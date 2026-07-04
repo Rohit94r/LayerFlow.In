@@ -1,15 +1,12 @@
 export const site = {
   name: "LayerFlow",
-  tagline: "Production infrastructure for AI applications",
-  github: "https://github.com/Rohit94r/LayerFlow.in",
-  githubStars: "26K",
-  monthlyRequests: "30M+",
-  docsCommand: "npx layerflow@latest init",
+  tagline: "The production infrastructure platform for AI applications",
+  docsCommand: "npm install @layerflow/gateway",
 };
 
 export const nav = [
   {
-    label: "Components",
+    label: "Platform",
     items: [
       { title: "Observability", desc: "Trace every agent step in production.", href: "#observability" },
       { title: "Cost Analytics", desc: "See spend per model, key, and user.", href: "#cost" },
@@ -24,42 +21,37 @@ export const nav = [
       { title: "Dashboard", desc: "Costs, traces, alerts, and billing in one place.", href: "#dashboard" },
     ],
   },
-  { label: "Releases", href: "#blog" },
+  { label: "Pricing", href: "#faq" },
   { label: "Blog", href: "#blog" },
   {
     label: "Docs",
     items: [
-      { title: "Quickstart", desc: "From zero to first trace in 5 minutes.", href: "#docs" },
-      { title: "SDK Reference", desc: "TypeScript drop-in for OpenAI client.", href: "#docs" },
-      { title: "API Reference", desc: "REST endpoints for traces, costs, keys.", href: "#docs" },
+      { title: "Quickstart", desc: "From sign-up to first trace in under 5 minutes.", href: "#docs" },
+      { title: "SDK Reference", desc: "Drop-in TypeScript client for OpenAI-compatible APIs.", href: "#docs" },
+      { title: "API Reference", desc: "Traces, costs, keys, budgets, and cache endpoints.", href: "#docs" },
     ],
   },
   {
     label: "Resources",
     items: [
-      { title: "Pricing", desc: "Free, Pro, and Scale plans.", href: "#pricing" },
       { title: "FAQ", desc: "Common questions about LayerFlow.", href: "#faq" },
-      { title: "GitHub", desc: "Open source SDK and examples.", href: "https://github.com/Rohit94r/LayerFlow.in" },
+      { title: "Contact", desc: "Talk to the LayerFlow team.", href: "#faq" },
     ],
   },
 ];
 
 export const heroBadges = [
-  { label: "Apache-2.0 friendly SDK" },
-  { label: "26K+ GitHub Stars" },
-  { label: "30M+ Requests / mo" },
+  { label: "BYOK — your keys, your data" },
+  { label: "<20ms gateway overhead" },
+  { label: "Hard budget limits" },
 ];
 
-export const companies = [
-  { name: "Meta", src: "/images/companies/meta.svg" },
-  { name: "MosaicML", src: "/images/companies/mosaicml.svg" },
-  { name: "Zillow", src: "/images/companies/zillow.svg" },
-  { name: "Toyota", src: "/images/companies/toyota.svg" },
-  { name: "Booking", src: "/images/companies/booking.svg" },
-  { name: "Microsoft", src: "/images/companies/microsoft.svg" },
-  { name: "Accenture", src: "/images/companies/accenture.svg" },
-  { name: "ASML", src: "/images/companies/asml.svg" },
-  { name: "Wix", src: "/images/companies/wix.svg" },
+export const providers = [
+  { name: "OpenAI", src: "/images/openai.svg" },
+  { name: "Anthropic", src: "/images/anthropic.svg" },
+  { name: "Gemini", src: "/images/google-gemini.svg" },
+  { name: "LangChain", src: "/images/langchain.svg" },
+  { name: "Databricks", src: "/images/databricks.svg" },
 ];
 
 export type Feature = {
@@ -86,7 +78,7 @@ export const features: Feature[] = [
     ],
     cta: [
       { label: "Quickstart", href: "#docs" },
-      { label: "Try Demo", href: "#demo" },
+      { label: "View dashboard", href: "#demo" },
     ],
     code: {
       lang: "typescript",
@@ -117,7 +109,7 @@ export const features: Feature[] = [
     ],
     cta: [
       { label: "Quickstart", href: "#docs" },
-      { label: "Try Demo", href: "#demo" },
+      { label: "View dashboard", href: "#demo" },
     ],
     reverse: true,
     code: {
@@ -174,7 +166,7 @@ export const features: Feature[] = [
     ],
     cta: [
       { label: "Quickstart", href: "#docs" },
-      { label: "Try Demo", href: "#demo" },
+      { label: "View dashboard", href: "#demo" },
     ],
     reverse: true,
     code: {
@@ -302,7 +294,7 @@ export const features: Feature[] = [
     ],
     cta: [
       { label: "Quickstart", href: "#docs" },
-      { label: "Try Demo", href: "#demo" },
+      { label: "View dashboard", href: "#demo" },
     ],
     code: {
       lang: "typescript",
@@ -330,7 +322,7 @@ export const features: Feature[] = [
     ],
     cta: [
       { label: "Quickstart", href: "#docs" },
-      { label: "Try Demo", href: "#demo" },
+      { label: "View dashboard", href: "#demo" },
     ],
     reverse: true,
     code: {
@@ -357,7 +349,7 @@ export const features: Feature[] = [
       "Trace explorer with session waterfall view",
       "Alerts for budget, errors, and quality drops",
     ],
-    cta: [{ label: "Try Demo", href: "#demo" }],
+    cta: [{ label: "View dashboard", href: "#demo" }],
     code: {
       lang: "bash",
       lines: [
@@ -380,7 +372,7 @@ export const whyChoose = [
   {
     iconKey: "unlock",
     title: "No Vendor Lock-in",
-    desc: "Framework-agnostic and provider-agnostic. Works with any code that calls an AI API.",
+    desc: "Framework-agnostic and provider-agnostic. Drop in wherever your app already calls an AI API.",
   },
   {
     iconKey: "shield",
@@ -410,10 +402,6 @@ export const integrations = [
   { name: "Gemini", src: "/images/google-gemini.svg" },
   { name: "LangChain", src: "/images/langchain.svg" },
   { name: "Databricks", src: "/images/databricks.svg" },
-  { name: "Vercel AI", src: "/images/vercel.svg" },
-  { name: "Bedrock", src: "/images/bedrock.png" },
-  { name: "LiteLLM", src: "/images/litellm.png" },
-  { name: "Qwen", src: "/images/qwen-logo.png" },
 ];
 
 export const steps = [
@@ -454,10 +442,10 @@ export const steps = [
 ];
 
 export const stats = [
-  { value: "30M+", label: "Requests proxied / month" },
-  { value: "26K+", label: "GitHub stars" },
-  { value: "<5ms", label: "Cache hit latency" },
-  { value: "40–70%", label: "Typical cost reduction" },
+  { value: "<20ms", label: "Gateway overhead" },
+  { value: "<5ms", label: "Cache hit response" },
+  { value: "11", label: "Platform capabilities" },
+  { value: "1", label: "Integration to get everything" },
 ];
 
 export const faqs = [
@@ -466,8 +454,8 @@ export const faqs = [
     a: "LayerFlow is the production infrastructure platform for AI applications. It sits between your app and every AI provider, giving you observability, real-time cost tracking, budget enforcement, caching, reliability, and automated testing — all through a single integration.",
   },
   {
-    q: "Why do I need an AI infrastructure platform?",
-    a: "Once AI apps hit production, teams face black-box debugging, unpredictable costs, multi-provider maintenance, and no standard way to test agents. LayerFlow solves all of these at the network layer so you don't rebuild the same infrastructure from scratch.",
+    q: "Why do I need LayerFlow?",
+    a: "AI agents in production need infrastructure that generic tools don't provide — cost control with hard budgets, full request tracing, multi-provider routing, and agent testing. LayerFlow is that layer. One integration instead of weeks of custom code.",
   },
   {
     q: "Is LayerFlow free?",
@@ -486,17 +474,17 @@ export const faqs = [
 export const posts = [
   {
     date: "Jul 2, 2026",
-    title: "Multi-step agents need multi-layer observability",
+    title: "Why your first $8,000 OpenAI bill has no breakdown",
     tag: "Engineering",
   },
   {
     date: "Jun 15, 2026",
-    title: "Manage your AI teams with role-based access control",
+    title: "Hard budget limits: stopping runaway AI spend before it happens",
     tag: "Product",
   },
   {
     date: "May 25, 2026",
-    title: "Route any AI coding agent through the LayerFlow Gateway",
+    title: "One import to trace every step of a multi-agent run",
     tag: "Tutorial",
   },
 ];
@@ -516,6 +504,6 @@ export const footerCols = [
   },
   {
     title: "Community",
-    links: ["GitHub", "Discord", "X / Twitter", "LinkedIn", "YouTube"],
+    links: ["Discord", "X / Twitter", "LinkedIn", "YouTube"],
   },
 ];
