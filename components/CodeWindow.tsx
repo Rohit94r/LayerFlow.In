@@ -1,57 +1,11 @@
 import { Fragment } from "react";
+import { highlightLine } from "@/lib/highlight-code";
 
 type CodeWindowProps = {
   lang: string;
   lines: string[];
   filename?: string;
 };
-
-const KEYWORDS = new Set([
-  "import",
-  "from",
-  "const",
-  "let",
-  "var",
-  "await",
-  "async",
-  "function",
-  "return",
-  "new",
-  "export",
-  "default",
-  "npm",
-  "install",
-  "npx",
-]);
-
-function highlight(line: string, key: number) {
-  // comments
-  if (line.trimStart().startsWith("//") || line.trimStart().startsWith("#")) {
-    return (
-      <span key={key} className="italic text-[#6b7280]">
-        {line}
-      </span>
-    );
-  }
-
-  const tokens = line.split(/(\s+|[(){}[\],:.])/);
-  return tokens.map((tok, i) => {
-    const t = tok.trim();
-    let cls = "";
-    if (KEYWORDS.has(t)) cls = "text-[#c792ea]";
-    else if (/^'.*'$/.test(t) || /^".*"$/.test(t) || /^`.*`$/.test(t))
-      cls = "text-[#c3e88d]";
-    else if (/^\d+$/.test(t)) cls = "text-[#f78c6c]";
-    else if (/^[A-Z][A-Za-z0-9]+$/.test(t)) cls = "text-[#ffcb6b]";
-    else if (/^(gpt-4o|claude-3-5-sonnet|gpt-4o-mini)$/.test(t))
-      cls = "text-[#82aaff]";
-    return (
-      <span key={`${key}-${i}`} className={cls}>
-        {tok}
-      </span>
-    );
-  });
-}
 
 export default function CodeWindow({ lang, lines, filename }: CodeWindowProps) {
   return (
@@ -68,7 +22,7 @@ export default function CodeWindow({ lang, lines, filename }: CodeWindowProps) {
         <code className="font-mono text-[#c9c9d4]">
           {lines.map((line, i) => (
             <Fragment key={i}>
-              {highlight(line, i)}
+              {highlightLine(line, i)}
               {"\n"}
             </Fragment>
           ))}
