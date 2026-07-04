@@ -71,11 +71,12 @@ export default function WhyChoose() {
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="font-sans text-[2rem] font-semibold leading-tight text-ink sm:text-[2.5rem]">
-              Why teams choose LayerFlow
+              What you get with LayerFlow
             </h2>
             <p className="mt-4 text-[20px] font-normal leading-[28px] text-muted">
-              Focus on building great AI, not on rebuilding infrastructure.
-              LayerFlow handles the production layer so you can ship faster.
+              Stop stitching together gateways, cost dashboards, and trace
+              tools. LayerFlow is the production layer — one integration, full
+              control.
             </p>
           </div>
         </Reveal>

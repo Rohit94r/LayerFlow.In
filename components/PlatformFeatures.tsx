@@ -73,7 +73,7 @@ export default function PlatformFeatures() {
     <section id="platform" className="scroll-mt-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-normal text-brand">LLMs &amp; Agents</p>
+          <p className="text-sm font-normal text-brand">Platform</p>
           <h2 className="mt-3 font-sans text-[2rem] font-semibold leading-tight text-ink sm:text-[2.5rem]">
             The production layer for AI applications
           </h2>

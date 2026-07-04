@@ -93,6 +93,9 @@ html.light {
 }
 
 /* MLflow-style underlined emphasis in hero copy */
+.hero-title {
+  font-weight: 400;
+}
 .hero-underline {
   text-decoration: underline;
   text-decoration-color: rgba(255, 255, 255, 0.55);
@@ -280,7 +283,7 @@ html.light {
   to { transform: translateX(-50%); }
 }
 .animate-marquee {
-  animation: marquee 34s linear infinite;
+  animation: marquee 28s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

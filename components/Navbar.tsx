@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Github, Menu, Star, X } from "lucide-react";
-import { nav, site } from "@/lib/content";
+import { ChevronDown, Menu, X } from "lucide-react";
+import { nav } from "@/lib/content";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
@@ -29,13 +29,47 @@ export default function Navbar() {
           : "border-b border-border bg-bg/85 backdrop-blur-xl"
       }`}
     >
-      <nav className="mx-auto flex h-[4.25rem] max-w-[1280px] items-center justify-between px-6 lg:px-8">
-        <a href="#top" aria-label="LayerFlow home">
-          <Logo variant={overHero ? "hero" : "default"} />
-        </a>
+      <nav className="relative mx-auto h-[4.25rem] max-w-[1280px] px-6 lg:px-8">
+        <div className="flex h-full items-center justify-between">
+          <a href="#top" aria-label="LayerFlow home" className="relative z-10 shrink-0">
+            <Logo variant={overHero ? "hero" : "default"} />
+          </a>
 
-        {/* center links — matches mlflow.org layout */}
-        <div className="hidden items-center gap-0.5 lg:flex">
+          <div className="relative z-10 ml-auto flex items-center gap-2 lg:min-w-[220px] lg:justify-end">
+            <ThemeToggle overHero={overHero} />
+            <a
+              href="#docs"
+              className={`hidden rounded-full px-4 py-2 text-sm font-normal transition-colors sm:inline-flex ${
+                overHero
+                  ? "border border-white/30 text-white hover:bg-white/10"
+                  : "border border-border-strong text-ink hover:bg-surface-2"
+              }`}
+            >
+              Get Started
+            </a>
+            <a
+              href="#demo"
+              className="hidden rounded-full bg-white px-4 py-2 text-sm font-normal text-black transition-transform hover:scale-[1.02] sm:inline-flex"
+            >
+              View dashboard
+            </a>
+            <button
+              aria-label="Toggle menu"
+              onClick={() => setMobileOpen((v) => !v)}
+              className={`rounded-lg p-2 lg:hidden ${
+                overHero
+                  ? "text-white"
+                  : "border border-border text-ink"
+              }`}
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* center navigation — absolutely centered like mlflow.org */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-full items-center justify-center lg:flex">
+          <div className="pointer-events-auto flex items-center gap-0.5">
           {nav.map((item) =>
             "items" in item && item.items ? (
               <div
@@ -93,52 +127,7 @@ export default function Navbar() {
               </a>
             ),
           )}
-        </div>
-
-        {/* right actions */}
-        <div className="flex items-center gap-2">
-          <ThemeToggle overHero={overHero} />
-          <a
-            href={site.github}
-            target="_blank"
-            rel="noreferrer"
-            className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-normal transition-colors sm:inline-flex ${
-              overHero
-                ? "border border-white/15 bg-black/25 text-white hover:bg-black/35"
-                : "glass-pill text-ink"
-            }`}
-          >
-            <Github className="h-4 w-4" />
-            <Star className="h-3.5 w-3.5 fill-current" />
-            <span>{site.githubStars}</span>
-          </a>
-          <a
-            href="#docs"
-            className={`hidden rounded-full px-4 py-2 text-sm font-normal transition-colors sm:inline-flex ${
-              overHero
-                ? "border border-white/30 text-white hover:bg-white/10"
-                : "border border-border-strong text-ink hover:bg-surface-2"
-            }`}
-          >
-            Get Started
-          </a>
-          <a
-            href="#demo"
-            className="hidden rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition-transform hover:scale-[1.02] sm:inline-flex"
-          >
-            Try Demo
-          </a>
-          <button
-            aria-label="Toggle menu"
-            onClick={() => setMobileOpen((v) => !v)}
-            className={`rounded-lg p-2 lg:hidden ${
-              overHero
-                ? "text-white"
-                : "border border-border text-ink"
-            }`}
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          </div>
         </div>
       </nav>
 
@@ -172,7 +161,7 @@ export default function Navbar() {
                   href="#demo"
                   className="flex-1 rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-black"
                 >
-                  Try Demo
+                  View dashboard
                 </a>
               </div>
             </div>
