@@ -1,0 +1,29 @@
+{
+  "name": "layerflow-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LayerFlow — the production infrastructure platform for AI applications.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.469.0",
+    "next": "^16.2.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^16.2.10",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}
