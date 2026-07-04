@@ -32,4 +32,5 @@ next-env.d.ts
 
 # reference scrape (local only)
 mlflow.org/
+images/
 .DS_Store
