@@ -1,18 +1,16 @@
 import {
   BookOpen,
-  Github,
   Linkedin,
   Youtube,
   MessageCircle,
   ArrowRight,
 } from "lucide-react";
-import { footerCols, site } from "@/lib/content";
+import { footerCols } from "@/lib/content";
 import Logo from "./Logo";
 import Reveal from "./Reveal";
 
 const socials = [
   { icon: BookOpen, label: "Docs" },
-  { icon: Github, label: "GitHub" },
   { icon: Linkedin, label: "LinkedIn" },
   { icon: Youtube, label: "YouTube" },
   { icon: MessageCircle, label: "Discord" },
@@ -21,11 +19,10 @@ const socials = [
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border">
-      {/* CTA */}
       <div className="relative mx-auto max-w-7xl px-5 py-24 sm:px-8">
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
-            <span className="text-sm font-medium text-brand">Get involved</span>
+            <span className="text-sm font-medium text-brand">Start building</span>
             <h2 className="mt-3 text-4xl font-semibold text-ink sm:text-5xl">
               Ready to ship AI with confidence?
             </h2>
@@ -42,13 +39,10 @@ export default function Footer() {
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </a>
               <a
-                href={site.github}
-                target="_blank"
-                rel="noreferrer"
+                href="#docs"
                 className="inline-flex items-center gap-2 rounded-xl border border-border-strong px-6 py-3 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
               >
-                <Github className="h-4 w-4" />
-                Star on GitHub
+                Read the docs
               </a>
             </div>
           </div>
@@ -68,7 +62,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Link columns */}
       <div className="border-t border-border">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:grid-cols-2 sm:px-8 lg:grid-cols-6">
           <div className="lg:col-span-2">
@@ -99,7 +92,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* bottom bar */}
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-5 py-6 sm:flex-row sm:px-8">
           <p className="text-sm text-faint">
@@ -113,7 +105,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* mirrored gradient glow at the very bottom */}
       <div className="relative h-24 overflow-hidden">
         <div className="footer-glow absolute inset-x-0 bottom-[-40px] h-24 [mask-image:linear-gradient(to_top,black,transparent)]" />
       </div>

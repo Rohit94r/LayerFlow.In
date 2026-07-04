@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
   icons: {
-    icon: "/images/mlflow-favicon.ico",
+    icon: "/favicon.svg",
   },
 };
 
