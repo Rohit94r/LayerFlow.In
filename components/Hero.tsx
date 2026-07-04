@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Copy, Check, Github, Download } from "lucide-react";
+import { Copy, Check } from "lucide-react";
 import { useState } from "react";
-import { site } from "@/lib/content";
+import { site, heroBadges } from "@/lib/content";
 
 const container = {
   hidden: {},
@@ -40,22 +40,28 @@ export default function Hero() {
         <motion.div variants={container} initial="hidden" animate="show">
           <motion.h1
             variants={item}
-            className="mx-auto max-w-[880px] text-balance font-sans text-[2.75rem] font-semibold leading-[1.08] tracking-[-0.03em] text-white sm:text-[3.5rem] md:text-[4.25rem]"
+            className="hero-title mx-auto max-w-[880px] text-balance font-sans text-[2.75rem] font-normal leading-[1.1] tracking-[-0.025em] text-white sm:text-[3.5rem] md:text-[4rem]"
           >
-            Deliver High-Quality AI, Fast
+            Ship reliable AI in production
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="mx-auto mt-6 max-w-[720px] text-balance font-sans text-[20px] font-normal leading-[28px] text-white/70"
+            className="mx-auto mt-6 max-w-[680px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/75"
           >
-            Building AI products is all about iteration.
-            <br />
-            LayerFlow lets you move 10x faster by simplifying how you{" "}
-            <span className="hero-underline">debug</span>,{" "}
-            <span className="hero-underline">evaluate</span>, and{" "}
-            <span className="hero-underline">monitor</span> your LLM
-            applications, Agents, and Models.
+            {site.tagline}
+          </motion.p>
+
+          <motion.p
+            variants={item}
+            className="mx-auto mt-4 max-w-[720px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
+          >
+            One integration gives you{" "}
+            <span className="hero-underline">full traces</span>,{" "}
+            <span className="hero-underline">real-time costs</span>, and{" "}
+            <span className="hero-underline">hard budget limits</span>
+            <br className="hidden sm:block" />
+            {" "}— before a surprise bill hits your inbox.
           </motion.p>
 
           <motion.div
@@ -64,21 +70,21 @@ export default function Hero() {
           >
             <a
               href="#demo"
-              className="rounded-full bg-white px-7 py-3 text-[15px] font-medium text-black transition-transform hover:scale-[1.02]"
+              className="rounded-full bg-white px-7 py-3 text-[15px] font-normal text-black transition-transform hover:scale-[1.02]"
             >
-              Try Demo
+              View dashboard
             </a>
             <a
               href="#docs"
               className="rounded-full border border-white/35 px-7 py-3 text-[15px] font-normal text-white transition-colors hover:bg-white/10"
             >
-              Get Started
+              Start free
             </a>
           </motion.div>
 
           <motion.div variants={item} className="mt-10 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/60">
-              ✨ New: let your coding agent set up LayerFlow tracing for you
+              Install the SDK — your first trace appears in under 5 minutes
             </p>
             <button
               onClick={copy}
@@ -100,12 +106,14 @@ export default function Hero() {
             variants={item}
             className="mt-10 flex flex-wrap items-center justify-center gap-3 text-[14px] font-normal text-white/80"
           >
-            <span className="pill-on-media inline-flex items-center gap-2 rounded-lg px-3 py-1.5">
-              <Github className="h-4 w-4" /> {site.githubStars}+ Stars
-            </span>
-            <span className="pill-on-media inline-flex items-center gap-2 rounded-lg px-3 py-1.5">
-              <Download className="h-4 w-4" /> {site.monthlyRequests} Requests/mo
-            </span>
+            {heroBadges.map((b) => (
+              <span
+                key={b.label}
+                className="pill-on-media inline-flex items-center gap-2 rounded-lg px-3 py-1.5"
+              >
+                {b.label}
+              </span>
+            ))}
           </motion.div>
         </motion.div>
       </div>
