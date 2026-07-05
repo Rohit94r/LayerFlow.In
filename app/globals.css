@@ -114,12 +114,27 @@ html.light {
   color: #ffffff;
 }
 
-/* ---------- Signature hero background (5 layers, GPU-optimised, no canvas/SVG/GSAP) ---------- */
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM HERO BACKGROUND — 6 animated layers, GPU-only, 60fps
+   Inspired by Vercel · Linear · Raycast · Stripe
+   ═══════════════════════════════════════════════════════════════════════════ */
 
-/* 1. Gradient layer — warm amber / burnt orange / deep charcoal */
-.hero-gradient {
+/* ── Layer 1 — Animated Gradient (slides left ↔ right, 40s loop) ── */
+.hero-gradient-layer {
   position: absolute;
   inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-gradient-layer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 200%;
+  height: 100%;
+  will-change: transform;
   background-image:
     repeating-linear-gradient(
       to right,
@@ -143,132 +158,149 @@ html.light {
       #1c1008 65%,
       #0c0a09 100%
     );
+  animation: gradientSlide 40s ease-in-out infinite;
 }
 
-/* 2. Animated aura — slowly shifting warm gradient behind the stripes */
-.hero-aura {
-  position: absolute;
-  inset: 0;
-  opacity: 0.35;
-  mix-blend-mode: screen;
-  pointer-events: none;
-  background: linear-gradient(
-    120deg,
-    rgba(251, 191, 36, 0.12),
-    rgba(192, 38, 211, 0.08),
-    rgba(251, 191, 36, 0.12)
-  );
-  background-size: 200% 200%;
-  animation: auraShift 20s ease-in-out infinite;
-}
-
-@keyframes auraShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* 3. Animated glow layer — large blurred orbs drifting across the hero */
-.hero-glows {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.hero-glows::before {
-  content: "";
-  position: absolute;
-  top: -20%;
-  left: -20%;
-  width: 65%;
-  height: 130%;
-  background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, transparent 65%);
-  filter: blur(90px);
-  will-change: transform;
-  animation: glowDriftRight 28s ease-in-out infinite;
-}
-
-.hero-glows::after {
-  content: "";
-  position: absolute;
-  top: 0%;
-  right: -20%;
-  width: 60%;
-  height: 120%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 65%);
-  filter: blur(100px);
-  will-change: transform;
-  animation: glowDriftLeft 34s ease-in-out infinite;
-}
-
-@keyframes glowDriftRight {
+@keyframes gradientSlide {
   0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(40%, 10%, 0); }
+  50% { transform: translate3d(25%, 0, 0); }
 }
 
-@keyframes glowDriftLeft {
-  0%, 100% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(-35%, -8%, 0); }
-}
-
-/* 4. Vertical stripe layer — entire layer floats like calm ocean waves */
-.hero-stripes {
+/* ── Layer 2 — Floating Vertical Lines (±25px drift, 18s loop) ── */
+.hero-stripes-layer {
   position: absolute;
-  inset: -40px;
+  inset: -60px;
   will-change: transform;
   pointer-events: none;
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04) 0px,
-    rgba(255, 255, 255, 0.04) 2px,
+    rgba(255, 255, 255, 0.035) 0px,
+    rgba(255, 255, 255, 0.035) 2px,
     transparent 2px,
-    transparent 28px
+    transparent 32px
   );
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 70%, transparent 92%);
-  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.4) 70%, transparent 92%);
-  animation: stripeFloat 24s ease-in-out infinite, stripePulse 8s ease-in-out infinite;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.35) 70%, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.35) 70%, transparent 92%);
+  animation: stripeDrift 18s ease-in-out infinite;
 }
 
-@keyframes stripeFloat {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale3d(1, 1, 1) rotateZ(0deg);
-  }
-  25% {
-    transform: translate3d(20px, -10px, 0) scale3d(1.02, 1.02, 1) rotateZ(0.5deg);
-  }
-  50% {
-    transform: translate3d(0, 10px, 0) scale3d(1, 1, 1) rotateZ(1deg);
-  }
-  75% {
-    transform: translate3d(-20px, -5px, 0) scale3d(1.01, 1.01, 1) rotateZ(0.5deg);
-  }
+@keyframes stripeDrift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(-25px, 0, 0); }
+  50% { transform: translate3d(0, 0, 0); }
+  75% { transform: translate3d(25px, 0, 0); }
 }
 
-@keyframes stripePulse {
-  0%, 100% { opacity: 0.98; }
-  50% { opacity: 1; }
-}
-
-/* 5. Noise texture layer */
-.hero-noise {
+/* ── Layer 3 — Aurora Glow (3 giant blurred circles, 35s loop) ── */
+.hero-aurora-layer {
   position: absolute;
   inset: 0;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
   pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  overflow: hidden;
+  mix-blend-mode: screen;
+  opacity: 0.2;
 }
 
-/* 6. Dark overlay — fades the hero into the page background and ensures text readability */
-.hero-fade {
+.aurora-orb {
+  position: absolute;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.aurora-cyan {
+  top: -10%;
+  left: -10%;
+  width: 70%;
+  height: 90%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.45) 0%, transparent 60%);
+  filter: blur(250px);
+  animation: auroraCyan 35s ease-in-out infinite;
+}
+
+.aurora-purple {
+  top: 10%;
+  right: -15%;
+  width: 65%;
+  height: 85%;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.35) 0%, transparent 55%);
+  filter: blur(300px);
+  animation: auroraPurple 35s ease-in-out infinite;
+}
+
+.aurora-blue {
+  top: 30%;
+  left: 20%;
+  width: 55%;
+  height: 70%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 50%);
+  filter: blur(220px);
+  animation: auroraBlue 35s ease-in-out infinite;
+}
+
+@keyframes auroraCyan {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  33% { transform: translate3d(12%, 8%, 0) rotate(2deg); }
+  66% { transform: translate3d(-5%, 15%, 0) rotate(-1deg); }
+}
+
+@keyframes auroraPurple {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  33% { transform: translate3d(-10%, -6%, 0) rotate(-2deg); }
+  66% { transform: translate3d(8%, -12%, 0) rotate(1deg); }
+}
+
+@keyframes auroraBlue {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  33% { transform: translate3d(6%, -10%, 0) rotate(3deg); }
+  66% { transform: translate3d(-8%, 5%, 0) rotate(-2deg); }
+}
+
+/* ── Layer 4 — Mouse Cursor Glow (subtle radial follow) ── */
+.hero-mouse-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(251, 191, 36, 0.08) 0%,
+    rgba(192, 38, 211, 0.04) 40%,
+    transparent 70%
+  );
+}
+
+.hero-canvas:hover .hero-mouse-glow {
+  opacity: 1;
+}
+
+/* ── Layer 5 — Noise (animated film grain, 3% opacity) ── */
+.hero-noise-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  animation: noiseShift 8s linear infinite;
+}
+
+@keyframes noiseShift {
+  0% { background-position: 0 0; }
+  100% { background-position: 200px 200px; }
+}
+
+/* ── Layer 6 — Dark Overlay (ensures text readability) ── */
+.hero-fade-layer {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    transparent 40%,
-    var(--fade-mid) 78%,
+    transparent 35%,
+    var(--fade-mid) 75%,
     var(--fade-end) 100%
   );
 }
@@ -394,9 +426,12 @@ html.light {
 
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
-  .hero-aura,
-  .hero-glows::before,
-  .hero-glows::after,
-  .hero-stripes { animation: none; }
+  .hero-gradient-layer::before,
+  .hero-stripes-layer,
+  .aurora-cyan,
+  .aurora-purple,
+  .aurora-blue,
+  .hero-noise-layer { animation: none; }
+  .hero-mouse-glow { opacity: 0 !important; }
   html { scroll-behavior: auto; }
 }
