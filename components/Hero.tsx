@@ -29,8 +29,31 @@ export default function Hero() {
 
   return (
     <section id="top" className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 h-[860px]">
-        <div className="hero-gradient" />
+      <div className="pointer-events-none absolute inset-0 h-[860px] overflow-hidden">
+        <motion.div
+          className="hero-gradient"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+        />
+        <motion.div
+          className="hero-aura"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.5, delay: 0.2, ease: "easeOut" }}
+        />
+        <motion.div
+          className="hero-glows"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 2, delay: 0.4, ease: "easeOut" }}
+        />
+        <motion.div
+          className="hero-stripes"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, delay: 0.1, ease: "easeOut" }}
+        />
         <div className="hero-noise" />
         <div className="hero-fade" />
       </div>
