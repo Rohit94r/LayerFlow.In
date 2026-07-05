@@ -31,7 +31,6 @@ export default function Hero() {
     <section id="top" className="relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0 h-[860px]">
         <div className="hero-gradient" />
-        <div className="hero-rays" />
         <div className="hero-noise" />
         <div className="hero-fade" />
       </div>
@@ -40,50 +39,42 @@ export default function Hero() {
         <motion.div variants={container} initial="hidden" animate="show">
           <motion.h1
             variants={item}
-            className="hero-title mx-auto max-w-[880px] text-balance font-sans text-[2.75rem] font-normal leading-[1.1] tracking-[-0.025em] text-white sm:text-[3.5rem] md:text-[4rem]"
+            className="hero-title mx-auto max-w-[880px] text-balance font-sans text-[2.75rem] font-light leading-[1.05] tracking-[-0.025em] text-white sm:text-[3.5rem] md:text-[4.5rem]"
           >
             Ship reliable AI in production
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="mx-auto mt-6 max-w-[680px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/75"
+            className="mx-auto mt-8 max-w-[680px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
           >
-            {site.tagline}
-          </motion.p>
-
-          <motion.p
-            variants={item}
-            className="mx-auto mt-4 max-w-[720px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
-          >
-            One integration gives you{" "}
+            {site.tagline}. One integration gives you{" "}
             <span className="hero-underline">full traces</span>,{" "}
             <span className="hero-underline">real-time costs</span>, and{" "}
-            <span className="hero-underline">hard budget limits</span>
-            <br className="hidden sm:block" />
-            {" "}— before a surprise bill hits your inbox.
+            <span className="hero-underline">hard budget limits</span> — before a
+            surprise bill hits your inbox.
           </motion.p>
 
           <motion.div
             variants={item}
-            className="mt-10 flex flex-wrap items-center justify-center gap-3"
+            className="mt-10 flex flex-wrap items-center justify-center gap-4"
           >
             <a
               href="#demo"
-              className="rounded-full bg-white px-7 py-3 text-[15px] font-normal text-black transition-transform hover:scale-[1.02]"
+              className="rounded-xl bg-white px-6 py-4 text-base font-medium text-black transition-transform hover:scale-[1.02]"
             >
               View dashboard
             </a>
             <a
               href="#docs"
-              className="rounded-full border border-white/35 px-7 py-3 text-[15px] font-normal text-white transition-colors hover:bg-white/10"
+              className="rounded-xl border border-white/30 bg-transparent px-6 py-4 text-base font-medium text-white transition-colors hover:text-gray-300"
             >
               Start free
             </a>
           </motion.div>
 
-          <motion.div variants={item} className="mt-10 flex flex-col items-center gap-3">
-            <p className="text-sm font-normal text-white/60">
+          <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
+            <p className="text-sm font-normal text-white/50">
               Install the SDK — your first trace appears in under 5 minutes
             </p>
             <button
@@ -104,7 +95,7 @@ export default function Hero() {
 
           <motion.div
             variants={item}
-            className="mt-10 flex flex-wrap items-center justify-center gap-3 text-[14px] font-normal text-white/80"
+            className="mt-8 flex flex-wrap items-center justify-center gap-3 text-[14px] font-normal text-white/60"
           >
             {heroBadges.map((b) => (
               <span

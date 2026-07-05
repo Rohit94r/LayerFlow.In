@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #08080a;
-  --color-bg-soft: #0c0c0f;
-  --color-surface: #111114;
-  --color-surface-2: #16161b;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.14);
-  --color-ink: #f4f4f6;
-  --color-muted: #a1a1aa;
-  --color-faint: #71717a;
+  --color-bg: #0e1416;
+  --color-bg-soft: #11181b;
+  --color-surface: #141b1e;
+  --color-surface-2: #1a2226;
+  --color-border: rgba(247, 248, 248, 0.08);
+  --color-border-strong: rgba(247, 248, 248, 0.16);
+  --color-ink: #f7f8f8;
+  --color-muted: #9ca3ab;
+  --color-faint: #6b7378;
 
-  --color-brand: #4f7cff;
-  --color-brand-2: #7c5cff;
-  --color-crimson: #e2295b;
-  --color-magenta: #b5237e;
+  --color-brand: #eb1700;
+  --color-brand-2: #44edbc;
+  --color-crimson: #eb1700;
+  --color-magenta: #7c2d5b;
 
   --font-display: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -25,13 +25,13 @@
 
 /* ---------- Theme tokens (dark is default) ---------- */
 :root {
-  --fade-mid: rgba(8, 8, 10, 0.55);
-  --fade-end: #08080a;
-  --card-shadow: 0 30px 80px -50px rgba(0, 0, 0, 0.9);
+  --fade-mid: rgba(14, 20, 22, 0.6);
+  --fade-end: #0e1416;
+  --card-shadow: 0 24px 60px -40px rgba(0, 0, 0, 0.85);
   --btn-primary-bg: #ffffff;
-  --btn-primary-fg: #08080a;
-  --glass-bg: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.12);
+  --btn-primary-fg: #0e1416;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
   --logo-invert: 0;
   color-scheme: dark;
 }
@@ -115,29 +115,40 @@ html.light {
 }
 
 /* ---------- Signature hero gradient (built entirely in CSS, no image) ---------- */
-/* 1. Base gradient: deep magenta -> crimson -> purple -> blue */
+/* 1. Base gradient: red radial glow at top + purple -> blue linear (mlflow.org style) */
 .hero-gradient {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(90% 60% at 50% 0%, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 55%),
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.05),
+      rgba(0, 0, 0, 0.25) 24px,
+      transparent 2px,
+      transparent 10px
+    ),
+    radial-gradient(
+      circle at top center,
+      #eb1700 0%,
+      transparent 60%
+    ),
     linear-gradient(
-      90deg,
-      #5b0035 0%,
-      #c2183a 40%,
-      #7a4ea1 70%,
-      #1f6ed4 100%
+      to right,
+      #3a1535 0%,
+      #5b1a3a 30%,
+      #3a2570 60%,
+      #1f3a8a 100%
     );
 }
 
-/* 2. Vertical stripes: 2px lines every 28px */
+/* 2. Vertical stripes — kept for legacy; gradient now holds them */
 .hero-rays {
   position: absolute;
   inset: 0;
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.05) 0px,
-    rgba(255, 255, 255, 0.05) 2px,
+    rgba(255, 255, 255, 0.04) 0px,
+    rgba(255, 255, 255, 0.04) 2px,
     transparent 2px,
     transparent 28px
   );
@@ -149,7 +160,7 @@ html.light {
 .hero-noise {
   position: absolute;
   inset: 0;
-  opacity: 0.05;
+  opacity: 0.04;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -161,7 +172,7 @@ html.light {
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    transparent 42%,
+    transparent 40%,
     var(--fade-mid) 78%,
     var(--fade-end) 100%
   );
@@ -170,10 +181,10 @@ html.light {
 .footer-glow {
   background: linear-gradient(
     100deg,
-    #7a0f2b 0%,
-    #b5237e 26%,
-    #7b2ea8 50%,
-    #3b3bd6 74%,
+    #eb1700 0%,
+    #7c2d5b 26%,
+    #3a2570 50%,
+    #1f3a8a 74%,
     #1b4fd8 100%
   );
   filter: blur(2px);
@@ -193,7 +204,7 @@ html.light {
 /* button that always sits on the colorful hero gradient (dark media) */
 .btn-on-media {
   background: #ffffff;
-  color: #08080a;
+  color: #0e1416;
   transition: transform 0.2s ease;
 }
 .btn-on-media:hover {
@@ -202,7 +213,7 @@ html.light {
 
 /* ---------- Reusable bits ---------- */
 .text-gradient {
-  background: linear-gradient(90deg, var(--color-ink) 0%, #a9b7ff 100%);
+  background: linear-gradient(90deg, var(--color-ink) 0%, #9abcf2 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -214,13 +225,13 @@ html.light {
   border-radius: var(--radius-xl);
 }
 
+/* mlflow.org-style subtle card hover: border + bg lift, no translate */
 .card-hover {
-  transition: border-color 0.25s ease, transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
 }
 .card-hover:hover {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-2);
-  transform: translateY(-3px);
+  border-color: rgba(247, 248, 248, 0.2);
+  background: rgba(255, 255, 255, 0.04);
   box-shadow: var(--card-shadow);
 }
 
@@ -241,33 +252,33 @@ html.light {
 
 .grid-lines {
   background-image:
-    linear-gradient(to right, rgba(128, 128, 160, 0.14) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(128, 128, 160, 0.14) 1px, transparent 1px);
+    linear-gradient(to right, rgba(128, 128, 160, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 160, 0.12) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
   -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
 }
 
 .code-window {
-  background: #0b0b0f;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0d1117;
+  border: 1px solid rgba(247, 248, 248, 0.08);
   border-radius: 0.9rem;
   box-shadow: var(--card-shadow);
 }
 
 /* monochrome (white) brand logos: dim in dark, invert to black in light */
 .logo-mono {
-  filter: grayscale(1) opacity(0.5) invert(var(--logo-invert));
+  filter: grayscale(1) opacity(0.2) invert(var(--logo-invert));
   transition: filter 0.25s ease, opacity 0.25s ease;
 }
 .logo-mono:hover {
-  filter: grayscale(1) opacity(0.85) invert(var(--logo-invert));
+  filter: grayscale(1) opacity(0.4) invert(var(--logo-invert));
 }
 
 /* dark chip that keeps colored logos visible in both themes */
 .logo-chip {
-  background: #0e0e13;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0e1416;
+  border: 1px solid rgba(247, 248, 248, 0.08);
 }
 
 /* stacked feature card */

@@ -3,24 +3,15 @@ import { providers } from "@/lib/content";
 
 function LogoSet({ offset }: { offset: number }) {
   return (
-    <div className="flex shrink-0 items-center gap-12 pr-12 sm:gap-16 sm:pr-16">
+    <div className="flex shrink-0 items-center gap-0 pr-10">
       {providers.map((p) => (
-        <div
+        <img
           key={`${p.name}-${offset}`}
-          className="flex shrink-0 items-center gap-4"
-        >
-          <span className="logo-chip flex h-14 w-14 items-center justify-center rounded-2xl sm:h-16 sm:w-16">
-            <img
-              src={p.src}
-              alt={p.name}
-              className="h-9 w-9 object-contain opacity-90 sm:h-10 sm:w-10"
-              loading="lazy"
-            />
-          </span>
-          <span className="whitespace-nowrap text-base font-medium text-ink/80 sm:text-lg">
-            {p.name}
-          </span>
-        </div>
+          src={p.src}
+          alt={p.name}
+          className="logo-mono inline h-10 w-auto mx-10 object-contain"
+          loading="lazy"
+        />
       ))}
     </div>
   );

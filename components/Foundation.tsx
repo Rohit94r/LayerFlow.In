@@ -49,14 +49,12 @@ export default function Foundation() {
                 key={it.name}
                 className="group flex h-32 flex-col items-center justify-center gap-3 bg-bg transition-colors hover:bg-surface"
               >
-                <span className="logo-chip flex h-14 w-14 items-center justify-center rounded-xl">
-                  <img
-                    src={it.src}
-                    alt={it.name}
-                    className="h-9 w-9 object-contain opacity-90 transition-opacity group-hover:opacity-100"
-                    loading="lazy"
-                  />
-                </span>
+                <img
+                  src={it.src}
+                  alt={it.name}
+                  className="logo-mono h-10 w-auto object-contain"
+                  loading="lazy"
+                />
                 <span className="text-sm text-muted">{it.name}</span>
               </div>
             ))}
