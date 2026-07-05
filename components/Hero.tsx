@@ -1,8 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import { Copy, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { site, heroBadges } from "@/lib/content";
 
 const container = {
@@ -20,6 +20,22 @@ const item = {
 
 export default function Hero() {
   const [copied, setCopied] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+
+  const { scrollY } = useScroll();
+  const bgParallax = useTransform(scrollY, [0, 800], [0, 120]);
+  const stripeParallax = useTransform(scrollY, [0, 800], [0, 60]);
+  const auroraParallax = useTransform(scrollY, [0, 800], [0, 30]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!heroRef.current) return;
+      heroRef.current.style.setProperty("--mouse-x", `${e.clientX}px`);
+      heroRef.current.style.setProperty("--mouse-y", `${e.clientY}px`);
+    };
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   const copy = async () => {
     await navigator.clipboard.writeText(site.docsCommand);
@@ -28,48 +44,67 @@ export default function Hero() {
   };
 
   return (
-    <section id="top" className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 h-[860px] overflow-hidden">
+    <section
+      id="top"
+      ref={heroRef}
+      className="hero-canvas relative min-h-[900px] overflow-hidden"
+    >
+      {/* ── BACKGROUND LAYERS ── */}
+      <div className="pointer-events-none absolute inset-0 h-[1100px] overflow-hidden">
+        {/* Layer 1 — Animated Gradient */}
         <motion.div
-          className="hero-gradient"
+          className="hero-gradient-layer"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
+          transition={{ duration: 1.4, ease: "easeOut" }}
+          style={{ y: bgParallax }}
         />
+
+        {/* Layer 2 — Floating Vertical Lines */}
         <motion.div
-          className="hero-aura"
+          className="hero-stripes-layer"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.2, ease: "easeOut" }}
+          transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
+          style={{ y: stripeParallax }}
         />
+
+        {/* Layer 3 — Aurora Glow (3 circles) */}
         <motion.div
-          className="hero-glows"
+          className="hero-aurora-layer"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 2, delay: 0.4, ease: "easeOut" }}
-        />
-        <motion.div
-          className="hero-stripes"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.2, delay: 0.1, ease: "easeOut" }}
-        />
-        <div className="hero-noise" />
-        <div className="hero-fade" />
+          style={{ y: auroraParallax }}
+        >
+          <div className="aurora-orb aurora-cyan" />
+          <div className="aurora-orb aurora-purple" />
+          <div className="aurora-orb aurora-blue" />
+        </motion.div>
+
+        {/* Layer 4 — Mouse Cursor Glow */}
+        <div className="hero-mouse-glow" />
+
+        {/* Layer 5 — Noise */}
+        <div className="hero-noise-layer" />
+
+        {/* Layer 6 — Dark Overlay */}
+        <div className="hero-fade-layer" />
       </div>
 
-      <div className="relative mx-auto max-w-[920px] px-6 pb-28 pt-[7.5rem] text-center sm:px-8">
+      {/* ── HERO CONTENT (never moves) ── */}
+      <div className="relative mx-auto max-w-[1100px] px-6 pb-32 pt-[8rem] text-center sm:px-8 md:pt-[9rem]">
         <motion.div variants={container} initial="hidden" animate="show">
           <motion.h1
             variants={item}
-            className="hero-title mx-auto max-w-[880px] text-balance font-sans text-[2.75rem] font-light leading-[1.05] tracking-[-0.025em] text-white sm:text-[3.5rem] md:text-[4.5rem]"
+            className="hero-title mx-auto max-w-[960px] text-balance font-sans text-[2.9rem] font-light leading-[1.05] tracking-[-0.025em] text-white sm:text-[3.8rem] md:text-[5rem]"
           >
             Ship reliable AI in production
           </motion.h1>
 
           <motion.p
             variants={item}
-            className="mx-auto mt-8 max-w-[680px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
+            className="mx-auto mt-8 max-w-[720px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
           >
             {site.tagline}. One integration gives you{" "}
             <span className="hero-underline">full traces</span>,{" "}
