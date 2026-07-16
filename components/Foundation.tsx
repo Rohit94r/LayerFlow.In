@@ -10,19 +10,18 @@ export default function Foundation() {
         <Reveal>
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold text-ink sm:text-4xl">
-              Infrastructure your AI apps actually need
+              The workspace your AI prompts deserve
             </h2>
             <p className="mt-4 text-muted">
-              A serverless gateway, atomic budget counters, and time-series
-              trace storage — designed for teams shipping agents and LLM
-              features to production.
+              A unified workspace for prompt versioning, multi-model comparison,
+              and hard budget enforcement — designed for anyone who writes prompts.
             </p>
           </div>
         </Reveal>
 
         <Reveal delay={0.05}>
           <p className="mt-10 text-center text-sm text-faint">
-            BYOK · hard budget limits · no vendor lock-in
+            BYOK · prompt versioning · multi-model compare · hard budget limits
           </p>
         </Reveal>
 
@@ -41,7 +40,7 @@ export default function Foundation() {
 
         <Reveal delay={0.1}>
           <p className="mt-20 text-center text-sm font-medium text-faint">
-            Drop into your existing stack
+            Works with every major AI model
           </p>
           <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3 md:grid-cols-5">
             {integrations.map((it) => (

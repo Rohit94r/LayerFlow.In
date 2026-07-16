@@ -24,11 +24,11 @@ export default function Footer() {
           <div className="mx-auto max-w-2xl text-center">
             <span className="text-sm font-medium text-brand">Start building</span>
             <h2 className="mt-3 text-4xl font-semibold text-ink sm:text-5xl">
-              Ready to ship AI with confidence?
+              Ready to organize your AI workspace?
             </h2>
             <p className="mt-4 text-muted">
-              Start free in minutes. See your first trace and true AI cost
-              breakdown before your coffee gets cold.
+              Start free in minutes. Create your first prompt workspace,
+              compare models, and set budget limits before your coffee gets cold.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <a
@@ -67,9 +67,8 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Logo className="h-7" />
             <p className="mt-4 max-w-xs text-sm text-muted">
-              The production infrastructure platform for AI applications.
-              Observability, cost control, reliability, and testing through one
-              integration.
+              The AI workspace for prompts, models, and cost management.
+              Write, version, compare, and control — all in one place.
             </p>
           </div>
           {footerCols.map((col) => (

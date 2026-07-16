@@ -99,18 +99,17 @@ export default function Hero() {
             variants={item}
             className="hero-title mx-auto max-w-[960px] text-balance font-sans text-[2.9rem] font-light leading-[1.05] tracking-[-0.025em] text-white sm:text-[3.8rem] md:text-[5rem]"
           >
-            Ship reliable AI in production
+            Your workspace for AI prompts
           </motion.h1>
 
           <motion.p
             variants={item}
             className="mx-auto mt-8 max-w-[720px] text-balance font-sans text-[20px] font-normal leading-[30px] text-white/70"
           >
-            {site.tagline}. One integration gives you{" "}
-            <span className="hero-underline">full traces</span>,{" "}
-            <span className="hero-underline">real-time costs</span>, and{" "}
-            <span className="hero-underline">hard budget limits</span> — before a
-            surprise bill hits your inbox.
+            {site.tagline}. Write, version, and organize in{" "}
+            <span className="hero-underline">prompt studios</span>, compare across{" "}
+            <span className="hero-underline">every AI model</span>, and stay within{" "}
+            <span className="hero-underline">hard budget limits</span> — all in one workspace.
           </motion.p>
 
           <motion.div
@@ -121,19 +120,19 @@ export default function Hero() {
               href="#demo"
               className="rounded-xl bg-white px-6 py-4 text-base font-medium text-black transition-transform hover:scale-[1.02]"
             >
-              View dashboard
+              Open workspace
             </a>
             <a
               href="#docs"
               className="rounded-xl border border-white/30 bg-transparent px-6 py-4 text-base font-medium text-white transition-colors hover:text-gray-300"
             >
-              Start free
+              Get started
             </a>
           </motion.div>
 
           <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/50">
-              Install the SDK — your first trace appears in under 5 minutes
+              Install the SDK — your first prompt workspace in under 5 minutes
             </p>
             <button
               onClick={copy}

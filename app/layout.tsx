@@ -21,42 +21,42 @@ const SITE_URL = "https://layerflow.dev";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LayerFlow — Production Infrastructure for AI Applications",
+    default: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
     template: "%s · LayerFlow",
   },
   description:
-    "LayerFlow is the production infrastructure platform for AI applications. One integration gives you observability, cost control, caching, reliability, and testing across every AI provider.",
+    "LayerFlow is the AI workspace for prompts, models, and cost management. Write, version, organize, and compare prompts across GPT, Claude, Gemini, and more — with hard budget limits.",
   keywords: [
-    "AI gateway",
-    "LLM observability",
+    "prompt management",
+    "AI workspace",
+    "prompt versioning",
+    "prompt diff",
     "AI cost tracking",
-    "AI infrastructure",
-    "prompt caching",
-    "model routing",
-    "AI agent monitoring",
-    "OpenAI proxy",
-    "Anthropic",
-    "Gemini",
+    "budget limits",
+    "multi-model comparison",
+    "GPT vs Claude vs Gemini",
+    "prompt organization",
+    "AI playground",
     "LayerFlow",
   ],
   authors: [{ name: "Rohit Jadhav" }],
   creator: "Rohit Jadhav",
   applicationName: "LayerFlow",
   alternates: { canonical: SITE_URL },
-  openGraph: {
+    openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "LayerFlow",
-    title: "LayerFlow — Production Infrastructure for AI Applications",
+    title: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
     description:
-      "Full visibility, cost control, reliability, and testing for your AI apps — through one integration.",
+      "Write, version, compare, and control your AI prompts. LayerFlow is the workspace for everyone who works with AI models.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — Production Infrastructure for AI Applications",
+    title: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
     description:
-      "Full visibility, cost control, reliability, and testing for your AI apps — through one integration.",
+      "Write, version, compare, and control your AI prompts. LayerFlow is the workspace for everyone who works with AI models.",
     images: ["/og.png"],
   },
   robots: {
@@ -88,7 +88,7 @@ export default function RootLayout({
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
     description:
-      "The production infrastructure platform for AI applications — observability, cost control, caching, reliability, and testing through one integration.",
+      "The AI workspace for prompts, models, and cost management — write, version, compare, and control all in one place.",
     offers: {
       "@type": "Offer",
       price: "0",

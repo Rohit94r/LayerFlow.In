@@ -40,11 +40,11 @@ export default function Steps() {
       <Reveal>
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-semibold text-ink sm:text-4xl">
-            Up and running in minutes
+            Your workspace in minutes
           </h2>
           <p className="mt-4 text-muted">
-            Install the SDK, swap one import, and your first trace and cost
-            breakdown show up in the dashboard — no rewrites required.
+            Create a project, write your first prompt, and compare across
+            models — outputs and costs appear instantly.
           </p>
           <a
             href="#demo"

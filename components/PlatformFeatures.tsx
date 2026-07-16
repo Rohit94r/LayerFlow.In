@@ -73,12 +73,12 @@ export default function PlatformFeatures() {
     <section id="platform" className="scroll-mt-24 border-t border-border">
       <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-normal text-brand">Platform</p>
+          <p className="text-sm font-normal text-brand">Workspace</p>
           <h2 className="mt-3 font-sans text-[2rem] font-semibold leading-tight text-ink sm:text-[2.5rem]">
-            The production layer for AI applications
+            The AI workspace for teams
           </h2>
           <p className="mt-4 text-[20px] font-normal leading-[28px] text-muted">
-            Scroll the left panel to explore — code updates on the right.
+            Scroll the left panel to explore — code samples update on the right.
           </p>
         </div>
 

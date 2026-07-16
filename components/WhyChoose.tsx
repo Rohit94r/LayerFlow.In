@@ -74,9 +74,8 @@ export default function WhyChoose() {
               What you get with LayerFlow
             </h2>
             <p className="mt-4 text-[20px] font-normal leading-[28px] text-muted">
-              Stop stitching together gateways, cost dashboards, and trace
-              tools. LayerFlow is the production layer — one integration, full
-              control.
+              Stop losing prompts in Notion, Docs, and Slack. LayerFlow is your
+              AI workspace — organize, compare, and control all in one place.
             </p>
           </div>
         </Reveal>

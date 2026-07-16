@@ -51,7 +51,7 @@ export default function Navbar() {
               href="#demo"
               className="hidden rounded-full bg-white px-4 py-2 text-sm font-normal text-black transition-transform hover:scale-[1.02] sm:inline-flex"
             >
-              View dashboard
+              Open workspace
             </a>
             <button
               aria-label="Toggle menu"
@@ -161,7 +161,7 @@ export default function Navbar() {
                   href="#demo"
                   className="flex-1 rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-black"
                 >
-                  View dashboard
+                  Open workspace
                 </a>
               </div>
             </div>
