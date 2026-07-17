@@ -21,11 +21,11 @@ const SITE_URL = "https://layerflow.dev";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
+    default: "LayerFlow — The Workspace for Everything You Do With AI",
     template: "%s · LayerFlow",
   },
   description:
-    "LayerFlow is the AI workspace for prompts, models, and cost management. Write, version, organize, and compare prompts across GPT, Claude, Gemini, and more — with hard budget limits.",
+    "Save prompts, compare models, control costs, organize AI projects, and connect every LLM in one place. LayerFlow is the AI workspace for developers and power users.",
   keywords: [
     "prompt management",
     "AI workspace",
@@ -47,16 +47,16 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "LayerFlow",
-    title: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
+    title: "LayerFlow — The Workspace for Everything You Do With AI",
     description:
-      "Write, version, compare, and control your AI prompts. LayerFlow is the workspace for everyone who works with AI models.",
+      "Save prompts, compare models, control costs, and connect every LLM in one workspace.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — AI Workspace for Prompts, Models, and Cost",
+    title: "LayerFlow — The Workspace for Everything You Do With AI",
     description:
-      "Write, version, compare, and control your AI prompts. LayerFlow is the workspace for everyone who works with AI models.",
+      "Save prompts, compare models, control costs, and connect every LLM in one workspace.",
     images: ["/og.png"],
   },
   robots: {
@@ -88,7 +88,7 @@ export default function RootLayout({
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
     description:
-      "The AI workspace for prompts, models, and cost management — write, version, compare, and control all in one place.",
+      "The AI workspace for prompts, models, and cost control — save, compare, organize, and stay under budget.",
     offers: {
       "@type": "Offer",
       price: "0",
