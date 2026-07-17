@@ -1,7 +1,8 @@
+import PageHeader from "@/components/workspace/PageHeader";
 import { gatewayConfig } from "@/lib/mock-data";
 
 export const metadata = {
-  title: "Gateway & SDK",
+  title: "Gateway",
 };
 
 const tsExample = `import LayerFlow from "@layerflow/sdk";
@@ -41,42 +42,35 @@ const curlExample = `curl https://api.layerflow.dev/v1/chat/completions \\
 export default function GatewayPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-[var(--color-ink)]">
-          Gateway & SDK
-        </h1>
-        <p className="mt-1 text-sm text-[var(--color-muted)]">
-          OpenAI-compatible API — one integration, every provider. Costs tracked,
-          budgets enforced.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Build"
+        title="Gateway"
+        description="BYOK, OpenAI-compatible API, and SDK snippets — for when you deploy, not the center of the workspace."
+      />
 
       <div className="card p-6">
-        <h3 className="mb-4 text-base font-semibold text-[var(--color-ink)]">
-          Connection
-        </h3>
-        <div className="space-y-3">
+        <h3 className="text-base font-semibold text-ink">Connection</h3>
+        <p className="mt-0.5 text-sm text-muted">
+          Your keys, every LLM, one workspace — and an API when you deploy.
+        </p>
+        <div className="mt-4 space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-[var(--color-muted)]">
-              Base URL
-            </label>
-            <code className="block rounded-lg bg-[var(--color-surface-2)] px-3 py-2 font-mono text-sm text-[var(--color-brand-2)]">
+            <label className="mb-1 block text-xs text-muted">Base URL</label>
+            <code className="block rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-sm text-ink">
               {gatewayConfig.baseUrl}
             </code>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-[var(--color-muted)]">
-              API Key
-            </label>
-            <code className="block rounded-lg bg-[var(--color-surface-2)] px-3 py-2 font-mono text-sm text-[var(--color-ink)]">
+            <label className="mb-1 block text-xs text-muted">API key</label>
+            <code className="block rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-sm text-ink">
               {gatewayConfig.apiKey}
             </code>
           </div>
           <div>
-            <label className="mb-1 block text-xs text-[var(--color-muted)]">
+            <label className="mb-1 block text-xs text-muted">
               Default model
             </label>
-            <code className="block rounded-lg bg-[var(--color-surface-2)] px-3 py-2 font-mono text-sm text-[var(--color-ink)]">
+            <code className="block rounded-lg border border-border bg-surface-2 px-3 py-2 font-mono text-sm text-ink">
               {gatewayConfig.defaultModel}
             </code>
           </div>
@@ -84,49 +78,29 @@ export default function GatewayPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="card overflow-hidden">
-          <div className="border-b border-[var(--color-border)] px-4 py-2.5">
-            <span className="text-xs font-medium text-[var(--color-muted)]">
-              TypeScript SDK
-            </span>
-          </div>
-          <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-[var(--color-muted)]">
-            {tsExample}
-          </pre>
+        <div className="workspace-code-block">
+          <div className="workspace-code-header">TypeScript SDK</div>
+          <pre>{tsExample}</pre>
         </div>
-        <div className="card overflow-hidden">
-          <div className="border-b border-[var(--color-border)] px-4 py-2.5">
-            <span className="text-xs font-medium text-[var(--color-muted)]">
-              Python SDK
-            </span>
-          </div>
-          <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-[var(--color-muted)]">
-            {pyExample}
-          </pre>
+        <div className="workspace-code-block">
+          <div className="workspace-code-header">Python SDK</div>
+          <pre>{pyExample}</pre>
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="border-b border-[var(--color-border)] px-4 py-2.5">
-          <span className="text-xs font-medium text-[var(--color-muted)]">
-            cURL (OpenAI-compatible)
-          </span>
-        </div>
-        <pre className="overflow-x-auto p-4 font-mono text-xs leading-relaxed text-[var(--color-muted)]">
-          {curlExample}
-        </pre>
+      <div className="workspace-code-block">
+        <div className="workspace-code-header">cURL (OpenAI-compatible)</div>
+        <pre>{curlExample}</pre>
       </div>
 
       <div className="card p-6">
-        <h3 className="mb-3 text-base font-semibold text-[var(--color-ink)]">
-          Supported providers
-        </h3>
-        <div className="flex flex-wrap gap-2">
+        <h3 className="text-base font-semibold text-ink">Supported providers</h3>
+        <div className="mt-3 flex flex-wrap gap-2">
           {["OpenAI", "Anthropic", "Google", "DeepSeek", "Mistral", "Groq"].map(
             (p) => (
               <span
                 key={p}
-                className="rounded-full border border-[var(--color-border)] px-3 py-1 text-xs text-[var(--color-muted)]"
+                className="rounded-lg border border-border px-3 py-1 text-xs text-muted"
               >
                 {p}
               </span>
