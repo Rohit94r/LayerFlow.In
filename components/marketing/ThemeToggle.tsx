@@ -4,10 +4,15 @@ import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type Theme = "dark" | "light";
+export type Theme = "dark" | "light";
 
-export default function ThemeToggle({ overHero = false }: { overHero?: boolean }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+export type ThemeToggleProps = {
+  /** When true, styles for sitting over the marketing hero gradient */
+  overHero?: boolean;
+};
+
+export function ThemeToggle({ overHero = false }: ThemeToggleProps) {
+  const [theme, setTheme] = useState<Theme>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -30,7 +35,7 @@ export default function ThemeToggle({ overHero = false }: { overHero?: boolean }
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle color theme"
+      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
       className={`flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
         overHero
           ? "border border-white/15 bg-black/20 text-white hover:bg-black/30"
@@ -55,3 +60,5 @@ export default function ThemeToggle({ overHero = false }: { overHero?: boolean }
     </button>
   );
 }
+
+export default ThemeToggle;

@@ -362,6 +362,11 @@ html.light {
   box-shadow: var(--card-shadow);
 }
 
+html.light .card-hover:hover {
+  border-color: rgba(9, 9, 18, 0.16);
+  background: rgba(9, 9, 18, 0.02);
+}
+
 /* adaptive glass pill (sits on the page background) */
 .glass-pill {
   background: var(--glass-bg);
@@ -434,4 +439,131 @@ html.light {
   .hero-noise-layer { animation: none; }
   .hero-mouse-glow { opacity: 0 !important; }
   html { scroll-behavior: auto; }
+}
+
+/* ---------- Workspace app shell ---------- */
+.app-shell {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  background: transparent;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.btn-secondary:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+}
+
+.filter-pill {
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.filter-pill:hover {
+  color: var(--color-ink);
+}
+.filter-pill-active {
+  border-color: var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.workspace-input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+.workspace-input::placeholder {
+  color: var(--color-faint);
+}
+.workspace-input:focus {
+  border-color: var(--color-border-strong);
+}
+
+.workspace-stat {
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.75rem 1rem;
+}
+.workspace-stat-label {
+  font-size: 0.75rem;
+  color: var(--color-faint);
+}
+.workspace-stat-value {
+  margin-top: 0.125rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.section-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.section-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  transition: color 0.2s ease;
+}
+.section-link:hover {
+  color: var(--color-ink);
+}
+
+/* Git-like timeline */
+.timeline-commit {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.workspace-code-block {
+  background: #0d1117;
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.workspace-code-block pre {
+  overflow-x: auto;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--color-muted);
+}
+.workspace-code-header {
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.625rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-muted);
 }
