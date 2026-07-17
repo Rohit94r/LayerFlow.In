@@ -27,10 +27,124 @@ export const journeySteps = [
   "Deploy",
 ];
 
-export const nav = [
-  { label: "Features", href: "/#features" },
+export type NavItem = {
+  label: string;
+  href: string;
+  menu?: "features";
+};
+
+export const nav: NavItem[] = [
+  { label: "Features", href: "/#features", menu: "features" },
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
+];
+
+export type FeatureMenuItem = {
+  title: string;
+  description: string;
+  href: string;
+  icon:
+    | "workspace"
+    | "domains"
+    | "timeline"
+    | "compare"
+    | "budget"
+    | "analytics"
+    | "alerts"
+    | "byok"
+    | "gateway"
+    | "sdk"
+    | "keys";
+};
+
+export type FeatureMenuSection = {
+  title: string;
+  items: FeatureMenuItem[];
+};
+
+/** Navbar + mobile menu — grouped from features.md positioning (AI Workspace first). */
+export const featureMenu: FeatureMenuSection[] = [
+  {
+    title: "Workspace",
+    items: [
+      {
+        title: "Prompt Workspace",
+        description: "One place for everything you do with AI.",
+        href: "/workspace",
+        icon: "workspace",
+      },
+      {
+        title: "Domains & Projects",
+        description: "Marketing, coding, school — each in its lane.",
+        href: "/#domains",
+        icon: "domains",
+      },
+      {
+        title: "Prompt Timeline",
+        description: "Git for prompts — every version, cost, and output.",
+        href: "/prompts",
+        icon: "timeline",
+      },
+      {
+        title: "Compare",
+        description: "Best, cheapest, or fastest — see it in one run.",
+        href: "/compare",
+        icon: "compare",
+      },
+    ],
+  },
+  {
+    title: "Cost & control",
+    items: [
+      {
+        title: "Hard Budget Limits",
+        description: "Never wake up to an AI bill you didn't approve.",
+        href: "/budget",
+        icon: "budget",
+      },
+      {
+        title: "Cost Analytics",
+        description: "See spend by project, key, and model before invoice shock.",
+        href: "/budget",
+        icon: "analytics",
+      },
+      {
+        title: "Budget Alerts",
+        description: "Warn at ~80% and catch spikes before they hurt.",
+        href: "/budget",
+        icon: "alerts",
+      },
+      {
+        title: "BYOK",
+        description: "Your keys, your billing — LayerFlow is control, not markup.",
+        href: "/settings",
+        icon: "byok",
+      },
+    ],
+  },
+  {
+    title: "Build",
+    items: [
+      {
+        title: "AI Gateway",
+        description: "One OpenAI-compatible integration → every major LLM.",
+        href: "/gateway",
+        icon: "gateway",
+      },
+      {
+        title: "SDK & API",
+        description: "TypeScript, Python, and drop-in OpenAI-style endpoints.",
+        href: "/gateway",
+        icon: "sdk",
+      },
+      {
+        title: "API Keys",
+        description: "Separate keys per project — costs and limits stay isolated.",
+        href: "/settings",
+        icon: "keys",
+      },
+    ],
+  },
 ];
 
 export const heroBadges = proofPoints.map((label) => ({ label }));
