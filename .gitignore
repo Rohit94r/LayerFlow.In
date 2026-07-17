@@ -1,36 +1,51 @@
 # dependencies
-/node_modules
-/.pnp
+node_modules/
+.pnp
 .pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
 # next.js
-/.next/
-/out/
+.next/
+out/
+dist/
 
 # production
-/build
+build/
 
 # misc
 .DS_Store
+**/.DS_Store
 *.pem
-
-# debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnpm-debug.log*
 
-# env files
-.env*.local
+# env / secrets
 .env
+.env*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# typescript
+# typescript / tooling
 *.tsbuildinfo
 next-env.d.ts
+.turbo/
+.vercel/
 
-# vercel
-.vercel
+# IDE / OS
+.idea/
+*.swp
+*.swo
+Thumbs.db
 
-# reference scrape (local only)
+# local reference only (do not commit)
 mlflow.org/
 images/
-.DS_Store
