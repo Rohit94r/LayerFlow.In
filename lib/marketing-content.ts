@@ -35,6 +35,7 @@ export type NavItem = {
 
 export const nav: NavItem[] = [
   { label: "Features", href: "/#features", menu: "features" },
+  { label: "Docs", href: "/docs" },
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
 ];
