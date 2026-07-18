@@ -37,6 +37,13 @@ export interface ExecuteRunInput {
   promptId?: string;
   promptVersionId?: string;
   routingReason?: string;
+  /**
+   * Live token callback. When set and the provider adapter supports true
+   * streaming, deltas are forwarded as they arrive and usage comes from the
+   * stream's final usage frame. Without adapter stream support the run falls
+   * back to the non-streaming call (check `streamed` on the result).
+   */
+  onDelta?: (text: string) => void | Promise<void>;
   /** Injected adapter for tests (skips real provider + BYOK). */
   adapter?: ProviderAdapter;
   /** Injected API key for tests. */
@@ -45,6 +52,8 @@ export interface ExecuteRunInput {
 
 export interface ExecuteRunResult {
   run: typeof runs.$inferSelect;
+  /** True when output was delivered live through onDelta. */
+  streamed: boolean;
 }
 
 async function resolveMessages(input: ExecuteRunInput): Promise<{
@@ -174,13 +183,21 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
     throw new RunExecutionError(failed, status, code, message);
   }
 
+  const useStream = Boolean(input.onDelta && adapter.chatCompletionStream);
   let result: ChatCompletionResult;
   try {
-    result = await adapter.chatCompletion({
-      apiKey,
-      model: input.model,
-      messages,
-    });
+    if (useStream) {
+      result = await adapter.chatCompletionStream!(
+        { apiKey, model: input.model, messages },
+        { onDelta: input.onDelta! },
+      );
+    } else {
+      result = await adapter.chatCompletion({
+        apiKey,
+        model: input.model,
+        messages,
+      });
+    }
   } catch (err) {
     const message = err instanceof AppError ? err.message : "Provider call failed";
     const code = err instanceof AppError ? err.code : "provider_error";
@@ -241,5 +258,5 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
     });
   }
 
-  return { run: succeeded };
+  return { run: succeeded, streamed: useStream };
 }

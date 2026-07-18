@@ -19,7 +19,6 @@ import {
 import { listConfiguredProviders } from "../services/keys/provider-keys";
 import type { AppEnv } from "../types";
 import type { ChatMessage } from "../providers/types";
-import { streamOpenAiCompatible } from "./providers";
 
 export const gatewayRouter = new Hono<AppEnv>();
 
@@ -127,39 +126,118 @@ gatewayRouter.post("/chat/completions", async (c) => {
 
   try {
     if (body.stream) {
-      const upstream = await streamOpenAiCompatible(provider, apiKey, {
+      // True token streaming in OpenAI chunk format for every provider with
+      // a streaming adapter (OpenAI-compatible vendors + Anthropic). Budget
+      // settles on the ACTUAL usage reported by the stream; the estimate is
+      // only the fallback when a provider omits usage.
+      const completionId = `chatcmpl_${requestId}`;
+      const createdAt = Math.floor(Date.now() / 1000);
+      const encoder = new TextEncoder();
+
+      const makeChunk = (
+        delta: Record<string, unknown>,
+        finishReason: string | null = null,
+        extra?: Record<string, unknown>,
+      ) => ({
+        id: completionId,
+        object: "chat.completion.chunk" as const,
+        created: createdAt,
         model: body.model,
-        messages: body.messages,
-        temperature: body.temperature,
-        top_p: body.top_p,
-        max_tokens: body.max_tokens,
-        max_completion_tokens: body.max_completion_tokens,
-        stop: body.stop,
-        user: body.user,
+        choices: [{ index: 0, delta, finish_reason: finishReason }],
+        ...(extra ?? {}),
       });
-      await settleBudget({
-        reservationId: reservation.reservationId,
-        actualMicro: estimateMicro,
-        provider,
-        model: body.model,
-        source: "gateway",
+
+      const sse = new ReadableStream({
+        async start(controller) {
+          const emit = (obj: unknown) => {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+          };
+          let settled = false;
+          try {
+            emit(makeChunk({ role: "assistant", content: "" }));
+
+            let result;
+            if (adapter.chatCompletionStream) {
+              result = await adapter.chatCompletionStream(
+                { model: body.model, messages, apiKey },
+                { onDelta: (text) => emit(makeChunk({ content: text })) },
+              );
+            } else {
+              // No streaming support (Google native API): run non-stream and
+              // deliver the whole completion as a single chunk.
+              result = await adapter.chatCompletion({ model: body.model, messages, apiKey });
+              if (result.content) emit(makeChunk({ content: result.content }));
+            }
+
+            const actualMicro =
+              result.inputTokens > 0 || result.outputTokens > 0
+                ? (computeCostMicro(body.model, result.inputTokens, result.outputTokens) ??
+                  estimateMicro)
+                : estimateMicro;
+            await settleBudget({
+              reservationId: reservation.reservationId,
+              actualMicro,
+              provider,
+              model: body.model,
+              source: "gateway",
+              inputTokens: result.inputTokens,
+              outputTokens: result.outputTokens,
+            });
+            settled = true;
+
+            emit(
+              makeChunk({}, "stop", {
+                usage: {
+                  prompt_tokens: result.inputTokens,
+                  completion_tokens: result.outputTokens,
+                  total_tokens: result.inputTokens + result.outputTokens,
+                },
+              }),
+            );
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            await writeGatewayLog({
+              workspaceId,
+              apiKeyId,
+              method: "POST",
+              path: "/v1/chat/completions",
+              model: body.model,
+              statusCode: 200,
+              latencyMs: Date.now() - started,
+              requestId,
+            });
+          } catch (err) {
+            if (!settled) {
+              await releaseBudget({ reservationId: reservation.reservationId }).catch(
+                () => undefined,
+              );
+            }
+            const code = err instanceof AppError ? err.code : "provider_error";
+            const message = err instanceof Error ? err.message : "stream failed";
+            emit({ error: { code, message } });
+            await writeGatewayLog({
+              workspaceId,
+              apiKeyId,
+              method: "POST",
+              path: "/v1/chat/completions",
+              model: body.model,
+              statusCode: 502,
+              latencyMs: Date.now() - started,
+              errorCode: code,
+              requestId,
+            });
+          } finally {
+            controller.close();
+          }
+        },
       });
-      await writeGatewayLog({
-        workspaceId,
-        apiKeyId,
-        method: "POST",
-        path: "/v1/chat/completions",
-        model: body.model,
-        statusCode: 200,
-        latencyMs: Date.now() - started,
-        requestId,
-      });
-      return new Response(upstream.body, {
+
+      return new Response(sse, {
         status: 200,
         headers: {
-          "Content-Type": upstream.headers.get("Content-Type") ?? "text/event-stream",
-          "Cache-Control": "no-cache",
+          "Content-Type": "text/event-stream; charset=utf-8",
+          "Cache-Control": "no-cache, no-transform",
           Connection: "keep-alive",
+          "X-Accel-Buffering": "no",
           "x-layerflow-cache": "miss",
           "x-request-id": requestId,
         },

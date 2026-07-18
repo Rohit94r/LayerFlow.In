@@ -50,10 +50,9 @@ runsRouter.post("/", async (c) => {
 });
 
 /**
- * Split completed output into progressive SSE deltas so UIs can render
- * incrementally. Gateway `/v1/chat/completions?stream=true` already pipes
- * true provider SSE for OpenAI-compatible vendors; this endpoint keeps the
- * LayerFlow event shape (start → delta* → done|error) stable.
+ * Fallback chunking for providers without true streaming support (Google's
+ * native API): split completed output into progressive SSE deltas so the UI
+ * still renders incrementally.
  */
 function chunkOutputForSse(text: string, maxChunk = 48): string[] {
   if (!text) return [];
@@ -75,10 +74,11 @@ function chunkOutputForSse(text: string, maxChunk = 48): string[] {
 /**
  * POST /api/runs/stream — SSE stream of a run.
  *
- * Runs the shared execute path (budget + persistence), then emits the output
- * as progressive `delta` events so clients can paint incrementally. True
- * token streaming from providers is still a follow-up for this route; use the
- * OpenAI-compatible gateway for live SSE from OpenAI/Groq/etc.
+ * True token streaming: deltas are forwarded live from the provider stream
+ * (OpenAI-compatible vendors + Anthropic), budget settles on the actual usage
+ * the stream reports, and the run row persists as usual. Providers without a
+ * streaming adapter (Google native) fall back to progressive chunking of the
+ * completed output. Event shape is stable: start → delta* → done|error.
  */
 runsRouter.post("/stream", async (c) => {
   const workspaceId = c.get("workspaceId");
@@ -98,7 +98,7 @@ runsRouter.post("/stream", async (c) => {
         // Keep-alive comment so proxies do not buffer the whole response.
         controller.enqueue(encoder.encode(": keepalive\n\n"));
 
-        const { run } = await executeRun({
+        const { run, streamed } = await executeRun({
           workspaceId,
           userId,
           requestId,
@@ -108,10 +108,13 @@ runsRouter.post("/stream", async (c) => {
           content: body.content,
           promptId: body.promptId,
           promptVersionId: body.promptVersionId,
+          onDelta: (text) => send("delta", { content: text }),
         });
 
-        for (const piece of chunkOutputForSse(run.output ?? "")) {
-          send("delta", { content: piece });
+        if (!streamed) {
+          for (const piece of chunkOutputForSse(run.output ?? "")) {
+            send("delta", { content: piece });
+          }
         }
         send("done", { run: toRunDetailDto(run) });
       } catch (err) {
