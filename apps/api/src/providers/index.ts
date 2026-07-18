@@ -10,7 +10,7 @@ import { xaiAdapter } from "./xai";
 import type { ProviderAdapter } from "./types";
 
 export type { ChatMessage, ChatCompletionRequest, ChatCompletionResult, ProviderAdapter } from "./types";
-export { loadProviderApiKey } from "./keys";
+export { loadProviderApiKey, platformDefaultModel } from "./keys";
 
 const ADAPTERS: Record<Provider, ProviderAdapter> = {
   openai: openaiAdapter,

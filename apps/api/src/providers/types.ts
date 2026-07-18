@@ -29,7 +29,23 @@ export interface ChatCompletionResult {
   raw?: unknown;
 }
 
+export interface ChatCompletionStreamHandlers {
+  /** Called once per token/text delta, in order. */
+  onDelta: (text: string) => void | Promise<void>;
+}
+
 export interface ProviderAdapter {
   provider: Provider;
   chatCompletion(req: ChatCompletionRequest): Promise<ChatCompletionResult>;
+  /**
+   * True token streaming. Resolves with the same final result shape as
+   * chatCompletion — including real usage when the provider reports it in the
+   * stream (OpenAI-compatible `stream_options.include_usage`, Anthropic
+   * message_start/message_delta events). Optional: callers must fall back to
+   * chatCompletion when absent.
+   */
+  chatCompletionStream?(
+    req: ChatCompletionRequest,
+    handlers: ChatCompletionStreamHandlers,
+  ): Promise<ChatCompletionResult>;
 }
