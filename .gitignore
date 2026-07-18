@@ -33,6 +33,9 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.vercel.env
+*.env
+!*.env.example
 
 # typescript / tooling
 *.tsbuildinfo
