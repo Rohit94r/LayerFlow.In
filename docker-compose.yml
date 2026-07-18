@@ -1,0 +1,36 @@
+# Local dev infrastructure for the LayerFlow API (apps/api).
+# Usage: docker compose up -d   (from the repo root)
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: layerflow-postgres
+    environment:
+      POSTGRES_USER: layerflow
+      POSTGRES_PASSWORD: layerflow
+      POSTGRES_DB: layerflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - layerflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U layerflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7
+    container_name: layerflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - layerflow_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  layerflow_pgdata:
+  layerflow_redisdata:
