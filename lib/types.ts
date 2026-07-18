@@ -1,16 +1,8 @@
-export type DomainId =
-  | "marketing"
-  | "coding"
-  | "study"
-  | "business"
-  | "research"
-  | "resume"
-  | "clients"
-  | "school"
-  | "personal";
+export type DomainId = string;
 
 export interface Domain {
   id: DomainId;
+  slug?: string;
   name: string;
   description: string;
   icon: string;
@@ -110,6 +102,7 @@ export interface CompareResult {
   tokensIn: number;
   tokensOut: number;
   qualityScore?: number;
+  rankHints?: { best: boolean; cheapest: boolean; fastest: boolean };
 }
 
 export interface Budget {
