@@ -1,6 +1,6 @@
 # LayerFlow — Completed Features & Backend Handoff
 
-> **Purpose:** Founder learning + handoff doc. Use this when you need to know **what the frontend MVP already shows** vs **what the backend must build next**.  
+> **Purpose:** Founder learning + handoff doc. Use this to see **what the frontend currently demonstrates** and the **complete backend architecture required for the full product**.
 > **When to use:** You finished the UI prototype and are about to start `apps/api` (or equivalent). Read this once, then keep [backend.md](backend.md) and [features.md](features.md) open while coding.  
 > **Last updated:** July 2026
 
@@ -15,7 +15,8 @@ This file bridges the **Next.js workspace UI** (built, mock data) and the **Hono
 | What can I demo today? | Section 2 — every route and component, with mock vs real status |
 | How does the UI behave without an API? | Section 3 — mock flows (save → version, sessions, compare, etc.) |
 | What is still fake? | Section 4 |
-| Where do I start backend work? | Sections 5–7 — stack, tables, endpoints, 2-week plan |
+| Which backend stack are we using? | Section 5 — one definitive stack |
+| What must the full backend contain? | Sections 6–12 — folders, data, APIs, behavior, services, integration, build order |
 
 **Rule of thumb:** If a screen reads from `lib/mock-data.ts` or `lib/prompt-analysis.ts`, it is **UI complete / not connected to API**.
 
@@ -145,11 +146,11 @@ These are the **demo loops** you can click through locally (`npm run dev` → `h
 
 ## 4. What is NOT built yet
 
-### Out of MVP product scope (do not build now)
+### Product surfaces not represented in the current frontend
 
-See [features.md § Out of MVP](features.md#3-out-of-mvp): Prompt Score, AI Notebook, Marketplace, Browser Extension, Team Library, Enterprise Dashboard, SOC2/HIPAA, RBAC/SSO, OpenTelemetry, security guardrails, etc.
+See [features.md](features.md) for the current product scope. Learning, community, collections, teams, and enterprise administration are included in the full architecture below but do not yet have completed frontend surfaces.
 
-### MVP features still missing (frontend and/or backend)
+### Features still missing (frontend and/or backend)
 
 | Area | Missing |
 |------|---------|
@@ -164,237 +165,343 @@ See [features.md § Out of MVP](features.md#3-out-of-mvp): Prompt Score, AI Note
 | **Gateway** | No `/v1/chat/completions`, no real `lf_live_` keys |
 | **SDK packages** | `@layerflow/sdk` snippets are illustrative only |
 | **AI Memory / search** | Search box on `/prompts` does not query |
-| **Module 5 Learning** | Phase 2 — not started |
+| **Learning / Community / Teams** | Included in the full backend target below; frontend not started |
 
 ---
 
-## 5. Backend — what you need to start (NEXT STEP)
+## 5. Definitive backend stack — full product
 
-> **Note:** [backend.md](backend.md) is the planned deep-dive API doc (referenced across the repo). If it is not on disk yet, **this section + [codebase-structure.md Part C](codebase-structure.md#part-c--backend-folder-structure-planned--recommended)** are your starting blueprint.
+This is the one stack LayerFlow will use. It supports the complete product: workspace, prompt history, sessions, AI Memory/Search, compare, cost intelligence, model routing, hard budgets, gateway, learning, community, teams, attachments, billing, email, and analytics. Engineering still has a dependency order, but the architecture does not split the product into disposable “Phase 1 vs Phase 2” systems.
 
-### Recommended stack (one paragraph)
+### 5.1 Stack decisions
 
-Use a **Hono** API on **Node 22**, deployed to **Fly.io** (or similar), with **Postgres on Neon** via **Drizzle ORM**, **Redis on Upstash** for atomic budget counters and optional response cache keys, **Better Auth** for email/session auth, and **BullMQ** workers for compare fan-out and async run persistence. Provider calls go through adapter modules (OpenAI, Anthropic, Google, DeepSeek, Groq). Encrypt BYOK provider keys at rest (AES-GCM with a KEK from env). The Next.js app stays UI-only and talks to the API with cookie sessions or bearer tokens.
+| Layer | Use | Purpose |
+|-------|-----|---------|
+| **Web frontend** | **Next.js 16 + React 19 + TypeScript + Tailwind 4**, Vercel | Existing marketing and workspace app |
+| **Backend runtime** | **Node.js 22 + Hono** | Typed REST API, streaming LLM gateway, webhooks |
+| **API hosting** | **Fly.io** (Docker, minimum one instance) | Long-lived streaming, workers, horizontal scaling |
+| **Primary database** | **Neon Postgres** | All durable relational product data |
+| **ORM / migrations** | **Drizzle ORM + drizzle-kit** | Typed SQL schema and migrations |
+| **Vector / semantic search** | **pgvector in Neon Postgres** | AI Memory, semantic prompt search, semantic cache |
+| **Text search** | **Postgres full-text + trigram indexes** | Prompt title/body/tag search without another database |
+| **Fast counters / cache** | **Upstash Redis** | Hard budgets, rate limits, exact cache, sessions hot data |
+| **Background jobs** | **Upstash QStash + Fly worker** | Compare fan-out, embeddings, weekly reports, alerts, imports |
+| **File storage** | **Cloudflare R2** | Attachments, exports, generated files, collection assets |
+| **Auth** | **Better Auth with Google OAuth only** | Direct “Continue with Google”; sessions stored in Postgres |
+| **Email** | **Resend + React Email** | Budget alerts, weekly reports, transactional email |
+| **Billing** | **Stripe Billing + webhooks** | Free/Pro/Team subscriptions and entitlement checks |
+| **Product analytics** | **PostHog** | Activation, funnels, feature use |
+| **Errors** | **Sentry** | Frontend/API errors and performance |
+| **Logs** | **Axiom** | Structured API/gateway logs, request IDs |
+| **LLM adapters** | Official SDKs + OpenAI-compatible `fetch` adapters | OpenAI, Anthropic, Gemini, DeepSeek, Groq, xAI, OpenRouter |
+| **Shared contracts** | **Zod + TypeScript package** | Request validation and frontend/backend types |
 
-### Repo / folder to create
+### 5.2 Why only one durable database
 
-Recommended monorepo layout (from [codebase-structure.md](codebase-structure.md)):
+**Neon Postgres is the source of truth.** Do not add MongoDB, Firebase, Supabase DB, or Elasticsearch.
 
+- Relational workspace hierarchy fits Postgres.
+- JSONB handles provider metadata, prompt variables, and routing conditions.
+- `pgvector` handles semantic memory/search/cache.
+- Full-text + trigram indexes handle normal search.
+- Redis is not a second source of truth; it only accelerates counters/cache.
+- R2 stores binary files; Postgres stores their metadata and permissions.
+
+### 5.3 Google direct authentication
+
+LayerFlow will show **one button: “Continue with Google.”**
+
+Do not manually implement OAuth security. Use **Better Auth’s Google provider**, connected directly to a LayerFlow Google Cloud OAuth client:
+
+1. Create a Google Cloud project.
+2. Configure OAuth consent screen.
+3. Create a Web OAuth Client ID.
+4. Add local and production redirect URIs.
+5. Put `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in backend secrets.
+6. Better Auth handles OAuth state/PKCE, secure cookies, session rotation, account linking, and Postgres session records.
+7. On the first successful login, create the user’s default workspace and domains.
+8. Every `/api/*` request resolves `session → userId → workspace membership`.
+
+There is no email/password signup in the first complete product. A user’s Google email is the account identity. Team invitation emails can still be sent through Resend.
+
+### 5.4 Full architecture
+
+```mermaid
+flowchart LR
+  Browser[Next.js Web]
+  SDK[TS/Python SDK]
+  UserApp[User AI App]
+  Google[Google OAuth]
+  API[Hono API on Fly]
+  Worker[Fly Job Worker]
+  PG[(Neon Postgres + pgvector)]
+  Redis[(Upstash Redis)]
+  Queue[Upstash QStash]
+  Files[(Cloudflare R2)]
+  Providers[LLM Providers]
+  Email[Resend]
+  Billing[Stripe]
+
+  Browser --> Google
+  Google --> API
+  Browser --> API
+  SDK --> API
+  UserApp --> API
+  API --> PG
+  API --> Redis
+  API --> Queue
+  API --> Files
+  API --> Providers
+  Queue --> Worker
+  Worker --> PG
+  Worker --> Redis
+  Worker --> Providers
+  Worker --> Email
+  Billing --> API
 ```
+
+---
+
+## 6. Full backend folder structure
+
+```text
 LayerFlow/
-├── app/                    # existing Next.js UI (keep)
-├── lib/                    # replace mock-data usage with api client
-└── apps/
-    └── api/                # CREATE THIS — Hono service
-        ├── src/index.ts
-        ├── src/routes/
-        ├── src/gateway/
-        ├── src/services/
-        ├── src/db/schema/
-        ├── src/providers/
-        ├── src/redis/
-        └── src/workers/
+├── app/                              # Existing Next.js frontend
+├── components/                       # Existing marketing/workspace UI
+├── lib/
+│   ├── api-client.ts                 # CREATE: typed frontend calls
+│   └── types.ts                      # Move later into shared package
+├── apps/
+│   ├── api/
+│   │   ├── src/
+│   │   │   ├── index.ts
+│   │   │   ├── config/
+│   │   │   ├── middleware/           # auth, tenancy, rate limit, errors
+│   │   │   ├── auth/                 # Better Auth + Google provider
+│   │   │   ├── db/
+│   │   │   │   ├── schema/
+│   │   │   │   ├── migrations/
+│   │   │   │   └── repositories/
+│   │   │   ├── routes/
+│   │   │   │   ├── workspace/
+│   │   │   │   ├── prompts/
+│   │   │   │   ├── sessions/
+│   │   │   │   ├── compare/
+│   │   │   │   ├── intelligence/
+│   │   │   │   ├── budgets/
+│   │   │   │   ├── memory/
+│   │   │   │   ├── learning/
+│   │   │   │   ├── community/
+│   │   │   │   ├── billing/
+│   │   │   │   └── gateway/
+│   │   │   ├── services/
+│   │   │   ├── providers/            # OpenAI, Claude, Gemini, etc.
+│   │   │   ├── gateway/              # OpenAI-compatible /v1
+│   │   │   ├── intelligence/         # analyze, recommend, route, savings
+│   │   │   ├── budgets/              # reserve, settle, block
+│   │   │   ├── search/               # FTS + pgvector
+│   │   │   ├── cache/                # exact + semantic
+│   │   │   ├── storage/              # R2 signed URLs
+│   │   │   ├── jobs/                 # QStash producers
+│   │   │   └── webhooks/              # Stripe, QStash callbacks
+│   │   └── Dockerfile
+│   └── worker/
+│       ├── src/jobs/                  # compare, embeddings, email, imports
+│       └── Dockerfile
+├── packages/
+│   ├── contracts/                     # Zod schemas + shared TS types
+│   ├── model-registry/                # prices, capabilities, token limits
+│   ├── sdk-typescript/
+│   └── sdk-python/
+└── docs/
 ```
 
-Alternative: standalone `layerflow-api` repo — same structure inside it.
+---
 
-### Database tables / entities (map to `lib/types.ts`)
+## 7. Complete data model
 
-| Frontend type (`lib/types.ts`) | Backend table / entity | Notes |
-|-------------------------------|--------------------------|-------|
-| `User` | `users` | Better Auth owns core fields |
-| — | `workspaces` | One per user at MVP; `workspaceId` on all rows |
-| `Domain` / `DomainId` | `domains` | Seed 9 default domains on workspace create |
-| `Project` | `projects` | FK `domainId`, `workspaceId` |
-| `Folder` | `folders` | FK `projectId` |
-| `Prompt` | `prompts` | FK project/folder/domain; tags as JSON array |
-| `PromptVersion` | `prompt_versions` | Auto-insert on content change; immutable snapshot |
-| `PromptSession` | `sessions` + `session_prompts` | Ordered join table for prompt chain |
-| `CompareResult` | `compare_jobs`, `compare_results` | Job queue + per-model rows |
-| — | `runs` | Every LLM call: promptId, versionId, model, tokens, cost, blocked, cacheHit |
-| `Budget` | `budgets` | monthly/daily limits, hardBlock, alertThreshold |
-| `ProjectBudget`, `KeyBudget` | `budget_scopes` | scope = project \| api_key |
-| `UsageRollup` | `usage_rollups` | Aggregates for dashboard (see features.md) |
-| `SavingsInsight` | `savings_insights` | actual vs optimized spend per period |
-| `WorkspaceSettings`, `ExecutionMode` | `workspace_settings` | preferCheap, executionMode, defaultModel |
-| `RoutingRule` | `routing_rules` | condition JSON + target model + enabled |
-| `PromptAnalysis` | computed | No table at MVP — return from `/api/intelligence/analyze` |
-| `ApiKey` | `api_keys` | Store hash only; prefix `lf_live_` |
-| — | `provider_keys` | Encrypted BYOK; provider enum |
-| `GatewayConfig` | derived | baseUrl from env + user's active key |
-| `GatewayLog` | `gateway_logs` | requestId, latency, status |
-| `ActivityItem`, `DashboardStats` | computed | From `runs` + recent CRUD events |
+### Accounts and tenancy
 
-### API endpoints to build first (priority order)
+`users`, `accounts`, `sessions`, `verification_tokens` (Better Auth), `workspaces`, `workspace_members`, `invitations`, `subscriptions`, `entitlements`.
 
-Aligned with MVP modules and what the UI needs first:
+### Workspace and prompt management
 
-| Priority | Endpoint group | Powers |
-|----------|----------------|--------|
-| **P0** | `GET /health`, Better Auth `/api/auth/*` | Skeleton + login |
-| **P1** | `GET/PATCH /api/workspaces/me` | Tenancy |
-| **P1** | `CRUD /api/domains`, `/api/projects`, `/api/folders` | Module 1 hierarchy |
-| **P1** | `CRUD /api/prompts`, `GET/POST /api/prompts/:id/versions` | Library + Timeline auto-version |
-| **P1** | `CRUD /api/sessions`, `POST /api/sessions/:id/prompts` | Session chains |
-| **P2** | `POST /api/runs`, `GET /api/runs` | Run button, timeline costs, dashboard feeds |
-| **P2** | `POST /api/compare`, `GET /api/compare/:jobId` | Compare page |
-| **P2** | `POST /api/intelligence/analyze` | Replace `lib/prompt-analysis.ts` for server truth |
-| **P2** | `GET/PUT /api/routing-rules`, `GET/PUT /api/workspace/settings` | Settings + optimizer |
-| **P3** | `GET/PUT /api/budgets/current`, `GET /api/usage`, `GET /api/savings` | Budget page, sidebar meter |
-| **P3** | Budget pre-check middleware | Block before provider call |
-| **P4** | `CRUD /api/keys`, `CRUD /api/provider-keys` | Settings + gateway |
-| **P4** | `POST /v1/chat/completions`, `GET /v1/models` | Gateway Module 4 |
-| **P5** | Email webhooks / digest worker | Weekly digest, 80% alerts |
+`domains`, `projects`, `folders`, `prompts`, `prompt_versions`, `prompt_variables`, `prompt_tags`, `prompt_attachments`, `prompt_outputs`, `prompt_sessions`, `session_messages`, `favorites`, `activity_events`.
 
-### Gateway + BYOK requirements
+Every prompt edit inserts an immutable `prompt_versions` row. Rollback creates a **new version** based on an old snapshot; it never rewrites history.
 
-1. **BYOK:** User stores provider keys encrypted; gateway never logs raw keys.
-2. **LayerFlow keys:** Issue `lf_live_*` scoped to workspace/project; store bcrypt hash.
-3. **OpenAI-compatible shape:** Same request/response as OpenAI chat completions.
-4. **Pre-flight:** Redis atomic increment budget counters → if over limit, return **402** with clear message (UI already shows blocked state).
-5. **Routing:** Model prefix → provider adapter → user's BYOK key.
-6. **Logging:** Persist `GatewayLog` + `Run` for dashboard and per-prompt spend.
-7. **Optional Auto Mode:** If key/workspace configured for auto, call intelligence service before provider.
+### Runs, compare, intelligence
 
-### Budget enforcement (Redis atomic counters)
+`runs`, `compare_jobs`, `compare_results`, `prompt_analyses`, `model_recommendations`, `routing_rules`, `workspace_settings`, `model_pricing`, `model_performance`, `savings_insights`.
 
-```
-Keys (example):
-  budget:{workspaceId}:monthly:{YYYY-MM}  → spent micro-dollars
-  budget:{workspaceId}:daily:{YYYY-MM-DD}
-  budget:{projectId}:monthly:{YYYY-MM}
-  budget:{apiKeyId}:monthly:{YYYY-MM}
-```
+Every real model call creates a `run` containing provider, model, estimated/actual tokens, cost, latency, cache status, recommendation explanation, and budget decision.
 
-- **INCRBY** estimated cost before provider call; **DECRBY** on failure.
-- Hard block: reject if `spent + estimate > limit` and `hardBlock = true`.
-- Sync rollups to Postgres async (worker) for analytics UI.
+### Costs and gateway
 
-### Model intelligence (start rule-based, then smarter)
+`budgets`, `budget_scopes`, `usage_ledger`, `usage_rollups`, `api_keys`, `provider_keys`, `gateway_logs`, `rate_limit_policies`, `cache_entries`.
 
-**Phase 1 (ship with backend):** Port `lib/prompt-analysis.ts` logic to server — token estimate (chars/4), keyword category, static pricing table, template **why** strings.
+Money is stored as integer **micro-dollars**, never floating point. API keys are HMAC-hashed. Provider keys are AES-256-GCM encrypted with a server KEK/KMS key.
 
-**Phase 2:** Store `PromptPerformance` from compare wins + user overrides; improve recommendations.
+### Memory, learning, community
 
-**Phase 3:** Optional LLM classifier for category — only if rule-based insufficient.
+`memories`, `memory_embeddings`, `learning_paths`, `lessons`, `challenges`, `challenge_submissions`, `collections`, `collection_items`, `profiles`, `follows`, `likes`, `comments`, `prompt_clones`, `notifications`.
 
-### Auth (Better Auth)
+These tables belong in the same Postgres database and share `workspaceId`/`userId` authorization.
 
-- Email + password or magic link for MVP.
-- Session cookie for Next.js → API same-site requests.
-- Map session → `userId` → `workspaceId` on every `/api/*` route.
-- No SSO/RBAC until enterprise phase.
+### Files and search
 
-### Environment variables / secrets
+`files` stores R2 object key, MIME type, size, checksum, owner, and access scope. Prompt/output text is indexed using Postgres FTS; embeddings live in `vector` columns for semantic retrieval.
 
-| Variable | Purpose |
+---
+
+## 8. Complete API groups
+
+| Group | Core endpoints |
+|-------|----------------|
+| **Auth** | `/api/auth/*` (Better Auth Google callback/session/sign-out) |
+| **Workspace** | `/api/workspaces`, `/domains`, `/projects`, `/folders`, `/activity` |
+| **Prompts** | `/api/prompts`, `/versions`, `/restore`, `/replay`, `/export`, `/attachments` |
+| **Sessions** | `/api/sessions`, `/messages`, `/continue` |
+| **Runs** | `/api/runs`, `/stream`, `/history` |
+| **Compare** | `/api/compare`, `/api/compare/:jobId`, SSE status |
+| **Intelligence** | `/api/intelligence/analyze`, `/recommend`, `/route`, `/explain`, `/savings` |
+| **Budgets** | `/api/budgets`, `/scopes`, `/usage`, `/alerts`, `/reports` |
+| **Memory/Search** | `/api/memory`, `/api/search`, `/api/similar`, `/api/cache` |
+| **Keys** | `/api/api-keys`, `/api/provider-keys` |
+| **Gateway** | `/v1/chat/completions`, `/v1/responses`, `/v1/models`, streaming |
+| **Learning** | `/api/learning/paths`, `/lessons`, `/challenges`, `/progress` |
+| **Community** | `/api/collections`, `/profiles`, `/follows`, `/likes`, `/comments`, `/clone` |
+| **Billing** | `/api/billing/checkout`, `/portal`, `/subscription`; `/webhooks/stripe` |
+| **Files** | `/api/files/upload-url`, `/complete`, `/download-url`, `/delete` |
+
+---
+
+## 9. Critical backend behavior
+
+### Hard budget enforcement
+
+1. Estimate maximum call cost.
+2. Atomically reserve micro-dollars in Redis using a Lua script.
+3. Check daily, monthly, project, and API-key limits together.
+4. If any hard limit fails, release reservation and return `402 budget_exceeded`.
+5. Call provider.
+6. Settle reservation to actual cost.
+7. Append immutable `usage_ledger` row.
+8. Worker updates Postgres rollups and sends 80% / 100% alerts.
+
+Redis enforces live limits; Postgres ledger is durable truth and reconciliation source.
+
+### Model intelligence
+
+The complete service combines:
+
+- deterministic token estimate and model capability/price registry;
+- task category and complexity classification;
+- routing rules;
+- workspace goal: Cheapest / Fastest / Best / Balanced;
+- historical Compare and user-override performance;
+- an LLM classifier only when deterministic logic lacks confidence;
+- a required explanation for every recommendation.
+
+Manual, Suggest, and Auto Mode all call the same intelligence service. Auto Mode must never choose a model without writing the reason into the run record.
+
+### Caching
+
+- **Exact cache:** hash normalized model/messages/parameters in Redis.
+- **Provider context cache:** preserve stable prefixes and pass provider caching controls.
+- **Semantic cache:** pgvector similarity lookup scoped to workspace and cache policy.
+- Never cache across workspaces.
+- Every cache hit records avoided tokens and saved cost.
+
+### Compare jobs
+
+API creates a job; QStash invokes worker; worker fans out to selected providers with bounded concurrency; results stream/poll back; ranking computes best/cheapest/fastest; all runs feed recommendation history.
+
+---
+
+## 10. External accounts, APIs, and secrets required
+
+### Create these service accounts
+
+1. **Google Cloud** — OAuth client ID/secret.
+2. **Neon** — Postgres project and pooled/direct URLs.
+3. **Upstash** — Redis and QStash.
+4. **Fly.io** — API and worker applications.
+5. **Cloudflare R2** — bucket and S3-compatible credentials.
+6. **Resend** — verified sending domain.
+7. **Stripe** — products/prices and webhook secret.
+8. **Sentry**, **Axiom**, **PostHog**.
+9. LLM provider developer accounts for integration testing.
+
+### Required environment variables
+
+| Variable | Service |
 |----------|---------|
-| `DATABASE_URL` | Neon Postgres |
-| `REDIS_URL` | Upstash |
-| `BETTER_AUTH_SECRET` | Auth signing |
-| `BETTER_AUTH_URL` | Public API URL |
-| `ENCRYPTION_KEK` | BYOK key encryption |
-| `OPENAI_API_KEY` | Optional platform fallback (prefer BYOK) |
-| `CORS_ORIGIN` | `http://localhost:3000`, production web URL |
-| `GATEWAY_BASE_URL` | e.g. `https://api.layerflow.dev/v1` |
-| `RESEND_API_KEY` or similar | Email digest (later) |
+| `DATABASE_URL`, `DATABASE_DIRECT_URL` | Neon |
+| `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` | Better Auth |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Direct Google OAuth |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Redis |
+| `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY` | Jobs |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET` | Files |
+| `PROVIDER_KEYS_KEK` | BYOK encryption |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Billing |
+| `RESEND_API_KEY` | Email |
+| `SENTRY_DSN`, `AXIOM_TOKEN`, `POSTHOG_KEY` | Operations |
+| `WEB_URL`, `API_URL`, `CORS_ORIGINS` | Routing |
 
-### What frontend files to replace (mock → API client)
-
-| Today | Replace with |
-|-------|--------------|
-| `lib/mock-data.ts` imports in pages | `lib/api-client.ts` (create) with typed fetch helpers |
-| `getPrompt`, `getProject`, … helpers | `GET /api/prompts/:id`, etc. |
-| `PromptEditor` client-only version save | `POST /api/prompts/:id/versions` |
-| `lib/prompt-analysis.ts` in browser | `POST /api/intelligence/analyze` (keep client fallback optional) |
-| `compareResults` static import | `POST /api/compare` + poll |
-| `budget`, `dashboardStats`, … | `GET /api/budgets/current`, `GET /api/usage/summary` |
-| `SettingsClient` local state | `GET/PUT /api/workspace/settings`, `/api/routing-rules` |
-| `demoUser` | Better Auth session user |
-| Run / Replay buttons | `POST /api/runs` |
-
-Keep `lib/types.ts` as shared contract — consider publishing as `@layerflow/types` later.
-
-### Suggested backend phases B0–B4
-
-| Phase | Week-style order | Ship | Frontend unblocked |
-|-------|------------------|------|-------------------|
-| **B0 — Skeleton** | Week 1, days 1–2 | Hono app, Drizzle, Neon migrate, Better Auth, `/health`, CORS | Login shell (future) |
-| **B1 — Workspace API** | Week 1, days 3–7 | Domains, projects, folders, prompts CRUD, sessions | Lists and detail pages load real data |
-| **B2 — Versions + Runs + Compare** | Week 2 | Auto version on save, runs table, compare job worker | Prompt editor, Timeline, Compare, Run button |
-| **B3 — Budgets + Intelligence** | Week 3 | Redis counters, hard block, usage API, analyze + routing rules | Budget meter live, analysis panel server-backed |
-| **B4 — Gateway + Keys** | Week 4 | Provider keys, `lf_live_` keys, `/v1/chat/completions`, basic logs | Gateway page, SDK points at real URL |
+Users’ OpenAI/Anthropic/Gemini/etc. keys belong in encrypted `provider_keys`, **not** environment variables.
 
 ---
 
-## 6. Frontend → Backend mapping table
+## 11. Frontend → backend replacement map
 
-| Frontend route / component | Backend API needed | Priority |
-|----------------------------|-------------------|----------|
-| `/workspace` dashboard stats | `GET /api/usage/summary`, `GET /api/activity` | P2 |
-| `/workspace` domains grid | `GET /api/domains` | P1 |
-| `/projects`, `/projects/[id]` | `GET/POST/PATCH/DELETE /api/projects`, folders | P1 |
-| `/prompts`, `/prompts/[id]` | `GET/POST/PATCH /api/prompts`, versions, tags | P1 |
-| `PromptEditor` Save | `POST /api/prompts/:id/versions` | P1 |
-| `PromptEditor` Run | `POST /api/runs` (+ budget pre-check) | P2 |
-| `Timeline` rollback/duplicate | `POST /api/prompts/:id/versions`, `POST /api/prompts/:id/restore/:version` | P2 |
-| `/sessions`, `/sessions/[id]` | `CRUD /api/sessions`, ordered prompts | P1 |
-| `/compare` `ComparePanel` | `POST /api/compare`, `GET /api/compare/:jobId` | P2 |
-| `PromptAnalysis` panel | `POST /api/intelligence/analyze` | P2 |
-| `/budget` `BudgetClient` | `GET/PUT /api/budgets/current`, scopes, `GET /api/usage` | P3 |
-| `BudgetMeter` (sidebar) | `GET /api/budgets/current` (poll or SSE later) | P3 |
-| `CostOptimizerBanner` | `GET /api/savings/current` | P3 |
-| `/optimizer` suggestions | `GET /api/savings/flagged-prompts` | P3 |
-| `/settings` execution + rules | `GET/PUT /api/workspace/settings`, `/api/routing-rules` | P2 |
-| `/settings` API keys | `CRUD /api/keys` | P4 |
-| `/gateway` snippets | `GET /api/gateway/config`, real base URL | P4 |
-| `/gateway` BYOK (future UI) | `CRUD /api/provider-keys` | P4 |
-| External SDK / curl | `POST /v1/chat/completions` | P4 |
-| Marketing → `/workspace` | Auth optional at first; protect API not pages | P0 |
+| Frontend today | Full backend source |
+|----------------|---------------------|
+| `lib/mock-data.ts` | typed `lib/api-client.ts` calls |
+| `demoUser` | Better Auth Google session |
+| Prompt local save | Prompt + immutable version transaction |
+| Mock sessions | Session/message APIs |
+| `lib/prompt-analysis.ts` | Intelligence analyze/recommend API |
+| Static Compare | QStash compare job + provider runs |
+| Budget mock | Redis enforcement + usage ledger/rollups |
+| Optimizer copy | savings insights from actual run history |
+| Settings state | workspace settings + routing rules |
+| Mock API keys | real hashed LayerFlow keys |
+| Gateway snippets | live `/v1/*` endpoint |
+| Search box | Postgres FTS + pgvector |
+| Attachments fields | R2 signed upload flow |
 
 ---
 
-## 7. First 2 weeks backend plan (concrete tasks)
+## 12. Full-product build order (not separate product phases)
 
-Solo founder schedule — adjust pace as needed.
+All items below are part of the target product. The order exists because later systems depend on earlier schemas and security.
 
-### Week 1 — B0 + B1 (workspace data is real)
+1. Foundation: monorepo packages, Hono, Drizzle, Neon, Google OAuth, tenancy.
+2. Workspace: domains, projects, folders, prompts, versions, sessions, files.
+3. Runs: provider adapters, token/cost settlement, streaming.
+4. Compare + workers: QStash orchestration and ranking.
+5. Cost: ledger, Redis hard limits, rollups, alerts, reports, billing.
+6. Intelligence: analysis, recommendations, routing rules, Auto Mode, savings.
+7. Gateway: BYOK, keys, `/v1/*`, rate limits, exact/semantic cache, SDKs.
+8. Memory/Search: FTS, pgvector, embeddings, replay/retrieval.
+9. Learning: lessons, challenges, progress, certifications.
+10. Community/Teams: profiles, collections, clone, social, memberships.
+11. Production operations: migrations, backups, reconciliation, load tests, incident alerts.
 
-| Day | Tasks |
-|-----|--------|
-| **Mon** | Create `apps/api`; init Hono + TypeScript; env validation; Neon project + Drizzle; first migration (`users`, `workspaces` via Better Auth); deploy hello world to Fly.io; `GET /health`. |
-| **Tue** | Better Auth: sign-up, sign-in, session middleware; CORS for localhost:3000; prove cookie session from curl/Postman. |
-| **Wed** | Schema: `domains`, `projects`, `folders`, `prompts`; seed domains on workspace create; implement `GET/POST /api/domains`, `GET/POST /api/projects`. |
-| **Thu** | `CRUD /api/folders`, `CRUD /api/prompts` (list filters: domain, project, tag, favorite); wire one Next page (`/prompts`) to API behind env flag. |
-| **Fri** | `GET/POST /api/sessions`, session ↔ prompt ordering; migrate `/projects` and `/sessions` to API client; seed script matching current mock demo data. |
-
-**Week 1 done when:** You can create a project and prompt in the UI (or Postman) and see it after refresh.
-
-### Week 2 — B2 (runs, versions, compare)
-
-| Day | Tasks |
-|-----|--------|
-| **Mon** | `prompt_versions` table; `POST /api/prompts/:id/versions` on save; auto-increment version; hook `PromptEditor` to API. |
-| **Tue** | `runs` table; OpenAI adapter + BYOK stub; `POST /api/runs` for single prompt run; store cost/tokens/output on version. |
-| **Wed** | Budget schema (no enforcement yet); attach run cost to usage rollups in Postgres. |
-| **Thu** | Compare: `compare_jobs` + BullMQ worker; fan-out to 2–4 providers; `POST/GET /api/compare/:jobId`; wire `/compare` page. |
-| **Fri** | `POST /api/intelligence/analyze` (port rule-based logic); dashboard `GET /api/usage/summary` for `/workspace`; fix bugs; write minimal README in `apps/api`. |
-
-**Week 2 done when:** Save creates DB versions, Run calls a real model (your BYOK), Compare returns live multi-model results.
-
-**Defer to Week 3+:** Redis hard block (B3), gateway `/v1/*` (B4), email digest.
+Definition of complete: the frontend no longer imports mock product data; all mutations persist; model calls, budgets, Compare, search, gateway, learning, and community are real; auth and authorization protect every workspace.
 
 ---
 
-## 8. Links to other docs
+## 13. Links to other docs
 
 | Doc | Use for |
 |-----|---------|
-| [features.md](features.md) | MVP scope, module flows, success criteria, route map |
+| [features.md](features.md) | Product modules, flows, success criteria, route map |
 | [backend.md](backend.md) | Full API design, gateway spec, domain model detail |
 | [codebase-structure.md](codebase-structure.md) | Folder map, where to edit UI, planned `apps/api` tree |
 | [product-strategy.md](product-strategy.md) | Positioning, GTM, build order, monetization |
 
 ---
 
-**Bottom line:** The frontend MVP **shows the full product story** — workspace, cost, intelligence, gateway — on **mock data**. Your next job is **`apps/api`**: auth + Postgres CRUD first, then real runs and compare, then Redis budgets and the OpenAI-compatible gateway. Swap `lib/mock-data.ts` for an API client one route group at a time using Section 6 as the checklist.
+**Bottom line:** Use one full-product backend: **Node 22 + Hono on Fly, Neon Postgres + Drizzle + pgvector, Upstash Redis + QStash, Cloudflare R2, Better Auth with direct Google OAuth, Resend, Stripe, Sentry/Axiom/PostHog**. Postgres is durable truth; Redis protects budgets and accelerates requests; R2 stores files. Build in dependency order, but do not create disposable phase-specific architectures.
