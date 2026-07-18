@@ -13,6 +13,7 @@ export * from "./gateway";
 export * from "./intelligence";
 export * from "./file";
 export * from "./activity";
+export * from "./audio";
 export * from "./search";
 export * from "./memory";
 export * from "./learning";

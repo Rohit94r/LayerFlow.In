@@ -21,6 +21,7 @@ import { promptsRouter } from "./prompts/prompts";
 import { runsRouter } from "./runs/runs";
 import { searchRouter, similarRouter } from "./search/search";
 import { sessionsRouter } from "./sessions/sessions";
+import { audioRouter } from "./audio/audio";
 import { activityRouter } from "./workspace/activity";
 import { domainsRouter } from "./workspace/domains";
 import { foldersRouter } from "./workspace/folders";
@@ -46,6 +47,7 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/sessions", sessionsRouter);
   app.route("/api/files", filesRouter);
   app.route("/api/runs", runsRouter);
+  app.route("/api/audio", audioRouter);
   app.route("/api/compare", compareRouter);
   app.route("/api/intelligence", intelligenceRouter);
   app.route("/api/workspace/settings", settingsRouter);
