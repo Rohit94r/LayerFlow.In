@@ -128,7 +128,9 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | Method & path | What it does |
 |---|---|
 | `GET/POST /api/auth/*` | Better Auth (Google sign-in, OAuth callback, session, sign-out) |
-| `GET /health` | Liveness + db/redis dependency check |
+| `GET /health/live` | Liveness only — always 200 while the process runs |
+| `GET /health/ready` | Readiness — db/redis dependency check (503 when degraded) |
+| `GET /health` | Combined check (kept for the smoke script) |
 
 ### Workspace (`src/routes/workspace/`)
 
@@ -169,7 +171,7 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | Method & path | What it does |
 |---|---|
 | `POST /api/runs` | Execute a model call (budget reserve → provider → persist run) |
-| `POST /api/runs/stream` | Same, as SSE events (`start` → `delta` → `done`) |
+| `POST /api/runs/stream` | Same, as SSE (`start` → `delta`* → `done`). True token streaming for OpenAI-compatible providers + Anthropic; Google falls back to progressive chunking |
 | `GET /api/runs`, `GET /api/runs/:id` | Run history / detail |
 | `POST /api/compare` | Enqueue a multi-model compare job (BullMQ) |
 | `GET /api/compare/:jobId` | Poll compare status + ranked results |
@@ -196,7 +198,14 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | Method & path | What it does |
 |---|---|
 | `GET /v1/models` | Models from the registry, flagged available per your BYOK keys |
-| `POST /v1/chat/completions` | Chat completion: cache → budget reserve → provider → settle + log |
+| `POST /v1/chat/completions` | Chat completion: cache → budget reserve → provider → settle + log. `stream: true` returns OpenAI-style SSE chunks with real usage in the final frame; budget settles on actual usage |
+
+### Audio (`src/routes/audio/`) — optional, platform ElevenLabs key
+
+| Method & path | What it does |
+|---|---|
+| `GET /api/audio/status` | `{ enabled }` — whether ELEVENLABS_API_KEY is configured |
+| `POST /api/audio/speech` | Text-to-speech (≤ 2,000 chars) → `audio/mpeg`. Budget-reserved + rate-limited (10/min). 503 `audio_disabled` without a key |
 
 ### Memory, search, learning, community
 
@@ -295,8 +304,45 @@ rejects with 503 rather than risking overspend. See
 | `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
 | `npm run db:seed` | Insert dev data (idempotent) |
 | `npm run db:verify` | Apply all migrations to in-memory Postgres (no Docker) |
-| `npm test` | Vitest — unit + integration (integration uses Docker Postgres/Redis when up, else in-memory Postgres; Redis-only checks skip) |
+| `npm run usage:rollup` | Recompute `usage_rollups` from the ledger (`-- 2026-07-15` for specific days) |
+| `npm run usage:reconcile` | Compare Redis budget counters to the ledger (`-- --heal` to fix drift) |
+| `npm test` | Vitest — unit + integration (integration uses Docker Postgres/Redis when up, else in-memory Postgres; Redis-only checks skip). Tests never touch non-local DATABASE_URL/REDIS_URL |
 | `npm run typecheck` | `tsc --noEmit` |
+
+## Background jobs & email
+
+The worker (`npm run worker`) registers three repeatable jobs on startup
+(idempotent upserts, safe with multiple workers):
+
+| Job | Schedule | What it does |
+|---|---|---|
+| `usage-rollup` | hourly at :15 | Recomputes `usage_rollups` from the immutable `usage_ledger` (yesterday + today, UTC) and reconciles Redis counters + `budgets.spent_micro` against the ledger |
+| `budget-alerts` | every 15 min | Emails workspace owners once per period at the warning threshold (`alert_at_pct`, default 80%) and once at 100% (blocked) |
+| `weekly-digest` | Mondays 09:00 UTC | Per-workspace usage summary email, once per ISO week |
+
+Email goes through Resend (`RESEND_API_KEY` + `FROM_EMAIL`); without a key
+every send is a logged no-op. Duplicate suppression is DB-backed: each logical
+notification claims a unique `email_events.dedupe_key` row before sending, so
+re-runs and concurrent workers never double-send.
+
+## Observability & production hardening
+
+- **Sentry** (`SENTRY_DSN`, optional): initialized before the server starts;
+  production trace sampling defaults to 0.1 (`SENTRY_TRACES_SAMPLE_RATE` to
+  override). Request bodies are dropped, auth/cookie headers and
+  credential-shaped strings (sk-…, gsk_…, lf_live_…, Bearer …) are redacted
+  before events leave the process (`src/observability/sentry.ts`).
+- **Security middleware**: secure headers on every response, HSTS in
+  production, 1 MB JSON body limit (25 MB for file uploads), 120 s request
+  deadline, exact-origin CORS, and graceful shutdown (SIGTERM → drain server,
+  close pool/Redis/queues, flush Sentry).
+- **Auth cookies in production**: Secure + HttpOnly + SameSite=Lax, scoped to
+  the shared parent domain derived from WEB_URL/API_URL (`.layerflow.dev`) so
+  `layerflow.dev` ↔ `api.layerflow.dev` share the session (override with
+  `COOKIE_DOMAIN`). Trusted origins = CORS_ORIGINS + WEB_URL + API_URL, exact
+  matches only.
+- **Rate limiting** fails open on Redis errors (budgets stay fail-closed —
+  a Redis outage never allows overspend, see below).
 
 ## Folder structure
 
