@@ -11,12 +11,17 @@ import {
   Plug,
   Settings,
   Home,
+  LogOut,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/marketing/Logo";
-import { demoUser, budget } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-provider";
+import { useAsyncData } from "@/lib/hooks/use-async-data";
+import { getCurrentBudget } from "@/lib/api";
+import { mapBudget } from "@/lib/api/mappers";
 import BudgetMeter from "./BudgetMeter";
+import type { Budget } from "@/lib/types";
 
 const navSections = [
   {
@@ -45,8 +50,30 @@ const navSections = [
   },
 ];
 
+const emptyBudget: Budget = {
+  monthlyLimit: 0,
+  dailyLimit: 0,
+  spent: 0,
+  dailySpent: 0,
+  remaining: 0,
+  percentUsed: 0,
+  blocked: false,
+  alertThreshold: 80,
+  resetDate: new Date().toISOString(),
+};
+
 export default function AppSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+  const budgetState = useAsyncData(async () => mapBudget(await getCurrentBudget()), []);
+
+  const budget = budgetState.data ?? emptyBudget;
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.replace("/sign-in");
+  };
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-bg-soft">
@@ -78,9 +105,7 @@ export default function AppSidebar() {
                     }`}
                   >
                     <Icon
-                      className={`h-4 w-4 shrink-0 ${
-                        active ? "text-brand" : ""
-                      }`}
+                      className={`h-4 w-4 shrink-0 ${active ? "text-brand" : ""}`}
                     />
                     {label}
                   </Link>
@@ -92,7 +117,7 @@ export default function AppSidebar() {
       </nav>
 
       <div className="space-y-3 border-t border-border p-4">
-        <BudgetMeter budget={budget} compact />
+        {budgetState.status === "success" && <BudgetMeter budget={budget} compact />}
         <Link
           href="/settings"
           className={`flex items-center gap-3 rounded-lg px-2 py-1.5 transition-colors ${
@@ -100,18 +125,24 @@ export default function AppSidebar() {
           }`}
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface text-xs font-medium text-brand">
-            {demoUser.avatarInitials}
+            {user?.avatarInitials ?? "?"}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-ink">
-              {demoUser.name}
+              {user?.name ?? "Account"}
             </p>
-            <p className="truncate text-xs text-faint">
-              {demoUser.plan === "pro" ? "Pro plan" : "Free plan"}
-            </p>
+            <p className="truncate text-xs text-faint">{user?.email ?? ""}</p>
           </div>
           <LayoutGrid className="h-4 w-4 shrink-0 text-faint" />
         </Link>
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs text-muted transition-colors hover:bg-surface hover:text-ink"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          Sign out
+        </button>
       </div>
     </aside>
   );

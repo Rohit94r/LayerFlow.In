@@ -1,11 +1,15 @@
+"use client";
+
 import Link from "next/link";
 import { Star, Clock, DollarSign, Cpu } from "lucide-react";
-import type { Prompt } from "@/lib/types";
-import { getProject, getDomain } from "@/lib/mock-data";
+import type { Domain, Project, Prompt } from "@/lib/types";
 
 interface PromptListProps {
   prompts: Prompt[];
   showProject?: boolean;
+  domains?: Domain[];
+  projects?: Project[];
+  emptyAction?: React.ReactNode;
 }
 
 function formatDate(iso: string): string {
@@ -18,14 +22,22 @@ function formatDate(iso: string): string {
 export default function PromptList({
   prompts,
   showProject = false,
+  domains = [],
+  projects = [],
+  emptyAction,
 }: PromptListProps) {
   if (prompts.length === 0) {
     return (
       <div className="card flex flex-col items-center justify-center px-6 py-16 text-center">
         <p className="text-sm text-muted">No prompts yet</p>
-        <button type="button" className="btn-primary mt-4 rounded-lg px-4 py-2 text-sm font-medium">
-          Create prompt
-        </button>
+        {emptyAction ?? (
+          <Link
+            href="/prompts"
+            className="btn-primary mt-4 rounded-lg px-4 py-2 text-sm font-medium"
+          >
+            Create prompt
+          </Link>
+        )}
       </div>
     );
   }
@@ -33,9 +45,14 @@ export default function PromptList({
   return (
     <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {prompts.map((prompt) => {
-        const project = showProject ? getProject(prompt.projectId) : null;
-        const domain = getDomain(prompt.domainId);
-        const totalCost = prompt.versions.reduce((sum, v) => sum + v.cost, 0);
+        const project = showProject
+          ? projects.find((p) => p.id === prompt.projectId)
+          : null;
+        const domain = domains.find((d) => d.id === prompt.domainId);
+        const totalCost =
+          prompt.versions.length > 0
+            ? prompt.versions.reduce((sum, v) => sum + v.cost, 0)
+            : prompt.cost;
 
         return (
           <Link
@@ -53,14 +70,15 @@ export default function PromptList({
               {prompt.description && (
                 <p className="mt-0.5 line-clamp-1 text-xs text-faint">{prompt.description}</p>
               )}
-              <p className="mt-0.5 line-clamp-1 text-sm text-muted">{prompt.content}</p>
+              <p className="mt-0.5 line-clamp-1 text-sm text-muted">{prompt.content || "No body yet"}</p>
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-faint">
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {formatDate(prompt.updatedAt)}
                 </span>
                 <span>
-                  {prompt.versions.length} version{prompt.versions.length !== 1 ? "s" : ""}
+                  {prompt.versions.length} version
+                  {prompt.versions.length !== 1 ? "s" : ""}
                 </span>
                 <span className="flex items-center gap-1">
                   <Cpu className="h-3 w-3" />

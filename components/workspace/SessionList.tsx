@@ -1,10 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { MessageSquare, Clock, DollarSign, ArrowRight } from "lucide-react";
-import type { PromptSession } from "@/lib/types";
-import { getDomain } from "@/lib/mock-data";
+import type { Domain, PromptSession } from "@/lib/types";
 
 interface SessionListProps {
   sessions: PromptSession[];
+  domains?: Domain[];
 }
 
 function formatDate(iso: string): string {
@@ -20,7 +22,7 @@ const statusStyles = {
   paused: "border-border bg-surface-2 text-faint",
 };
 
-export default function SessionList({ sessions }: SessionListProps) {
+export default function SessionList({ sessions, domains = [] }: SessionListProps) {
   if (sessions.length === 0) {
     return (
       <div className="card flex flex-col items-center justify-center px-6 py-16 text-center">
@@ -36,7 +38,7 @@ export default function SessionList({ sessions }: SessionListProps) {
   return (
     <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
       {sessions.map((session) => {
-        const domain = getDomain(session.domainId);
+        const domain = domains.find((d) => d.id === session.domainId);
         return (
           <Link
             key={session.id}
@@ -63,7 +65,10 @@ export default function SessionList({ sessions }: SessionListProps) {
                 </p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-faint">
-                <span>{session.promptIds.length} prompts</span>
+                <span>
+                  {session.promptIds.length || "—"} prompt
+                  {session.promptIds.length === 1 ? "" : "s"}
+                </span>
                 {domain && <span>{domain.name}</span>}
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
