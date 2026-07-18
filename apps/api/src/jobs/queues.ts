@@ -11,7 +11,13 @@ import { createBullConnection } from "../redis/client";
 export const DEFAULT_QUEUE = "layerflow";
 
 /** Job names — add new ones here and register a processor for them. */
-export type JobName = "example" | "compare" | "embeddings" | "usage-rollup" | "budget-alerts";
+export type JobName =
+  | "example"
+  | "compare"
+  | "embeddings"
+  | "usage-rollup"
+  | "budget-alerts"
+  | "weekly-digest";
 
 let queue: Queue | undefined;
 
@@ -31,6 +37,31 @@ export async function enqueue<T extends object>(name: JobName, payload: T): Prom
     removeOnFail: { count: 5_000 },
   });
   return job.id ?? "";
+}
+
+/**
+ * Register repeatable jobs (idempotent — upsert by scheduler id). Called by
+ * the worker on startup so exactly one schedule exists per job regardless of
+ * how many workers run.
+ *
+ *   usage-rollup   hourly at :15  — recompute rollups + reconcile Redis
+ *   budget-alerts  every 15 min   — 80% / 100% owner emails (DB-deduped)
+ *   weekly-digest  Mondays 09:00Z — per-workspace usage summary (DB-deduped)
+ */
+export async function registerScheduledJobs(): Promise<void> {
+  const q = getQueue();
+  await q.upsertJobScheduler("usage-rollup-hourly", { pattern: "15 * * * *" }, {
+    name: "usage-rollup",
+    data: {},
+  });
+  await q.upsertJobScheduler("budget-alerts-15min", { pattern: "*/15 * * * *" }, {
+    name: "budget-alerts",
+    data: {},
+  });
+  await q.upsertJobScheduler("weekly-digest-monday", { pattern: "0 9 * * 1" }, {
+    name: "weekly-digest",
+    data: {},
+  });
 }
 
 /** Graceful shutdown helper. */
