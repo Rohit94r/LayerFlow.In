@@ -13,6 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "db:verify": "tsx scripts/verify-migrations.ts",
+    "usage:rollup": "tsx scripts/usage-rollup.ts",
+    "usage:reconcile": "tsx scripts/reconcile.ts",
     "smoke": "tsx scripts/smoke.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
@@ -24,6 +26,7 @@
     "@hono/node-server": "^2.0.10",
     "@layerflow/contracts": "*",
     "@layerflow/model-registry": "*",
+    "@sentry/node": "^10.66.0",
     "better-auth": "^1.6.23",
     "bullmq": "^5.80.8",
     "dotenv": "^16.4.7",
