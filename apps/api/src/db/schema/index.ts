@@ -8,6 +8,7 @@ export * from "./sessions";
 export * from "./runs";
 export * from "./intelligence";
 export * from "./cost";
+export * from "./email";
 export * from "./gateway";
 export * from "./memory";
 export * from "./learning";

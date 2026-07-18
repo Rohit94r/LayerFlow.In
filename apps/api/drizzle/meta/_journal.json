@@ -15,6 +15,13 @@
       "when": 1784381730129,
       "tag": "0001_equal_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784413394851,
+      "tag": "0002_glorious_mister_fear",
+      "breakpoints": true
     }
   ]
 }
