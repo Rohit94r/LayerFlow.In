@@ -1,6 +1,6 @@
+import { Suspense } from "react";
 import ComparePanel from "@/components/workspace/ComparePanel";
 import PageHeader from "@/components/workspace/PageHeader";
-import { compareResults } from "@/lib/mock-data";
 
 export const metadata = {
   title: "Compare",
@@ -14,7 +14,9 @@ export default function ComparePage() {
         title="Compare"
         description="Run the same prompt across GPT, Claude, Gemini, and DeepSeek — pick best, cheapest, or fastest."
       />
-      <ComparePanel results={compareResults} />
+      <Suspense fallback={<p className="text-sm text-muted">Loading compare…</p>}>
+        <ComparePanel />
+      </Suspense>
     </div>
   );
 }

@@ -1,35 +1,151 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import BudgetMeter from "@/components/workspace/BudgetMeter";
 import CostOptimizerBanner from "@/components/workspace/CostOptimizerBanner";
 import PageHeader from "@/components/workspace/PageHeader";
 import RoutingRules from "@/components/workspace/RoutingRules";
+import { ErrorState, LoadingState } from "@/components/workspace/DataState";
+import { useAsyncData, errorMessage } from "@/lib/hooks/use-async-data";
 import {
-  budget,
-  blockedBudget,
-  projectBudgets,
-  keyBudgets,
-  promptSpend,
-  routingRules,
-} from "@/lib/mock-data";
+  getCurrentBudget,
+  updateBudget,
+  listBudgetScopes,
+  listProjects,
+  listApiKeys,
+  listRoutingRules,
+  updateRoutingRule,
+  getUsageSummary,
+  getSavings,
+  getWorkspaceSettings,
+  updateWorkspaceSettings,
+} from "@/lib/api";
+import {
+  mapBudget,
+  mapProject,
+  mapApiKey,
+  mapProjectBudgets,
+  mapKeyBudgets,
+  mapRoutingRule,
+  mapSettings,
+} from "@/lib/api/mappers";
+import { microToUsd, usdToMicro } from "@/lib/api/money";
 
-const spendByModel = [
-  { model: "gpt-4o", spent: 14.28, pct: 37 },
-  { model: "claude-sonnet-4", spent: 11.52, pct: 30 },
-  { model: "gemini-2.5-pro", spent: 7.84, pct: 20 },
-  { model: "deepseek-v3", spent: 4.78, pct: 13 },
-];
+async function loadBudgetPage() {
+  const [
+    budgetRes,
+    scopesRes,
+    projectsRes,
+    keysRes,
+    rulesRes,
+    usageRes,
+    savingsRes,
+    settingsRes,
+  ] = await Promise.all([
+    getCurrentBudget(),
+    listBudgetScopes(),
+    listProjects(),
+    listApiKeys(),
+    listRoutingRules(),
+    getUsageSummary({ groupBy: "model" }),
+    getSavings().catch(() => null),
+    getWorkspaceSettings(),
+  ]);
+
+  const projects = projectsRes.projects.map((p) => mapProject(p));
+  const keys = keysRes.keys.map(mapApiKey);
+  const budget = mapBudget(budgetRes);
+  return {
+    budget,
+    budgetRaw: budgetRes,
+    projectBudgets: mapProjectBudgets(scopesRes.scopes, projects),
+    keyBudgets: mapKeyBudgets(scopesRes.scopes, keys),
+    rules: rulesRes.rules.map(mapRoutingRule),
+    spendByModel: usageRes.buckets
+      .filter((b) => b.model)
+      .map((b) => ({
+        model: b.model!,
+        spent: microToUsd(b.costMicro),
+        requests: b.requests,
+      })),
+    savings: savingsRes
+      ? {
+          actual: microToUsd(savingsRes.actualCostMicro),
+          optimized: microToUsd(savingsRes.optimizedCostMicro),
+        }
+      : { actual: budget.spent, optimized: budget.spent * 0.3 },
+    settings: mapSettings(settingsRes.settings),
+  };
+}
 
 export default function BudgetClient() {
-  const [preferCheap, setPreferCheap] = useState(true);
-  const [rules, setRules] = useState(routingRules);
+  const state = useAsyncData(loadBudgetPage, []);
+  const [preferCheap, setPreferCheap] = useState<boolean | null>(null);
+  const [rules, setRules] = useState<ReturnType<typeof mapRoutingRule>[] | null>(null);
+  const [monthlyLimit, setMonthlyLimit] = useState<string>("");
+  const [dailyLimit, setDailyLimit] = useState<string>("");
+  const [alertAt, setAlertAt] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggleRule = (id: string) => {
-    setRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
-    );
+  if (state.status === "loading") return <LoadingState label="Loading budget…" />;
+  if (state.status === "error") {
+    return <ErrorState message={errorMessage(state.error)} onRetry={state.reload} />;
+  }
+
+  const data = state.data;
+  const currentPrefer = preferCheap ?? data.settings.preferCheap;
+  const currentRules = rules ?? data.rules;
+  const totalModelSpend = data.spendByModel.reduce((s, m) => s + m.spent, 0) || 1;
+
+  useEffect(() => {
+    setMonthlyLimit(String(data.budget.monthlyLimit));
+    setDailyLimit(String(data.budget.dailyLimit));
+    setAlertAt(String(data.budget.alertThreshold));
+  }, [data.budget.monthlyLimit, data.budget.dailyLimit, data.budget.alertThreshold]);
+
+  const toggleRule = async (id: string) => {
+    const rule = currentRules.find((r) => r.id === id);
+    if (!rule) return;
+    const nextEnabled = !rule.enabled;
+    setRules(currentRules.map((r) => (r.id === id ? { ...r, enabled: nextEnabled } : r)));
+    try {
+      await updateRoutingRule(id, { enabled: nextEnabled });
+    } catch (err) {
+      setError(errorMessage(err));
+      state.reload();
+    }
+  };
+
+  const savePreferCheap = async (value: boolean) => {
+    setPreferCheap(value);
+    try {
+      await updateWorkspaceSettings({ preferCheap: value });
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const saveBudget = async () => {
+    setSaving(true);
+    setError(null);
+    setMessage(null);
+    try {
+      await updateBudget({
+        monthlyLimitMicro: usdToMicro(Number(monthlyLimit) || 0),
+        dailyLimitMicro: dailyLimit === "" ? null : usdToMicro(Number(dailyLimit) || 0),
+        alertAtPct: Number(alertAt) || 80,
+        hardBlock: true,
+      });
+      setMessage("Budget updated");
+      state.reload();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -40,19 +156,31 @@ export default function BudgetClient() {
         description="Hard limits that block API calls when exceeded — daily, monthly, per-project, per-key."
       />
 
-      <CostOptimizerBanner actualSpent={42} optimizedSpent={11} />
+      <CostOptimizerBanner
+        actualSpent={data.savings.actual}
+        optimizedSpent={data.savings.optimized}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <BudgetMeter budget={budget} />
+        <BudgetMeter budget={data.budget} />
         <div className="card p-6">
           <h3 className="text-base font-semibold text-ink">Daily budget</h3>
           <p className="mt-0.5 text-sm text-muted">
-            ${budget.dailySpent.toFixed(2)} of ${budget.dailyLimit.toFixed(2)} today
+            ${data.budget.dailySpent.toFixed(2)} of ${data.budget.dailyLimit.toFixed(2)} today
           </p>
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full rounded-full bg-ink/25"
-              style={{ width: `${(budget.dailySpent / budget.dailyLimit) * 100}%` }}
+              style={{
+                width: `${
+                  data.budget.dailyLimit > 0
+                    ? Math.min(
+                        (data.budget.dailySpent / data.budget.dailyLimit) * 100,
+                        100,
+                      )
+                    : 0
+                }%`,
+              }}
             />
           </div>
           <div className="mt-4 flex items-center justify-between rounded-lg border border-border px-4 py-3">
@@ -62,15 +190,15 @@ export default function BudgetClient() {
             </div>
             <button
               type="button"
-              onClick={() => setPreferCheap(!preferCheap)}
+              onClick={() => savePreferCheap(!currentPrefer)}
               className={`relative h-6 w-11 rounded-full transition-colors ${
-                preferCheap ? "bg-brand" : "bg-surface-2"
+                currentPrefer ? "bg-brand" : "bg-surface-2"
               }`}
               aria-label="Toggle prefer cheap"
             >
               <span
                 className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                  preferCheap ? "left-[22px]" : "left-0.5"
+                  currentPrefer ? "left-[22px]" : "left-0.5"
                 }`}
               />
             </button>
@@ -78,130 +206,143 @@ export default function BudgetClient() {
         </div>
       </div>
 
+      <div className="card p-6">
+        <h3 className="text-base font-semibold text-ink">Update limits</h3>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="mb-1.5 block text-xs text-muted">Monthly ($)</label>
+            <input
+              type="number"
+              value={monthlyLimit}
+              onChange={(e) => setMonthlyLimit(e.target.value)}
+              className="workspace-input"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs text-muted">Daily ($)</label>
+            <input
+              type="number"
+              value={dailyLimit}
+              onChange={(e) => setDailyLimit(e.target.value)}
+              className="workspace-input"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs text-muted">Alert at (%)</label>
+            <input
+              type="number"
+              value={alertAt}
+              onChange={(e) => setAlertAt(e.target.value)}
+              className="workspace-input"
+            />
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={saveBudget}
+          disabled={saving}
+          className="btn-primary mt-4 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+        >
+          {saving ? "Saving…" : "Save budget"}
+        </button>
+        {message && <p className="mt-2 text-sm text-brand">{message}</p>}
+        {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-6">
           <h3 className="text-base font-semibold text-ink">Per-project budgets</h3>
           <p className="mt-0.5 text-sm text-muted">Isolate spend by project.</p>
           <div className="mt-4 space-y-3">
-            {projectBudgets.map((item) => (
-              <div key={item.projectId}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-muted">{item.projectName}</span>
-                  <span className="font-medium text-ink">
-                    ${item.spent.toFixed(2)} / ${item.limit.toFixed(0)}
-                  </span>
+            {data.projectBudgets.length === 0 ? (
+              <p className="text-sm text-muted">No project scopes configured yet.</p>
+            ) : (
+              data.projectBudgets.map((item) => (
+                <div key={item.projectId}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-muted">{item.projectName}</span>
+                    <span className="font-medium text-ink">
+                      ${item.spent.toFixed(2)} / ${item.limit.toFixed(0)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className={`h-full rounded-full ${item.percentUsed >= 80 ? "bg-brand" : "bg-ink/20"}`}
+                      style={{ width: `${Math.min(item.percentUsed, 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className={`h-full rounded-full ${item.percentUsed >= 80 ? "bg-brand" : "bg-ink/20"}`}
-                    style={{ width: `${item.percentUsed}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
         <div className="card p-6">
           <h3 className="text-base font-semibold text-ink">Per-key budgets</h3>
-          <p className="mt-0.5 text-sm text-muted">Cap spend per API key.</p>
+          <p className="mt-0.5 text-sm text-muted">Cap gateway keys individually.</p>
           <div className="mt-4 space-y-3">
-            {keyBudgets.map((item) => (
-              <div key={item.keyId}>
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="text-muted">{item.keyName}</span>
-                  <span className="font-medium text-ink">
-                    ${item.spent.toFixed(2)} / ${item.limit.toFixed(0)}
-                  </span>
+            {data.keyBudgets.length === 0 ? (
+              <p className="text-sm text-muted">No key scopes configured yet.</p>
+            ) : (
+              data.keyBudgets.map((item) => (
+                <div key={item.keyId}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="text-muted">{item.keyName}</span>
+                    <span className="font-medium text-ink">
+                      ${item.spent.toFixed(2)} / ${item.limit.toFixed(0)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                    <div
+                      className="h-full rounded-full bg-ink/20"
+                      style={{ width: `${Math.min(item.percentUsed, 100)}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className="h-full rounded-full bg-ink/20"
-                    style={{ width: `${item.percentUsed}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
       <div className="card p-6">
         <h3 className="text-base font-semibold text-ink">Spend by model</h3>
-        <p className="mt-0.5 text-sm text-muted">Where your monthly budget goes.</p>
         <div className="mt-4 space-y-3">
-          {spendByModel.map((item) => (
-            <div key={item.model}>
-              <div className="mb-1 flex items-center justify-between text-sm">
-                <span className="font-mono text-xs text-muted">{item.model}</span>
-                <span className="font-medium text-ink">${item.spent.toFixed(2)}</span>
+          {data.spendByModel.length === 0 ? (
+            <p className="text-sm text-muted">No usage yet this period.</p>
+          ) : (
+            data.spendByModel.map((item) => (
+              <div key={item.model}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-mono text-xs text-muted">{item.model}</span>
+                  <span className="text-xs text-faint">
+                    {item.requests} runs · ${item.spent.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+                  <div
+                    className="h-full rounded-full bg-ink/20"
+                    style={{ width: `${(item.spent / totalModelSpend) * 100}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-surface-2">
-                <div className="h-full rounded-full bg-ink/20" style={{ width: `${item.pct}%` }} />
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
       <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Token & cost estimator</h3>
-        <p className="mt-0.5 text-sm text-muted">Estimate before you run.</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mb-4 flex items-center justify-between">
           <div>
-            <label className="mb-1.5 block text-xs text-muted">Prompt length (chars)</label>
-            <input type="number" defaultValue={500} className="workspace-input" />
+            <h3 className="text-base font-semibold text-ink">Routing rules</h3>
+            <p className="mt-0.5 text-sm text-muted">Toggle rules that steer Auto Mode.</p>
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Model</label>
-            <select className="workspace-input">
-              <option>gemini-2.5-flash</option>
-              <option>gpt-4o</option>
-              <option>claude-sonnet-4</option>
-              <option>deepseek-v3</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Estimated cost</label>
-            <p className="workspace-input flex items-center font-mono text-sm">~$0.0024</p>
-          </div>
+          <Link href="/settings" className="section-link text-sm">
+            Manage in settings
+          </Link>
         </div>
+        <RoutingRules rules={currentRules} onToggle={toggleRule} />
       </div>
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Per-prompt spend</h3>
-        <p className="mt-0.5 text-sm text-muted">Know which prompts burn the most.</p>
-        <div className="mt-4 divide-y divide-border">
-          {promptSpend.map((item) => (
-            <Link
-              key={item.promptId}
-              href={`/prompts/${item.promptId}`}
-              className="flex items-center justify-between py-3 transition-colors hover:text-brand"
-            >
-              <div>
-                <p className="text-sm font-medium text-ink">{item.title}</p>
-                <p className="text-xs text-faint">
-                  {item.projectName} · {item.runCount} runs · {item.lastModel}
-                </p>
-              </div>
-              <span className="font-mono text-sm text-ink">${item.totalCost.toFixed(3)}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Routing rules</h3>
-        <p className="mt-0.5 text-sm text-muted">Simple model routing — mock.</p>
-        <div className="mt-4">
-          <RoutingRules rules={rules} onToggle={toggleRule} />
-        </div>
-      </div>
-
-      <section>
-        <h2 className="mb-3 text-sm font-medium text-muted">Preview: blocked state</h2>
-        <BudgetMeter budget={blockedBudget} />
-      </section>
     </div>
   );
 }
