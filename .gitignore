@@ -49,3 +49,6 @@ Thumbs.db
 # local reference only (do not commit)
 mlflow.org/
 images/
+
+# local API uploads
+apps/api/.data/
