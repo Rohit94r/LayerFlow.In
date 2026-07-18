@@ -1,0 +1,50 @@
+# Build context is the repo ROOT (npm workspaces). Keep the image lean and,
+# above all, keep secrets and local-only junk OUT of the build.
+
+# dependencies (reinstalled inside the image)
+node_modules
+**/node_modules
+
+# secrets / env — NEVER copy these into an image
+.env
+.env.*
+*.env
+!*.env.example
+.vercel.env
+.vercel
+
+# build output / caches
+.next
+out
+dist
+**/dist
+.turbo
+*.tsbuildinfo
+next-env.d.ts
+
+# frontend (deployed on Vercel, not in the API image)
+app
+components
+public
+lib
+postcss.config.mjs
+next.config.mjs
+tailwind*
+
+# git / CI / IDE / OS
+.git
+.github
+.vscode
+.idea
+**/.DS_Store
+Thumbs.db
+
+# docs and local-only reference material
+docs
+images
+mlflow.org
+README.md
+
+# local API uploads + test artifacts
+apps/api/.data
+**/*.log
