@@ -3,8 +3,14 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  applyTheme,
+  persistTheme,
+  resolveInitialTheme,
+  type Theme,
+} from "@/lib/theme";
 
-export type Theme = "dark" | "light";
+export type { Theme };
 
 export type ThemeToggleProps = {
   /** When true, styles for sitting over the marketing hero gradient */
@@ -16,20 +22,17 @@ export function ThemeToggle({ overHero = false }: ThemeToggleProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const current = document.documentElement.classList.contains("light")
-      ? "light"
-      : "dark";
-    setTheme(current);
+    const initial = resolveInitialTheme();
+    applyTheme(initial);
+    setTheme(initial);
     setMounted(true);
   }, []);
 
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    document.documentElement.classList.toggle("light", next === "light");
-    try {
-      localStorage.setItem("lf-theme", next);
-    } catch {}
+    applyTheme(next);
+    persistTheme(next);
   };
 
   return (

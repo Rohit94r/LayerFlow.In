@@ -399,12 +399,22 @@ html.light .card-hover:hover {
 }
 
 /* monochrome (white) brand logos: dim in dark, invert to black in light */
+/* Force every logo (solid, text, or gradient-masked) to a single flat color
+   so they all render consistently instead of washing out to empty shapes. */
 .logo-mono {
-  filter: grayscale(1) opacity(0.2) invert(var(--logo-invert));
-  transition: filter 0.25s ease, opacity 0.25s ease;
+  filter: brightness(0) invert(1);
+  opacity: 0.6;
+  transition: opacity 0.25s ease;
 }
 .logo-mono:hover {
-  filter: grayscale(1) opacity(0.4) invert(var(--logo-invert));
+  opacity: 0.9;
+}
+html.light .logo-mono {
+  filter: brightness(0) invert(0);
+  opacity: 0.55;
+}
+html.light .logo-mono:hover {
+  opacity: 0.85;
 }
 
 /* dark chip that keeps colored logos visible in both themes */
