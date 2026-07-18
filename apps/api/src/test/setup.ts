@@ -3,6 +3,21 @@
 // (cast because Next.js's ambient types mark NODE_ENV read-only at the repo root)
 (process.env as Record<string, string | undefined>).NODE_ENV = "test";
 
+// SAFETY: tests must never touch remote infrastructure. If apps/api/.env
+// points DATABASE_URL/REDIS_URL at a non-local host (Neon, Upstash, ...),
+// force the local defaults — the PGlite fallback in the integration tests
+// takes over when Docker isn't running.
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+for (const key of ["DATABASE_URL", "REDIS_URL"] as const) {
+  const value = process.env[key];
+  if (!value) continue;
+  try {
+    if (!LOCAL_HOSTS.has(new URL(value).hostname)) delete process.env[key];
+  } catch {
+    delete process.env[key];
+  }
+}
+
 const defaults: Record<string, string> = {
   DATABASE_URL: "postgres://layerflow:layerflow@localhost:5432/layerflow",
   REDIS_URL: "redis://localhost:6379",

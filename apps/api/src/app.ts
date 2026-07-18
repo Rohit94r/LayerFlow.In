@@ -1,10 +1,14 @@
 import { sql } from "drizzle-orm";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { timeout } from "hono/timeout";
+import { MAX_FILE_SIZE_BYTES } from "@layerflow/contracts";
 import { auth } from "./auth";
 import { getEnv } from "./config/env";
 import { db } from "./db/client";
-import { handleError, handleNotFound } from "./middleware/error";
+import { AppError, handleError, handleNotFound } from "./middleware/error";
 import { requestId } from "./middleware/request-id";
 import { redis } from "./redis/client";
 import { registerRoutes } from "./routes";
@@ -19,6 +23,39 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
+/** JSON bodies are capped small; file-content uploads get the contract max. */
+const JSON_BODY_LIMIT_BYTES = 1 * 1024 * 1024;
+
+const jsonBodyLimit = bodyLimit({
+  maxSize: JSON_BODY_LIMIT_BYTES,
+  onError: () => {
+    throw new AppError(413, "payload_too_large", "Request body exceeds 1 MB");
+  },
+});
+
+const fileBodyLimit = bodyLimit({
+  maxSize: MAX_FILE_SIZE_BYTES + 64 * 1024, // contract max + envelope slack
+  onError: () => {
+    throw new AppError(413, "payload_too_large", "File exceeds the 25 MB upload limit");
+  },
+});
+
+async function dependencyChecks(): Promise<{ ok: boolean; checks: { db: boolean; redis: boolean } }> {
+  const checks = { db: false, redis: false };
+  try {
+    await withTimeout(db.execute(sql`select 1`), 2_000);
+    checks.db = true;
+  } catch {
+    // reported below
+  }
+  try {
+    checks.redis = (await withTimeout(redis.ping(), 2_000)) === "PONG";
+  } catch {
+    // reported below
+  }
+  return { ok: checks.db && checks.redis, checks };
+}
+
 /** Build the Hono app (separate from the server so tests can call it directly). */
 export function createApp(): Hono<AppEnv> {
   const env = getEnv();
@@ -28,7 +65,20 @@ export function createApp(): Hono<AppEnv> {
   app.notFound(handleNotFound);
   app.use(requestId);
 
+  // Baseline security headers on every response (API-appropriate subset).
+  app.use(
+    secureHeaders({
+      // No cross-origin isolation needs; the API serves JSON + SSE only.
+      crossOriginResourcePolicy: "cross-origin",
+      crossOriginOpenerPolicy: false,
+      xFrameOptions: "DENY",
+      strictTransportSecurity:
+        env.NODE_ENV === "production" ? "max-age=31536000; includeSubDomains" : false,
+    }),
+  );
+
   // CORS must be registered before the auth handler and routes.
+  // Origins are an exact allow-list from CORS_ORIGINS (no wildcards).
   app.use(
     "/api/*",
     cors({
@@ -41,24 +91,32 @@ export function createApp(): Hono<AppEnv> {
     }),
   );
 
+  // Body-size limits: 1 MB JSON everywhere, 25 MB for local file-content PUTs.
+  app.use("/api/*", (c, next) =>
+    c.req.path.startsWith("/api/files/") ? fileBodyLimit(c, next) : jsonBodyLimit(c, next),
+  );
+  app.use("/v1/*", jsonBodyLimit);
+
+  // Hard request deadline. SSE routes return their Response immediately and
+  // stream afterwards, so this only bounds time-to-first-byte for them.
+  app.use("/api/*", timeout(120_000));
+  app.use("/v1/*", timeout(120_000));
+
   // Better Auth owns everything under /api/auth/* (Google OAuth callback, session...).
   app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
-  // Liveness + dependency check.
+  // Liveness: process is up (no dependency checks — for container restarts).
+  app.get("/health/live", (c) => c.json({ status: "ok" }));
+
+  // Readiness: dependencies reachable (for load-balancer / deploy gating).
+  app.get("/health/ready", async (c) => {
+    const { ok, checks } = await dependencyChecks();
+    return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
+  });
+
+  // Back-compat combined check (used by the smoke script).
   app.get("/health", async (c) => {
-    const checks = { db: false, redis: false };
-    try {
-      await withTimeout(db.execute(sql`select 1`), 2_000);
-      checks.db = true;
-    } catch {
-      // reported below
-    }
-    try {
-      checks.redis = (await withTimeout(redis.ping(), 2_000)) === "PONG";
-    } catch {
-      // reported below
-    }
-    const ok = checks.db && checks.redis;
+    const { ok, checks } = await dependencyChecks();
     return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
   });
 

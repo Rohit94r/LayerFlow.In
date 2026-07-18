@@ -39,10 +39,31 @@ export const envSchema = z.object({
   /** Server-wide OpenAI key for embeddings; without it (and without a
    * workspace BYOK key) search falls back to local hash embeddings. */
   OPENAI_API_KEY: z.string().optional(),
+  /** Platform provider keys — used as a fallback when a workspace has no BYOK
+   * key for that provider, so the product works out of the box. */
+  GROQ_API_KEY: z.string().optional(),
+  GROQ_MODEL: z.string().optional(),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().optional(),
+  /** ElevenLabs — reserved for future audio / sound-effect features. */
+  ELEVENLABS_API_KEY: z.string().optional(),
+  ELEVENLABS_VOICE_ID: z.string().optional(),
+  ELEVENLABS_MODEL_ID: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /** Resend (transactional email). Without it the email service logs a no-op. */
   RESEND_API_KEY: z.string().optional(),
+  /** Sender for all outgoing email, e.g. `LayerFlow <alerts@layerflow.dev>`. */
+  FROM_EMAIL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  /** Override trace sampling (0..1). Defaults: 0.1 in production, 0 elsewhere. */
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+  /**
+   * Cookie domain for cross-subdomain sessions in production
+   * (e.g. `.layerflow.dev` so layerflow.dev and api.layerflow.dev share auth).
+   * Derived from WEB_URL when unset.
+   */
+  COOKIE_DOMAIN: z.string().optional(),
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),

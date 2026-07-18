@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";
 import { logger } from "../config/logger";
+import { captureException } from "../observability/sentry";
 
 /** Throw anywhere in a route; the global handler turns it into a JSON error. */
 export class AppError extends Error {
@@ -37,6 +38,7 @@ export function handleError(err: Error, c: Context) {
   }
 
   logger.error({ err, requestId, path: c.req.path }, "unhandled error");
+  captureException(err, { requestId, path: c.req.path, method: c.req.method });
   return c.json(errorBody("internal_error", "Something went wrong"), 500);
 }
 
