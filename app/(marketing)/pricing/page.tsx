@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "Pricing",
   description:
     "LayerFlow pricing — free personal workspace, Pro for power users, Team when you're ready to share.",
+  alternates: { canonical: "/pricing" },
+  openGraph: { url: "/pricing" },
 };
 
 export default function PricingPage() {

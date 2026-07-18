@@ -11,7 +11,7 @@ const validEnv = {
   PROVIDER_KEYS_KEK: "ab".repeat(32),
   WEB_URL: "http://localhost:3000",
   API_URL: "http://localhost:8787",
-  CORS_ORIGINS: "http://localhost:3000, https://app.layerflow.dev",
+  CORS_ORIGINS: "http://localhost:3000, https://layerflow.dev",
 };
 
 describe("parseEnv", () => {
@@ -23,7 +23,7 @@ describe("parseEnv", () => {
 
   it("splits CORS_ORIGINS into a trimmed array", () => {
     const env = parseEnv(validEnv);
-    expect(env.CORS_ORIGINS).toEqual(["http://localhost:3000", "https://app.layerflow.dev"]);
+    expect(env.CORS_ORIGINS).toEqual(["http://localhost:3000", "https://layerflow.dev"]);
   });
 
   it("fails fast and names every missing var", () => {

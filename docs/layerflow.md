@@ -13,7 +13,7 @@ LayerFlow is a production infrastructure platform for AI applications. It combin
 - **AI Evaluation** — test cases, CI integration, regression alerts
 - **Dashboard** — full control plane (keys, analytics, billing, team)
 
-Landing page: layer-flow-in.vercel.app (polished, Next.js, dark mode, built by Rohit Jadhav)
+Landing page: https://layerflow.dev (custom production domain, polished Next.js experience, built by Rohit Jadhav)
 
 ---
 

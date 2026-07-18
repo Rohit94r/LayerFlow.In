@@ -74,7 +74,8 @@ client — **not built yet**, deliberately:
    responses with the zod schemas from `@layerflow/contracts`.
 2. Add Better Auth's client (`createAuthClient`) for
    `signIn.social({ provider: "google" })` and session state, pointed at
-   `http://localhost:8787`.
+   `http://localhost:8787` locally and `https://api.layerflow.dev` in
+   production. The production frontend origin is `https://layerflow.dev`.
 3. Replace mock imports screen by screen, in this order: workspace lists
    (domains/projects/prompts) → prompt detail + versions → runs in the
    editor → budgets page → compare → gateway/keys settings.

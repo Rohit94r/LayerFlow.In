@@ -177,7 +177,7 @@ This is the one stack LayerFlow will use. It supports the complete product: work
 
 | Layer | Use | Purpose |
 |-------|-----|---------|
-| **Web frontend** | **Next.js 16 + React 19 + TypeScript + Tailwind 4**, Vercel | Existing marketing and workspace app |
+| **Web frontend** | **Next.js 16 + React 19 + TypeScript + Tailwind 4** at **https://layerflow.dev** | Existing marketing and workspace app on the custom production domain |
 | **Backend runtime** | **Node.js 22 + Hono** | Typed REST API, streaming LLM gateway, webhooks |
 | **API hosting** | **Fly.io** (Docker, minimum one instance) | Long-lived streaming, workers, horizontal scaling |
 | **Primary database** | **Neon Postgres** | All durable relational product data |

@@ -1121,7 +1121,7 @@ GET /v1/cache/stats
 
 ## 8. Dashboard
 
-The LayerFlow dashboard is a Next.js web application at `app.layerflow.dev`.
+The LayerFlow dashboard is part of the main Next.js application at `https://layerflow.dev/workspace`.
 
 ### Pages
 

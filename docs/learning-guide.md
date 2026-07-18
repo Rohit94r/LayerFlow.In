@@ -249,7 +249,7 @@ HTTP is the request-and-response language used between browsers and servers.
 A REST API organizes operations around URLs and methods such as `GET` for reading, `POST` for creating, `PATCH` for updating, and `DELETE` for removing.
 
 The current frontend mostly imports local data and does not fetch product data.
-The planned frontend client will call workspace endpoints under `https://api…/api/*`, while external applications will call Gateway endpoints under `/v1/*`.
+The frontend client will call workspace endpoints under `https://api.layerflow.dev/api/*`, while external applications call gateway endpoints under `https://api.layerflow.dev/v1/*`.
 
 - **Where used:** future replacement for `lib/mock-data.ts`; endpoint design in `docs/backend.md`
 - **Free resource:** [MDN: HTTP overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Overview)
@@ -656,7 +656,7 @@ The intended flow is:
 7. On first login, LayerFlow creates a default workspace and default domains.
 8. Better Auth creates a session record and sends a secure session cookie.
 9. The browser stores that cookie.
-10. Matching requests to `https://api…/api/*` include the cookie.
+10. Matching requests to `https://api.layerflow.dev/api/*` include the cookie.
 11. The API resolves the session to a user and workspace membership.
 12. Every protected query is scoped to that workspace.
 

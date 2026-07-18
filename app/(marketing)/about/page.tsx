@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   title: "About",
   description:
     "LayerFlow is the AI workspace for prompts, models, and cost control — built for developers and AI power users.",
+  alternates: { canonical: "/about" },
+  openGraph: { url: "/about" },
 };
 
 export default function AboutPage() {

@@ -48,7 +48,7 @@ Build a backend that:
 | Fly | Railway | Slightly simpler DX; Fly wins for multi-region / gateway scale story. |
 | Upstash | Redis on Fly | Fine when you outgrow serverless Redis pricing. |
 
-**Frontend ↔ API:** Next.js calls `https://api.layerflow…` with session cookie or Bearer. Same origin via reverse proxy optional later.
+**Frontend ↔ API:** The app at `https://layerflow.dev` calls `https://api.layerflow.dev` with a session cookie or bearer token.
 
 ---
 
@@ -159,7 +159,7 @@ CompareJob 1──* CompareResult *──1 Run
 
 Style: **REST + JSON** on Hono. (tRPC is fine *inside* the Next app only; public gateway must stay OpenAI-compatible REST.)
 
-Base: `https://api…/v1` for gateway; `https://api…/api` for workspace (or `/api/v1/...`).
+Base: `https://api.layerflow.dev/v1` for the gateway and `https://api.layerflow.dev/api` for workspace APIs.
 
 ### Auth
 

@@ -48,7 +48,7 @@ Both groups inherit from the **root** `app/layout.tsx` (fonts, metadata, theme b
 | `lib/mock-data.ts` | Demo user, domains, projects, prompts with versions, budget, compare results, gateway config |
 | `lib/mock-data.ts` helpers | e.g. `getPrompt(id)`, `getProject(id)` — pages call these instead of an API |
 
-When the backend ships (see [backend.md](backend.md)), pages will replace mock imports with `fetch('https://api…/api/...')` or a small client wrapper.
+When the backend is connected (see [backend.md](backend.md)), pages replace mock imports with a typed client that calls `https://api.layerflow.dev/api/...`.
 
 ### Theme: light default, `lf-theme`, ThemeToggle
 

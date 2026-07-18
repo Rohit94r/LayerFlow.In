@@ -17,6 +17,8 @@ export const metadata: Metadata = {
   title: "Documentation",
   description:
     "Learn how to organize prompts, compare models, enforce AI budgets, and use the LayerFlow OpenAI-compatible gateway.",
+  alternates: { canonical: "/docs" },
+  openGraph: { url: "/docs" },
 };
 
 const sections = [

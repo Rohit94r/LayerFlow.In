@@ -64,6 +64,15 @@ The database/Redis URLs already match docker compose defaults.
    - Authorized redirect URI: **`http://localhost:8787/api/auth/callback/google`**
 4. Copy the client ID and secret into `apps/api/.env`.
 
+For production, add these values to the same Google OAuth client:
+
+- Authorized JavaScript origins: `https://layerflow.dev` and `https://api.layerflow.dev`
+- Authorized redirect URI: `https://api.layerflow.dev/api/auth/callback/google`
+
+Set `BETTER_AUTH_URL` and `API_URL` to `https://api.layerflow.dev`, set
+`WEB_URL` and `CORS_ORIGINS` to `https://layerflow.dev`, and keep the generated
+hosting URL out of application configuration.
+
 ### 5. Create the database tables
 
 ```bash
