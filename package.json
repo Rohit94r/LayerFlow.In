@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "description": "LayerFlow — the production infrastructure platform for AI applications.",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
