@@ -47,10 +47,10 @@ export default function Steps() {
             models — outputs and costs appear instantly.
           </p>
           <a
-            href={site.workspaceHref}
+            href={site.signInHref}
             className="group mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand"
           >
-            Open your workspace
+            Sign in to start
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
           </a>
         </div>

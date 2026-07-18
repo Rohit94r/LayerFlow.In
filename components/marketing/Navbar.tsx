@@ -247,10 +247,10 @@ export default function Navbar() {
               Pricing
             </Link>
             <Link
-              href={site.workspaceHref}
+              href={site.signInHref}
               className="hidden rounded-full bg-white px-4 py-2 text-sm font-normal text-black transition-transform hover:scale-[1.02] sm:inline-flex"
             >
-              Open workspace
+              Sign in
             </Link>
             <button
               aria-label="Toggle menu"
@@ -350,11 +350,11 @@ export default function Navbar() {
                   Pricing
                 </Link>
                 <Link
-                  href={site.workspaceHref}
+                  href={site.signInHref}
                   onClick={closeAll}
                   className="flex-1 rounded-full bg-white px-4 py-2 text-center text-sm font-medium text-black"
                 >
-                  Open workspace
+                  Sign in
                 </Link>
               </div>
             </div>

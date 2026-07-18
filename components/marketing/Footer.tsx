@@ -11,7 +11,7 @@ import Logo from "./Logo";
 import Reveal from "./Reveal";
 
 const socials = [
-  { icon: BookOpen, label: "Docs", href: "#" },
+  { icon: BookOpen, label: "Docs", href: "/docs" },
   { icon: Linkedin, label: "LinkedIn", href: "#" },
   { icon: Youtube, label: "YouTube", href: "#" },
   { icon: MessageCircle, label: "Discord", href: "#" },
@@ -33,10 +33,10 @@ export default function Footer() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link
-                href={site.workspaceHref}
+                href={site.signInHref}
                 className="btn-primary group inline-flex items-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold"
               >
-                Open workspace
+                Sign in with Google
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link

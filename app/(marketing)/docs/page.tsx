@@ -24,6 +24,7 @@ export const metadata: Metadata = {
 const sections = [
   { href: "#overview", label: "Overview" },
   { href: "#quickstart", label: "Quickstart" },
+  { href: "#workflow", label: "Full workflow" },
   { href: "#workspace", label: "Prompt workspace" },
   { href: "#models", label: "Models and BYOK" },
   { href: "#gateway", label: "AI gateway" },
@@ -120,10 +121,10 @@ export default function DocsPage() {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
-            href="/workspace"
+            href="/sign-in"
             className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-medium text-black"
           >
-            Open workspace
+            Sign in
             <ArrowRight className="h-4 w-4" />
           </Link>
           <a
@@ -182,9 +183,62 @@ export default function DocsPage() {
             />
             <ol className="mt-8 space-y-4">
               {[
-                ["Sign in with Google", "LayerFlow creates your account, default workspace, settings, budget, and starter domains."],
-                ["Add a provider key", "Open Settings and add your OpenAI, Anthropic, Gemini, or another supported provider key. It is encrypted before storage."],
+                ["Sign in with Google", "Open /sign-in and continue with Google. LayerFlow creates your account, default workspace, settings, budget, and starter domains."],
+                ["Add a provider key", "Open Settings → Provider keys and add your OpenAI, Anthropic, Gemini, or another supported provider key. It is encrypted before storage."],
                 ["Create and run a prompt", "Save a prompt, choose a model, review the token and cost estimate, then run or compare it."],
+              ].map(([title, text], index) => (
+                <li
+                  key={title}
+                  className="flex gap-4 rounded-xl border border-border p-5"
+                >
+                  <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-brand/10 text-sm font-medium text-brand">
+                    {index + 1}
+                  </span>
+                  <div>
+                    <h3 className="text-base font-medium text-ink">{title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-muted">{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section id="workflow" className="scroll-mt-28">
+            <SectionTitle
+              eyebrow="Full workflow"
+              title="From first login to gateway key"
+              description="Follow this order the first time you use LayerFlow. You can always return to Settings to rotate keys or raise budgets."
+            />
+            <ol className="mt-8 space-y-4">
+              {[
+                [
+                  "Sign in",
+                  "Use Continue with Google. After the OAuth callback you land in the workspace home.",
+                ],
+                [
+                  "Create a project and prompt",
+                  "Pick a domain (Coding, Marketing, …), create a project, then New prompt. Every save writes an immutable Timeline version.",
+                ],
+                [
+                  "Connect a provider key",
+                  "Settings → Provider keys. Paste your BYOK secret once. LayerFlow never returns the full key later.",
+                ],
+                [
+                  "Get a model suggestion",
+                  "Open a prompt — the analysis panel estimates tokens/cost and recommends a cheaper suitable model.",
+                ],
+                [
+                  "Run and compare",
+                  "Run uses your selected model with hard budget checks. Compare polls a background job across multiple models.",
+                ],
+                [
+                  "Set a budget",
+                  "Cost / Budget → update monthly and daily limits. When the cap is hit, runs return 402 before the provider is called.",
+                ],
+                [
+                  "Create a LayerFlow gateway key",
+                  "Settings → Create key. Copy the lf_ secret immediately, then call https://api.layerflow.dev/v1 from your app.",
+                ],
               ].map(([title, text], index) => (
                 <li
                   key={title}
@@ -366,10 +420,10 @@ npm run dev --workspace @layerflow/api`}</CodeBlock>
               Open the workspace to create your first project and prompt.
             </p>
             <Link
-              href="/workspace"
+              href="/sign-in"
               className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"
             >
-              Open workspace
+              Sign in to open workspace
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

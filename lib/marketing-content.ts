@@ -6,6 +6,7 @@ export const site = {
   tagline: "The AI workspace for prompts, models, and cost",
   docsCommand: "npm install @layerflow/sdk",
   workspaceHref: "/workspace",
+  signInHref: "/sign-in",
   pricingHref: "/pricing",
 };
 
@@ -435,12 +436,29 @@ export const posts = [
   },
 ];
 
-export const pricingTiers = [
+export type PricingTier = {
+  name: string;
+  /** Displayed amount users pay now (₹0 while launch pricing is free). */
+  price: string;
+  /** Original list price — shown struck through when launch pricing is free. */
+  originalPrice?: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
+  href: string;
+  highlighted: boolean;
+  /** When true, plan is not available yet — no payment, no signup CTA. */
+  comingSoon?: boolean;
+};
+
+export const pricingTiers: PricingTier[] = [
   {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Generous personal workspace for getting started.",
+    name: "Basic",
+    originalPrice: "₹499",
+    price: "₹0",
+    period: "/ month",
+    description: "Personal workspace to organize prompts and stay under budget.",
     features: [
       "Unlimited personal projects",
       "Prompt Timeline & Compare",
@@ -449,12 +467,13 @@ export const pricingTiers = [
       "Hard budget limits",
     ],
     cta: "Start free",
-    href: "/workspace",
+    href: "/sign-in",
     highlighted: false,
   },
   {
     name: "Pro",
-    price: "$19",
+    originalPrice: "₹1,999",
+    price: "₹0",
     period: "/ month",
     description: "For developers and AI power users who live in prompts.",
     features: [
@@ -464,15 +483,16 @@ export const pricingTiers = [
       "BYOK + SDK access",
       "Priority support",
     ],
-    cta: "Get Pro",
-    href: "/workspace",
+    cta: "Get Pro free",
+    href: "/sign-in",
     highlighted: true,
   },
   {
-    name: "Team",
-    price: "$49",
+    name: "Advanced",
+    originalPrice: "₹4,999",
+    price: "₹0",
     period: "/ month",
-    description: "Shared workspace when your team is ready.",
+    description: "Shared workspace, teams, and advanced controls — launching soon.",
     features: [
       "Everything in Pro",
       "Shared prompt libraries",
@@ -480,9 +500,10 @@ export const pricingTiers = [
       "Team cost dashboard",
       "Role-based access",
     ],
-    cta: "Contact us",
-    href: "/about",
+    cta: "Coming soon",
+    href: "#",
     highlighted: false,
+    comingSoon: true,
   },
 ];
 

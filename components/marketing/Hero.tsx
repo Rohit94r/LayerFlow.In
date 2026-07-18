@@ -114,10 +114,10 @@ export default function Hero() {
             className="mt-10 flex flex-wrap items-center justify-center gap-4"
           >
             <a
-              href={site.workspaceHref}
+              href={site.signInHref}
               className="rounded-xl bg-white px-6 py-4 text-base font-medium text-black transition-transform hover:scale-[1.02]"
             >
-              Open workspace
+              Sign in with Google
             </a>
             <a
               href={site.pricingHref}
