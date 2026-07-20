@@ -217,14 +217,21 @@ export default function SignInForm() {
                 <p className="mt-1 text-xs leading-5 opacity-90">
                   {!localDev ? (
                     <>
-                      The live API at api.layerflow.dev is starting up. You can
-                      still try signing in — we&apos;ll retry automatically.
+                      You are on the live site. Production API DNS (
+                      api.layerflow.dev) is not set up yet. Open{" "}
+                      <a
+                        className="underline"
+                        href="http://localhost:3000/sign-in"
+                      >
+                        http://localhost:3000/sign-in
+                      </a>{" "}
+                      after running <code className="font-mono">npm run dev</code>.
                     </>
                   ) : (
                     <>
-                      Start the API with <code className="font-mono">npm run dev</code> in
-                      the LayerFlow folder, then try again. We&apos;ll keep
-                      checking in the background.
+                      Local API is not reachable. In the LayerFlow folder run{" "}
+                      <code className="font-mono">npm run dev</code>, wait for
+                      “API connected”, then try again.
                     </>
                   )}
                 </p>

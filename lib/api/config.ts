@@ -1,15 +1,19 @@
-/** True when the browser (or host string) is a local development host. */
+/** True when the browser (or host string) is a local / private development host. */
 export function isLocalWebHost(hostname?: string): boolean {
   const host =
     hostname ??
     (typeof window !== "undefined" ? window.location.hostname : undefined);
   if (!host) return false;
-  return (
+  if (
     host === "localhost" ||
     host === "127.0.0.1" ||
     host === "::1" ||
     host.endsWith(".local")
-  );
+  ) {
+    return true;
+  }
+  // LAN IPs used when opening the app from a phone/other device on the network.
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(host);
 }
 
 /**

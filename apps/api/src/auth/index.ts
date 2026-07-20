@@ -41,7 +41,8 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     autoSignIn: true,
   },
-  socialPlatforms:
+  // Better Auth option name is `socialProviders` (not socialPlatforms).
+  socialProviders:
     env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
       ? {
           google: {
