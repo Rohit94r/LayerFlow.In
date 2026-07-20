@@ -2,6 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  serverExternalPackages: [
+    "pg",
+    "drizzle-orm",
+    "better-auth",
+    "@better-auth/drizzle-adapter",
+    "ioredis",
+  ],
   compiler: {
     removeConsole: process.env.NODE_ENV === "production",
   },

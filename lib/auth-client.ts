@@ -1,7 +1,7 @@
 "use client";
 
 import { createAuthClient } from "better-auth/react";
-import { getApiBaseUrl } from "@/lib/api/config";
+import { getAuthBaseUrl } from "@/lib/api/config";
 
 type AuthClient = ReturnType<typeof createAuthClient>;
 
@@ -13,7 +13,7 @@ let cachedClient: AuthClient | null = null;
  * Rebuilt when the API base URL changes (localhost vs production).
  */
 export function getAuthClient(): AuthClient {
-  const baseURL = getApiBaseUrl();
+  const baseURL = getAuthBaseUrl();
   if (!cachedClient || cachedBaseUrl !== baseURL) {
     cachedBaseUrl = baseURL;
     cachedClient = createAuthClient({

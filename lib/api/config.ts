@@ -26,7 +26,31 @@ export function isProductionWebHost(hostname?: string): boolean {
 }
 
 /**
- * Resolve the Hono API base URL for the browser.
+ * Better Auth base URL — local uses the Hono API; production web uses same-origin
+ * (layerflow.dev/api/auth) until api.layerflow.dev is deployed.
+ */
+export function getAuthBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    if (isLocalWebHost(window.location.hostname)) {
+      return "http://localhost:8787";
+    }
+    if (isProductionWebHost(window.location.hostname)) {
+      return window.location.origin;
+    }
+  }
+
+  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:8787";
+  }
+
+  return process.env.WEB_URL?.replace(/\/$/, "") || "https://layerflow.dev";
+}
+
+/**
+ * Resolve the Hono API base URL for workspace/gateway calls.
  *
  * On localhost/LAN we ALWAYS use the local API, even if a production
  * `NEXT_PUBLIC_API_URL` was baked into a build or set in Vercel.

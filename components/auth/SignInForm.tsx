@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/marketing/ThemeToggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
 import { signIn, signUp } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
-import { getApiBaseUrl, isLocalWebHost, isProductionWebHost, pingApi } from "@/lib/api/config";
+import { getApiBaseUrl, getAuthBaseUrl, isLocalWebHost, isProductionWebHost, pingApi } from "@/lib/api/config";
 
 type Mode = "signin" | "signup";
 
@@ -76,7 +76,7 @@ export default function SignInForm() {
   }, [checkApi]);
 
   const authBlocked = productionSite && apiUp === false;
-  const apiLabel = localDev ? getApiBaseUrl() : apiUpstream ?? "https://api.layerflow.dev";
+  const apiLabel = localDev ? getAuthBaseUrl() : apiUpstream ?? getAuthBaseUrl();
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -257,22 +257,18 @@ export default function SignInForm() {
                 <p className="mt-1 text-xs leading-5 opacity-90">
                   {productionSite ? (
                     <>
-                      The website is on Vercel, but the <strong>API is not
-                      live</strong> yet. Deploy it once, then add DNS:
-                      <br />
-                      <code className="mt-1 block font-mono text-[11px]">
-                        flyctl auth login
+                      Full API (<code className="font-mono">api.layerflow.dev</code>)
+                      is not live yet. Sign-in uses same-origin auth on{" "}
+                      <strong>layerflow.dev</strong> if Vercel has DATABASE_URL,
+                      BETTER_AUTH_SECRET, GOOGLE_CLIENT_* set. Add Google redirect:{" "}
+                      <code className="font-mono text-[10px]">
+                        https://layerflow.dev/api/auth/callback/google
                       </code>
-                      <code className="block font-mono text-[11px]">
-                        bash scripts/deploy-api-prod.sh
-                      </code>
-                      Then add <strong>CNAME api → layerflow-api.fly.dev</strong>{" "}
-                      at your registrar. Until{" "}
-                      <code className="font-mono">api.layerflow.dev</code> resolves,
-                      use{" "}
+                      . For local dev:{" "}
                       <a className="underline" href="http://localhost:3000/sign-in">
                         localhost:3000/sign-in
-                      </a>.
+                      </a>
+                      .
                     </>
                   ) : (
                     <>
