@@ -288,12 +288,6 @@ export default function SignInForm() {
               </div>
             )}
 
-            {apiUp === true && (
-              <p className="mt-4 text-center font-mono text-[11px] text-brand-2">
-                API connected · {apiLabel}
-              </p>
-            )}
-
             {/* Email / Password form */}
             <form onSubmit={handleEmailAuth} className="mt-6 space-y-3" noValidate>
               {mode === "signup" && (
