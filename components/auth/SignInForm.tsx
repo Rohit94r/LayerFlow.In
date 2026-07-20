@@ -56,12 +56,15 @@ export default function SignInForm() {
     setLocalDev(isLocalWebHost(host));
     setProductionSite(isProductionWebHost(host));
 
-    // API may start a few seconds after Next — retry quickly on local dev.
+    const onProd = isProductionWebHost(host);
+
+    // API may start a few seconds after Next (local) or after Fly cold start (prod).
     let cancelled = false;
+    const maxAttempts = onProd ? 6 : 8;
     const run = async (attempt: number) => {
       const ok = await checkApi();
-      if (cancelled || ok || attempt >= 8) return;
-      setTimeout(() => void run(attempt + 1), 1500);
+      if (cancelled || ok || attempt >= maxAttempts) return;
+      setTimeout(() => void run(attempt + 1), onProd ? 3000 : 1500);
     };
     void run(0);
 
@@ -254,15 +257,22 @@ export default function SignInForm() {
                 <p className="mt-1 text-xs leading-5 opacity-90">
                   {productionSite ? (
                     <>
-                      You opened <strong>layerflow.dev</strong>. The API at{" "}
-                      <code className="font-mono">api.layerflow.dev</code> is not
-                      deployed yet (no DNS). Sign-in is disabled here until you
-                      deploy the API (Fly.io) and add the DNS record. For
-                      development, use{" "}
+                      The website is on Vercel, but the <strong>API is not
+                      live</strong> yet. Deploy it once, then add DNS:
+                      <br />
+                      <code className="mt-1 block font-mono text-[11px]">
+                        flyctl auth login
+                      </code>
+                      <code className="block font-mono text-[11px]">
+                        bash scripts/deploy-api-prod.sh
+                      </code>
+                      Then add <strong>CNAME api → layerflow-api.fly.dev</strong>{" "}
+                      at your registrar. Until{" "}
+                      <code className="font-mono">api.layerflow.dev</code> resolves,
+                      use{" "}
                       <a className="underline" href="http://localhost:3000/sign-in">
                         localhost:3000/sign-in
-                      </a>{" "}
-                      with <code className="font-mono">npm run dev</code>.
+                      </a>.
                     </>
                   ) : (
                     <>

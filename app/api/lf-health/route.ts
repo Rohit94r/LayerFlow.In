@@ -13,8 +13,9 @@ export async function GET() {
       : process.env.NEXT_PUBLIC_API_URL?.trim() || "https://api.layerflow.dev");
 
   const base = target.replace(/\/$/, "");
+  const timeoutMs = isProd ? 12_000 : 4_000;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4_000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(`${base}/health/live`, {

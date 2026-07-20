@@ -17,7 +17,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:prod": "bash scripts/check-production.sh",
+    "deploy:api": "bash scripts/deploy-api-prod.sh"
   },
   "dependencies": {
     "@layerflow/contracts": "*",
