@@ -9,17 +9,16 @@ import ThemeToggle from "@/components/marketing/ThemeToggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
 import { signIn, signUp } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
-import { getApiBaseUrl, isLocalWebHost, pingApi } from "@/lib/api/config";
+import { getApiBaseUrl, isLocalWebHost, isProductionWebHost, pingApi } from "@/lib/api/config";
 
 type Mode = "signin" | "signup";
 
-function friendlyError(err: unknown): string {
+function friendlyError(err: unknown, onProduction: boolean): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
-    const api = getApiBaseUrl();
-    if (typeof window !== "undefined" && !isLocalWebHost()) {
-      return `Production API (${api}) is not reachable yet. For local sign-in, open http://localhost:3000/sign-in with \`npm run dev\` running.`;
+    if (onProduction) {
+      return "Production API (api.layerflow.dev) is not online yet. Sign-in will work after the API is deployed to Fly.io and DNS is added. For now, use http://localhost:3000/sign-in with npm run dev.";
     }
-    return `Could not reach the LayerFlow API at ${api}. Keep \`npm run dev\` running, then try again.`;
+    return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Run npm run dev in the LayerFlow folder and wait for "API connected".`;
   }
   if (err instanceof ApiClientError) return err.message;
   if (err instanceof Error && err.message) return err.message;
@@ -35,6 +34,8 @@ export default function SignInForm() {
   const [info, setInfo] = useState<string | null>(null);
   const [apiUp, setApiUp] = useState<boolean | null>(null);
   const [localDev, setLocalDev] = useState(true);
+  const [productionSite, setProductionSite] = useState(false);
+  const [apiUpstream, setApiUpstream] = useState<string | null>(null);
 
   // Email/password form state
   const [name, setName] = useState("");
@@ -44,17 +45,35 @@ export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   const checkApi = useCallback(async () => {
-    const ok = await pingApi();
-    setApiUp(ok);
-    return ok;
+    const result = await pingApi();
+    setApiUp(result.ok);
+    if (result.upstream) setApiUpstream(result.upstream);
+    return result.ok;
   }, []);
 
   useEffect(() => {
-    setLocalDev(isLocalWebHost());
-    void checkApi();
+    const host = window.location.hostname;
+    setLocalDev(isLocalWebHost(host));
+    setProductionSite(isProductionWebHost(host));
+
+    // API may start a few seconds after Next — retry quickly on local dev.
+    let cancelled = false;
+    const run = async (attempt: number) => {
+      const ok = await checkApi();
+      if (cancelled || ok || attempt >= 8) return;
+      setTimeout(() => void run(attempt + 1), 1500);
+    };
+    void run(0);
+
     const id = setInterval(() => void checkApi(), 10_000);
-    return () => clearInterval(id);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [checkApi]);
+
+  const authBlocked = productionSite && apiUp === false;
+  const apiLabel = localDev ? getApiBaseUrl() : apiUpstream ?? "https://api.layerflow.dev";
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -92,11 +111,19 @@ export default function SignInForm() {
 
     setLoading(true);
 
-    // Soft check — warn but don't block.
+    if (authBlocked) {
+      setError(
+        "Production API is not deployed yet. Deploy apps/api to Fly.io and add api.layerflow.dev DNS (see docs/deployment.md).",
+      );
+      setLoading(false);
+      return;
+    }
+
+    // Soft check — warn but don't block on local.
     const ok = await checkApi();
     if (!ok) {
       setInfo(
-        `Heads up: the API health check failed. Still trying ${mode === "signup" ? "sign-up" : "sign-in"} via ${getApiBaseUrl()}…`,
+        `Heads up: the API health check failed. Still trying ${mode === "signup" ? "sign-up" : "sign-in"} via ${apiLabel}…`,
       );
     }
 
@@ -135,7 +162,7 @@ export default function SignInForm() {
         window.location.href = `${window.location.origin}${dest}`;
       }
     } catch (err) {
-      setError(friendlyError(err));
+      setError(friendlyError(err, productionSite));
       setLoading(false);
     }
   };
@@ -145,10 +172,18 @@ export default function SignInForm() {
     setError(null);
     setInfo(null);
 
-    // Soft check only — never block sign-in on a false "offline" probe.
+    if (authBlocked) {
+      setError(
+        "Production API is not deployed yet. Deploy apps/api to Fly.io and add api.layerflow.dev DNS (see docs/deployment.md).",
+      );
+      setLoading(false);
+      return;
+    }
+
+    // Soft check only — never block sign-in on a false "offline" probe (local).
     const ok = await checkApi();
     if (!ok) {
-      setInfo(`Heads up: API health check failed. Still trying Google sign-in via ${getApiBaseUrl()}…`);
+      setInfo(`Heads up: API health check failed. Still trying Google sign-in via ${apiLabel}…`);
     }
 
     try {
@@ -165,7 +200,7 @@ export default function SignInForm() {
       }
       // Successful redirect — keep loading spinner until navigation.
     } catch (err) {
-      setError(friendlyError(err));
+      setError(friendlyError(err, productionSite));
       setLoading(false);
     }
   };
@@ -211,27 +246,29 @@ export default function SignInForm() {
             {apiUp === false && (
               <div
                 role="status"
-                className="mt-5 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-left text-sm text-sky-600 dark:text-sky-400"
+                className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-700 dark:text-amber-400"
               >
-                <p className="font-medium">Connecting to the API…</p>
+                <p className="font-medium">
+                  {productionSite ? "Production API is offline" : "Local API not connected"}
+                </p>
                 <p className="mt-1 text-xs leading-5 opacity-90">
-                  {!localDev ? (
+                  {productionSite ? (
                     <>
-                      You are on the live site. Production API DNS (
-                      api.layerflow.dev) is not set up yet. Open{" "}
-                      <a
-                        className="underline"
-                        href="http://localhost:3000/sign-in"
-                      >
-                        http://localhost:3000/sign-in
+                      You opened <strong>layerflow.dev</strong>. The API at{" "}
+                      <code className="font-mono">api.layerflow.dev</code> is not
+                      deployed yet (no DNS). Sign-in is disabled here until you
+                      deploy the API (Fly.io) and add the DNS record. For
+                      development, use{" "}
+                      <a className="underline" href="http://localhost:3000/sign-in">
+                        localhost:3000/sign-in
                       </a>{" "}
-                      after running <code className="font-mono">npm run dev</code>.
+                      with <code className="font-mono">npm run dev</code>.
                     </>
                   ) : (
                     <>
-                      Local API is not reachable. In the LayerFlow folder run{" "}
-                      <code className="font-mono">npm run dev</code>, wait for
-                      “API connected”, then try again.
+                      Run <code className="font-mono">npm run dev</code> in the
+                      LayerFlow folder (starts web + API). Target:{" "}
+                      <code className="font-mono">{apiLabel}</code>
                     </>
                   )}
                 </p>
@@ -247,7 +284,7 @@ export default function SignInForm() {
 
             {apiUp === true && (
               <p className="mt-4 text-center font-mono text-[11px] text-brand-2">
-                API connected
+                API connected · {apiLabel}
               </p>
             )}
 
@@ -321,7 +358,7 @@ export default function SignInForm() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || authBlocked}
                 className="btn-primary flex w-full items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-60"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -346,7 +383,7 @@ export default function SignInForm() {
             <button
               type="button"
               onClick={() => void handleGoogle()}
-              disabled={loading}
+              disabled={loading || authBlocked}
               className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface/80 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}

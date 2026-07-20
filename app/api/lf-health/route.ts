@@ -9,7 +9,7 @@ export async function GET() {
   const target =
     process.env.API_INTERNAL_URL?.trim() ||
     (!isProd
-      ? "http://127.0.0.1:8787"
+      ? "http://localhost:8787"
       : process.env.NEXT_PUBLIC_API_URL?.trim() || "https://api.layerflow.dev");
 
   const base = target.replace(/\/$/, "");
