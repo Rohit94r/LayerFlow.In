@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { findApiKeyBySecret, touchApiKeyLastUsed } from "../services/keys/api-keys";
 import type { AppEnv } from "../types";
-import { AppError } from "./error";
+import { AppError } from "./app-error";
 
 /**
  * Bearer API-key guard for /v1/* routes.

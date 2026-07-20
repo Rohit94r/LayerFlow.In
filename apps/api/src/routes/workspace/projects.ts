@@ -11,7 +11,7 @@ import {
 import { db } from "../../db/client";
 import { projects } from "../../db/schema/workspace";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { recordActivity } from "../../services/workspace/activity";
 import type { AppEnv } from "../../types";
 

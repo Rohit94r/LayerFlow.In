@@ -14,7 +14,7 @@ import {
   learningPaths,
   lessons,
 } from "../../db/schema/learning";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 
 export function toPathDto(
   row: typeof learningPaths.$inferSelect,

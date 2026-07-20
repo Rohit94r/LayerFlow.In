@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ApiClientError, apiFetch } from "@/lib/api/client";
+import { getApiBaseUrl, getGatewayBaseUrl } from "@/lib/api/config";
 import { microToUsd, usdToMicro } from "@/lib/api/money";
 import { mapBudget, initialsFromName } from "@/lib/api/mappers";
 import { resolveInitialTheme, THEME_STORAGE_KEY } from "@/lib/theme";
@@ -40,6 +41,36 @@ describe("mappers", () => {
     expect(budget.spent).toBe(10);
     expect(budget.remaining).toBe(40);
     expect(budget.dailySpent).toBe(1);
+  });
+});
+
+describe("getApiBaseUrl", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("uses local API on localhost even when prod NEXT_PUBLIC_API_URL is set", () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.layerflow.dev");
+    expect(window.location.hostname).toMatch(/localhost|127\.0\.0\.1/);
+    expect(getApiBaseUrl()).toBe("http://localhost:8787");
+  });
+
+  it("uses same-origin on layerflow.dev even when NEXT_PUBLIC_API_URL points at Fly", () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.layerflow.dev");
+    const original = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...original, hostname: "layerflow.dev", origin: "https://layerflow.dev" },
+    });
+    try {
+      expect(getApiBaseUrl()).toBe("https://layerflow.dev");
+      expect(getGatewayBaseUrl()).toBe("https://layerflow.dev/v1");
+    } finally {
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: original,
+      });
+    }
   });
 });
 

@@ -1,5 +1,5 @@
 import { getEnv } from "../../config/env";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 
 /**
  * Optional ElevenLabs text-to-speech service.

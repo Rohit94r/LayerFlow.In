@@ -6,7 +6,7 @@ import type {
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { comments, likes } from "../../db/schema/community";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { notify } from "./notifications";
 
 async function likeCount(

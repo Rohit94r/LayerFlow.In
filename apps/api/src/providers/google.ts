@@ -1,4 +1,4 @@
-import { AppError } from "../middleware/error";
+import { AppError } from "../middleware/app-error";
 import type { ChatCompletionRequest, ChatCompletionResult, ProviderAdapter } from "./types";
 
 /**

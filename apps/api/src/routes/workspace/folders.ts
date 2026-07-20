@@ -11,7 +11,7 @@ import {
 import { db } from "../../db/client";
 import { folders } from "../../db/schema/workspace";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import type { AppEnv } from "../../types";
 
 export const foldersRouter = new Hono<AppEnv>();

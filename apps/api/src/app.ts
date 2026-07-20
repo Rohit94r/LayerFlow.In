@@ -9,7 +9,7 @@ import { auth } from "./auth";
 import { buildTrustedOrigins } from "./auth/config";
 import { getEnv } from "./config/env";
 import { db } from "./db/client";
-import { AppError, handleError, handleNotFound } from "./middleware/error";
+import { AppError, handleError, handleNotFound } from "./middleware/app-error";
 import { requestId } from "./middleware/request-id";
 import { redis } from "./redis/client";
 import { registerRoutes } from "./routes";

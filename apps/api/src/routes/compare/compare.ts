@@ -11,7 +11,7 @@ import { promptVersions } from "../../db/schema/prompts";
 import { compareJobs, compareResults, runs } from "../../db/schema/runs";
 import { enqueue } from "../../jobs/queues";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { toRunDetailDto } from "../../services/runs/dto";
 import type { AppEnv } from "../../types";
 

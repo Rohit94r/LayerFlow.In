@@ -2,7 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { CreateProviderKeyRequest, ProviderKey } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { providerKeys } from "../../db/schema/gateway";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { decryptSecret, encryptSecret } from "../crypto";
 
 function toProviderKeyDto(row: typeof providerKeys.$inferSelect): ProviderKey {

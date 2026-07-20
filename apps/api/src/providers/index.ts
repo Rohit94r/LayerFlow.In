@@ -1,5 +1,5 @@
 import { resolveProvider, type Provider } from "@layerflow/model-registry";
-import { AppError } from "../middleware/error";
+import { AppError } from "../middleware/app-error";
 import { anthropicAdapter } from "./anthropic";
 import { deepseekAdapter } from "./deepseek";
 import { googleAdapter } from "./google";

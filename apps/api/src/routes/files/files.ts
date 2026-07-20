@@ -17,7 +17,7 @@ import { createId } from "../../db/schema/_helpers";
 import { files } from "../../db/schema/files";
 import { promptAttachments } from "../../db/schema/prompts";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import {
   buildObjectKey,
   createR2DownloadUrl,

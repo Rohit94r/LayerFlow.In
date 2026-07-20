@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { BudgetScope, UpdateBudgetScopesRequest } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { budgetScopes } from "../../db/schema/cost";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { getOrCreateCurrentBudget } from "./current";
 
 function toScopeDto(row: typeof budgetScopes.$inferSelect): BudgetScope {

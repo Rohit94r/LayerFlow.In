@@ -21,7 +21,7 @@ import { analyzePrompt } from "../../intelligence/analyze";
 import { recommend } from "../../intelligence/recommend";
 import { routeModel } from "../../intelligence/route";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import type { AppEnv } from "../../types";
 
 export const intelligenceRouter = new Hono<AppEnv>();

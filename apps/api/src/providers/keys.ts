@@ -3,7 +3,7 @@ import type { Provider } from "@layerflow/model-registry";
 import { db } from "../db/client";
 import { getEnv } from "../config/env";
 import { providerKeys } from "../db/schema/gateway";
-import { AppError } from "../middleware/error";
+import { AppError } from "../middleware/app-error";
 import { decryptSecret } from "../services/crypto";
 
 /**

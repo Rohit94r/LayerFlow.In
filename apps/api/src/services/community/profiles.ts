@@ -2,7 +2,7 @@ import { and, eq, sql } from "drizzle-orm";
 import type { Profile, UpdateProfileRequest } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { follows, profiles } from "../../db/schema/community";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 
 async function followerCounts(userId: string): Promise<{
   followerCount: number;

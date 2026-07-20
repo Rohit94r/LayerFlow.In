@@ -10,7 +10,7 @@ import { releaseBudget, reserveBudget, settleBudget } from "../budgets/enforce";
 import { db } from "../db/client";
 import { gatewayLogs } from "../db/schema/gateway";
 import { requireApiKey } from "../middleware/api-key-auth";
-import { AppError } from "../middleware/error";
+import { AppError } from "../middleware/app-error";
 import { rateLimit } from "../middleware/rate-limit";
 import {
   loadProviderApiKey,

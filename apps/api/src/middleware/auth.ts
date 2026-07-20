@@ -3,7 +3,7 @@ import { auth } from "../auth";
 import { db } from "../db/client";
 import { onboardNewUser } from "../services/onboarding";
 import type { AppEnv } from "../types";
-import { AppError } from "./error";
+import { AppError } from "./app-error";
 
 /**
  * Session guard for /api/* routes.

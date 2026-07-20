@@ -10,7 +10,7 @@ import { db } from "../../db/client";
 import { promptVersions } from "../../db/schema/prompts";
 import { runs } from "../../db/schema/runs";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { executeRun, RunExecutionError } from "../../services/runs/execute";
 import { toRunDetailDto, toRunDto } from "../../services/runs/dto";
 import type { AppEnv } from "../../types";

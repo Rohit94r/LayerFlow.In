@@ -385,7 +385,7 @@ apps/api/
 - **Model pricing** comes from `@layerflow/model-registry`
   (`getModelPricing`, `resolveProvider`, `computeCostMicro`).
 - **Errors**: throw `new AppError(status, code, message)` from
-  `src/middleware/error.ts`; every error response has the shape
+  `src/middleware/app-error.ts`; every error response has the shape
   `{ error: { code, message } }`.
 - **New routes**: copy `src/routes/workspace/workspaces.ts`, then mount the
   router in `src/routes/index.ts`.

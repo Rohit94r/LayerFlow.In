@@ -3,7 +3,7 @@ import type { ClonePromptResponse } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { collectionItems, collections, promptClones } from "../../db/schema/community";
 import { prompts, promptTags, promptVersions } from "../../db/schema/prompts";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { notify } from "./notifications";
 
 /**

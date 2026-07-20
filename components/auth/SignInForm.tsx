@@ -16,7 +16,7 @@ type Mode = "signin" | "signup";
 function friendlyError(err: unknown, onProduction: boolean): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
     if (onProduction) {
-      return "Production API (api.layerflow.dev) is not online yet. Sign-in will work after the API is deployed to Fly.io and DNS is added. For now, use http://localhost:3000/sign-in with npm run dev.";
+      return "Could not reach LayerFlow auth. Check that Vercel has DATABASE_URL, BETTER_AUTH_SECRET, and WEB_URL set, then redeploy.";
     }
     return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Run npm run dev in the LayerFlow folder and wait for "API connected".`;
   }
@@ -116,7 +116,7 @@ export default function SignInForm() {
 
     if (authBlocked) {
       setError(
-        "Production API is not deployed yet. Deploy apps/api to Fly.io and add api.layerflow.dev DNS (see docs/deployment.md).",
+        "LayerFlow backend is not ready on this host. Confirm Vercel env (DATABASE_URL, BETTER_AUTH_*, WEB_URL) and redeploy.",
       );
       setLoading(false);
       return;
@@ -177,7 +177,7 @@ export default function SignInForm() {
 
     if (authBlocked) {
       setError(
-        "Production API is not deployed yet. Deploy apps/api to Fly.io and add api.layerflow.dev DNS (see docs/deployment.md).",
+        "LayerFlow backend is not ready on this host. Confirm Vercel env (DATABASE_URL, BETTER_AUTH_*, WEB_URL) and redeploy.",
       );
       setLoading(false);
       return;
@@ -252,22 +252,21 @@ export default function SignInForm() {
                 className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-700 dark:text-amber-400"
               >
                 <p className="font-medium">
-                  {productionSite ? "Production API is offline" : "Local API not connected"}
+                  {productionSite ? "Backend health check failed" : "Local API not connected"}
                 </p>
                 <p className="mt-1 text-xs leading-5 opacity-90">
                   {productionSite ? (
                     <>
-                      Full API (<code className="font-mono">api.layerflow.dev</code>)
-                      is not live yet. Sign-in uses same-origin auth on{" "}
-                      <strong>layerflow.dev</strong> if Vercel has DATABASE_URL,
-                      BETTER_AUTH_SECRET, GOOGLE_CLIENT_* set. Add Google redirect:{" "}
+                      Could not verify the database on{" "}
+                      <strong>layerflow.dev</strong>. Workspace API runs
+                      same-origin (no{" "}
+                      <code className="font-mono">api.layerflow.dev</code>{" "}
+                      required). Confirm Vercel has DATABASE_URL,
+                      BETTER_AUTH_SECRET, WEB_URL, and GOOGLE_CLIENT_* set.
+                      Google redirect:{" "}
                       <code className="font-mono text-[10px]">
                         https://layerflow.dev/api/auth/callback/google
                       </code>
-                      . For local dev:{" "}
-                      <a className="underline" href="http://localhost:3000/sign-in">
-                        localhost:3000/sign-in
-                      </a>
                       .
                     </>
                   ) : (

@@ -11,7 +11,7 @@ import {
 import { db } from "../../db/client";
 import { routingRules } from "../../db/schema/intelligence";
 import { requireAuth } from "../../middleware/auth";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import type { AppEnv } from "../../types";
 
 export const routingRulesRouter = new Hono<AppEnv>();

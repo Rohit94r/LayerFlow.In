@@ -9,7 +9,7 @@ import type {
 import { db } from "../../db/client";
 import { collectionItems, collections } from "../../db/schema/community";
 import { prompts } from "../../db/schema/prompts";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 
 async function itemCount(collectionId: string): Promise<number> {
   const [row] = await db

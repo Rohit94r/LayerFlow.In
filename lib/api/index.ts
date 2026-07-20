@@ -75,8 +75,7 @@ import {
   type AdminAnalyticsResponse,
 } from "@layerflow/contracts";
 import type { z } from "zod";
-import { apiFetch, ApiClientError } from "./client";
-import { isProductionWebHost } from "./config";
+import { apiFetch } from "./client";
 
 type AnalyzePromptInput = z.input<typeof analyzePromptRequestSchema>;
 type RecommendInput = z.input<typeof recommendRequestSchema>;
@@ -366,38 +365,7 @@ export function search(query: { q: string; type?: string; limit?: number }) {
 
 // ── Admin ──────────────────────────────────────────────────
 
-/**
- * Admin analytics. Local → Hono API (auth cookie on :8787).
- * Production web → same-origin Next route (auth cookie on layerflow.dev).
- */
-export async function getAdminAnalytics(): Promise<AdminAnalyticsResponse> {
-  if (typeof window !== "undefined" && isProductionWebHost(window.location.hostname)) {
-    const res = await fetch("/api/admin/analytics", {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      let message = res.statusText || `Request failed (${res.status})`;
-      let code = `http_${res.status}`;
-      try {
-        const json: unknown = await res.json();
-        const err = json as { error?: { message?: string; code?: string } };
-        if (err?.error?.message) message = err.error.message;
-        if (err?.error?.code) code = err.error.code;
-      } catch {
-        // ignore
-      }
-      throw new ApiClientError(res.status, code, message);
-    }
-    const json: unknown = await res.json();
-    const parsed = adminAnalyticsResponseSchema.safeParse(json);
-    if (!parsed.success) {
-      throw new ApiClientError(500, "invalid_response", "Unexpected admin analytics response");
-    }
-    return parsed.data;
-  }
-
+/** Admin analytics (local → :8787; production → same-origin Hono / Next). */
+export function getAdminAnalytics(): Promise<AdminAnalyticsResponse> {
   return apiFetch("/api/admin/analytics", {}, adminAnalyticsResponseSchema);
 }

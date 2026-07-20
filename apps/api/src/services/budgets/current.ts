@@ -3,7 +3,7 @@ import type { Budget, CurrentBudgetResponse } from "@layerflow/contracts";
 import { getLiveDailySpent, getLiveMonthlySpent, currentPeriod } from "../../budgets/enforce";
 import { db } from "../../db/client";
 import { budgets } from "../../db/schema/cost";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 
 function toBudgetDto(row: typeof budgets.$inferSelect): Budget {
   return {

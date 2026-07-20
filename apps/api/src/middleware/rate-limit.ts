@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { redis } from "../redis/client";
 import type { AppEnv } from "../types";
-import { AppError } from "./error";
+import { AppError } from "./app-error";
 
 export interface RateLimitOptions {
   requestsPerMinute: number;

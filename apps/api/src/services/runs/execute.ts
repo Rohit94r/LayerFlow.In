@@ -4,7 +4,7 @@ import type { RunMessage, RunSource } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { promptOutputs, prompts, promptVersions } from "../../db/schema/prompts";
 import { runs } from "../../db/schema/runs";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import {
   loadProviderApiKey,
   resolveProviderFromModel,

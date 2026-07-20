@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import { auth } from "../auth";
 import { isAdminEmail } from "../config/admin";
 import type { AppEnv } from "../types";
-import { AppError } from "./error";
+import { AppError } from "./app-error";
 
 /**
  * Email allowlist check. Mount after `requireAuth` so userId/workspaceId

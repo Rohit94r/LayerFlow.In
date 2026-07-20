@@ -2,7 +2,7 @@ import { and, eq, isNull } from "drizzle-orm";
 import type { ApiKey, CreateApiKeyRequest } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { apiKeys } from "../../db/schema/gateway";
-import { AppError } from "../../middleware/error";
+import { AppError } from "../../middleware/app-error";
 import { generateApiKey, hashApiKey } from "../crypto";
 
 function toApiKeyDto(row: typeof apiKeys.$inferSelect): ApiKey {

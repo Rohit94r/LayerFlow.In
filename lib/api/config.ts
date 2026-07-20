@@ -52,12 +52,27 @@ export function getAuthBaseUrl(): string {
 /**
  * Resolve the Hono API base URL for workspace/gateway calls.
  *
- * On localhost/LAN we ALWAYS use the local API, even if a production
- * `NEXT_PUBLIC_API_URL` was baked into a build or set in Vercel.
+ * - Localhost/LAN → always `http://localhost:8787` (even if a prod
+ *   `NEXT_PUBLIC_API_URL` was baked into the client bundle).
+ * - Production web (`layerflow.dev`) → same-origin. The Next.js app mounts
+ *   Hono under `/api/*` and `/v1/*` until api.layerflow.dev (Fly) is live.
+ *   Ignoring `NEXT_PUBLIC_API_URL=https://api.layerflow.dev` avoids DNS
+ *   failures that previously broke every workspace page with "Try again".
  */
 export function getApiBaseUrl(): string {
-  if (typeof window !== "undefined" && isLocalWebHost(window.location.hostname)) {
-    return "http://localhost:8787";
+  if (typeof window !== "undefined") {
+    if (isLocalWebHost(window.location.hostname)) {
+      return "http://localhost:8787";
+    }
+    if (isProductionWebHost(window.location.hostname)) {
+      return window.location.origin;
+    }
+  }
+
+  // Server-side on Vercel: same-origin as the web host (cookies + DB).
+  if (process.env.VERCEL === "1") {
+    const web = process.env.WEB_URL?.trim()?.replace(/\/$/, "");
+    if (web) return web;
   }
 
   const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
@@ -67,7 +82,7 @@ export function getApiBaseUrl(): string {
     return "http://localhost:8787";
   }
 
-  return "https://api.layerflow.dev";
+  return process.env.WEB_URL?.replace(/\/$/, "") || "https://layerflow.dev";
 }
 
 /** OpenAI-compatible gateway base (…/v1). */

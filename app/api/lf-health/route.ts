@@ -4,7 +4,8 @@ import { sql } from "drizzle-orm";
 /**
  * Same-origin API liveness probe for the sign-in page.
  * Local/dev probes localhost:8787. Production tries api.layerflow.dev first,
- * then falls back to same-origin Better Auth on Vercel (layerflow.dev/api/auth).
+ * then falls back to same-origin DB/auth on Vercel (workspace API is mounted
+ * under layerflow.dev/api/* via the Hono catch-all).
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ async function probeSameOriginAuth(webUrl: string) {
     return {
       ok: true as const,
       upstream: webUrl,
-      mode: "same-origin-auth" as const,
+      mode: "same-origin-api" as const,
       status: "ok",
     };
   } catch (err) {
