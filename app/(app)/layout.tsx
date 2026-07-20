@@ -1,24 +1,8 @@
-"use client";
+import AppShell from "./AppShell";
 
-import AppSidebar from "@/components/workspace/AppSidebar";
-import AppTopBar from "@/components/workspace/AppTopBar";
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import { AuthProvider } from "@/lib/auth-provider";
+/** Auth-gated workspace — skip static prerender (Better Auth hooks need a request). */
+export const dynamic = "force-dynamic";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider>
-      <AuthGuard>
-        <div className="app-shell flex h-screen overflow-hidden">
-          <AppSidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <AppTopBar />
-            <main className="flex-1 overflow-y-auto">
-              <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
-            </main>
-          </div>
-        </div>
-      </AuthGuard>
-    </AuthProvider>
-  );
+  return <AppShell>{children}</AppShell>;
 }

@@ -1,5 +1,9 @@
+import BudgetClient from "./BudgetClient";
+
 export const metadata = {
   title: "Budget",
 };
 
-export { default } from "./BudgetClient";
+export default function BudgetPage() {
+  return <BudgetClient />;
+}

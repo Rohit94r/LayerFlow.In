@@ -90,6 +90,14 @@ export default function BudgetClient() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (state.status !== "success" || !state.data) return;
+    const { budget } = state.data;
+    setMonthlyLimit(String(budget.monthlyLimit));
+    setDailyLimit(String(budget.dailyLimit));
+    setAlertAt(String(budget.alertThreshold));
+  }, [state.status, state.data]);
+
   if (state.status === "loading") return <LoadingState label="Loading budget…" />;
   if (state.status === "error") {
     return <ErrorState message={errorMessage(state.error)} onRetry={state.reload} />;
@@ -99,12 +107,6 @@ export default function BudgetClient() {
   const currentPrefer = preferCheap ?? data.settings.preferCheap;
   const currentRules = rules ?? data.rules;
   const totalModelSpend = data.spendByModel.reduce((s, m) => s + m.spent, 0) || 1;
-
-  useEffect(() => {
-    setMonthlyLimit(String(data.budget.monthlyLimit));
-    setDailyLimit(String(data.budget.dailyLimit));
-    setAlertAt(String(data.budget.alertThreshold));
-  }, [data.budget.monthlyLimit, data.budget.dailyLimit, data.budget.alertThreshold]);
 
   const toggleRule = async (id: string) => {
     const rule = currentRules.find((r) => r.id === id);
