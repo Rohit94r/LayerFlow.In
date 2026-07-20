@@ -9,11 +9,15 @@ import ThemeToggle from "@/components/marketing/ThemeToggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
 import { signIn } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
-import { getApiBaseUrl, pingApi } from "@/lib/api/config";
+import { getApiBaseUrl, isLocalWebHost, pingApi } from "@/lib/api/config";
 
 function friendlyError(err: unknown): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
-    return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Keep \`npm run dev\` running, then try again.`;
+    const api = getApiBaseUrl();
+    if (typeof window !== "undefined" && !isLocalWebHost()) {
+      return `Production API (${api}) is not reachable yet. For local sign-in, open http://localhost:3000/sign-in with \`npm run dev\` running.`;
+    }
+    return `Could not reach the LayerFlow API at ${api}. Keep \`npm run dev\` running, then try again.`;
   }
   if (err instanceof ApiClientError) return err.message;
   if (err instanceof Error && err.message) return err.message;
@@ -26,6 +30,7 @@ export default function SignInForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [apiUp, setApiUp] = useState<boolean | null>(null);
+  const [localDev, setLocalDev] = useState(true);
 
   const checkApi = useCallback(async () => {
     const ok = await pingApi();
@@ -34,6 +39,7 @@ export default function SignInForm() {
   }, []);
 
   useEffect(() => {
+    setLocalDev(isLocalWebHost());
     void checkApi();
     const id = setInterval(() => void checkApi(), 10_000);
     return () => clearInterval(id);
@@ -112,9 +118,24 @@ export default function SignInForm() {
               >
                 <p className="font-medium">API health check failed</p>
                 <p className="mt-1 text-xs leading-5 opacity-90">
-                  You can still try Google sign-in. If it fails, run{" "}
-                  <code className="font-mono">npm run dev</code> in the
-                  LayerFlow folder.
+                  {!localDev ? (
+                    <>
+                      The live API at api.layerflow.dev is not up yet. Use{" "}
+                      <a
+                        href="http://localhost:3000/sign-in"
+                        className="underline"
+                      >
+                        localhost:3000/sign-in
+                      </a>{" "}
+                      with <code className="font-mono">npm run dev</code>.
+                    </>
+                  ) : (
+                    <>
+                      You can still try Google sign-in. If it fails, run{" "}
+                      <code className="font-mono">npm run dev</code> in the
+                      LayerFlow folder.
+                    </>
+                  )}
                 </p>
                 <button
                   type="button"

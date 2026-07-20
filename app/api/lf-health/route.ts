@@ -2,13 +2,15 @@ import { NextResponse } from "next/server";
 
 /**
  * Same-origin API liveness probe for the sign-in page.
- * Avoids browser CORS / private-network blocks when checking the Hono API.
+ * In local/dev always probes 127.0.0.1:8787 — never the production API host.
  */
 export async function GET() {
+  const isProd = process.env.NODE_ENV === "production";
   const target =
     process.env.API_INTERNAL_URL?.trim() ||
-    process.env.NEXT_PUBLIC_API_URL?.trim() ||
-    "http://127.0.0.1:8787";
+    (!isProd
+      ? "http://127.0.0.1:8787"
+      : process.env.NEXT_PUBLIC_API_URL?.trim() || "https://api.layerflow.dev");
 
   const base = target.replace(/\/$/, "");
   const controller = new AbortController();

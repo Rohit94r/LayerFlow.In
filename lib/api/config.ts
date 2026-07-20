@@ -1,8 +1,38 @@
-/** Resolve the Hono API base URL used by the browser. */
+/** True when the browser (or host string) is a local development host. */
+export function isLocalWebHost(hostname?: string): boolean {
+  const host =
+    hostname ??
+    (typeof window !== "undefined" ? window.location.hostname : undefined);
+  if (!host) return false;
+  return (
+    host === "localhost" ||
+    host === "127.0.0.1" ||
+    host === "::1" ||
+    host.endsWith(".local")
+  );
+}
+
+/**
+ * Resolve the Hono API base URL for the browser.
+ *
+ * Critical: on localhost we ALWAYS use the local API, even if a production
+ * `NEXT_PUBLIC_API_URL` was baked into a build or set in Vercel. That was
+ * causing "Could not reach https://api.layerflow.dev" while developing.
+ */
 export function getApiBaseUrl(): string {
+  if (typeof window !== "undefined" && isLocalWebHost(window.location.hostname)) {
+    return "http://127.0.0.1:8787";
+  }
+
   const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
-  return "http://127.0.0.1:8787";
+
+  // Server-side during `next dev` — prefer local API.
+  if (process.env.NODE_ENV !== "production") {
+    return "http://127.0.0.1:8787";
+  }
+
+  return "https://api.layerflow.dev";
 }
 
 /** OpenAI-compatible gateway base (…/v1). */
