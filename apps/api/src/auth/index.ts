@@ -40,8 +40,30 @@ export const auth = betterAuth({
       clientSecret: env.GOOGLE_CLIENT_SECRET,
     },
   },
-  // Browser origins allowed to call the auth endpoints — exact list, no wildcards.
-  trustedOrigins: buildTrustedOrigins(env),
+  // Browser origins allowed to call the auth endpoints.
+  // In development, also accept private LAN hosts (Next.js "Network" URL).
+  trustedOrigins: async (request) => {
+    const base = buildTrustedOrigins(env);
+    if (env.NODE_ENV === "production") return base;
+    const origin = request?.headers?.get?.("origin");
+    if (!origin) return base;
+    try {
+      const { hostname, protocol } = new URL(origin);
+      const isLocal =
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname === "::1" ||
+        hostname.startsWith("192.168.") ||
+        hostname.startsWith("10.") ||
+        /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
+      if (isLocal && (protocol === "http:" || protocol === "https:")) {
+        return [...base, origin];
+      }
+    } catch {
+      // ignore
+    }
+    return base;
+  },
   advanced: {
     useSecureCookies: isProduction,
     ...(cookieDomain

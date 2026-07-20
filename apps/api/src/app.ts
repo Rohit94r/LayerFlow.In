@@ -79,14 +79,34 @@ export function createApp(): Hono<AppEnv> {
     }),
   );
 
-  // CORS must be registered before the auth handler and routes.
-  // Origins are an exact allow-list (no wildcards). Dev also allows
-  // localhost + 127.0.0.1 so Google sign-in does not fail with "Failed to fetch".
+  // CORS on ALL routes. In development, also reflect private LAN origins
+  // (e.g. http://192.168.x.x:3000) so opening Next's "Network" URL still works.
   const corsOrigins = buildTrustedOrigins(env);
   app.use(
-    "/api/*",
+    "*",
     cors({
-      origin: corsOrigins,
+      origin: (origin) => {
+        if (!origin) return corsOrigins[0] ?? "*";
+        if (corsOrigins.includes(origin)) return origin;
+        if (env.NODE_ENV !== "production") {
+          try {
+            const { hostname, protocol } = new URL(origin);
+            const isLocal =
+              hostname === "localhost" ||
+              hostname === "127.0.0.1" ||
+              hostname === "::1" ||
+              hostname.startsWith("192.168.") ||
+              hostname.startsWith("10.") ||
+              /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname);
+            if (isLocal && (protocol === "http:" || protocol === "https:")) {
+              return origin;
+            }
+          } catch {
+            // fall through
+          }
+        }
+        return null;
+      },
       allowHeaders: ["Content-Type", "Authorization"],
       allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length", "x-request-id"],

@@ -19,12 +19,15 @@ const [{ serve }, { createApp }, { logger }] = await Promise.all([
 
 const app = createApp();
 
-// Bind IPv4 explicitly so browsers hitting http://127.0.0.1:8787 work
-// (macOS Node can otherwise listen on IPv6-only and look "down").
+// Dual-stack (::) so both http://127.0.0.1:8787 and http://localhost:8787
+// work. macOS browsers often resolve localhost → ::1 first; IPv4-only bind
+// made the sign-in page falsely show "API offline".
 const server = serve(
-  { fetch: app.fetch, port: env.PORT, hostname: "0.0.0.0" },
+  { fetch: app.fetch, port: env.PORT, hostname: "::" },
   (info) => {
-    logger.info(`LayerFlow API listening on http://127.0.0.1:${info.port}`);
+    logger.info(
+      `LayerFlow API listening on http://127.0.0.1:${info.port} (also localhost)`,
+    );
   },
 );
 

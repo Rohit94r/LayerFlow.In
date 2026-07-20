@@ -13,7 +13,7 @@ import { getApiBaseUrl, pingApi } from "@/lib/api/config";
 
 function friendlyError(err: unknown): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
-    return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Run \`npm run dev\` from the project root (starts web + API together).`;
+    return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Keep \`npm run dev\` running, then try again.`;
   }
   if (err instanceof ApiClientError) return err.message;
   if (err instanceof Error && err.message) return err.message;
@@ -35,7 +35,7 @@ export default function SignInForm() {
 
   useEffect(() => {
     void checkApi();
-    const id = setInterval(() => void checkApi(), 8_000);
+    const id = setInterval(() => void checkApi(), 10_000);
     return () => clearInterval(id);
   }, [checkApi]);
 
@@ -43,13 +43,12 @@ export default function SignInForm() {
     setLoading(true);
     setError(null);
 
+    // Soft check only — never block sign-in on a false "offline" probe.
     const ok = await checkApi();
     if (!ok) {
       setError(
-        `API is not running on ${getApiBaseUrl()}. In the project folder run: npm run dev`,
+        `Warning: API health check failed. Still trying Google sign-in via ${getApiBaseUrl()}…`,
       );
-      setLoading(false);
-      return;
     }
 
     try {
@@ -62,7 +61,9 @@ export default function SignInForm() {
       if (result?.error) {
         setError(result.error.message || "Sign-in failed. Try again.");
         setLoading(false);
+        return;
       }
+      // Successful redirect — keep loading spinner until navigation.
     } catch (err) {
       setError(friendlyError(err));
       setLoading(false);
@@ -109,11 +110,11 @@ export default function SignInForm() {
                 role="status"
                 className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-600 dark:text-amber-400"
               >
-                <p className="font-medium">API offline</p>
+                <p className="font-medium">API health check failed</p>
                 <p className="mt-1 text-xs leading-5 opacity-90">
-                  Open a terminal in the LayerFlow folder and run{" "}
-                  <code className="font-mono">npm run dev</code> — that starts
-                  the website and the API together. Then click Retry.
+                  You can still try Google sign-in. If it fails, run{" "}
+                  <code className="font-mono">npm run dev</code> in the
+                  LayerFlow folder.
                 </p>
                 <button
                   type="button"
@@ -127,14 +128,14 @@ export default function SignInForm() {
 
             {apiUp === true && (
               <p className="mt-4 text-center font-mono text-[11px] text-brand-2">
-                API connected · {getApiBaseUrl().replace(/^https?:\/\//, "")}
+                API connected
               </p>
             )}
 
             <button
               type="button"
               onClick={() => void handleGoogle()}
-              disabled={loading || apiUp === false}
+              disabled={loading}
               className="btn-primary mt-7 flex w-full items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
