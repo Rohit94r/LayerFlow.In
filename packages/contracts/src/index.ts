@@ -18,3 +18,4 @@ export * from "./search";
 export * from "./memory";
 export * from "./learning";
 export * from "./community";
+export * from "./admin";

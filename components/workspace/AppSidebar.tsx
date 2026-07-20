@@ -12,11 +12,13 @@ import {
   Settings,
   Home,
   LogOut,
+  ChartColumn,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Logo from "@/components/marketing/Logo";
 import { useAuth } from "@/lib/auth-provider";
+import { isAdminEmail } from "@/lib/admin";
 import { useAsyncData } from "@/lib/hooks/use-async-data";
 import { getCurrentBudget } from "@/lib/api";
 import { mapBudget } from "@/lib/api/mappers";
@@ -66,6 +68,7 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const showAdmin = isAdminEmail(user?.email);
   const budgetState = useAsyncData(async () => mapBudget(await getCurrentBudget()), []);
 
   const budget = budgetState.data ?? emptyBudget;
@@ -74,6 +77,16 @@ export default function AppSidebar() {
     await signOut();
     router.replace("/sign-in");
   };
+
+  const sections = showAdmin
+    ? [
+        ...navSections,
+        {
+          label: "Admin",
+          items: [{ href: "/admin", label: "Analytics", icon: ChartColumn }],
+        },
+      ]
+    : navSections;
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-border bg-bg-soft">
@@ -85,7 +98,7 @@ export default function AppSidebar() {
       </div>
 
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-        {navSections.map((section) => (
+        {sections.map((section) => (
           <div key={section.label}>
             <p className="mb-1.5 px-3 text-[11px] font-medium uppercase tracking-wider text-faint">
               {section.label}

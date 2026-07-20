@@ -1,8 +1,16 @@
 import type { MetadataRoute } from "next";
+import { getAllPosts } from "@/lib/blog";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://layerflow.dev";
   const now = new Date();
+  const blogPosts = getAllPosts().map((post) => ({
+    url: `${base}/blog/${post.slug}`,
+    lastModified: new Date(post.updatedAt ?? post.publishedAt),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
   return [
     {
       url: base,
@@ -28,5 +36,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly",
       priority: 0.6,
     },
+    {
+      url: `${base}/blog`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    ...blogPosts,
   ];
 }

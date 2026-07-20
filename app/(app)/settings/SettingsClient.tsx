@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Copy, Check, Loader2, Trash2 } from "lucide-react";
 import PageHeader from "@/components/workspace/PageHeader";
@@ -8,6 +9,7 @@ import ExecutionModeToggle from "@/components/workspace/ExecutionModeToggle";
 import RoutingRules from "@/components/workspace/RoutingRules";
 import { ErrorState, LoadingState } from "@/components/workspace/DataState";
 import { useAuth } from "@/lib/auth-provider";
+import { isAdminEmail } from "@/lib/admin";
 import { useAsyncData, errorMessage } from "@/lib/hooks/use-async-data";
 import type { ExecutionMode } from "@/lib/types";
 import {
@@ -240,13 +242,23 @@ export default function SettingsClient() {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleSignOut}
-          className="btn-secondary mt-4 rounded-lg px-4 py-2 text-sm"
-        >
-          Sign out
-        </button>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {isAdminEmail(user?.email) && (
+            <Link
+              href="/admin"
+              className="btn-secondary rounded-lg px-4 py-2 text-sm"
+            >
+              Admin analytics
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="btn-secondary rounded-lg px-4 py-2 text-sm"
+          >
+            Sign out
+          </button>
+        </div>
       </div>
 
       <div className="card p-6">

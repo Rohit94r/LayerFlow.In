@@ -27,6 +27,7 @@ import { domainsRouter } from "./workspace/domains";
 import { foldersRouter } from "./workspace/folders";
 import { projectsRouter } from "./workspace/projects";
 import { workspacesRouter } from "./workspace/workspaces";
+import { adminRouter } from "./admin/analytics";
 
 /**
  * Route registration. Add new feature routers here:
@@ -37,6 +38,7 @@ import { workspacesRouter } from "./workspace/workspaces";
  * Sub-routers own their own middleware (requireAuth etc.).
  */
 export function registerRoutes(app: Hono<AppEnv>): void {
+  app.route("/api/admin", adminRouter);
   app.route("/api/workspaces", workspacesRouter);
   app.route("/api/domains", domainsRouter);
   app.route("/api/projects", projectsRouter);

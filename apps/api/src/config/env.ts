@@ -65,6 +65,11 @@ export const envSchema = z.object({
    * Derived from WEB_URL when unset.
    */
   COOKIE_DOMAIN: z.string().optional(),
+  /**
+   * Comma-separated admin emails for `/api/admin/*` (case-insensitive).
+   * Defaults to rjdhav67@gmail.com when unset — see config/admin.ts.
+   */
+  ADMIN_EMAILS: z.string().optional(),
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),

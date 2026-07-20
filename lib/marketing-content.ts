@@ -37,6 +37,7 @@ export type NavItem = {
 export const nav: NavItem[] = [
   { label: "Features", href: "/#features", menu: "features" },
   { label: "Docs", href: "/docs" },
+  { label: "Blog", href: "/blog" },
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
 ];
@@ -418,23 +419,7 @@ export const faqs = [
   },
 ];
 
-export const posts = [
-  {
-    date: "Jul 10, 2026",
-    title: "Why you need version control for your AI prompts",
-    tag: "Product",
-  },
-  {
-    date: "Jun 28, 2026",
-    title: "Hard budget limits: peace of mind for AI spend",
-    tag: "Product",
-  },
-  {
-    date: "Jun 5, 2026",
-    title: "GPT vs Claude vs Gemini: compare in one workspace",
-    tag: "Tutorial",
-  },
-];
+/** Homepage teaser posts — sourced from the full blog corpus at runtime in Blog.tsx */
 
 export type PricingTier = {
   name: string;
@@ -539,7 +524,7 @@ export const footerCols = [
     title: "Company",
     links: [
       { label: "About", href: "/about" },
-      { label: "Blog", href: "/#blog" },
+      { label: "Blog", href: "/blog" },
       { label: "Contact", href: "/about" },
     ],
   },
