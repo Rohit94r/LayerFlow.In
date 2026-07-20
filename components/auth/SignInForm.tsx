@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
@@ -9,10 +9,11 @@ import ThemeToggle from "@/components/marketing/ThemeToggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
 import { signIn } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
+import { getApiBaseUrl, pingApi } from "@/lib/api/config";
 
 function friendlyError(err: unknown): string {
-  if (err instanceof TypeError && /fetch/i.test(err.message)) {
-    return "Could not reach the LayerFlow API — is it running on port 8787?";
+  if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
+    return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Run \`npm run dev\` from the project root (starts web + API together).`;
   }
   if (err instanceof ApiClientError) return err.message;
   if (err instanceof Error && err.message) return err.message;
@@ -24,16 +25,40 @@ export default function SignInForm() {
   const next = searchParams.get("next") || "/workspace";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [apiUp, setApiUp] = useState<boolean | null>(null);
+
+  const checkApi = useCallback(async () => {
+    const ok = await pingApi();
+    setApiUp(ok);
+    return ok;
+  }, []);
+
+  useEffect(() => {
+    void checkApi();
+    const id = setInterval(() => void checkApi(), 8_000);
+    return () => clearInterval(id);
+  }, [checkApi]);
 
   const handleGoogle = async () => {
     setLoading(true);
     setError(null);
+
+    const ok = await checkApi();
+    if (!ok) {
+      setError(
+        `API is not running on ${getApiBaseUrl()}. In the project folder run: npm run dev`,
+      );
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signIn.social({
         provider: "google",
-        callbackURL: next.startsWith("/") ? `${window.location.origin}${next}` : next,
+        callbackURL: next.startsWith("/")
+          ? `${window.location.origin}${next}`
+          : next,
       });
-      // Better Auth resolves with an error object instead of throwing on 4xx/5xx.
       if (result?.error) {
         setError(result.error.message || "Sign-in failed. Try again.");
         setLoading(false);
@@ -46,7 +71,6 @@ export default function SignInForm() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-bg">
-      {/* Animated flow-field: streams converge into the auth card */}
       <SignInFlowField />
       <div
         aria-hidden
@@ -61,7 +85,6 @@ export default function SignInForm() {
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col-reverse items-center justify-center gap-12 px-6 pb-16 pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-10">
-        {/* Left: brand + headline */}
         <section className="w-full max-w-xl text-center lg:text-left">
           <h1 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.4rem]">
             The workspace for everything you do with AI
@@ -72,7 +95,6 @@ export default function SignInForm() {
           </p>
         </section>
 
-        {/* Right: auth card the streams flow into */}
         <section className="w-full max-w-sm lg:shrink-0">
           <div className="rounded-2xl border border-border bg-surface p-8 shadow-[var(--card-shadow)] backdrop-blur-sm">
             <h2 className="text-center text-xl font-semibold tracking-tight text-ink">
@@ -82,10 +104,37 @@ export default function SignInForm() {
               One account for prompts, budgets, and the gateway.
             </p>
 
+            {apiUp === false && (
+              <div
+                role="status"
+                className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-600 dark:text-amber-400"
+              >
+                <p className="font-medium">API offline</p>
+                <p className="mt-1 text-xs leading-5 opacity-90">
+                  Open a terminal in the LayerFlow folder and run{" "}
+                  <code className="font-mono">npm run dev</code> — that starts
+                  the website and the API together. Then click Retry.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void checkApi()}
+                  className="mt-2 text-xs font-medium underline"
+                >
+                  Retry connection
+                </button>
+              </div>
+            )}
+
+            {apiUp === true && (
+              <p className="mt-4 text-center font-mono text-[11px] text-brand-2">
+                API connected · {getApiBaseUrl().replace(/^https?:\/\//, "")}
+              </p>
+            )}
+
             <button
               type="button"
-              onClick={handleGoogle}
-              disabled={loading}
+              onClick={() => void handleGoogle()}
+              disabled={loading || apiUp === false}
               className="btn-primary mt-7 flex w-full items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}

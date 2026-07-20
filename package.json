@@ -8,7 +8,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently -k -n web,api -c cyan,magenta \"npm run dev:web\" \"npm run dev:api\"",
+    "dev:web": "next dev",
+    "dev:api": "npm run dev --workspace @layerflow/api",
+    "dev:worker": "npm run worker --workspace @layerflow/api",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -31,6 +34,7 @@
     "@types/node": "^22.10.5",
     "@types/react": "^19.0.4",
     "@types/react-dom": "^19.0.2",
+    "concurrently": "^9.2.4",
     "eslint": "^9.18.0",
     "eslint-config-next": "^16.2.10",
     "happy-dom": "^18.0.1",

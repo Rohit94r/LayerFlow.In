@@ -47,8 +47,34 @@ export function deriveCookieDomain(env: Pick<Env, "NODE_ENV" | "COOKIE_DOMAIN" |
 /**
  * Origins allowed to call the auth endpoints: the exact CORS allow-list plus
  * the web and API origins themselves. Deduplicated, no wildcards.
+ *
+ * In development we also allow both localhost and 127.0.0.1 on the web port —
+ * browsers often switch between them, and a mismatch causes "Failed to fetch".
  */
-export function buildTrustedOrigins(env: Pick<Env, "CORS_ORIGINS" | "WEB_URL" | "API_URL">): string[] {
+export function buildTrustedOrigins(
+  env: Pick<Env, "NODE_ENV" | "CORS_ORIGINS" | "WEB_URL" | "API_URL">,
+): string[] {
   const normalize = (u: string) => new URL(u).origin;
-  return [...new Set([...env.CORS_ORIGINS.map(normalize), normalize(env.WEB_URL), normalize(env.API_URL)])];
+  const origins = [
+    ...env.CORS_ORIGINS.map(normalize),
+    normalize(env.WEB_URL),
+    normalize(env.API_URL),
+  ];
+
+  if (env.NODE_ENV !== "production") {
+    try {
+      const web = new URL(env.WEB_URL);
+      const port = web.port || (web.protocol === "https:" ? "443" : "80");
+      origins.push(
+        `http://localhost:${port}`,
+        `http://127.0.0.1:${port}`,
+        `http://localhost:3000`,
+        `http://127.0.0.1:3000`,
+      );
+    } catch {
+      origins.push("http://localhost:3000", "http://127.0.0.1:3000");
+    }
+  }
+
+  return [...new Set(origins)];
 }

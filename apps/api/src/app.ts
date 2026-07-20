@@ -6,6 +6,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { timeout } from "hono/timeout";
 import { MAX_FILE_SIZE_BYTES } from "@layerflow/contracts";
 import { auth } from "./auth";
+import { buildTrustedOrigins } from "./auth/config";
 import { getEnv } from "./config/env";
 import { db } from "./db/client";
 import { AppError, handleError, handleNotFound } from "./middleware/error";
@@ -43,7 +44,8 @@ const fileBodyLimit = bodyLimit({
 async function dependencyChecks(): Promise<{ ok: boolean; checks: { db: boolean; redis: boolean } }> {
   const checks = { db: false, redis: false };
   try {
-    await withTimeout(db.execute(sql`select 1`), 2_000);
+    // Neon pooler can take several seconds after idle — keep this generous.
+    await withTimeout(db.execute(sql`select 1`), 8_000);
     checks.db = true;
   } catch {
     // reported below
@@ -78,11 +80,13 @@ export function createApp(): Hono<AppEnv> {
   );
 
   // CORS must be registered before the auth handler and routes.
-  // Origins are an exact allow-list from CORS_ORIGINS (no wildcards).
+  // Origins are an exact allow-list (no wildcards). Dev also allows
+  // localhost + 127.0.0.1 so Google sign-in does not fail with "Failed to fetch".
+  const corsOrigins = buildTrustedOrigins(env);
   app.use(
     "/api/*",
     cors({
-      origin: env.CORS_ORIGINS,
+      origin: corsOrigins,
       allowHeaders: ["Content-Type", "Authorization"],
       allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       exposeHeaders: ["Content-Length", "x-request-id"],

@@ -55,10 +55,23 @@ describe("auth production config helpers", () => {
 
   it("buildTrustedOrigins dedupes and includes web + api origins", () => {
     const origins = buildTrustedOrigins({
+      NODE_ENV: "production",
       CORS_ORIGINS: ["https://layerflow.dev", "https://layerflow.dev"],
       WEB_URL: "https://layerflow.dev",
       API_URL: "https://api.layerflow.dev",
     });
     expect(origins).toEqual(["https://layerflow.dev", "https://api.layerflow.dev"]);
+  });
+
+  it("buildTrustedOrigins adds localhost and 127.0.0.1 in development", () => {
+    const origins = buildTrustedOrigins({
+      NODE_ENV: "development",
+      CORS_ORIGINS: ["http://localhost:3000"],
+      WEB_URL: "http://localhost:3000",
+      API_URL: "http://localhost:8787",
+    });
+    expect(origins).toContain("http://localhost:3000");
+    expect(origins).toContain("http://127.0.0.1:3000");
+    expect(origins).toContain("http://localhost:8787");
   });
 });

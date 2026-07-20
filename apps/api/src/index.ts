@@ -19,9 +19,14 @@ const [{ serve }, { createApp }, { logger }] = await Promise.all([
 
 const app = createApp();
 
-const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  logger.info(`LayerFlow API listening on http://localhost:${info.port}`);
-});
+// Bind IPv4 explicitly so browsers hitting http://127.0.0.1:8787 work
+// (macOS Node can otherwise listen on IPv6-only and look "down").
+const server = serve(
+  { fetch: app.fetch, port: env.PORT, hostname: "0.0.0.0" },
+  (info) => {
+    logger.info(`LayerFlow API listening on http://127.0.0.1:${info.port}`);
+  },
+);
 
 /**
  * Graceful shutdown: stop accepting connections, then close DB/Redis and

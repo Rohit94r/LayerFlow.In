@@ -7,6 +7,9 @@ import { getApiBaseUrl } from "@/lib/api/config";
  */
 export const authClient = createAuthClient({
   baseURL: getApiBaseUrl(),
+  fetchOptions: {
+    credentials: "include",
+  },
 });
 
 export const { signIn, signOut, useSession } = authClient;
