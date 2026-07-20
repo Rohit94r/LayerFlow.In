@@ -22,7 +22,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen items-center justify-center bg-bg">
         <div className="text-center">
           <p className="text-sm font-medium text-ink">Loading session…</p>
-          <p className="mt-1 text-xs text-muted">Checking your Google sign-in</p>
+          <p className="mt-1 text-xs text-muted">Checking your sign-in</p>
         </div>
       </div>
     );

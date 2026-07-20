@@ -4,7 +4,7 @@ import SignInForm from "@/components/auth/SignInForm";
 
 export const metadata: Metadata = {
   title: "Sign in",
-  description: "Sign in to LayerFlow with Google to open your AI workspace.",
+  description: "Sign in to LayerFlow with email and password or Google to open your AI workspace.",
   robots: { index: false, follow: false },
 };
 

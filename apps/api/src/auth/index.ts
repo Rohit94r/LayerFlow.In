@@ -12,7 +12,7 @@ const isProduction = env.NODE_ENV === "production";
 const cookieDomain = deriveCookieDomain(env);
 
 /**
- * Better Auth instance — Google OAuth only, sessions in Postgres.
+ * Better Auth instance — email/password + optional Google OAuth, sessions in Postgres.
  * Mounted at /api/auth/* in src/index.ts.
  * Google console redirect URI: {API_URL}/api/auth/callback/google
  *
@@ -34,12 +34,22 @@ export const auth = betterAuth({
       verification: schema.verificationTokens,
     },
   }),
-  socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    maxPasswordLength: 128,
+    requireEmailVerification: false,
+    autoSignIn: true,
   },
+  socialPlatforms:
+    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : undefined,
   // Browser origins allowed to call the auth endpoints.
   // In development, also accept private LAN hosts (Next.js "Network" URL).
   trustedOrigins: async (request) => {
@@ -80,8 +90,8 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        // First Google login → default workspace, membership, settings,
-        // budget, and the 9 default domains.
+        // First sign-up (Google or email/password) → default workspace,
+        // membership, settings, budget, and the 9 default domains.
         after: async (user) => {
           try {
             await onboardNewUser(user);

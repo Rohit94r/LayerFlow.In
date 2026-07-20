@@ -9,7 +9,7 @@ let cachedBaseUrl: string | null = null;
 let cachedClient: AuthClient | null = null;
 
 /**
- * Better Auth browser client — Google-only.
+ * Better Auth browser client — email/password + Google.
  * Rebuilt when the API base URL changes (localhost vs production).
  */
 export function getAuthClient(): AuthClient {
@@ -30,6 +30,13 @@ export function getAuthClient(): AuthClient {
 export const signIn = {
   social: (...args: Parameters<AuthClient["signIn"]["social"]>) =>
     getAuthClient().signIn.social(...args),
+  email: (...args: Parameters<AuthClient["signIn"]["email"]>) =>
+    getAuthClient().signIn.email(...args),
+};
+
+export const signUp = {
+  email: (...args: Parameters<AuthClient["signUp"]["email"]>) =>
+    getAuthClient().signUp.email(...args),
 };
 
 export const signOut = (...args: Parameters<AuthClient["signOut"]>) =>

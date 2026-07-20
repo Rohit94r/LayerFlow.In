@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from "lucide-react";
 import Logo from "@/components/marketing/Logo";
 import ThemeToggle from "@/components/marketing/ThemeToggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
-import { signIn } from "@/lib/auth-client";
+import { signIn, signUp } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
 import { getApiBaseUrl, isLocalWebHost, pingApi } from "@/lib/api/config";
+
+type Mode = "signin" | "signup";
 
 function friendlyError(err: unknown): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
@@ -27,10 +29,19 @@ function friendlyError(err: unknown): string {
 export default function SignInForm() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/workspace";
+  const [mode, setMode] = useState<Mode>("signin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [apiUp, setApiUp] = useState<boolean | null>(null);
   const [localDev, setLocalDev] = useState(true);
+
+  // Email/password form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const checkApi = useCallback(async () => {
     const ok = await pingApi();
@@ -45,16 +56,99 @@ export default function SignInForm() {
     return () => clearInterval(id);
   }, [checkApi]);
 
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    setError(null);
+    setInfo(null);
+  };
+
+  const validateForm = (): string | null => {
+    if (mode === "signup") {
+      if (!name.trim()) return "Please enter your name.";
+      if (name.trim().length < 2) return "Name must be at least 2 characters.";
+    }
+    if (!email.trim()) return "Please enter your email.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return "Please enter a valid email address.";
+    }
+    if (!password) return "Please enter a password.";
+    if (password.length < 8) return "Password must be at least 8 characters.";
+    if (mode === "signup" && password !== confirmPassword) {
+      return "Passwords do not match.";
+    }
+    return null;
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
+
+    // Soft check — warn but don't block.
+    const ok = await checkApi();
+    if (!ok) {
+      setInfo(
+        `Heads up: the API health check failed. Still trying ${mode === "signup" ? "sign-up" : "sign-in"} via ${getApiBaseUrl()}…`,
+      );
+    }
+
+    try {
+      if (mode === "signup") {
+        const result = await signUp.email({
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          callbackURL: next.startsWith("/")
+            ? `${window.location.origin}${next}`
+            : next,
+        });
+        if (result?.error) {
+          setError(result.error.message || "Sign-up failed. Try again.");
+          setLoading(false);
+          return;
+        }
+        // Success — better-auth auto-signs-in when enabled; redirect.
+        const dest = next.startsWith("/") ? next : "/workspace";
+        window.location.href = `${window.location.origin}${dest}`;
+      } else {
+        const result = await signIn.email({
+          email: email.trim(),
+          password,
+          callbackURL: next.startsWith("/")
+            ? `${window.location.origin}${next}`
+            : next,
+        });
+        if (result?.error) {
+          setError(result.error.message || "Sign-in failed. Try again.");
+          setLoading(false);
+          return;
+        }
+        const dest = next.startsWith("/") ? next : "/workspace";
+        window.location.href = `${window.location.origin}${dest}`;
+      }
+    } catch (err) {
+      setError(friendlyError(err));
+      setLoading(false);
+    }
+  };
+
   const handleGoogle = async () => {
     setLoading(true);
     setError(null);
+    setInfo(null);
 
     // Soft check only — never block sign-in on a false "offline" probe.
     const ok = await checkApi();
     if (!ok) {
-      setError(
-        `Warning: API health check failed. Still trying Google sign-in via ${getApiBaseUrl()}…`,
-      );
+      setInfo(`Heads up: API health check failed. Still trying Google sign-in via ${getApiBaseUrl()}…`);
     }
 
     try {
@@ -105,35 +199,32 @@ export default function SignInForm() {
         <section className="w-full max-w-sm lg:shrink-0">
           <div className="rounded-2xl border border-border bg-surface p-8 shadow-[var(--card-shadow)] backdrop-blur-sm">
             <h2 className="text-center text-xl font-semibold tracking-tight text-ink">
-              Sign in to LayerFlow
+              {mode === "signin" ? "Sign in to LayerFlow" : "Create your LayerFlow account"}
             </h2>
             <p className="mt-2 text-center text-sm text-muted">
-              One account for prompts, budgets, and the gateway.
+              {mode === "signin"
+                ? "One account for prompts, budgets, and the gateway."
+                : "Free to start. No credit card required."}
             </p>
 
+            {/* Soft API notice — informational, never blocks */}
             {apiUp === false && (
               <div
                 role="status"
-                className="mt-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-left text-sm text-amber-600 dark:text-amber-400"
+                className="mt-5 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-left text-sm text-sky-600 dark:text-sky-400"
               >
-                <p className="font-medium">API health check failed</p>
+                <p className="font-medium">Connecting to the API…</p>
                 <p className="mt-1 text-xs leading-5 opacity-90">
                   {!localDev ? (
                     <>
-                      The live API at api.layerflow.dev is not up yet. Use{" "}
-                      <a
-                        href="http://localhost:3000/sign-in"
-                        className="underline"
-                      >
-                        localhost:3000/sign-in
-                      </a>{" "}
-                      with <code className="font-mono">npm run dev</code>.
+                      The live API at api.layerflow.dev is starting up. You can
+                      still try signing in — we&apos;ll retry automatically.
                     </>
                   ) : (
                     <>
-                      You can still try Google sign-in. If it fails, run{" "}
-                      <code className="font-mono">npm run dev</code> in the
-                      LayerFlow folder.
+                      Start the API with <code className="font-mono">npm run dev</code> in
+                      the LayerFlow folder, then try again. We&apos;ll keep
+                      checking in the background.
                     </>
                   )}
                 </p>
@@ -153,15 +244,143 @@ export default function SignInForm() {
               </p>
             )}
 
+            {/* Email / Password form */}
+            <form onSubmit={handleEmailAuth} className="mt-6 space-y-3" noValidate>
+              {mode === "signup" && (
+                <Field
+                  icon={<UserIcon className="h-4 w-4" />}
+                  label="Name"
+                >
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                    autoComplete="name"
+                    disabled={loading}
+                    className="w-full bg-transparent text-sm text-ink placeholder:text-faint focus:outline-none"
+                  />
+                </Field>
+              )}
+
+              <Field icon={<Mail className="h-4 w-4" />} label="Email">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                  disabled={loading}
+                  className="w-full bg-transparent text-sm text-ink placeholder:text-faint focus:outline-none"
+                />
+              </Field>
+
+              <Field icon={<Lock className="h-4 w-4" />} label="Password">
+                <div className="flex w-full items-center">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder={mode === "signup" ? "At least 8 characters" : "Your password"}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    disabled={loading}
+                    className="w-full bg-transparent text-sm text-ink placeholder:text-faint focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    className="ml-1 text-faint hover:text-muted"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </Field>
+
+              {mode === "signup" && (
+                <Field icon={<Lock className="h-4 w-4" />} label="Confirm password">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    autoComplete="new-password"
+                    disabled={loading}
+                    className="w-full bg-transparent text-sm text-ink placeholder:text-faint focus:outline-none"
+                  />
+                </Field>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary flex w-full items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-60"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading
+                  ? mode === "signup"
+                    ? "Creating account…"
+                    : "Signing in…"
+                  : mode === "signup"
+                    ? "Create account"
+                    : "Sign in with email"}
+              </button>
+            </form>
+
+            {/* Divider */}
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-faint">or</span>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+
+            {/* Google */}
             <button
               type="button"
               onClick={() => void handleGoogle()}
               disabled={loading}
-              className="btn-primary mt-7 flex w-full items-center justify-center gap-2.5 rounded-xl px-4 py-3 text-sm font-medium disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface/80 disabled:opacity-60"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
               {loading ? "Redirecting to Google…" : "Continue with Google"}
             </button>
+
+            {/* Toggle sign-in / sign-up */}
+            <p className="mt-6 text-center text-sm text-muted">
+              {mode === "signin" ? (
+                <>
+                  Don&apos;t have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signup")}
+                    className="text-brand font-medium hover:underline"
+                  >
+                    Create one
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signin")}
+                    className="text-brand font-medium hover:underline"
+                  >
+                    Sign in
+                  </button>
+                </>
+              )}
+            </p>
+
+            {info && (
+              <p
+                role="status"
+                className="mt-4 rounded-lg border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-sm text-sky-600 dark:text-sky-400"
+              >
+                {info}
+              </p>
+            )}
 
             {error && (
               <p
@@ -190,6 +409,26 @@ export default function SignInForm() {
         </section>
       </main>
     </div>
+  );
+}
+
+function Field({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-muted">{label}</span>
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-bg/50 px-3 py-2.5 transition focus-within:border-brand">
+        <span className="text-faint">{icon}</span>
+        {children}
+      </div>
+    </label>
   );
 }
 

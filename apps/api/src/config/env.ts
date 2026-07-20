@@ -19,8 +19,9 @@ export const envSchema = z.object({
   // Auth
   BETTER_AUTH_SECRET: z.string().min(16, "must be at least 16 chars (use `openssl rand -hex 32`)"),
   BETTER_AUTH_URL: z.url(),
-  GOOGLE_CLIENT_ID: z.string().min(1),
-  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  // Google OAuth — optional; email/password works without it.
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
 
   // Crypto: 32-byte key as 64 hex chars, used for BYOK encryption + API key HMAC
   PROVIDER_KEYS_KEK: z
