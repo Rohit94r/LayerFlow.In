@@ -1,3 +1,8 @@
+/**
+ * Static demo fixtures for UI prototypes / docs. Live app routes do not import
+ * this file — they use the API + Better Auth. Do not treat this as production
+ * defaults, and do not sync it into Neon via `db:seed` on production.
+ */
 import type {
   ActivityItem,
   ApiKey,

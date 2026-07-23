@@ -5,6 +5,10 @@ import { modelPricing } from "./schema/intelligence";
 /**
  * Seed model_pricing from @layerflow/model-registry when the table is empty.
  * Idempotent: skips if any rows already exist (effective-dated overrides win).
+ *
+ * Used only by the local/demo `db:seed` script. Runtime cost estimates use
+ * `@layerflow/model-registry` directly — an empty `model_pricing` table is fine
+ * in production (the table is for optional effective-dated overrides).
  */
 export async function seedModelPricingIfEmpty(): Promise<number> {
   const existing = await db.query.modelPricing.findFirst();

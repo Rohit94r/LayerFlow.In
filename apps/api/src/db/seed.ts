@@ -10,11 +10,41 @@ import { logger } from "../config/logger";
 import { seedModelPricingIfEmpty } from "./seed-pricing";
 
 /**
- * Dev seed (`npm run db:seed`): a dev user, their onboarded workspace
- * (9 domains, settings, budget), and a couple of projects/prompts/versions
- * mirroring the spirit of lib/mock-data.ts. Safe to re-run.
+ * Local/demo seed only (`npm run db:seed`).
+ *
+ * Creates a sample user (`alex@layerflow.dev`), onboarded workspace, projects,
+ * prompts, learning content, and model_pricing rows. Idempotent.
+ *
+ * Never runs on API startup or deploy. Refuses remote DBs (e.g. Neon) unless
+ * you explicitly set `ALLOW_PROD_SEED=1` — do not use that on production.
  */
+function assertSafeToSeed(): void {
+  if (process.env.ALLOW_PROD_SEED === "1") {
+    logger.warn("ALLOW_PROD_SEED=1 — seeding anyway (not for production Neon)");
+    return;
+  }
+
+  const url = process.env.DATABASE_URL ?? "";
+  const looksRemote =
+    /neon\.tech|supabase\.co|railway\.app|render\.com|\.aws\.|fly\.io|aivencloud|timescaledb\.cloud/i.test(
+      url,
+    );
+  const looksLocal =
+    /localhost|127\.0\.0\.1|@postgres(?::\d+)?\/|layerflow:layerflow@/i.test(url);
+
+  if (looksRemote || (!looksLocal && url.length > 0)) {
+    logger.error(
+      "Refusing to seed: DATABASE_URL does not look like a local database. " +
+        "db:seed is for local/demo only — never run it against Neon production. " +
+        "Override only with ALLOW_PROD_SEED=1 (not recommended).",
+    );
+    process.exit(1);
+  }
+}
+
 async function seed() {
+  assertSafeToSeed();
+
   const DEV_USER_ID = "user_dev_alex";
 
   const pricingCount = await seedModelPricingIfEmpty();

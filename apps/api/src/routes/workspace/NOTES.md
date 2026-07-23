@@ -88,5 +88,5 @@ All request/response shapes are zod schemas in `@layerflow/contracts`
   (foreign workspace access is a 404, never a leak). Uses the same
   docker-Postgres-or-PGlite bootstrap as `integration.test.ts` — each vitest
   file runs in its own worker, so the bootstrap is duplicated by design.
-- Seed (`npm run db:seed`) now also creates a "Resume Builder" session with 3
-  messages and two activity events.
+- Local/demo seed (`npm run db:seed`) can create a "Resume Builder" session with
+  3 messages and activity events — never run against Neon production.

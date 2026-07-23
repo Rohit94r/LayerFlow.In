@@ -175,14 +175,13 @@ npm run db:verify --workspace @layerflow/api
 npm run db:migrate --workspace @layerflow/api
 ```
 
-> ✅ As of this runbook, migrations `0000` + `0001` + `0002` have been applied
-> to the current Neon database: **57 tables, 0 rows** (empty, safe). If you point
-> at a fresh Neon database, run the migrate step once (or just deploy — the
-> release command does it).
+> ✅ Migrations `0000` + `0001` + `0002` create **57** public tables on Neon.
+> Re-run `npm run db:migrate --workspace @layerflow/api` safely (forward-only),
+> or deploy — Fly `release_command` migrates before traffic.
 
-**Seeding is optional** and mainly for local/demo data. Do **not** seed
-production unless you want the sample `alex@layerflow.dev` workspace:
-`npm run db:seed --workspace @layerflow/api`.
+**Do not seed Neon production.** `db:seed` inserts demo user
+`alex@layerflow.dev` and sample workspace data. It is local/demo only and
+refuses remote `DATABASE_URL`s by default. See `docs/database.md`.
 
 ---
 

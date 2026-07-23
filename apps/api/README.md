@@ -83,15 +83,16 @@ npm run db:migrate --workspace @layerflow/api
 `npm run db:verify --workspace @layerflow/api` applies them to an in-memory
 Postgres.
 
-### 6. Seed dev data
+### 6. Seed (local / demo only — skip for Neon)
 
 ```bash
+# Refuses Neon / remote DATABASE_URL unless ALLOW_PROD_SEED=1 (do not use in prod)
 npm run db:seed --workspace @layerflow/api
 ```
 
-Creates a dev user (`alex@layerflow.dev`), their workspace with the 9 default
-domains, a budget, and a few projects/prompts/versions matching the frontend
-mock data.
+Optional. Creates a sample user (`alex@layerflow.dev`), workspace, and demo
+prompts for offline UI demos. **Never run this against Neon production** —
+real users get a workspace on first Google sign-in. See `docs/database.md`.
 
 ### 7. Start the API (and worker)
 
@@ -282,16 +283,20 @@ rejects with 503 rather than risking overspend. See
 
 ## How seeding works
 
-`npm run db:seed` is idempotent (safe to re-run) and creates:
+`npm run db:seed` is **local/demo only**. It does not run on API startup or
+Fly deploy. It refuses remote `DATABASE_URL`s (Neon, etc.) unless you set
+`ALLOW_PROD_SEED=1` (not for production). Idempotent when allowed:
 
 - model pricing rows from `@layerflow/model-registry` (if the table is empty)
-- a dev user `alex@layerflow.dev` and their onboarded workspace
+- a sample user `alex@layerflow.dev` and their onboarded workspace
   (9 default domains, settings, a budget) via `src/services/onboarding.ts` —
   the same code path that runs on first Google login
-- sample projects, prompts, versions, and sessions mirroring the frontend
-  mock data
+- sample projects, prompts, versions, and sessions
 - global learning content (paths, lessons, challenges) via
   `src/services/learning/seed.ts`
+
+Runtime cost estimates use `@layerflow/model-registry` in-process — an empty
+`model_pricing` table in production is fine.
 
 ## Scripts
 
@@ -302,7 +307,7 @@ rejects with 503 rather than risking overspend. See
 | `npm run build` / `npm start` | Production build (tsup) / run `dist/index.js` |
 | `npm run db:generate` | Generate a new migration from schema changes |
 | `npm run db:migrate` | Apply migrations to `DATABASE_URL` |
-| `npm run db:seed` | Insert dev data (idempotent) |
+| `npm run db:seed` | Local/demo data only (blocked on Neon by default) |
 | `npm run db:verify` | Apply all migrations to in-memory Postgres (no Docker) |
 | `npm run usage:rollup` | Recompute `usage_rollups` from the ledger (`-- 2026-07-15` for specific days) |
 | `npm run usage:reconcile` | Compare Redis budget counters to the ledger (`-- --heal` to fix drift) |

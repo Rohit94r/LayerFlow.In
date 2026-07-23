@@ -5,34 +5,40 @@ sign in, create your first prompt, run it against a model, compare models,
 set a budget, and mint a gateway key. It ends with the checklist for taking
 this to production.
 
-> New to the codebase or want to run it yourself? See `apps/api/README.md`
-> (backend), `docs/backend-status.md` (what's built), and `docs/deployment.md`
-> (go-live). This page is about **using the product**.
+> New to the codebase or want to run it yourself? See `docs/database.md`
+> (Neon migrate + commands), `apps/api/README.md` (backend), 
+> `docs/backend-status.md` (what's built), and `docs/deployment.md` (go-live).
+> This page is about **using the product**.
 
 ---
 
 ## 0. Before you start (local run)
 
-You need two processes running plus Postgres + Redis. From the repo root:
+You need Postgres (Neon or Docker), Redis, the API, and the web app. From the
+repo root — full detail in `docs/database.md`:
 
 ```bash
-# 1. dependencies + local infra
+# 1. dependencies
 npm install
-docker compose up -d                          # Postgres (pgvector) + Redis
 
-# 2. backend env — copy the example and fill the blanks (see apps/api/README.md §3-4)
-cp apps/api/.env.example apps/api/.env
+# 2. env
+cp apps/api/.env.example apps/api/.env   # set DATABASE_URL (Neon or docker)
+cp .env.example .env.local               # NEXT_PUBLIC_API_URL=http://localhost:8787
+
+# Optional local infra instead of Neon/Upstash:
+# docker compose up -d
+
+# 3. tables (forward-only; safe to re-run)
 npm run db:migrate --workspace @layerflow/api
-npm run db:seed    --workspace @layerflow/api   # optional demo data
 
-# 3. run the API, the worker, and the web app (three terminals)
-npm run dev    --workspace @layerflow/api       # API   → http://localhost:8787
-npm run worker --workspace @layerflow/api       # jobs  → needed for Compare
-npm run dev                                     # web   → http://localhost:3000
+# 4. full stack (web + API). Worker optional — needed for Compare.
+npm run dev                              # web :3000 + API :8787
+npm run worker --workspace @layerflow/api   # separate terminal
 ```
 
-Frontend env: `cp .env.example .env.local` and keep
-`NEXT_PUBLIC_API_URL=http://localhost:8787`.
+> ⚠️ **Do not run `db:seed` against Neon production.** Seed is local/demo only
+> (`alex@layerflow.dev` sample data). Real users get a workspace on first Google
+> sign-in. See `docs/database.md`.
 
 > ⚠️ **The worker is required for Compare.** If `npm run worker` isn't running,
 > compare jobs never finish and the UI will spin.

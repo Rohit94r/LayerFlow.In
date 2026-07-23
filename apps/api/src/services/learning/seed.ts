@@ -4,7 +4,8 @@ import { challenges, learningPaths, lessons } from "../../db/schema/learning";
 
 /**
  * Idempotent seed of 2 beginner learning paths with a few lessons/challenges.
- * Called from db/seed.ts and safe to re-run (keyed on path slug).
+ * Called only from the local/demo `db:seed` script (never on API startup).
+ * Safe to re-run (keyed on path slug). Do not run against Neon production.
  */
 export async function seedLearning(): Promise<void> {
   const existing = await db.query.learningPaths.findFirst({

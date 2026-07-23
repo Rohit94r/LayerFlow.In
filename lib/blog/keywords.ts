@@ -76,6 +76,36 @@ export const keywordClusters = {
     "agency AI workflow",
     "developer AI prompt workflow",
   ],
+  /** High commercial intent — surprise bills & hard caps (Cluster B wedge) */
+  hardBudgets: [
+    "hard budget limits AI",
+    "hard budget limits LLM",
+    "prevent surprise OpenAI bill",
+    "stop surprise AI bills",
+    "OpenAI bill shock",
+    "LLM spend caps",
+    "AI monthly budget limit",
+    "block LLM requests over budget",
+  ],
+  /** Everyday / non-dev search intent underserved by gateway tools */
+  everydayUsers: [
+    "organize ChatGPT prompts",
+    "save Claude prompts",
+    "ChatGPT prompt library",
+    "where to store AI prompts",
+    "prompt manager for ChatGPT",
+    "Notion AI prompt library alternative",
+    "ChatGPT Teams prompt organizer",
+  ],
+  /** Mid-funnel alternatives — secondary to workspace SEO */
+  gatewayAlternatives: [
+    "OpenRouter alternative",
+    "OpenRouter vs BYOK",
+    "Portkey alternatives",
+    "LiteLLM alternative hosted",
+    "Helicone alternatives",
+    "best LLM gateway for individuals",
+  ],
 } as const;
 
 export const allKeywords = Object.values(keywordClusters).flat();
@@ -89,4 +119,8 @@ export const categoryKeywordFocus: Record<string, keyof typeof keywordClusters> 
   Productivity: "alternatives",
   "Getting started": "gettingStarted",
   "Use cases": "useCases",
+  /** Editorial: map new posts into these when authored */
+  Budgets: "hardBudgets",
+  Everyday: "everydayUsers",
+  Alternatives: "gatewayAlternatives",
 };

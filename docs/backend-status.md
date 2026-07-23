@@ -63,14 +63,16 @@ Full steps in `apps/api/README.md`. Short version, from the repo root:
 
 ```bash
 npm install
-docker compose up -d                          # Postgres + Redis
-cp apps/api/.env.example apps/api/.env        # then fill in secrets (see README)
+cp apps/api/.env.example apps/api/.env        # DATABASE_URL → Neon or local Docker
+cp .env.example .env.local
+# docker compose up -d                        # optional local Postgres + Redis
 npm run db:migrate --workspace @layerflow/api
-npm run db:seed    --workspace @layerflow/api
-npm run dev        --workspace @layerflow/api # API on :8787
-npm run worker     --workspace @layerflow/api # in a second terminal
-npm run smoke      --workspace @layerflow/api # checks /health
+npm run dev                                   # web + API
+npm run worker --workspace @layerflow/api     # optional (Compare / digests)
+# npm run db:seed --workspace @layerflow/api  # LOCAL/DEMO ONLY — never on Neon prod
 ```
+
+Full command list: `docs/database.md`.
 
 ## Frontend connection status
 

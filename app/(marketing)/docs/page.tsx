@@ -398,11 +398,12 @@ const result = await client.chat.completions.create({
             />
             <div className="mt-7 space-y-4">
               <CodeBlock>{`npm install
-docker compose up -d
 cp apps/api/.env.example apps/api/.env
+cp .env.example .env.local
 npm run db:migrate --workspace @layerflow/api
-npm run db:seed --workspace @layerflow/api
-npm run dev --workspace @layerflow/api`}</CodeBlock>
+npm run dev
+# optional: npm run worker --workspace @layerflow/api
+# local/demo only (never on Neon prod): npm run db:seed --workspace @layerflow/api`}</CodeBlock>
               <p className="flex items-start gap-2 text-sm leading-6 text-muted">
                 <Braces className="mt-1 h-4 w-4 flex-none text-brand" />
                 Start the worker in a second terminal with{" "}
