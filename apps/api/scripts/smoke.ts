@@ -17,7 +17,9 @@ async function main(): Promise<void> {
     res = await fetch(`${base}/health`, { signal: AbortSignal.timeout(5_000) });
   } catch {
     console.log(`smoke: SKIPPED — no API listening at ${base}`);
-    console.log("smoke: start it with `npm run dev --workspace @layerflow/api` (and `docker compose up -d`)");
+    console.log(
+      "smoke: start it with `npm run dev --workspace @layerflow/api` after confirming apps/api/.env points at Neon/Upstash or local Docker services.",
+    );
     return;
   }
 
@@ -32,7 +34,9 @@ async function main(): Promise<void> {
   for (const [name, up] of Object.entries(body.checks ?? {})) {
     if (!up) console.error(`smoke: dependency DOWN: ${name}`);
   }
-  console.error("smoke: FAILED — run `docker compose up -d` and check apps/api/.env");
+  console.error(
+    "smoke: FAILED — check apps/api/.env first (DATABASE_URL / REDIS_URL). Docker is optional if Neon and Upstash are reachable.",
+  );
   process.exit(1);
 }
 

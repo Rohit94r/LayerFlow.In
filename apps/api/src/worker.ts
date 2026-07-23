@@ -1,3 +1,4 @@
+import "./db/prefer-ipv4";
 import { Worker } from "bullmq";
 import { logger } from "./config/logger";
 import { processors } from "./jobs/processors";

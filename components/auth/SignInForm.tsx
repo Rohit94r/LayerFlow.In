@@ -13,6 +13,12 @@ import { getApiBaseUrl, getAuthBaseUrl, isLocalWebHost, isProductionWebHost, pin
 
 type Mode = "signin" | "signup";
 
+function looksLikeDbConnectivity(message: string): boolean {
+  return /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|Failed query|Internal Server Error|getaddrinfo|connection terminated|Neon/i.test(
+    message,
+  );
+}
+
 function friendlyError(err: unknown, onProduction: boolean): string {
   if (err instanceof TypeError && /fetch|network|failed/i.test(err.message)) {
     if (onProduction) {
@@ -20,9 +26,35 @@ function friendlyError(err: unknown, onProduction: boolean): string {
     }
     return `Could not reach the LayerFlow API at ${getApiBaseUrl()}. Run npm run dev in the LayerFlow folder and wait for "API connected".`;
   }
-  if (err instanceof ApiClientError) return err.message;
-  if (err instanceof Error && err.message) return err.message;
+  if (err instanceof ApiClientError) {
+    if (looksLikeDbConnectivity(err.message)) {
+      return onProduction
+        ? "Auth could not reach the database. Wait a moment and try again."
+        : "Could not reach the Neon database (DNS/network). Check connectivity and DATABASE_URL, then retry.";
+    }
+    return err.message;
+  }
+  if (err instanceof Error && err.message) {
+    if (looksLikeDbConnectivity(err.message)) {
+      return onProduction
+        ? "Auth could not reach the database. Wait a moment and try again."
+        : "Could not reach the Neon database (DNS/network). Check connectivity and DATABASE_URL, then retry.";
+    }
+    return err.message;
+  }
   return "Sign-in failed. Try again.";
+}
+
+function friendlyAuthResultError(
+  message: string | undefined,
+  onProduction: boolean,
+): string {
+  if (message && looksLikeDbConnectivity(message)) {
+    return onProduction
+      ? "Auth could not reach the database. Wait a moment and try again."
+      : "Could not reach the Neon database (DNS/network). Check connectivity and DATABASE_URL, then retry.";
+  }
+  return message || "Sign-in failed. Try again.";
 }
 
 export default function SignInForm() {
@@ -141,7 +173,12 @@ export default function SignInForm() {
             : next,
         });
         if (result?.error) {
-          setError(result.error.message || "Sign-up failed. Try again.");
+          setError(
+            friendlyAuthResultError(
+              result.error.message || "Sign-up failed. Try again.",
+              productionSite,
+            ),
+          );
           setLoading(false);
           return;
         }
@@ -157,7 +194,9 @@ export default function SignInForm() {
             : next,
         });
         if (result?.error) {
-          setError(result.error.message || "Sign-in failed. Try again.");
+          setError(
+            friendlyAuthResultError(result.error.message, productionSite),
+          );
           setLoading(false);
           return;
         }
@@ -197,7 +236,7 @@ export default function SignInForm() {
           : next,
       });
       if (result?.error) {
-        setError(result.error.message || "Sign-in failed. Try again.");
+        setError(friendlyAuthResultError(result.error.message, productionSite));
         setLoading(false);
         return;
       }

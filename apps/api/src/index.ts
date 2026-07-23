@@ -1,3 +1,4 @@
+import "./db/prefer-ipv4";
 import { getEnv } from "./config/env";
 import {
   flushSentry,

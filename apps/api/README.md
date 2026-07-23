@@ -14,7 +14,7 @@ of truth; Redis handles budgets, caching, and the job queue.
 ## Prerequisites
 
 - Node.js 22+
-- Docker Desktop (for local Postgres + Redis)
+- Docker Desktop (optional, only for local Postgres + Redis)
 - A Google account (to create the OAuth client)
 
 ## Run it locally, step by step
@@ -27,7 +27,14 @@ All commands run from the **repo root** unless noted.
 npm install
 ```
 
-### 2. Start Postgres and Redis
+### 2. Choose your infra path
+
+#### Preferred: existing Neon + Upstash
+
+If `apps/api/.env` already points at a working Neon Postgres database and an
+Upstash Redis instance, you can skip Docker entirely and jump to step 3.
+
+#### Optional: local Docker instead of Neon + Upstash
 
 ```bash
 docker compose up -d
@@ -48,7 +55,9 @@ Then edit `apps/api/.env`:
 - `PROVIDER_KEYS_KEK` — run `openssl rand -hex 32` again (different value).
 - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — next step.
 
-The database/Redis URLs already match docker compose defaults.
+The sample `DATABASE_URL` / `REDIS_URL` values in `.env.example` match docker
+compose defaults. If you are using Neon + Upstash, keep your existing cloud
+URLs instead.
 
 ### 4. Create a Google OAuth client
 
