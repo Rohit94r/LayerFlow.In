@@ -79,20 +79,20 @@ compareRouter.get("/:jobId", async (c) => {
     where: eq(compareResults.compareJobId, jobId),
   });
 
-  const results = await Promise.all(
-    resultRows.map(async (row) => {
-      const run = await db.query.runs.findFirst({ where: eq(runs.id, row.runId) });
-      if (!run) {
-        throw new AppError(500, "internal_error", `Missing run ${row.runId} for compare result`);
-      }
-      return {
-        id: row.id,
-        runId: row.runId,
-        rankHints: (row.rankHints as RankHints | null) ?? null,
-        run: toRunDetailDto(run),
-      };
-    }),
-  );
+  const results = (
+    await Promise.all(
+      resultRows.map(async (row) => {
+        const run = await db.query.runs.findFirst({ where: eq(runs.id, row.runId) });
+        if (!run) return null;
+        return {
+          id: row.id,
+          runId: row.runId,
+          rankHints: (row.rankHints as RankHints | null) ?? null,
+          run: toRunDetailDto(run),
+        };
+      }),
+    )
+  ).filter((r): r is NonNullable<typeof r> => r !== null);
 
   const response: CompareJobResponse = {
     job: {

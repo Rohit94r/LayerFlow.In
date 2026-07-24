@@ -18,6 +18,7 @@ export function toRunDto(row: RunRow): Run {
     latencyMs: row.latencyMs,
     cacheHit: row.cacheHit,
     routingReason: row.routingReason,
+    savings: row.savings ?? null,
     errorMessage: row.errorMessage,
     requestId: row.requestId,
     createdAt: row.createdAt.toISOString(),

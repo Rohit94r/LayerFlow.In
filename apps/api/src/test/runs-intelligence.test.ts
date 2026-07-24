@@ -218,6 +218,12 @@ describe("runs + intelligence APIs", () => {
   });
 
   it("POST /api/runs returns provider_key_missing without a key for that provider", async () => {
+    // Disable Prefer-cheap / Auto so the requested Anthropic model is kept.
+    await api("PUT", "/api/workspace/settings", {
+      preferCheap: false,
+      tokenSaver: false,
+      executionMode: "manual",
+    });
     // Anthropic has no key seeded — should 400 before any network call.
     const { status, json } = await api("POST", "/api/runs", {
       model: "claude-sonnet-4",

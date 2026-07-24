@@ -22,6 +22,13 @@
       "when": 1784413394851,
       "tag": "0002_glorious_mister_fear",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784820000000,
+      "tag": "0003_token_savings",
+      "breakpoints": true
     }
   ]
 }

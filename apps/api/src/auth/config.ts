@@ -10,6 +10,13 @@ import type { Env } from "../config/env";
  * request forgery from third-party origins is rejected.
  */
 
+/** Session lives 30 days; refreshed on use after `SESSION_UPDATE_AGE_SEC` (sliding). */
+export const SESSION_EXPIRES_IN_SEC = 60 * 60 * 24 * 30;
+/** How often an active session's `expiresAt` (and cookie maxAge) is extended. */
+export const SESSION_UPDATE_AGE_SEC = 60 * 60 * 24;
+/** Short-lived signed cookie cache so getSession need not hit Postgres every time. */
+export const SESSION_COOKIE_CACHE_MAX_AGE_SEC = 5 * 60;
+
 /** Longest common domain suffix with at least two labels, or null. */
 export function sharedParentDomain(hostA: string, hostB: string): string | null {
   const a = hostA.toLowerCase().split(".");

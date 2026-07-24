@@ -103,6 +103,26 @@ Leave these **unset** for now:
 
 ---
 
+## Session persistence (stay signed in)
+
+Better Auth sessions are configured in `apps/api/src/auth/config.ts` + `index.ts` (not env):
+
+| Setting | Value | Meaning |
+|---------|-------|---------|
+| `session.expiresIn` | 30 days | DB `sessions.expires_at` + session cookie `maxAge` |
+| `session.updateAge` | 1 day | Active use extends expiry (sliding window) |
+| `session.cookieCache.maxAge` | 5 minutes | Signed session cache cookie; reduces DB hits |
+| Cookie `SameSite` | `Lax` | Same-site CSRF hardening; fine for layerflow.dev ↔ api |
+| Cookie `Secure` | production only | HTTPS required in prod; local http uses non-Secure |
+
+Optional env: `COOKIE_DOMAIN=.layerflow.dev` (auto-derived from `WEB_URL`/`API_URL` in production when web and API are different hosts). On Vercel same-origin auth (`BETTER_AUTH_URL=https://layerflow.dev`), a host-only or `.layerflow.dev` cookie both work.
+
+**Verify:** Sign in → fully quit the browser (or close the tab and reopen) → visit `/workspace` → still signed in. Sign out should clear the cookie and require login again.
+
+**Local vs production:** Local cookies are set on `localhost:8787` (API) without `Secure`. Production cookies are `Secure` + `HttpOnly` on `layerflow.dev` / `.layerflow.dev`. Do not run the API with `NODE_ENV=production` over plain `http://` — browsers will reject `Secure` cookies.
+
+---
+
 ## What you do **not** need yet
 
 - Stripe / Razorpay / any payment gateway

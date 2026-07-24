@@ -89,6 +89,8 @@ export const workspaceSettings = pgTable(
       .notNull()
       .default("suggest"),
     preferCheap: boolean("prefer_cheap").notNull().default(false),
+    /** Compress history + short-answer defaults on runs/gateway. */
+    tokenSaver: boolean("token_saver").notNull().default(false),
     defaultModel: text("default_model").notNull().default("gpt-4o-mini"),
     ...timestamps,
   },

@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { buildTrustedOrigins, deriveCookieDomain, sharedParentDomain } from "./config";
+import {
+  buildTrustedOrigins,
+  deriveCookieDomain,
+  SESSION_COOKIE_CACHE_MAX_AGE_SEC,
+  SESSION_EXPIRES_IN_SEC,
+  SESSION_UPDATE_AGE_SEC,
+  sharedParentDomain,
+} from "./config";
+
+describe("auth session TTL constants", () => {
+  it("keeps a multi-week persistent session with daily sliding refresh", () => {
+    expect(SESSION_EXPIRES_IN_SEC).toBe(60 * 60 * 24 * 30);
+    expect(SESSION_UPDATE_AGE_SEC).toBe(60 * 60 * 24);
+    expect(SESSION_COOKIE_CACHE_MAX_AGE_SEC).toBe(5 * 60);
+    expect(SESSION_UPDATE_AGE_SEC).toBeLessThan(SESSION_EXPIRES_IN_SEC);
+  });
+});
 
 describe("auth production config helpers", () => {
   it("sharedParentDomain finds the apex for web + api subdomains", () => {

@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { computeCostMicro } from "@layerflow/model-registry";
-import type { RunMessage, RunSource } from "@layerflow/contracts";
+import type { RunMessage, RunSource, RunSavings } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { promptOutputs, prompts, promptVersions } from "../../db/schema/prompts";
 import { runs } from "../../db/schema/runs";
@@ -12,7 +12,9 @@ import {
   type ProviderAdapter,
 } from "../../providers";
 import { estimateTokens } from "../../intelligence/analyze";
+import { getExactCache, hashExactCacheKey, setExactCache } from "../../cache/exact";
 import { budgetRelease, budgetReserve, budgetSettle } from "./budget-hook";
+import { buildRunSavings, prepareRunCall } from "../savings/prepare";
 
 /** Thrown after a run row has been persisted as failed/blocked. */
 export class RunExecutionError extends AppError {
@@ -38,6 +40,11 @@ export interface ExecuteRunInput {
   promptVersionId?: string;
   routingReason?: string;
   /**
+   * When false, keep the requested model (compare legs). Default true so
+   * Prefer-cheap / Auto Mode can route playground + gateway-style runs.
+   */
+  allowRouting?: boolean;
+  /**
    * Live token callback. When set and the provider adapter supports true
    * streaming, deltas are forwarded as they arrive and usage comes from the
    * stream's final usage frame. Without adapter stream support the run falls
@@ -48,6 +55,8 @@ export interface ExecuteRunInput {
   adapter?: ProviderAdapter;
   /** Injected API key for tests. */
   apiKey?: string;
+  /** Skip exact-match cache (tests). */
+  skipCache?: boolean;
 }
 
 export interface ExecuteRunResult {
@@ -109,18 +118,32 @@ async function resolveMessages(input: ExecuteRunInput): Promise<{
 }
 
 /**
- * Execute a non-streaming model call: reserve budget → provider → persist run
- * (+ optional prompt_outputs).
+ * Execute a model call: compress → route → cache → reserve budget → provider
+ * → persist run (+ optional prompt_outputs) with savings telemetry.
  */
 export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResult> {
-  const { provider, adapter: resolvedAdapter } = resolveProviderFromModel(input.model);
+  const { messages: rawMessages, promptVersionId } = await resolveMessages(input);
+
+  const prepared = await prepareRunCall({
+    workspaceId: input.workspaceId,
+    messages: rawMessages,
+    requestedModel: input.model,
+    allowRouting: input.allowRouting,
+  });
+
+  const model = prepared.model;
+  const messages = prepared.messages;
+  const routingReason = input.routingReason ?? prepared.routingReason;
+
+  const { provider, adapter: resolvedAdapter } = resolveProviderFromModel(model);
   const adapter = input.adapter ?? resolvedAdapter;
-  const { messages, promptVersionId } = await resolveMessages(input);
 
   const textForEstimate = messages.map((m) => m.content).join("\n");
-  const estIn = estimateTokens(textForEstimate);
-  const estOut = Math.min(800, Math.max(120, Math.floor(estIn * 1.5)));
-  const estimatedCostMicro = computeCostMicro(input.model, estIn, estOut) ?? 0;
+  const estIn = prepared.compress.compressedTokens || estimateTokens(textForEstimate);
+  const estOut = prepared.maxTokens
+    ? Math.min(prepared.maxTokens, Math.max(64, Math.floor(estIn * 0.5)))
+    : Math.min(800, Math.max(120, Math.floor(estIn * 1.5)));
+  const estimatedCostMicro = computeCostMicro(model, estIn, estOut) ?? 0;
 
   const [pending] = await db
     .insert(runs)
@@ -129,14 +152,13 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
       promptVersionId,
       source: input.source,
       provider,
-      model: input.model,
+      model,
       status: "pending",
-      routingReason: input.routingReason,
+      routingReason,
       requestId: input.requestId,
     })
     .returning();
 
-  // BUDGET_HOOK: call reserve/settle here
   const reservation = await budgetReserve({
     workspaceId: input.workspaceId,
     estimatedCostMicro,
@@ -163,6 +185,92 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
 
   await db.update(runs).set({ status: "running" }).where(eq(runs.id, pending.id));
 
+  // Exact-match response cache (workspace-scoped Redis).
+  const cacheKey = hashExactCacheKey({
+    model,
+    messages,
+    max_tokens: prepared.maxTokens,
+  });
+  if (!input.skipCache) {
+    const cached = await getExactCache(input.workspaceId, cacheKey);
+    if (cached) {
+      let parsed: { content?: string; inputTokens?: number; outputTokens?: number } = {};
+      try {
+        const body = JSON.parse(cached) as {
+          choices?: Array<{ message?: { content?: string } }>;
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+          content?: string;
+          inputTokens?: number;
+          outputTokens?: number;
+        };
+        parsed = {
+          content:
+            body.content ??
+            body.choices?.[0]?.message?.content ??
+            "",
+          inputTokens: body.inputTokens ?? body.usage?.prompt_tokens ?? estIn,
+          outputTokens: body.outputTokens ?? body.usage?.completion_tokens ?? 0,
+        };
+      } catch {
+        parsed = { content: cached, inputTokens: estIn, outputTokens: 0 };
+      }
+
+      const savings: RunSavings = buildRunSavings({
+        prepared,
+        outputTokens: parsed.outputTokens ?? 0,
+        cacheHit: true,
+        actualCostMicro: 0,
+      });
+
+      const [succeeded] = await db
+        .update(runs)
+        .set({
+          status: "succeeded",
+          inputTokens: parsed.inputTokens ?? 0,
+          outputTokens: parsed.outputTokens ?? 0,
+          costMicro: 0,
+          latencyMs: 0,
+          output: parsed.content ?? "",
+          cacheHit: true,
+          savings,
+        })
+        .where(eq(runs.id, pending.id))
+        .returning();
+
+      await budgetSettle({
+        workspaceId: input.workspaceId,
+        reservationId: reservation.reservationId,
+        actualCostMicro: 0,
+        runId: succeeded.id,
+        provider,
+        model,
+        source: input.source,
+        inputTokens: parsed.inputTokens ?? 0,
+        outputTokens: parsed.outputTokens ?? 0,
+      });
+
+      if (promptVersionId) {
+        await db.insert(promptOutputs).values({
+          promptVersionId,
+          workspaceId: input.workspaceId,
+          runId: succeeded.id,
+          provider,
+          model,
+          body: parsed.content ?? "",
+          inputTokens: parsed.inputTokens ?? 0,
+          outputTokens: parsed.outputTokens ?? 0,
+          costMicro: 0,
+        });
+      }
+
+      if (input.onDelta && parsed.content) {
+        await input.onDelta(parsed.content);
+      }
+
+      return { run: succeeded, streamed: Boolean(input.onDelta) };
+    }
+  }
+
   let apiKey: string;
   try {
     apiKey = input.apiKey ?? (await loadProviderApiKey(input.workspaceId, provider));
@@ -183,20 +291,22 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
     throw new RunExecutionError(failed, status, code, message);
   }
 
+  const providerReq = {
+    apiKey,
+    model,
+    messages,
+    ...(prepared.maxTokens != null ? { maxTokens: prepared.maxTokens } : {}),
+  };
+
   const useStream = Boolean(input.onDelta && adapter.chatCompletionStream);
   let result: ChatCompletionResult;
   try {
     if (useStream) {
-      result = await adapter.chatCompletionStream!(
-        { apiKey, model: input.model, messages },
-        { onDelta: input.onDelta! },
-      );
-    } else {
-      result = await adapter.chatCompletion({
-        apiKey,
-        model: input.model,
-        messages,
+      result = await adapter.chatCompletionStream!(providerReq, {
+        onDelta: input.onDelta!,
       });
+    } else {
+      result = await adapter.chatCompletion(providerReq);
     }
   } catch (err) {
     const message = err instanceof AppError ? err.message : "Provider call failed";
@@ -216,7 +326,14 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
   }
 
   const costMicro =
-    computeCostMicro(input.model, result.inputTokens, result.outputTokens) ?? 0;
+    computeCostMicro(model, result.inputTokens, result.outputTokens) ?? 0;
+
+  const savings = buildRunSavings({
+    prepared,
+    outputTokens: result.outputTokens,
+    cacheHit: false,
+    actualCostMicro: costMicro,
+  });
 
   const [succeeded] = await db
     .update(runs)
@@ -227,22 +344,39 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
       costMicro,
       latencyMs: result.latencyMs,
       output: result.content,
+      savings,
     })
     .where(eq(runs.id, pending.id))
     .returning();
 
-  // BUDGET_HOOK: call reserve/settle here
   await budgetSettle({
     workspaceId: input.workspaceId,
     reservationId: reservation.reservationId,
     actualCostMicro: costMicro,
     runId: succeeded.id,
     provider,
-    model: input.model,
+    model,
     source: input.source,
     inputTokens: result.inputTokens,
     outputTokens: result.outputTokens,
   });
+
+  if (!input.skipCache) {
+    await setExactCache(
+      input.workspaceId,
+      cacheKey,
+      JSON.stringify({
+        content: result.content,
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+        choices: [{ message: { role: "assistant", content: result.content } }],
+        usage: {
+          prompt_tokens: result.inputTokens,
+          completion_tokens: result.outputTokens,
+        },
+      }),
+    );
+  }
 
   if (promptVersionId) {
     await db.insert(promptOutputs).values({
@@ -250,7 +384,7 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
       workspaceId: input.workspaceId,
       runId: succeeded.id,
       provider,
-      model: input.model,
+      model,
       body: result.content,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,

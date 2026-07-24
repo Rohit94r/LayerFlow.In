@@ -40,6 +40,9 @@ import {
   createPromptRequestSchema,
   updatePromptRequestSchema,
   createPromptVersionRequestSchema,
+  createPromptVariableRequestSchema,
+  updatePromptVariableRequestSchema,
+  promptVariableResponseSchema,
   createProjectRequestSchema,
   updateProjectRequestSchema,
   createFolderRequestSchema,
@@ -47,6 +50,8 @@ import {
   updateSessionRequestSchema,
   appendSessionMessageRequestSchema,
   updateBudgetRequestSchema,
+  updateBudgetScopesRequestSchema,
+  updateBudgetScopesResponseSchema,
   createApiKeyRequestSchema,
   createProviderKeyRequestSchema,
   createRunRequestSchema,
@@ -60,6 +65,8 @@ import {
   type CreatePromptRequest,
   type UpdatePromptRequest,
   type CreatePromptVersionRequest,
+  type CreatePromptVariableRequest,
+  type UpdatePromptVariableRequest,
   type CreateProjectRequest,
   type UpdateProjectRequest,
   type CreateFolderRequest,
@@ -67,6 +74,7 @@ import {
   type UpdateSessionRequest,
   type AppendSessionMessageRequest,
   type UpdateBudgetRequest,
+  type UpdateBudgetScopesRequest,
   type CreateApiKeyRequest,
   type CreateProviderKeyRequest,
   type UpdateWorkspaceSettingsRequest,
@@ -195,6 +203,31 @@ export function restorePromptVersion(promptId: string, versionId: string) {
     `/api/prompts/${promptId}/restore/${versionId}`,
     { method: "POST" },
     promptVersionResponseSchema,
+  );
+}
+
+export function createPromptVariable(promptId: string, body: CreatePromptVariableRequest) {
+  createPromptVariableRequestSchema.parse(body);
+  return apiFetch(
+    `/api/prompts/${promptId}/variables`,
+    { method: "POST", body },
+    promptVariableResponseSchema,
+  );
+}
+
+export function updatePromptVariable(promptId: string, variableId: string, body: UpdatePromptVariableRequest) {
+  updatePromptVariableRequestSchema.parse(body);
+  return apiFetch(
+    `/api/prompts/${promptId}/variables/${variableId}`,
+    { method: "PATCH", body },
+    promptVariableResponseSchema,
+  );
+}
+
+export function deletePromptVariable(promptId: string, variableId: string) {
+  return apiFetch(
+    `/api/prompts/${promptId}/variables/${variableId}`,
+    { method: "DELETE", parseJson: false },
   );
 }
 
@@ -327,6 +360,11 @@ export function getUsageSummary(query?: { from?: string; to?: string; groupBy?: 
 
 export function getSavings() {
   return apiFetch("/api/savings", {}, savingsResponseSchema);
+}
+
+export function replaceBudgetScopes(body: UpdateBudgetScopesRequest) {
+  updateBudgetScopesRequestSchema.parse(body);
+  return apiFetch("/api/budgets/scopes", { method: "PUT", body }, updateBudgetScopesResponseSchema);
 }
 
 // ── Keys ───────────────────────────────────────────────────

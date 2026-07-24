@@ -58,7 +58,7 @@ async function loadPromptDetail(promptId: string) {
     versions.push(mapPromptVersion(v, output));
   }
 
-  const prompt = mapPrompt(promptRes.prompt, promptRes.currentVersion, versions);
+  const prompt = mapPrompt(promptRes.prompt, promptRes.currentVersion, versions, promptRes.variables);
   return {
     prompt,
     versions,

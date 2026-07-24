@@ -8,12 +8,13 @@ import { createCompare, getCompareJob } from "@/lib/api";
 import { mapCompareResults } from "@/lib/api/mappers";
 import { errorMessage } from "@/lib/hooks/use-async-data";
 import { ApiClientError } from "@/lib/api/client";
+import SavingsLine from "@/components/workspace/SavingsLine";
 
 const DEFAULT_MODELS = [
   "gpt-4o",
   "claude-sonnet-4",
   "gemini-2.5-flash",
-  "deepseek-v3",
+  "deepseek-chat",
 ];
 
 interface ComparePanelProps {
@@ -172,19 +173,26 @@ export default function ComparePanel({
                 </p>
               </div>
 
-              <div className="flex items-center gap-4 border-t border-border px-4 py-2.5 text-xs text-faint">
-                <span className="flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
-                  ${result.cost.toFixed(3)}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {result.latencyMs}ms
-                </span>
-                <span className="flex items-center gap-1">
-                  <Zap className="h-3 w-3" />
-                  {result.tokensIn + result.tokensOut} tok
-                </span>
+              <div className="flex flex-col gap-1 border-t border-border px-4 py-2.5 text-xs text-faint">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3" />
+                    ${result.cost.toFixed(3)}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {result.latencyMs}ms
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Zap className="h-3 w-3" />
+                    {result.tokensIn + result.tokensOut} tok
+                  </span>
+                </div>
+                <SavingsLine
+                  tokensSaved={result.tokensSaved}
+                  costSavedUsd={result.costSaved}
+                  cacheHit={result.cacheHit}
+                />
               </div>
             </div>
           );

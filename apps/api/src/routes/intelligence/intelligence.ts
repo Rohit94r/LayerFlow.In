@@ -58,6 +58,7 @@ async function loadWorkspaceContext(workspaceId: string) {
     settings: settings ?? {
       executionMode: "suggest" as const,
       preferCheap: false,
+      tokenSaver: false,
       defaultModel: "gpt-4o-mini",
     },
     rules: rules.map((r) => ({

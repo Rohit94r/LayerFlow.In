@@ -35,6 +35,7 @@ export const demoUser: User = {
 
 export const workspaceSettings: WorkspaceSettings = {
   preferCheap: true,
+  tokenSaver: true,
   executionMode: "suggest",
   defaultModel: "gemini-2.5-flash",
 };

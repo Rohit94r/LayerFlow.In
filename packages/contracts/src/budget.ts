@@ -154,7 +154,9 @@ export const savingsResponseSchema = z.object({
   actualCostMicro: microDollarsSchema,
   optimizedCostMicro: microDollarsSchema,
   savedMicro: microDollarsSchema,
-  source: z.enum(["insights", "computed"]),
+  /** Sum of per-run savings.tokensSaved this period (when available). */
+  tokensSaved: z.number().int().nonnegative().optional(),
+  source: z.enum(["insights", "computed", "runs"]),
 });
 
 export type SavingsResponse = z.infer<typeof savingsResponseSchema>;

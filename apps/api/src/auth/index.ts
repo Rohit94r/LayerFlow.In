@@ -5,7 +5,13 @@ import { logger } from "../config/logger";
 import { db } from "../db/client";
 import * as schema from "../db/schema";
 import { onboardNewUser } from "../services/onboarding";
-import { buildTrustedOrigins, deriveCookieDomain } from "./config";
+import {
+  buildTrustedOrigins,
+  deriveCookieDomain,
+  SESSION_COOKIE_CACHE_MAX_AGE_SEC,
+  SESSION_EXPIRES_IN_SEC,
+  SESSION_UPDATE_AGE_SEC,
+} from "./config";
 
 const env = getEnv();
 const isProduction = env.NODE_ENV === "production";
@@ -16,9 +22,13 @@ const cookieDomain = deriveCookieDomain(env);
  * Mounted at /api/auth/* in src/index.ts.
  * Google console redirect URI: {API_URL}/api/auth/callback/google
  *
+ * Session persistence: `expiresIn` + cookie `maxAge` keep users signed in across
+ * browser restarts until sign-out or idle expiry (see session block below).
+ *
  * Production cookies: Secure, HttpOnly, SameSite=Lax, scoped to the shared
  * parent domain (`.layerflow.dev`) so layerflow.dev ↔ api.layerflow.dev
- * share the session. See src/auth/config.ts.
+ * share the session. Local/dev uses host-only cookies (no Domain) over http.
+ * See src/auth/config.ts.
  */
 export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
@@ -34,6 +44,16 @@ export const auth = betterAuth({
       verification: schema.verificationTokens,
     },
   }),
+  session: {
+    // Persistent cookie (maxAge = expiresIn) — not a browser session cookie.
+    expiresIn: SESSION_EXPIRES_IN_SEC,
+    // Sliding expiry: active users get expiresAt + cookie maxAge renewed daily.
+    updateAge: SESSION_UPDATE_AGE_SEC,
+    cookieCache: {
+      enabled: true,
+      maxAge: SESSION_COOKIE_CACHE_MAX_AGE_SEC,
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
@@ -86,6 +106,7 @@ export const auth = betterAuth({
       // Same-site subdomains (layerflow.dev / api.layerflow.dev) work with Lax;
       // Lax also blocks the session cookie on cross-site POSTs (CSRF hardening).
       sameSite: "lax",
+      path: "/",
     },
   },
   databaseHooks: {

@@ -2,10 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Note: do not put `better-auth` here. Externalizing it makes
+  // `better-auth/react` load a separate React copy during SSR, which crashes
+  // hooks with "Cannot read properties of null (reading 'useRef')".
   serverExternalPackages: [
     "pg",
     "drizzle-orm",
-    "better-auth",
     "@better-auth/drizzle-adapter",
     "ioredis",
     "bullmq",

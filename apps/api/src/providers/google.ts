@@ -43,6 +43,9 @@ export const googleAdapter: ProviderAdapter = {
             ? { systemInstruction: { parts: [{ text: systemParts.join("\n\n") }] } }
             : {}),
           contents,
+          ...(req.maxTokens != null
+            ? { generationConfig: { maxOutputTokens: req.maxTokens } }
+            : {}),
         }),
       });
     } catch (err) {

@@ -16,7 +16,9 @@ import {
   getWorkspaceSettings,
   updateWorkspaceSettings,
   listRoutingRules,
+  createRoutingRule,
   updateRoutingRule,
+  deleteRoutingRule,
   listApiKeys,
   createApiKey,
   deleteApiKey,
@@ -123,6 +125,17 @@ export default function SettingsClient() {
       setError(errorMessage(err));
       state.reload();
     }
+  };
+
+  const handleAddRule = async (condition: string, model: string) => {
+    const res = await createRoutingRule({ condition, targetModel: model, priority: 0, enabled: true });
+    const mapped = mapRoutingRule(res.rule);
+    setRules((prev) => [...prev, mapped]);
+  };
+
+  const handleDeleteRule = async (id: string) => {
+    await deleteRoutingRule(id);
+    setRules((prev) => prev.filter((r) => r.id !== id));
   };
 
   const handleCreateKey = async () => {
@@ -302,7 +315,7 @@ export default function SettingsClient() {
             <option value="gpt-4o">gpt-4o</option>
             <option value="gpt-4o-mini">gpt-4o-mini</option>
             <option value="claude-sonnet-4">claude-sonnet-4</option>
-            <option value="deepseek-v3">deepseek-v3</option>
+            <option value="deepseek-chat">deepseek-chat</option>
           </select>
         </div>
 
@@ -320,7 +333,7 @@ export default function SettingsClient() {
         <h3 className="text-base font-semibold text-ink">Routing rules</h3>
         <p className="mt-0.5 text-sm text-muted">Rules evaluated by Auto Mode and recommend.</p>
         <div className="mt-4">
-          <RoutingRules rules={rules} onToggle={toggleRule} />
+          <RoutingRules rules={rules} onToggle={toggleRule} onAdd={handleAddRule} onDelete={handleDeleteRule} />
         </div>
       </div>
 

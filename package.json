@@ -8,7 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -n web,api -c cyan,magenta \"npm run dev:web\" \"npm run dev:api\"",
+    "dev": "concurrently -k -n web,api,worker -c cyan,magenta,yellow \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:worker\"",
     "dev:web": "next dev",
     "dev:api": "npm run dev --workspace @layerflow/api",
     "dev:worker": "npm run worker --workspace @layerflow/api",

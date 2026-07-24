@@ -15,6 +15,22 @@ export const runMessageSchema = z.object({
 
 export type RunMessage = z.infer<typeof runMessageSchema>;
 
+/** Per-run cost/token savings telemetry (compression, routing, cache). */
+export const runSavingsSchema = z.object({
+  originalInputTokens: z.number().int().nonnegative(),
+  compressedInputTokens: z.number().int().nonnegative(),
+  tokensSaved: z.number().int().nonnegative(),
+  costSavedMicro: microDollarsSchema,
+  modelChosen: z.string(),
+  expensiveAlternative: z.string().nullish(),
+  alternativeCostMicro: microDollarsSchema.nullish(),
+  cacheHit: z.boolean().default(false),
+  compressionApplied: z.boolean().default(false),
+  maxTokensCapped: z.number().int().positive().nullish(),
+});
+
+export type RunSavings = z.infer<typeof runSavingsSchema>;
+
 export const runSchema = z.object({
   id: idSchema,
   workspaceId: idSchema,
@@ -30,6 +46,8 @@ export const runSchema = z.object({
   cacheHit: z.boolean(),
   /** Why this model was chosen (routing rule / auto mode explanation). */
   routingReason: z.string().nullish(),
+  /** Compression / routing / cache savings vs baseline. */
+  savings: runSavingsSchema.nullish(),
   errorMessage: z.string().nullish(),
   requestId: z.string().nullish(),
   createdAt: timestampSchema,

@@ -103,6 +103,9 @@ export interface CompareResult {
   tokensOut: number;
   qualityScore?: number;
   rankHints?: { best: boolean; cheapest: boolean; fastest: boolean };
+  tokensSaved?: number;
+  costSaved?: number;
+  cacheHit?: boolean;
 }
 
 export interface Budget {
@@ -166,6 +169,7 @@ export type ExecutionMode =
 
 export interface WorkspaceSettings {
   preferCheap: boolean;
+  tokenSaver: boolean;
   executionMode: ExecutionMode;
   defaultModel: string;
 }

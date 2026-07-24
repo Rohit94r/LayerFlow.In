@@ -12,6 +12,7 @@ import {
   getCurrentBudget,
   updateBudget,
   listBudgetScopes,
+  replaceBudgetScopes,
   listProjects,
   listApiKeys,
   listRoutingRules,
@@ -59,8 +60,11 @@ async function loadBudgetPage() {
   return {
     budget,
     budgetRaw: budgetRes,
+    scopes: scopesRes.scopes,
     projectBudgets: mapProjectBudgets(scopesRes.scopes, projects),
     keyBudgets: mapKeyBudgets(scopesRes.scopes, keys),
+    projects,
+    keys,
     rules: rulesRes.rules.map(mapRoutingRule),
     spendByModel: usageRes.buckets
       .filter((b) => b.model)
@@ -89,6 +93,11 @@ export default function BudgetClient() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [scopeProjectId, setScopeProjectId] = useState("");
+  const [scopeProjectLimit, setScopeProjectLimit] = useState("");
+  const [scopeKeyId, setScopeKeyId] = useState("");
+  const [scopeKeyLimit, setScopeKeyLimit] = useState("");
+  const [savingScope, setSavingScope] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.status !== "success" || !state.data) return;
@@ -147,6 +156,72 @@ export default function BudgetClient() {
       setError(errorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveProjectScope = async () => {
+    if (!scopeProjectId.trim()) return;
+    setSavingScope("project");
+    setError(null);
+    try {
+      const current = (data.scopes ?? [])
+        .filter((s) => !(s.scopeType === "project" && s.projectId === scopeProjectId))
+        .map((s) => ({
+          scopeType: s.scopeType,
+          limitMicro: s.limitMicro,
+          projectId: s.projectId ?? undefined,
+          apiKeyId: s.apiKeyId ?? undefined,
+        }));
+      const limit = Number(scopeProjectLimit) || 0;
+      await replaceBudgetScopes({
+        scopes: [
+          ...current,
+          ...(limit > 0
+            ? [{ scopeType: "project" as const, projectId: scopeProjectId, limitMicro: usdToMicro(limit), apiKeyId: undefined }]
+            : []),
+        ],
+      });
+      setScopeProjectId("");
+      setScopeProjectLimit("");
+      setMessage("Project scope saved");
+      state.reload();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSavingScope(null);
+    }
+  };
+
+  const saveKeyScope = async () => {
+    if (!scopeKeyId.trim()) return;
+    setSavingScope("key");
+    setError(null);
+    try {
+      const current = (data.scopes ?? [])
+        .filter((s) => !(s.scopeType === "api_key" && s.apiKeyId === scopeKeyId))
+        .map((s) => ({
+          scopeType: s.scopeType,
+          limitMicro: s.limitMicro,
+          projectId: s.projectId ?? undefined,
+          apiKeyId: s.apiKeyId ?? undefined,
+        }));
+      const limit = Number(scopeKeyLimit) || 0;
+      await replaceBudgetScopes({
+        scopes: [
+          ...current,
+          ...(limit > 0
+            ? [{ scopeType: "api_key" as const, apiKeyId: scopeKeyId, limitMicro: usdToMicro(limit), projectId: undefined }]
+            : []),
+        ],
+      });
+      setScopeKeyId("");
+      setScopeKeyLimit("");
+      setMessage("Key scope saved");
+      state.reload();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSavingScope(null);
     }
   };
 
@@ -304,6 +379,40 @@ export default function BudgetClient() {
               ))
             )}
           </div>
+          <div className="mt-4 border-t border-border pt-4">
+            <p className="mb-2 text-xs font-medium text-muted">Add / update key scope</p>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <select
+                  value={scopeKeyId}
+                  onChange={(e) => setScopeKeyId(e.target.value)}
+                  className="workspace-input text-xs"
+                >
+                  <option value="">Select key…</option>
+                  {data.keys.map((k) => (
+                    <option key={k.id} value={k.id}>{k.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  value={scopeKeyLimit}
+                  onChange={(e) => setScopeKeyLimit(e.target.value)}
+                  className="workspace-input w-24 text-xs"
+                  placeholder="$ limit"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={saveKeyScope}
+                disabled={savingScope === "key" || !scopeKeyId.trim()}
+                className="btn-secondary rounded-lg px-3 py-1.5 text-xs disabled:opacity-60"
+              >
+                {savingScope === "key" ? "Saving…" : "Set"}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -329,9 +438,43 @@ export default function BudgetClient() {
                 </div>
               </div>
             ))
-          )}
+            )}
+          </div>
+          <div className="mt-4 border-t border-border pt-4">
+            <p className="mb-2 text-xs font-medium text-muted">Add / update project scope</p>
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <select
+                  value={scopeProjectId}
+                  onChange={(e) => setScopeProjectId(e.target.value)}
+                  className="workspace-input text-xs"
+                >
+                  <option value="">Select project…</option>
+                  {data.projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <input
+                  type="number"
+                  value={scopeProjectLimit}
+                  onChange={(e) => setScopeProjectLimit(e.target.value)}
+                  className="workspace-input w-24 text-xs"
+                  placeholder="$ limit"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={saveProjectScope}
+                disabled={savingScope === "project" || !scopeProjectId.trim()}
+                className="btn-secondary rounded-lg px-3 py-1.5 text-xs disabled:opacity-60"
+              >
+                {savingScope === "project" ? "Saving…" : "Set"}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
       <div className="card p-6">
         <div className="mb-4 flex items-center justify-between">

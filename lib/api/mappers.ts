@@ -9,6 +9,7 @@ import type {
   Prompt as PromptDto,
   PromptOutput,
   PromptSession as PromptSessionDto,
+  PromptVariable,
   PromptVersion as PromptVersionDto,
   RoutingRule as RoutingRuleDto,
   SessionMessage,
@@ -105,6 +106,7 @@ export function mapPrompt(
   prompt: PromptDto,
   currentVersion?: PromptVersionDto | null,
   versions: PromptVersion[] = [],
+  variables?: { name: string; defaultValue?: string | null; description?: string | null }[],
 ): Prompt {
   const content = currentVersion?.body ?? versions[versions.length - 1]?.content ?? "";
   const latest = versions[versions.length - 1];
@@ -118,7 +120,11 @@ export function mapPrompt(
     content,
     tags: prompt.tags,
     favorite: prompt.favorite,
-    variables: [],
+    variables: (variables ?? []).map((v) => ({
+      name: v.name,
+      defaultValue: v.defaultValue ?? undefined,
+      description: v.description ?? undefined,
+    })),
     versions,
     notes: prompt.notes ?? undefined,
     model: latest?.model ?? currentVersion?.modelHint ?? "gpt-4o",
@@ -228,6 +234,7 @@ export function mapApiKey(key: ApiKeyDto): ApiKey {
 export function mapSettings(settings: WorkspaceSettingsDto): WorkspaceSettings {
   return {
     preferCheap: settings.preferCheap,
+    tokenSaver: settings.tokenSaver,
     executionMode: settings.executionMode,
     defaultModel: settings.defaultModel,
   };
@@ -273,5 +280,8 @@ export function mapCompareResults(job: CompareJobResponse): CompareResult[] {
     tokensOut: r.run.outputTokens,
     qualityScore: r.rankHints?.best ? 100 : r.rankHints?.cheapest ? 80 : 70,
     rankHints: r.rankHints ?? undefined,
+    tokensSaved: r.run.savings?.tokensSaved ?? 0,
+    costSaved: microToUsd(r.run.savings?.costSavedMicro ?? 0),
+    cacheHit: r.run.cacheHit || r.run.savings?.cacheHit,
   }));
 }

@@ -3,8 +3,11 @@ import { Hono } from "hono";
 import {
   createPromptRequestSchema,
   createPromptVersionRequestSchema,
+  createPromptVariableRequestSchema,
+  updatePromptVariableRequestSchema,
   listPromptsQuerySchema,
   updatePromptRequestSchema,
+  type PromptVariableResponse,
   type ListPromptVersionsResponse,
   type ListPromptsResponse,
   type Prompt,
@@ -96,7 +99,7 @@ async function favoritePromptIds(userId: string, promptIds: string[]): Promise<S
   return new Set(rows.map((r) => r.promptId));
 }
 
-/** Full DTO for one prompt (tags + favorite flag + current version). */
+/** Full DTO for one prompt (tags + favorite flag + current version + variables). */
 async function buildPromptResponse(
   userId: string,
   prompt: PromptRow,
@@ -108,9 +111,18 @@ async function buildPromptResponse(
         where: (v, { eq }) => eq(v.id, prompt.currentVersionId!),
       })
     : undefined;
+  const variableRows = await db.query.promptVariables.findMany({
+    where: (v, { eq }) => eq(v.promptId, prompt.id),
+    orderBy: (v, { asc }) => [asc(v.name)],
+  });
   return {
     prompt: toPromptDto(prompt, tags.get(prompt.id) ?? [], favs.has(prompt.id)),
     currentVersion: currentVersion ? toVersionDto(currentVersion) : null,
+    variables: variableRows.map((v) => ({
+      name: v.name,
+      defaultValue: v.defaultValue,
+      description: v.description,
+    })),
   };
 }
 
@@ -343,6 +355,78 @@ promptsRouter.patch("/:id", async (c) => {
   });
 
   return c.json(await buildPromptResponse(userId, updated));
+});
+
+// POST /api/prompts/:id/variables — add a variable
+promptsRouter.post("/:id/variables", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const prompt = await getOwnedPrompt(workspaceId, c.req.param("id"));
+  const body = createPromptVariableRequestSchema.parse(await c.req.json());
+
+  const [variable] = await db
+    .insert(promptVariables)
+    .values({
+      promptId: prompt.id,
+      workspaceId,
+      name: body.name,
+      defaultValue: body.defaultValue,
+      description: body.description,
+    })
+    .onConflictDoNothing()
+    .returning();
+
+  if (!variable) {
+    throw new AppError(409, "conflict", `Variable "${body.name}" already exists on this prompt`);
+  }
+
+  const response: PromptVariableResponse = {
+    variable: { id: variable.id, name: variable.name, defaultValue: variable.defaultValue, description: variable.description },
+  };
+  return c.json(response, 201);
+});
+
+// PATCH /api/prompts/:id/variables/:variableId — update a variable
+promptsRouter.patch("/:id/variables/:variableId", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const prompt = await getOwnedPrompt(workspaceId, c.req.param("id"));
+  const body = updatePromptVariableRequestSchema.parse(await c.req.json());
+
+  const variable = await db.query.promptVariables.findFirst({
+    where: (v, { and, eq }) =>
+      and(eq(v.id, c.req.param("variableId")), eq(v.promptId, prompt.id)),
+  });
+  if (!variable) throw new AppError(404, "not_found", "Variable not found");
+
+  const [updated] = await db
+    .update(promptVariables)
+    .set({
+      ...(body.name !== undefined ? { name: body.name } : {}),
+      ...(body.defaultValue !== undefined ? { defaultValue: body.defaultValue } : {}),
+      ...(body.description !== undefined ? { description: body.description } : {}),
+    })
+    .where(eq(promptVariables.id, variable.id))
+    .returning();
+
+  const response: PromptVariableResponse = {
+    variable: { id: updated.id, name: updated.name, defaultValue: updated.defaultValue, description: updated.description },
+  };
+  return c.json(response);
+});
+
+// DELETE /api/prompts/:id/variables/:variableId — remove a variable
+promptsRouter.delete("/:id/variables/:variableId", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const prompt = await getOwnedPrompt(workspaceId, c.req.param("id"));
+
+  const variable = await db.query.promptVariables.findFirst({
+    where: (v, { and, eq }) =>
+      and(eq(v.id, c.req.param("variableId")), eq(v.promptId, prompt.id)),
+  });
+  if (!variable) throw new AppError(404, "not_found", "Variable not found");
+
+  await db.delete(promptVariables).where(eq(promptVariables.id, variable.id));
+
+  return c.json({ deleted: true });
 });
 
 // DELETE /api/prompts/:id — permanent delete (versions/tags/attachments

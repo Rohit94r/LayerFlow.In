@@ -18,6 +18,8 @@ export interface ChatCompletionRequest {
   apiKey: string;
   /** Reserved for streaming adapters; non-stream path ignores this. */
   stream?: boolean;
+  /** Cap completion length (Prefer-cheap / tokenSaver short answers). */
+  maxTokens?: number;
 }
 
 export interface ChatCompletionResult {

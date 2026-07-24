@@ -88,6 +88,7 @@ export async function processCompare(job: Job<CompareJobPayload>): Promise<void>
         content,
         promptVersionId: compareJob.promptVersionId ?? undefined,
         routingReason: "compare",
+        allowRouting: false,
       });
       runIds.push(run.id);
       await db.insert(compareResults).values({
@@ -121,16 +122,19 @@ export async function processCompare(job: Job<CompareJobPayload>): Promise<void>
     resultRows.map((r) => db.query.runs.findFirst({ where: eq(runs.id, r.runId) })),
   );
 
-  const rankable = resultRows.map((r, i) => {
-    const run = runRows[i]!;
-    return {
-      runId: r.runId,
-      status: run?.status ?? "failed",
-      costMicro: run?.costMicro ?? 0,
-      latencyMs: run?.latencyMs ?? null,
-      outputLength: run?.output?.length ?? 0,
-    };
-  });
+  const rankable = resultRows
+    .map((r, i) => {
+      const run = runRows[i];
+      if (!run) return null;
+      return {
+        runId: r.runId,
+        status: run.status ?? "failed",
+        costMicro: run.costMicro ?? 0,
+        latencyMs: run.latencyMs ?? null,
+        outputLength: run.output?.length ?? 0,
+      };
+    })
+    .filter((r): r is NonNullable<typeof r> => r !== null);
 
   const hints = computeRankHints(rankable);
   for (const row of resultRows) {

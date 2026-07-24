@@ -149,6 +149,8 @@ export const workspaceSettingsSchema = z.object({
   workspaceId: idSchema,
   executionMode: executionModeSchema,
   preferCheap: z.boolean(),
+  /** Compress history + short-answer max_tokens defaults. */
+  tokenSaver: z.boolean(),
   defaultModel: z.string(),
   updatedAt: timestampSchema,
 });
@@ -164,6 +166,7 @@ export type WorkspaceSettingsResponse = z.infer<typeof workspaceSettingsResponse
 export const updateWorkspaceSettingsRequestSchema = z.object({
   executionMode: executionModeSchema.optional(),
   preferCheap: z.boolean().optional(),
+  tokenSaver: z.boolean().optional(),
   defaultModel: z.string().min(1).optional(),
 });
 

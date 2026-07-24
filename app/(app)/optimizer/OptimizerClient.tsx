@@ -50,12 +50,16 @@ async function loadOptimizer() {
 export default function OptimizerClient() {
   const state = useAsyncData(loadOptimizer, []);
   const [mode, setMode] = useState<ExecutionMode>("suggest");
+  const [preferCheap, setPreferCheap] = useState(false);
+  const [tokenSaver, setTokenSaver] = useState(false);
   const [rules, setRules] = useState<ReturnType<typeof mapRoutingRule>[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.status === "success") {
       setMode(state.data.settings.executionMode);
+      setPreferCheap(state.data.settings.preferCheap);
+      setTokenSaver(state.data.settings.tokenSaver);
       setRules(state.data.rules);
     }
   }, [state]);
@@ -71,6 +75,24 @@ export default function OptimizerClient() {
     setMode(next);
     try {
       await updateWorkspaceSettings({ executionMode: next });
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const onPreferCheapChange = async (next: boolean) => {
+    setPreferCheap(next);
+    try {
+      await updateWorkspaceSettings({ preferCheap: next });
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  const onTokenSaverChange = async (next: boolean) => {
+    setTokenSaver(next);
+    try {
+      await updateWorkspaceSettings({ tokenSaver: next });
     } catch (err) {
       setError(errorMessage(err));
     }
@@ -123,6 +145,36 @@ export default function OptimizerClient() {
         </p>
         <div className="mt-4">
           <ExecutionModeToggle value={mode} onChange={onModeChange} />
+        </div>
+        <div className="mt-5 space-y-3 border-t border-border pt-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={preferCheap}
+              onChange={(e) => onPreferCheapChange(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              <span className="block text-sm font-medium text-ink">Prefer cheap</span>
+              <span className="text-xs text-muted">
+                Bias runs toward budget-tier models when quality allows.
+              </span>
+            </span>
+          </label>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={tokenSaver}
+              onChange={(e) => onTokenSaverChange(e.target.checked)}
+              className="mt-1"
+            />
+            <span>
+              <span className="block text-sm font-medium text-ink">Token saver</span>
+              <span className="text-xs text-muted">
+                Compress long history and cap max tokens for shorter answers.
+              </span>
+            </span>
+          </label>
         </div>
       </div>
 

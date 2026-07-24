@@ -104,6 +104,7 @@ export type ListPromptsResponse = z.infer<typeof listPromptsResponseSchema>;
 export const promptResponseSchema = z.object({
   prompt: promptSchema,
   currentVersion: promptVersionSchema.nullish(),
+  variables: z.array(promptVariableSchema).optional().default([]),
 });
 
 export type PromptResponse = z.infer<typeof promptResponseSchema>;
@@ -130,6 +131,30 @@ export const createPromptVersionRequestSchema = z.object({
 });
 
 export type CreatePromptVersionRequest = z.infer<typeof createPromptVersionRequestSchema>;
+
+/** POST /api/prompts/:id/variables */
+export const createPromptVariableRequestSchema = z.object({
+  name: z.string().min(1).max(40),
+  defaultValue: z.string().max(500).nullish(),
+  description: z.string().max(500).nullish(),
+});
+
+export type CreatePromptVariableRequest = z.infer<typeof createPromptVariableRequestSchema>;
+
+/** PATCH /api/prompts/:id/variables/:variableId */
+export const updatePromptVariableRequestSchema = z.object({
+  name: z.string().min(1).max(40).optional(),
+  defaultValue: z.string().max(500).nullish().optional(),
+  description: z.string().max(500).nullish().optional(),
+});
+
+export type UpdatePromptVariableRequest = z.infer<typeof updatePromptVariableRequestSchema>;
+
+export const promptVariableResponseSchema = z.object({
+  variable: promptVariableSchema.extend({ id: idSchema }),
+});
+
+export type PromptVariableResponse = z.infer<typeof promptVariableResponseSchema>;
 
 /** A stored model output attached to a prompt version. */
 export const promptOutputSchema = z.object({

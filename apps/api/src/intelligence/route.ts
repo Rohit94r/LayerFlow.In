@@ -14,12 +14,14 @@ export interface RouteInput {
 
 /**
  * Auto Mode model selection. ALWAYS returns an explanation string.
- * Manual / Suggest modes return the requested (or default) model with a clear reason.
+ * Manual / Suggest modes return the requested (or default) model unless
+ * Prefer-cheap is on (then we still route via recommend).
  */
 export function routeModel(input: RouteInput): RouteResponse {
   const isAuto = input.executionMode.startsWith("auto-");
+  const shouldRoute = isAuto || input.preferCheap;
 
-  if (!isAuto) {
+  if (!shouldRoute) {
     const model = input.requestedModel ?? input.defaultModel;
     const provider = resolveProvider(model) ?? "openai";
     return {
@@ -38,7 +40,7 @@ export function routeModel(input: RouteInput): RouteResponse {
     content: input.content,
     currentModel: input.requestedModel ?? input.defaultModel,
     preferCheap: input.preferCheap,
-    executionMode: input.executionMode,
+    executionMode: isAuto ? input.executionMode : "auto-cheapest",
     rules: input.rules,
   });
 
@@ -48,7 +50,9 @@ export function routeModel(input: RouteInput): RouteResponse {
   return {
     model,
     provider,
-    explanation: recommendation.reason,
+    explanation: input.preferCheap && !isAuto
+      ? `Prefer cheap: ${recommendation.reason}`
+      : recommendation.reason,
     source: recommendation.source === "rule" ? "rule" : "heuristic",
     matchedRuleId: recommendation.matchedRuleId ?? null,
   };

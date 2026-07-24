@@ -1,8 +1,7 @@
 import { createHash } from "node:crypto";
 import type Redis from "ioredis";
+import { getSavingsEnv } from "../config/savings-env";
 import { redis as defaultRedis } from "../redis/client";
-
-const DEFAULT_TTL_SECONDS = 60 * 60; // 1 hour
 
 function cacheRedisKey(workspaceId: string, keyHash: string): string {
   return `cache:exact:${workspaceId}:${keyHash}`;
@@ -50,7 +49,7 @@ export async function setExactCache(
   workspaceId: string,
   keyHash: string,
   responseBody: string,
-  ttlSeconds = DEFAULT_TTL_SECONDS,
+  ttlSeconds = getSavingsEnv().exactCacheTtlSeconds,
   client: Redis = defaultRedis,
 ): Promise<void> {
   try {

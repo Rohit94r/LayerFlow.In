@@ -189,6 +189,8 @@ export default function SignInForm() {
         const result = await signIn.email({
           email: email.trim(),
           password,
+          // Persistent cookie with maxAge — omit or set false for a session-only cookie.
+          rememberMe: true,
           callbackURL: next.startsWith("/")
             ? `${window.location.origin}${next}`
             : next,

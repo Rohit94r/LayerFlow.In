@@ -10,6 +10,7 @@ import {
 import { createdAtOnly, idColumn, microDollars } from "./_helpers";
 import { promptVersions } from "./prompts";
 import { workspaces } from "./tenancy";
+import type { RunSavings } from "@layerflow/contracts";
 
 /** One model call — from the workspace (compare/playground/session) or the gateway. */
 export const runs = pgTable(
@@ -40,6 +41,8 @@ export const runs = pgTable(
     apiKeyId: text("api_key_id"),
     /** Why this model was chosen (routing rule / auto mode explanation). */
     routingReason: text("routing_reason"),
+    /** Compression / routing / cache savings vs baseline. */
+    savings: jsonb("savings").$type<RunSavings>(),
     /** Model output body (assistant message). Null while pending or on failure. */
     output: text("output"),
     errorMessage: text("error_message"),

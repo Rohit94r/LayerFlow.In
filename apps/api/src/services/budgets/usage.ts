@@ -8,6 +8,7 @@ import type {
 import { currentPeriod, getLiveDailySpent, getLiveMonthlySpent } from "../../budgets/enforce";
 import { db } from "../../db/client";
 import { usageLedger, usageRollups } from "../../db/schema/cost";
+import { runs } from "../../db/schema/runs";
 import { getOrCreateCurrentBudget } from "./current";
 
 function defaultFromTo(): { from: string; to: string } {
@@ -206,8 +207,49 @@ export async function getSavings(workspaceId: string): Promise<SavingsResponse> 
     };
   }
 
-  // Stub: actual = ledger sum this month; "optimized" = 80% of actual (illustrative).
   const start = new Date(`${period}-01T00:00:00.000Z`);
+
+  // Prefer real per-run savings telemetry when present.
+  const runRows = await db
+    .select({
+      costMicro: runs.costMicro,
+      savings: runs.savings,
+    })
+    .from(runs)
+    .where(
+      and(
+        eq(runs.workspaceId, workspaceId),
+        eq(runs.status, "succeeded"),
+        gte(runs.createdAt, start),
+      ),
+    );
+
+  let runSaved = 0;
+  let tokensSaved = 0;
+  let runActual = 0;
+  let withSavings = 0;
+  for (const row of runRows) {
+    runActual += row.costMicro ?? 0;
+    const s = row.savings;
+    if (s && typeof s === "object") {
+      withSavings += 1;
+      runSaved += Number((s as { costSavedMicro?: number }).costSavedMicro ?? 0);
+      tokensSaved += Number((s as { tokensSaved?: number }).tokensSaved ?? 0);
+    }
+  }
+
+  if (withSavings > 0) {
+    return {
+      period,
+      actualCostMicro: runActual,
+      optimizedCostMicro: Math.max(0, runActual - runSaved),
+      savedMicro: runSaved,
+      tokensSaved,
+      source: "runs",
+    };
+  }
+
+  // Fallback: ledger sum; illustrative 20% optimization when no run telemetry yet.
   const [row] = await db
     .select({ total: sql<number>`coalesce(sum(${usageLedger.costMicro}), 0)` })
     .from(usageLedger)

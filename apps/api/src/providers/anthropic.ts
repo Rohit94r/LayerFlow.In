@@ -56,7 +56,7 @@ export const anthropicAdapter: ProviderAdapter = {
         },
         body: JSON.stringify({
           model: req.model,
-          max_tokens: 4096,
+          max_tokens: req.maxTokens ?? 4096,
           ...(system ? { system } : {}),
           messages,
         }),
@@ -120,7 +120,7 @@ export const anthropicAdapter: ProviderAdapter = {
         },
         body: JSON.stringify({
           model: req.model,
-          max_tokens: 4096,
+          max_tokens: req.maxTokens ?? 4096,
           stream: true,
           ...(system ? { system } : {}),
           messages,

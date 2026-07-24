@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Save, Play, Copy, Check, Loader2 } from "lucide-react";
+import { Save, Play, Copy, Check, Loader2, Plus, X } from "lucide-react";
 import type { Prompt, PromptVersion, PromptAnalysis } from "@/lib/types";
 import PromptAnalysisPanel from "./PromptAnalysis";
 import {
@@ -9,11 +9,15 @@ import {
   updatePrompt,
   createRun,
   analyzePrompt,
+  createPromptVariable,
+  updatePromptVariable,
+  deletePromptVariable,
 } from "@/lib/api";
 import { mapPromptVersion } from "@/lib/api/mappers";
 import { microToUsd } from "@/lib/api/money";
 import { ApiClientError } from "@/lib/api/client";
 import { errorMessage } from "@/lib/hooks/use-async-data";
+import SavingsLine from "@/components/workspace/SavingsLine";
 
 interface PromptEditorProps {
   prompt: Prompt;
@@ -65,6 +69,15 @@ export default function PromptEditor({
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [runOutput, setRunOutput] = useState<string | null>(null);
+  const [runSavings, setRunSavings] = useState<{
+    tokensSaved: number;
+    costSavedUsd: number;
+    cacheHit: boolean;
+  } | null>(null);
+  const [variables, setVariables] = useState(prompt.variables);
+  const [newVarName, setNewVarName] = useState("");
+  const [newVarDefault, setNewVarDefault] = useState("");
+  const [addingVar, setAddingVar] = useState(false);
 
   const hasChanges = content !== prompt.content || title !== prompt.title;
 
@@ -73,6 +86,7 @@ export default function PromptEditor({
     setTitle(prompt.title);
     setModel(prompt.model || "gpt-4o");
     setVersionCount(prompt.versions.length);
+    setVariables(prompt.variables);
   }, [prompt]);
 
   useEffect(() => {
@@ -136,6 +150,7 @@ export default function PromptEditor({
     setRunning(true);
     setError(null);
     setRunOutput(null);
+    setRunSavings(null);
     try {
       let versionId = prompt.versions[prompt.versions.length - 1]?.id;
       if (content !== prompt.content || !versionId) {
@@ -160,6 +175,16 @@ export default function PromptEditor({
       });
       const output = runRes.run.output ?? "";
       setRunOutput(output);
+      const s = runRes.run.savings;
+      if (s && (s.tokensSaved > 0 || s.costSavedMicro > 0 || s.cacheHit || runRes.run.cacheHit)) {
+        setRunSavings({
+          tokensSaved: s.tokensSaved,
+          costSavedUsd: microToUsd(s.costSavedMicro),
+          cacheHit: Boolean(s.cacheHit || runRes.run.cacheHit),
+        });
+      } else if (runRes.run.cacheHit) {
+        setRunSavings({ tokensSaved: 0, costSavedUsd: 0, cacheHit: true });
+      }
       onRunComplete?.(output);
     } catch (err) {
       if (err instanceof ApiClientError && err.isBudgetExceeded) {
@@ -172,6 +197,45 @@ export default function PromptEditor({
     } finally {
       setRunning(false);
     }
+  };
+
+  const handleAddVariable = async () => {
+    const name = newVarName.trim();
+    if (!name) return;
+    setAddingVar(true);
+    setError(null);
+    try {
+      await createPromptVariable(prompt.id, {
+        name,
+        defaultValue: newVarDefault.trim() || undefined,
+      });
+      setVariables((prev) => [
+        ...prev,
+        { name, defaultValue: newVarDefault.trim() || undefined },
+      ]);
+      setNewVarName("");
+      setNewVarDefault("");
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setAddingVar(false);
+    }
+  };
+
+  const handleDeleteVariable = async (varName: string) => {
+    const variable = variables.find((v) => v.name === varName);
+    if (!variable) return;
+    setError(null);
+    try {
+      const varObj = variable as { name: string; id?: string };
+      if (varObj.id) {
+        await deletePromptVariable(prompt.id, varObj.id);
+      }
+    } catch (err) {
+      setError(errorMessage(err));
+      return;
+    }
+    setVariables((prev) => prev.filter((v) => v.name !== varName));
   };
 
   const analysisPanel = useMemo(() => analysis, [analysis]);
@@ -231,21 +295,75 @@ export default function PromptEditor({
           placeholder="Write your prompt here..."
         />
 
-        {prompt.variables.length > 0 && (
+        {variables.length > 0 && (
           <div className="border-t border-border px-4 py-3">
             <p className="mb-2 text-xs font-medium text-muted">Variables</p>
             <div className="flex flex-wrap gap-2">
-              {prompt.variables.map((v) => (
+              {variables.map((v) => (
                 <span
                   key={v.name}
-                  className="rounded-md border border-border bg-surface-2 px-2 py-1 font-mono text-xs text-brand"
+                  className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1 font-mono text-xs text-brand"
                 >
-                  {`{{${v.name}}}`}
+                  <span>{`{{${v.name}}}`}</span>
+                  {v.defaultValue && (
+                    <span className="text-faint">={v.defaultValue}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteVariable(v.name)}
+                    className="ml-0.5 rounded p-0.5 text-faint hover:text-red-500"
+                    aria-label={`Remove ${v.name}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </span>
               ))}
             </div>
           </div>
         )}
+        {variables.length === 0 && (
+          <div className="border-t border-border px-4 py-2">
+            <p className="text-xs text-faint">
+              Add variables like {"{{topic}}"} to make prompts reusable.
+            </p>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2 border-t border-border px-4 py-2">
+          <input
+            type="text"
+            value={newVarName}
+            onChange={(e) => setNewVarName(e.target.value)}
+            placeholder="Variable name"
+            className="h-7 w-32 rounded border border-border bg-surface-2 px-2 font-mono text-xs text-ink outline-none placeholder:text-faint"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newVarName.trim()) handleAddVariable();
+            }}
+          />
+          <input
+            type="text"
+            value={newVarDefault}
+            onChange={(e) => setNewVarDefault(e.target.value)}
+            placeholder="Default value (optional)"
+            className="h-7 flex-1 rounded border border-border bg-surface-2 px-2 text-xs text-ink outline-none placeholder:text-faint"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newVarName.trim()) handleAddVariable();
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleAddVariable}
+            disabled={addingVar || !newVarName.trim()}
+            className="btn-secondary flex items-center gap-1 rounded px-2 py-1 text-xs disabled:opacity-60"
+          >
+            {addingVar ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Plus className="h-3 w-3" />
+            )}
+            Add
+          </button>
+        </div>
 
         <div className="flex items-center justify-between border-t border-border px-4 py-2.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -266,7 +384,7 @@ export default function PromptEditor({
               <option value="gpt-4o-mini">gpt-4o-mini</option>
               <option value="claude-sonnet-4">claude-sonnet-4</option>
               <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-              <option value="deepseek-v3">deepseek-v3</option>
+              <option value="deepseek-chat">deepseek-chat</option>
             </select>
           </div>
           <span className="text-xs text-faint">
@@ -284,7 +402,16 @@ export default function PromptEditor({
 
       {runOutput && (
         <div className="card p-4">
-          <h3 className="text-sm font-semibold text-ink">Run output</h3>
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-sm font-semibold text-ink">Run output</h3>
+            {runSavings && (
+              <SavingsLine
+                tokensSaved={runSavings.tokensSaved}
+                costSavedUsd={runSavings.costSavedUsd}
+                cacheHit={runSavings.cacheHit}
+              />
+            )}
+          </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
             {runOutput}
           </p>

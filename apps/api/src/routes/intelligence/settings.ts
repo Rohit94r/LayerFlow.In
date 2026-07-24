@@ -19,6 +19,7 @@ function toDto(row: typeof workspaceSettings.$inferSelect) {
     workspaceId: row.workspaceId,
     executionMode: row.executionMode,
     preferCheap: row.preferCheap,
+    tokenSaver: row.tokenSaver,
     defaultModel: row.defaultModel,
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -56,6 +57,7 @@ settingsRouter.put("/", async (c) => {
         workspaceId,
         executionMode: body.executionMode ?? "suggest",
         preferCheap: body.preferCheap ?? false,
+        tokenSaver: body.tokenSaver ?? false,
         defaultModel: body.defaultModel ?? "gpt-4o-mini",
       })
       .returning();
@@ -67,6 +69,7 @@ settingsRouter.put("/", async (c) => {
     .set({
       ...(body.executionMode !== undefined ? { executionMode: body.executionMode } : {}),
       ...(body.preferCheap !== undefined ? { preferCheap: body.preferCheap } : {}),
+      ...(body.tokenSaver !== undefined ? { tokenSaver: body.tokenSaver } : {}),
       ...(body.defaultModel !== undefined ? { defaultModel: body.defaultModel } : {}),
     })
     .where(eq(workspaceSettings.workspaceId, workspaceId))
