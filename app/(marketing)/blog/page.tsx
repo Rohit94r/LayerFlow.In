@@ -4,11 +4,14 @@ import BlogHero from "@/components/blog/BlogHero";
 import BlogFilters from "@/components/blog/BlogFilters";
 import BlogPostRow from "@/components/blog/BlogPostRow";
 import {
-  getAllPosts,
+  getPublishedPosts,
   getCategories,
   getTags,
   SITE_URL,
 } from "@/lib/blog";
+
+/** Unlock scheduled posts without a full redeploy (checks publishedAt on each revalidate) */
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -31,7 +34,7 @@ export default async function BlogIndexPage({
   searchParams: SearchParams;
 }) {
   const { category, tag } = await searchParams;
-  let posts = getAllPosts();
+  let posts = getPublishedPosts();
 
   if (category) {
     posts = posts.filter((p) => p.category === category);

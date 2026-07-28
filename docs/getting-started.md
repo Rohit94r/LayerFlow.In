@@ -8,6 +8,8 @@ this to production.
 > New to the codebase or want to run it yourself? See `docs/database.md`
 > (Neon migrate + commands), `apps/api/README.md` (backend), 
 > `docs/backend-status.md` (what's built), and `docs/deployment.md` (go-live).
+> Calling models from your own app? See `docs/sdk.md` — there is **no** published
+> `@layerflow/sdk` yet; use HTTP or the OpenAI client with `baseURL`.
 > This page is about **using the product**.
 
 ---
@@ -142,10 +144,11 @@ curl -X POST http://localhost:8787/v1/chat/completions \
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say hi"}]}'
 ```
 
-Or in code: set `baseURL` to `http://localhost:8787/v1` and `apiKey` to your
-`lf_…` secret. Identical requests are served from the exact-match cache
+Or in code: set `baseURL` to `http://localhost:8787/v1` (local) or
+`https://layerflow.dev/v1` (prod same-origin) and `apiKey` to your `lf_…`
+secret. Identical requests are served from the exact-match cache
 (`x-layerflow-cache: hit`) for free, and every call is budget-checked and
-logged to your usage.
+logged to your usage. Full interim examples and SDK roadmap: `docs/sdk.md`.
 
 ---
 

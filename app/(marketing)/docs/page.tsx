@@ -325,16 +325,16 @@ export default function DocsPage() {
               <CodeBlock>{`import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: process.env.LAYERFLOW_API_KEY,
-  baseURL: "https://api.layerflow.dev/v1",
+  apiKey: process.env.LAYERFLOW_API_KEY, // lf_…
+  baseURL: "https://layerflow.dev/v1",
 });
 
 const result = await client.chat.completions.create({
   model: "gpt-4o-mini",
   messages: [{ role: "user", content: "Explain this simply." }],
 });`}</CodeBlock>
-              <CodeBlock>{`curl https://api.layerflow.dev/v1/chat/completions \\
-  -H "Authorization: Bearer lf_live_your_key" \\
+              <CodeBlock>{`curl https://layerflow.dev/v1/chat/completions \\
+  -H "Authorization: Bearer lf_...your-secret..." \\
   -H "Content-Type: application/json" \\
   -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Hello"}]}'`}</CodeBlock>
             </div>

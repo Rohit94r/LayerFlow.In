@@ -179,20 +179,21 @@ export const posts = [
   },
   {
     "slug": "organize-ai-prompts-workspace",
-    "title": "How to Organize AI Prompts Like a Pro Workspace",
-    "metaTitle": "How to Organize AI Prompts | Prompt Workspace Guide",
-    "description": "Stop dumping prompts in Notion and Notes. Build a domain-based AI prompt workspace with projects, folders, and searchable libraries.",
+    "title": "How to Organize AI Prompts: A Complete Workspace System",
+    "metaTitle": "How to Organize AI Prompts | Complete System (2026)",
+    "description": "How to organize AI prompts with domains, projects, and folders — stop losing versions in Notion and ChatGPT history. Free workspace to start.",
     "publishedAt": "2026-07-16",
     "category": "Prompt engineering",
     "tags": [
       "prompt organization",
       "AI workspace",
-      "prompt library"
+      "prompt library",
+      "how to organize ai prompts"
     ],
-    "primaryKeyword": "AI prompt management",
+    "primaryKeyword": "how to organize ai prompts",
     "secondaryKeywords": [
-      "prompt workspace",
-      "prompt organization",
+      "organize ai prompts",
+      "ai prompt organizer",
       "prompt library"
     ],
     "readingTime": "4 min read",
@@ -1812,9 +1813,9 @@ export const posts = [
   },
   {
     "slug": "gpt-vs-claude-vs-gemini-vs-deepseek-2026",
-    "title": "GPT vs Claude vs Gemini vs DeepSeek: 2026 Comparison Guide",
-    "metaTitle": "GPT vs Claude vs Gemini vs DeepSeek (2026)",
-    "description": "Compare GPT, Claude, Gemini, and DeepSeek on quality, cost, and latency — and learn how to pick winners per task in one workspace.",
+    "title": "GPT-4o vs Claude vs Gemini 2026: Full Comparison for Developers",
+    "metaTitle": "GPT-4o vs Claude vs Gemini 2026 Comparison",
+    "description": "GPT-4o vs Claude vs Gemini in 2026 — quality, cost, and latency side by side, plus when DeepSeek belongs in the mix.",
     "publishedAt": "2026-06-28",
     "category": "Model comparison",
     "tags": [
@@ -1823,7 +1824,7 @@ export const posts = [
       "Gemini",
       "DeepSeek"
     ],
-    "primaryKeyword": "GPT vs Claude vs Gemini vs DeepSeek",
+    "primaryKeyword": "gpt-4o vs claude vs gemini 2026",
     "secondaryKeywords": [
       "compare GPT Claude Gemini",
       "multi-model comparison",
@@ -2537,21 +2538,21 @@ export const posts = [
   },
   {
     "slug": "model-routing-latency-cost-quality",
-    "title": "Model Routing Strategies for Latency, Cost, and Quality",
-    "metaTitle": "LLM Model Routing for Latency, Cost & Quality",
-    "description": "Design model routing rules that balance latency, cost, and quality — including fallbacks, cheap mode, and task-based selection.",
+    "title": "AI Cost vs Quality Tradeoff: Find the Sweet Spot with Model Routing",
+    "metaTitle": "AI Cost vs Quality Tradeoff | LLM Routing Guide",
+    "description": "AI cost vs quality tradeoff explained: route prompts by latency, cost, and quality so you stop overpaying for frontier models.",
     "publishedAt": "2026-06-20",
     "category": "Model comparison",
     "tags": [
       "routing",
-      "architecture",
-      "performance"
+      "cost",
+      "quality"
     ],
-    "primaryKeyword": "LLM model routing",
+    "primaryKeyword": "llm routing cost latency quality",
     "secondaryKeywords": [
+      "AI cost vs quality",
       "cheap mode LLM routing",
-      "LLM latency comparison",
-      "OpenAI compatible API gateway"
+      "LLM latency comparison"
     ],
     "readingTime": "4 min read",
     "author": "LayerFlow Team",
@@ -2718,17 +2719,18 @@ export const posts = [
   },
   {
     "slug": "what-is-llm-gateway",
-    "title": "What Is an LLM Gateway? OpenAI-Compatible APIs Explained",
+    "title": "What Is an LLM Gateway and Why Every AI App Needs One",
     "metaTitle": "What Is an LLM Gateway? OpenAI-Compatible Explained",
-    "description": "Understand LLM gateways, OpenAI-compatible APIs, and when a unified gateway helps — without confusing gateway with your whole AI workflow.",
+    "description": "What is an LLM gateway? How OpenAI-compatible gateways unify providers, keys, and routing — without replacing your AI workspace.",
     "publishedAt": "2026-06-18",
     "category": "AI gateway",
     "tags": [
       "gateway",
       "API",
-      "architecture"
+      "architecture",
+      "llm gateway"
     ],
-    "primaryKeyword": "LLM gateway",
+    "primaryKeyword": "llm gateway",
     "secondaryKeywords": [
       "OpenAI compatible API gateway",
       "AI API gateway",
@@ -2899,9 +2901,9 @@ export const posts = [
   },
   {
     "slug": "bring-your-own-keys-byok",
-    "title": "Bring Your Own Keys (BYOK): Why It Matters for AI Tools",
-    "metaTitle": "BYOK for AI Tools | Bring Your Own Keys Guide",
-    "description": "BYOK keeps provider billing with you. Learn why bring-your-own-keys matters for cost control, portability, and trust in AI tools.",
+    "title": "What is BYOK? Bring Your Own Key Explained for AI Apps",
+    "metaTitle": "What is BYOK? Bring Your Own Key Explained",
+    "description": "What is BYOK in AI? Bring your own key explained — keep provider billing with you, stay portable, and control spend across models.",
     "publishedAt": "2026-06-16",
     "category": "AI gateway",
     "tags": [
@@ -2909,11 +2911,11 @@ export const posts = [
       "API keys",
       "billing"
     ],
-    "primaryKeyword": "bring your own keys BYOK",
+    "primaryKeyword": "what is byok ai",
     "secondaryKeywords": [
-      "BYOK LLM",
-      "AI key management",
-      "manage LLM API keys"
+      "byok explained",
+      "bring your own keys BYOK",
+      "BYOK LLM"
     ],
     "readingTime": "4 min read",
     "author": "LayerFlow Team",

@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog";
+import { getPublishedPosts } from "@/lib/blog";
+
+export const revalidate = 3600;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://layerflow.dev";
   const now = new Date();
-  const blogPosts = getAllPosts().map((post) => ({
+  const blogPosts = getPublishedPosts(now).map((post) => ({
     url: `${base}/blog/${post.slug}`,
     lastModified: new Date(post.updatedAt ?? post.publishedAt),
     changeFrequency: "monthly" as const,

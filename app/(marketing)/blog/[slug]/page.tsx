@@ -6,14 +6,18 @@ import BlogTOC from "@/components/blog/BlogTOC";
 import RelatedPosts from "@/components/blog/RelatedPosts";
 import {
   getAllSlugs,
-  getPostBySlug,
+  getPublishedPostBySlug,
   getRelatedPosts,
   SITE_URL,
 } from "@/lib/blog";
 
 type Params = Promise<{ slug: string }>;
 
+/** Unlock scheduled posts without a full redeploy */
+export const revalidate = 3600;
+
 export function generateStaticParams() {
+  // Generate all slugs; unpublished posts 404 until publishedAt <= now
   return getAllSlugs().map((slug) => ({ slug }));
 }
 
@@ -23,8 +27,8 @@ export async function generateMetadata({
   params: Params;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
-  if (!post) return {};
+  const post = getPublishedPostBySlug(slug);
+  if (!post) return { robots: { index: false, follow: false } };
 
   const url = `/blog/${post.slug}`;
   return {
@@ -61,7 +65,7 @@ function formatDate(iso: string) {
 
 export default async function BlogPostPage({ params }: { params: Params }) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = getPublishedPostBySlug(slug);
   if (!post) notFound();
 
   const related = getRelatedPosts(post, 3);

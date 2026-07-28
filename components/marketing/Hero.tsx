@@ -129,7 +129,7 @@ export default function Hero() {
 
           <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/50">
-              Connect your keys — workspace ready in under 5 minutes
+              SDK coming soon — use the OpenAI-compatible gateway today
             </p>
             <button
               onClick={copy}

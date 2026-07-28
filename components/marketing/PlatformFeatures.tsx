@@ -171,7 +171,13 @@ export default function PlatformFeatures() {
                   <CodeWindow
                     lang={current.code.lang}
                     lines={current.code.lines}
-                    filename={`${current.id}.${current.code.lang === "bash" ? "sh" : "ts"}`}
+                    filename={`${current.id}.${
+                      current.code.lang === "bash"
+                        ? "sh"
+                        : current.code.lang === "text"
+                          ? "txt"
+                          : "ts"
+                    }`}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -187,7 +193,13 @@ export default function PlatformFeatures() {
           <CodeWindow
             lang={current.code.lang}
             lines={current.code.lines}
-            filename={`${current.id}.ts`}
+            filename={`${current.id}.${
+              current.code.lang === "bash"
+                ? "sh"
+                : current.code.lang === "text"
+                  ? "txt"
+                  : "ts"
+            }`}
           />
         </div>
       </div>

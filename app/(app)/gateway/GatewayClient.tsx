@@ -73,7 +73,7 @@ export default function GatewayClient() {
       <PageHeader
         eyebrow="Build"
         title="Gateway"
-        description="BYOK, OpenAI-compatible API, and SDK snippets — for when you deploy, not the center of the workspace."
+        description="BYOK, OpenAI-compatible API, and client snippets — for when you deploy, not the center of the workspace."
       />
 
       <div className="card p-6">

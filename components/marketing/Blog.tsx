@@ -1,6 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import { getAllPosts } from "@/lib/blog";
+import { getPublishedPosts } from "@/lib/blog";
 import Reveal from "./Reveal";
 
 function formatDate(iso: string) {
@@ -12,7 +12,7 @@ function formatDate(iso: string) {
 }
 
 export default function Blog() {
-  const posts = getAllPosts().slice(0, 3);
+  const posts = getPublishedPosts().slice(0, 3);
 
   return (
     <section id="blog" className="mx-auto max-w-7xl scroll-mt-24 px-5 py-20 sm:px-8 sm:py-24">

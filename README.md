@@ -220,6 +220,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - [Product Strategy](docs/product-strategy.md) — Vision, personas, and roadmap
 - [Features](docs/features.md) — Detailed feature specifications
+- [Features status](docs/features-status.md) — What’s working vs planned
+- [Getting started](docs/getting-started.md) — Use the app + gateway without an SDK
+- [SDK](docs/sdk.md) — Official SDK planned (not on npm); HTTP / OpenAI client today
 - [Backend Architecture](docs/backend.md) — API design and data model
 
 ---

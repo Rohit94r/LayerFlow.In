@@ -16,13 +16,19 @@ export type BlogBlock =
   | { type: "callout"; text: string }
   | { type: "faq"; items: { q: string; a: string }[] };
 
+/** Editorial publish state — usually derived from publishedAt vs now */
+export type BlogPublishStatus = "draft" | "scheduled" | "published";
+
 export type BlogPost = {
   slug: string;
   title: string;
   metaTitle: string;
   description: string;
-  publishedAt: string; // ISO date
+  /** ISO calendar date (YYYY-MM-DD) or full ISO timestamp — live when <= now */
+  publishedAt: string;
   updatedAt?: string;
+  /** Optional explicit status; if omitted, derived from publishedAt */
+  status?: BlogPublishStatus;
   category: BlogCategory;
   tags: string[];
   primaryKeyword: string;
