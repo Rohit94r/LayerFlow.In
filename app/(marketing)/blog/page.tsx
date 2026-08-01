@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import BlogHero from "@/components/blog/BlogHero";
 import BlogFilters from "@/components/blog/BlogFilters";
 import BlogPostRow from "@/components/blog/BlogPostRow";
@@ -78,9 +79,9 @@ export default async function BlogIndexPage({
           {posts.length === 0 ? (
             <p className="py-16 text-muted">
               No posts match this filter.{" "}
-              <a href="/blog" className="text-brand hover:underline">
+              <Link href="/blog" className="text-brand hover:underline">
                 View all
-              </a>
+              </Link>
             </p>
           ) : (
             posts.map((post) => <BlogPostRow key={post.slug} post={post} />)
