@@ -14,7 +14,7 @@
     "dev:worker": "npm run worker --workspace @layerflow/api",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

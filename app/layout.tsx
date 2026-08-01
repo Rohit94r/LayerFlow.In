@@ -23,42 +23,43 @@ const SITE_URL = "https://layerflow.dev";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LayerFlow — The Workspace for Everything You Do With AI",
+    default: "LayerFlow — Never lose AI context again",
     template: "%s · LayerFlow",
   },
   description:
-    "Save prompts, compare models, control costs, organize AI projects, and connect every LLM in one place. LayerFlow is the AI workspace for developers and power users.",
+    "Paste any ChatGPT, Claude, Gemini, DeepSeek or Kimi conversation. LayerFlow compresses it into a reusable Context Passport so you can continue in any AI model with better prompts and lower cost.",
   keywords: [
-    "prompt management",
+    "AI context",
+    "context passport",
+    "limit rescue",
+    "chatgpt limit",
+    "claude limit",
+    "continue in another AI",
+    "prompt improver",
+    "AI cost comparison",
+    "best AI model",
+    "context compression",
     "AI workspace",
-    "prompt versioning",
-    "prompt diff",
-    "AI cost tracking",
-    "budget limits",
-    "multi-model comparison",
-    "GPT vs Claude vs Gemini",
-    "prompt organization",
-    "AI playground",
     "LayerFlow",
   ],
   authors: [{ name: "Rohit Jadhav" }],
   creator: "Rohit Jadhav",
   applicationName: "LayerFlow",
   alternates: { canonical: SITE_URL },
-    openGraph: {
+  openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "LayerFlow",
-    title: "LayerFlow — The Workspace for Everything You Do With AI",
+    title: "LayerFlow — Never lose AI context again",
     description:
-      "Save prompts, compare models, control costs, and connect every LLM in one workspace.",
+      "The AI Context Operating System. Rescue chats, compress context, improve prompts, and continue in any model.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — The Workspace for Everything You Do With AI",
+    title: "LayerFlow — Never lose AI context again",
     description:
-      "Save prompts, compare models, control costs, and connect every LLM in one workspace.",
+      "The AI Context Operating System. Rescue chats, compress context, improve prompts, and continue in any model.",
     images: ["/og.png"],
   },
   robots: {
@@ -90,7 +91,7 @@ export default function RootLayout({
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
     description:
-      "The AI workspace for prompts, models, and cost control — save, compare, organize, and stay under budget.",
+      "The AI Context Operating System — paste any AI conversation and continue in any model with better prompts and lower cost.",
     offers: {
       "@type": "Offer",
       price: "0",
