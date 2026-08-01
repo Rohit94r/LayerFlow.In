@@ -1,236 +1,275 @@
-export type DomainId = string;
+// ─────────────────────────────────────────────────────────────
+// LayerFlow — Core domain types
+// The AI Context Operating System
+// ─────────────────────────────────────────────────────────────
 
-export interface Domain {
-  id: DomainId;
-  slug?: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  projectCount: number;
-  promptCount: number;
+export type AiTool =
+  | "chatgpt"
+  | "claude"
+  | "gemini"
+  | "deepseek"
+  | "kimi"
+  | "groq"
+  | "openrouter"
+  | "perplexity"
+  | "generic";
+
+export type PlanId = "free" | "starter" | "pro";
+
+// ── Context Passport ─────────────────────────────────────────
+
+export interface PassportFields {
+  goal: string;
+  currentState: string;
+  decisions: string[];
+  constraints: string[];
+  failures: string[];
+  successes: string[];
+  missingInfo: string[];
+  outputFormat: string;
+  nextAction: string;
 }
 
-export interface Project {
+export interface PassportMeta {
+  sourceTool: AiTool;
+  sourceModel: string;
+  projectId?: string;
+  tags: string[];
+  estimatedNextCost: number;
+}
+
+export interface ContextPassport {
   id: string;
-  domainId: DomainId;
-  name: string;
-  description: string;
-  folderCount: number;
-  promptCount: number;
-  updatedAt: string;
-  archived?: boolean;
-}
-
-export interface Folder {
-  id: string;
-  projectId: string;
-  name: string;
-  promptCount: number;
-}
-
-export interface PromptVariable {
-  name: string;
-  defaultValue?: string;
-  description?: string;
-}
-
-export interface PromptAttachment {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-}
-
-export interface PromptVersion {
-  id: string;
-  version: number;
-  content: string;
-  model: string;
-  provider: string;
-  cost: number;
-  tokensIn: number;
-  tokensOut: number;
-  output: string;
+  title: string;
+  fields: PassportFields;
+  meta: PassportMeta;
   createdAt: string;
-  note?: string;
+  updatedAt: string;
+  favorite: boolean;
+  usageCount: number;
+  wordCount: number;
 }
+
+// ── Rescue Report ────────────────────────────────────────────
+
+export interface CostEstimate {
+  modelId: string;
+  provider: string;
+  model: string;
+  class: "flagship" | "balanced" | "cheap";
+  inputTokens: number;
+  outputTokens: number;
+  cost: number;
+  latency: string;
+  recommended: boolean;
+}
+
+export interface PromptScoreAxis {
+  label: string;
+  value: number; // 0-100
+}
+
+export interface ContextDiff {
+  kept: string[];
+  removed: string[];
+  unsure: string[];
+}
+
+export interface RescueReport {
+  id: string;
+  title: string;
+  sourceTool: AiTool;
+  sourceModel: string;
+  createdAt: string;
+  originalWords: number;
+  compressedWords: number;
+  compressionPercent: number;
+  summary: string;
+  passport: PassportFields;
+  improvedPrompt: string;
+  promptScore: number;
+  promptScores: PromptScoreAxis[];
+  diff: ContextDiff;
+  costs: CostEstimate[];
+  recommendedModelId: string;
+  recommendedReason: string;
+  continuePack: { label: string; value: string }[];
+  saved: boolean;
+  projectId?: string;
+  feedback?: "worked" | "missing" | "long" | "model" | "prompt";
+}
+
+// ── Prompt Library ───────────────────────────────────────────
 
 export interface Prompt {
   id: string;
-  projectId: string;
-  folderId?: string;
-  domainId: DomainId;
   title: string;
-  description?: string;
+  description: string;
   content: string;
+  originalContent?: string;
+  score: number;
   tags: string[];
+  model: string;
+  version: number;
   favorite: boolean;
-  variables: PromptVariable[];
-  versions: PromptVersion[];
-  notes?: string;
-  attachments?: PromptAttachment[];
-  model: string;
-  provider: string;
-  cost: number;
-  tokensIn: number;
-  tokensOut: number;
-  updatedAt: string;
-  createdAt: string;
-}
-
-export interface PromptSession {
-  id: string;
-  title: string;
-  description?: string;
-  domainId: DomainId;
-  projectId?: string;
-  promptIds: string[];
-  status: "active" | "completed" | "paused";
-  totalCost: number;
-  totalTokens: number;
+  usageCount: number;
   createdAt: string;
   updatedAt: string;
+  sourceTool?: AiTool;
 }
 
-export interface CompareResult {
-  model: string;
-  provider: string;
-  output: string;
-  cost: number;
-  latencyMs: number;
-  tokensIn: number;
-  tokensOut: number;
-  qualityScore?: number;
-  rankHints?: { best: boolean; cheapest: boolean; fastest: boolean };
-  tokensSaved?: number;
-  costSaved?: number;
-  cacheHit?: boolean;
-}
+// ── Workspace ────────────────────────────────────────────────
 
-export interface Budget {
-  monthlyLimit: number;
-  dailyLimit: number;
-  spent: number;
-  dailySpent: number;
-  remaining: number;
-  percentUsed: number;
-  blocked: boolean;
-  alertThreshold: number;
-  resetDate: string;
-}
-
-export interface ProjectBudget {
-  projectId: string;
-  projectName: string;
-  limit: number;
-  spent: number;
-  percentUsed: number;
-}
-
-export interface KeyBudget {
-  keyId: string;
-  keyName: string;
-  limit: number;
-  spent: number;
-  percentUsed: number;
-}
-
-export interface ApiKey {
+export interface Project {
   id: string;
   name: string;
-  prefix: string;
-  projectId?: string;
+  description: string;
+  color: string;
+  passportCount: number;
+  promptCount: number;
+  learningCount: number;
+  updatedAt: string;
   createdAt: string;
+  stage: "active" | "paused" | "done";
+}
+
+export type TimelineEventType =
+  | "rescue"
+  | "passport"
+  | "prompt"
+  | "learning"
+  | "cost"
+  | "model"
+  | "decision";
+
+export interface TimelineEvent {
+  id: string;
+  type: TimelineEventType;
+  title: string;
+  description: string;
+  timestamp: string;
+  meta?: string;
+  projectId?: string;
+}
+
+export interface Learning {
+  id: string;
+  content: string;
+  source: string;
+  tags: string[];
+  createdAt: string;
+  projectId?: string;
+  pinned: boolean;
+}
+
+// ── Models & BYOK ────────────────────────────────────────────
+
+export type ModelClass = "flagship" | "balanced" | "cheap";
+
+export interface ModelInfo {
+  id: string;
+  provider: string;
+  name: string;
+  class: ModelClass;
+  quality: number; // 0-100
+  costIn: number; // USD per 1M input tokens
+  costOut: number; // USD per 1M output tokens
+  speed: number; // relative, higher = faster
+  bestFor: string;
+  supportsByok: boolean;
+}
+
+export interface ProviderKey {
+  provider: string;
+  label: string;
+  status: "connected" | "needs_attention" | "not_added";
+  addedAt?: string;
   lastUsed?: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatarInitials: string;
-  plan: "free" | "pro";
+export interface ModelSuggestion {
+  modelId: string;
+  reason: string;
+  alternativeModelId: string;
+  alternativeReason: string;
+  savingsPercent: number;
+  costPerRun: number;
+  tokensPerRun: number;
+  confidence: number;
 }
 
-export interface GatewayConfig {
-  baseUrl: string;
-  apiKey: string;
-  defaultModel: string;
+// ── Cost Analytics ───────────────────────────────────────────
+
+export interface CostPoint {
+  label: string;
+  value: number;
 }
 
-export type ExecutionMode =
-  | "manual"
-  | "suggest"
-  | "auto-cheapest"
-  | "auto-fastest"
-  | "auto-best"
-  | "auto-balanced";
-
-export interface WorkspaceSettings {
-  preferCheap: boolean;
-  tokenSaver: boolean;
-  executionMode: ExecutionMode;
-  defaultModel: string;
-}
-
-export interface RoutingRule {
-  id: string;
-  condition: string;
+export interface ModelSpend {
+  modelId: string;
+  provider: string;
   model: string;
-  enabled: boolean;
+  spend: number;
+  runs: number;
+  tokensIn: number;
+  tokensOut: number;
 }
 
-export interface PromptAnalysis {
-  estimatedTokensIn: number;
-  estimatedTokensOut: number;
-  estimatedCost: number;
-  recommended: {
-    model: string;
-    provider: string;
-    qualityPercent: number;
-    cheaperPercent: number;
-    label: string;
-  };
-  alternative: {
-    model: string;
-    provider: string;
-    label: string;
-  };
-  why: string[];
-  taskType: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  type: "prompt_saved" | "compare_run" | "session_started" | "budget_alert" | "cache_hit";
-  title: string;
-  description?: string;
-  timestamp: string;
-  meta?: string;
-}
+// ── Dashboard ────────────────────────────────────────────────
 
 export interface DashboardStats {
-  todayPrompts: number;
-  totalProjects: number;
-  totalPrompts: number;
-  monthlyCost: number;
-  cacheSaved: number;
-  mostUsedModel: string;
-  modelUsage: { model: string; count: number; cost: number }[];
+  todayUsage: number; // dollars spent estimate
+  todayUsageDelta: number; // percent vs yesterday
+  moneySaved: number;
+  moneySavedDelta: number;
+  contextsSaved: number;
+  contextsSavedDelta: number;
+  continuePacks: number;
+  continuePacksDelta: number;
+  weeklyUsage: CostPoint[];
+  weeklySavings: CostPoint[];
+  modelMix: { provider: string; value: number }[];
 }
 
-export interface PromptSpendItem {
-  promptId: string;
-  title: string;
-  projectName: string;
-  totalCost: number;
-  runCount: number;
-  lastModel: string;
-}
+// ── Marketing ────────────────────────────────────────────────
 
-export type NavItem = {
+export interface Plan {
+  id: PlanId;
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: string[];
+  cta: string;
   href: string;
-  label: string;
+  highlighted: boolean;
+  badge?: string;
+}
+
+export interface Testimonial {
+  quote: string;
+  name: string;
+  role: string;
+  initials: string;
+  color: string;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface RoadmapPhase {
+  phase: string;
+  title: string;
+  description: string;
+  status: "live" | "building" | "planned";
+  items: string[];
+}
+
+export interface UseCase {
+  title: string;
+  description: string;
+  example: string;
   icon: string;
-};
+}
