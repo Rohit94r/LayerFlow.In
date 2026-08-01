@@ -22,9 +22,13 @@ export function ThemeToggle({ overHero = false }: ThemeToggleProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Theme is applied post-mount (document unavailable on the server);
+    // the bootstrap script in the layout has already set the correct class.
     const initial = resolveInitialTheme();
     applyTheme(initial);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initial);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 

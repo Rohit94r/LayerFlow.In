@@ -6,17 +6,18 @@ import {
   Menu,
   X,
   ChevronDown,
-  LayoutGrid,
-  FolderTree,
-  GitBranch,
-  Scale,
-  Wallet,
+  LifeBuoy,
+  Shrink,
+  Wand2,
+  Play,
+  BookUser,
+  Library,
+  Search,
+  Brain,
+  ClipboardList,
   BarChart3,
-  Bell,
+  Cpu,
   KeyRound,
-  Server,
-  Code2,
-  Key,
   ArrowRight,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -32,17 +33,18 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 const featureIcons: Record<FeatureMenuItem["icon"], LucideIcon> = {
-  workspace: LayoutGrid,
-  domains: FolderTree,
-  timeline: GitBranch,
-  compare: Scale,
-  budget: Wallet,
-  analytics: BarChart3,
-  alerts: Bell,
+  rescue: LifeBuoy,
+  compress: Shrink,
+  improve: Wand2,
+  continue: Play,
+  passport: BookUser,
+  prompts: Library,
+  search: Search,
+  memory: Brain,
+  ledger: ClipboardList,
+  cost: BarChart3,
+  models: Cpu,
   byok: KeyRound,
-  gateway: Server,
-  sdk: Code2,
-  keys: Key,
 };
 
 function FeatureMenuLink({
@@ -97,6 +99,8 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    // Close menus whenever the route changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFeaturesOpen(false);
     setMobileOpen(false);
     setMobileFeaturesOpen(false);
@@ -203,7 +207,7 @@ export default function Navbar() {
                             </div>
                             <div className="flex items-center justify-between border-t border-border bg-surface-1/50 px-5 py-3">
                               <p className="text-xs text-muted">
-                                The AI workspace for prompts, models, and cost
+                                The AI Context Operating System
                               </p>
                               <Link
                                 href="/#features"

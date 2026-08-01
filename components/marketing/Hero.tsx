@@ -117,7 +117,7 @@ export default function Hero() {
               href={site.signInHref}
               className="rounded-xl bg-white px-6 py-4 text-base font-medium text-black transition-transform hover:scale-[1.02]"
             >
-              Sign in with Google
+              Sign in
             </a>
             <a
               href={site.pricingHref}
@@ -129,7 +129,7 @@ export default function Hero() {
 
           <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/50">
-              SDK coming soon — use the OpenAI-compatible gateway today
+              Paste a dead chat, get a living prompt — no SDK needed
             </p>
             <button
               onClick={copy}
