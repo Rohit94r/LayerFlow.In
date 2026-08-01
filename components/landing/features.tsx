@@ -1,0 +1,129 @@
+import { SectionHeading, Reveal } from "@/components/ui/reveal";
+import {
+  LifeBuoy,
+  BookUser,
+  FileDown,
+  Wand2,
+  DollarSign,
+  CopyCheck,
+  KeyRound,
+  Cpu,
+  FolderKanban,
+  Search,
+  Brain,
+  History,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+const FEATURES: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  badge?: string;
+}[] = [
+  {
+    icon: LifeBuoy,
+    title: "Limit Rescue",
+    description: "Hit the ChatGPT or Claude cap? Paste the thread and keep working in another model in under a minute.",
+    badge: "Hero",
+  },
+  {
+    icon: BookUser,
+    title: "Context Passport",
+    description: "A portable memory package: goal, current state, decisions, constraints, failures, success, next action, output format.",
+  },
+  {
+    icon: FileDown,
+    title: "Smart Compress",
+    description: "15,000 words in, ~1,000 words out. Only the useful context survives — with a clear reduction count.",
+  },
+  {
+    icon: Wand2,
+    title: "Improve Prompt",
+    description: "Adds missing context, constraints, examples, format and clarity — and scores the result from 0 to 100.",
+  },
+  {
+    icon: DollarSign,
+    title: "Cost Check",
+    description: "Real dollar estimates across Claude, GPT, Gemini, DeepSeek, Kimi and Groq — not just token counts.",
+  },
+  {
+    icon: CopyCheck,
+    title: "Continue Pack",
+    description: "A copy-ready continuation package. Paste it into any AI and continue exactly where you stopped.",
+  },
+  {
+    icon: KeyRound,
+    title: "BYOK",
+    description: "Bring your own API keys. Pay your provider's prices, keep full control, and never touch resold credits.",
+  },
+  {
+    icon: Cpu,
+    title: "Best Model Suggestion",
+    description: "The right model for the task — with the reasoning explained. Cheap first, strong when it matters.",
+  },
+  {
+    icon: FolderKanban,
+    title: "Workspace",
+    description: "Projects, saved context, prompt library, timeline and history — your AI work, organized and durable.",
+  },
+  {
+    icon: Search,
+    title: "Context Search",
+    description: "Search every saved passport, prompt and decision. Find the answer you already paid for.",
+  },
+  {
+    icon: Brain,
+    title: "Learning Memory",
+    description: "Pin what worked so future sessions start from your hard-won lessons, not from scratch.",
+  },
+  {
+    icon: History,
+    title: "AI Work Ledger",
+    description: "A git-like timeline of everything done with AI: rescues, prompts, models, decisions and costs.",
+  },
+];
+
+export default function Features() {
+  return (
+    <section id="features" className="relative py-16 sm:py-20">
+      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+        <SectionHeading
+          eyebrow="Features"
+          title={
+            <>
+              Everything you need to keep
+              <br />
+              <span className="text-brand">AI context alive</span>
+            </>
+          }
+          description="Not another chat window. A system for preserving, improving and reusing the context you've already earned."
+        />
+
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title} delay={(i % 4) * 0.06}>
+              <div className="card card-hover group relative h-full overflow-hidden p-6">
+                <div
+                  className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                  style={{ background: "var(--glow-amber)" }}
+                  aria-hidden
+                />
+                {f.badge ? (
+                  <span className="absolute right-4 top-4 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                    {f.badge}
+                  </span>
+                ) : null}
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-2 text-brand transition-colors group-hover:border-brand/40">
+                  <f.icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-5 text-base font-semibold text-ink">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{f.description}</p>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
