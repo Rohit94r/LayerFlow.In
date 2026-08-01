@@ -12,7 +12,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isPending) return;
     if (!isAuthenticated) {
-      const next = encodeURIComponent(pathname || "/workspace");
+      const next = encodeURIComponent(pathname || "/home");
       router.replace(`/sign-in?next=${next}`);
     }
   }, [isAuthenticated, isPending, pathname, router]);

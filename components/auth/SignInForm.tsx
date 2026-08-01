@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from "lucide-react";
-import Logo from "@/components/marketing/Logo";
-import ThemeToggle from "@/components/marketing/ThemeToggle";
+import { Wordmark } from "@/components/ui/logo";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";
 import { signIn, signUp } from "@/lib/auth-client";
 import { ApiClientError } from "@/lib/api/client";
@@ -59,7 +59,7 @@ function friendlyAuthResultError(
 
 export default function SignInForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/workspace";
+  const next = searchParams.get("next") || "/home";
   const [mode, setMode] = useState<Mode>("signin");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +85,8 @@ export default function SignInForm() {
 
   useEffect(() => {
     const host = window.location.hostname;
+    // Host detection is only possible post-mount (window unavailable on server).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalDev(isLocalWebHost(host));
     setProductionSite(isProductionWebHost(host));
 
@@ -183,7 +185,7 @@ export default function SignInForm() {
           return;
         }
         // Success — better-auth auto-signs-in when enabled; redirect.
-        const dest = next.startsWith("/") ? next : "/workspace";
+        const dest = next.startsWith("/") ? next : "/home";
         window.location.href = `${window.location.origin}${dest}`;
       } else {
         const result = await signIn.email({
@@ -202,7 +204,7 @@ export default function SignInForm() {
           setLoading(false);
           return;
         }
-        const dest = next.startsWith("/") ? next : "/workspace";
+        const dest = next.startsWith("/") ? next : "/home";
         window.location.href = `${window.location.origin}${dest}`;
       }
     } catch (err) {
@@ -259,7 +261,7 @@ export default function SignInForm() {
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 lg:px-10">
         <Link href="/" aria-label="LayerFlow home">
-          <Logo />
+          <Wordmark />
         </Link>
         <ThemeToggle />
       </header>
@@ -267,11 +269,11 @@ export default function SignInForm() {
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col-reverse items-center justify-center gap-12 px-6 pb-16 pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-10">
         <section className="w-full max-w-xl text-center lg:text-left">
           <h1 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.4rem]">
-            The workspace for everything you do with AI
+            Never lose AI context again
           </h1>
           <p className="mx-auto mt-5 max-w-md text-pretty font-mono text-sm leading-6 text-muted lg:mx-0">
-            Save prompts, compare models, control costs — all in one place.
-            Build faster with every LLM connected.
+            Paste any ChatGPT, Claude, Gemini, DeepSeek or Kimi conversation.
+            Continue in any model with better prompts and lower cost.
           </p>
         </section>
 
@@ -282,7 +284,7 @@ export default function SignInForm() {
             </h2>
             <p className="mt-2 text-center text-sm text-muted">
               {mode === "signin"
-                ? "One account for prompts, budgets, and the gateway."
+                ? "One account for every AI you use."
                 : "Free to start. No credit card required."}
             </p>
 
@@ -486,8 +488,8 @@ export default function SignInForm() {
               Back to home
             </Link>
             {" · "}
-            <Link href="/docs" className="text-brand hover:underline">
-              Docs
+            <Link href="/pricing" className="text-brand hover:underline">
+              Pricing
             </Link>
           </p>
         </section>
