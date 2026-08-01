@@ -2,8 +2,10 @@ import Hero from "@/components/marketing/Hero";
 import LogosStrip from "@/components/landing/logos-strip";
 import Problem from "@/components/landing/problem";
 import HowItWorks from "@/components/landing/how-it-works";
+import TerminalSection from "@/components/landing/terminal";
 import MagicMoment from "@/components/landing/magic-moment";
 import Features from "@/components/landing/features";
+import ModelSupport from "@/components/landing/model-support";
 import Comparison from "@/components/landing/comparison";
 import UseCases from "@/components/landing/use-cases";
 import Pricing from "@/components/landing/pricing";
@@ -19,8 +21,10 @@ export default function HomePage() {
       <LogosStrip />
       <Problem />
       <HowItWorks />
+      <TerminalSection />
       <MagicMoment />
       <Features />
+      <ModelSupport />
       <Comparison />
       <UseCases />
       <Pricing />
