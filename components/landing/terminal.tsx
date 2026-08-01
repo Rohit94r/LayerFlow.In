@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { Sparkles, Scissors, Bot, Wallet, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -40,24 +40,22 @@ const TERMINAL_LINES: { id: number; type: string; text: string }[] = [
 
 export default function TerminalSection() {
   const [visible, setVisible] = useState(0);
-  const endRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+  const done = visible >= TERMINAL_LINES.length;
 
   useEffect(() => {
+    if (paused || done) return;
     const t = setInterval(() => {
-      setVisible((v) => {
-        if (v >= TERMINAL_LINES.length) {
-          clearInterval(t);
-          return v;
-        }
-        return v + 1;
-      });
+      setVisible((v) => Math.min(v + 1, TERMINAL_LINES.length));
     }, 700);
     return () => clearInterval(t);
-  }, []);
+  }, [paused, done]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }, [visible]);
+    if (paused || done) return;
+    const t = setTimeout(() => setVisible(0), 2600);
+    return () => clearTimeout(t);
+  }, [paused, done]);
 
   return (
     <section id="terminal" className="relative scroll-mt-20 py-16 sm:py-20">
@@ -77,14 +75,29 @@ export default function TerminalSection() {
         <div className="mt-12 grid items-center gap-10 lg:grid-cols-2">
           {/* Terminal mock */}
           <Reveal>
-            <div className="overflow-hidden rounded-2xl border border-border bg-[#0a0e10] shadow-2xl shadow-black/40">
-              <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
-                <span className="h-3 w-3 rounded-full bg-rose-500/70" />
-                <span className="h-3 w-3 rounded-full bg-amber-500/70" />
-                <span className="h-3 w-3 rounded-full bg-emerald-500/70" />
-                <span className="ml-3 font-mono text-xs text-white/40">layerflow — zsh</span>
+            <div
+              className="overflow-hidden rounded-2xl border border-border bg-[#0a0e10] shadow-2xl shadow-black/40"
+              onMouseEnter={() => setPaused(true)}
+              onMouseLeave={() => setPaused(false)}
+            >
+              <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-3 w-3 rounded-full bg-rose-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-amber-500/70" />
+                  <span className="h-3 w-3 rounded-full bg-emerald-500/70" />
+                  <span className="ml-3 font-mono text-xs text-white/40">layerflow — zsh</span>
+                </div>
+                {paused ? (
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-emerald-400">
+                    ● paused
+                  </span>
+                ) : done ? (
+                  <span className="font-mono text-[10px] uppercase tracking-widest text-faint">
+                    replaying…
+                  </span>
+                ) : null}
               </div>
-              <div className="h-[340px] overflow-hidden p-4 font-mono text-[13px] leading-relaxed">
+              <div className="h-[300px] overflow-hidden p-4 font-mono text-[13px] leading-relaxed">
                 {TERMINAL_LINES.slice(0, visible).map((l) => (
                   <div key={l.id} className="flex gap-2">
                     {l.type === "cmd" ? <span className="text-brand">$</span> : <span className="w-2" />}
@@ -107,7 +120,6 @@ export default function TerminalSection() {
                   <span className="text-brand">$</span>
                   <span className="h-4 w-2 animate-pulse bg-brand/80" />
                 </div>
-                <div ref={endRef} />
               </div>
             </div>
           </Reveal>

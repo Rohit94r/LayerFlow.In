@@ -1,4 +1,4 @@
-import { SectionHeading, Reveal } from "@/components/ui/reveal";
+import { SectionHeading } from "@/components/ui/reveal";
 import {
   LifeBuoy,
   BookUser,
@@ -106,7 +106,8 @@ const FEATURES: {
 export default function Features() {
   return (
     <section id="features" className="relative py-16 sm:py-20">
-      <div className="mx-auto max-w-7xl px-5 sm:px-8">
+      <div className="absolute inset-0 grid-lines opacity-30" aria-hidden />
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
           eyebrow="Features"
           title={
@@ -118,31 +119,45 @@ export default function Features() {
           }
           description="A coding platform, a browser terminal, and a rescue workflow for the context you've already earned. Not another chat window."
         />
-
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 4) * 0.06}>
-              <div className="card card-hover group relative h-full overflow-hidden p-6">
-                <div
-                  className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
-                  style={{ background: "var(--glow-amber)" }}
-                  aria-hidden
-                />
-                {f.badge ? (
-                  <span className="absolute right-4 top-4 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
-                    {f.badge}
-                  </span>
-                ) : null}
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-2 text-brand transition-colors group-hover:border-brand/40">
-                  <f.icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-5 text-base font-semibold text-ink">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted">{f.description}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
       </div>
+
+      <div className="marquee-paused relative mt-10 space-y-5">
+        {[0, 1].map((row) => {
+          const items = row === 0 ? FEATURES.slice(0, 8) : FEATURES.slice(8);
+          return (
+            <div key={row} className="overflow-hidden">
+              <div
+                className={`flex w-max gap-4 pr-4 sm:gap-5 sm:pr-5 ${
+                  row === 0 ? "animate-marquee" : "animate-marquee-reverse"
+                }`}
+              >
+                {[...items, ...items].map((f, i) => (
+                  <div
+                    key={`${f.title}-${i}`}
+                    className="card card-hover group relative h-full w-[calc(100vw-2.5rem)] shrink-0 overflow-hidden p-6 sm:w-[calc((100vw-3.5rem-1.25rem)/2)] lg:w-[calc((100vw-4.5rem-2.5rem)/3)]"
+                  >
+                      <div
+                        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+                        style={{ background: "var(--glow-amber)" }}
+                        aria-hidden
+                      />
+                      {f.badge ? (
+                        <span className="absolute right-4 top-4 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand">
+                          {f.badge}
+                        </span>
+                      ) : null}
+                      <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-surface-2 text-brand transition-colors group-hover:border-brand/40">
+                        <f.icon className="h-5 w-5" />
+                      </div>
+                      <h3 className="mt-5 text-base font-semibold text-ink">{f.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted">{f.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
     </section>
   );
 }
