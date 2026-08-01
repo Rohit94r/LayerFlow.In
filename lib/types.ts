@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // LayerFlow — Core domain types
-// The AI Context Operating System
+// The AI Coding Platform — web + terminal, rescue workflow
 // ─────────────────────────────────────────────────────────────
 
 export type AiTool =

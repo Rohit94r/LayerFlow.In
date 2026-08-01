@@ -1,22 +1,22 @@
 export const site = {
   name: "LayerFlow",
-  headline: "Never lose AI context again",
+  headline: "Code with AI — in your browser or terminal",
   subtitle:
-    "The AI Context Operating System — rescue dead chats, carry context between tools and models, compress conversations, improve prompts, and control every penny you spend on AI.",
-  tagline: "The AI Context Operating System",
-  docsCommand: "lf rescue dead-chat.md --to prompt",
+    "The AI coding platform with a rescue workflow. Write plain English, click Improve, and run working prompts — or open the terminal and let multiple agents build with you. Rescue dead chats, carry context between tools and models, and control every penny you spend on AI.",
+  tagline: "The AI Coding Platform",
+  docsCommand: "lf run \"build a landing page\"",
   workspaceHref: "/home",
   signInHref: "/sign-in",
   pricingHref: "/pricing",
 };
 
 export const proofPoints = [
+  "Coding Agents",
+  "Plain-English Improve",
+  "Browser Terminal",
+  "Multi-Agent",
   "Context Passport",
-  "Limit Rescue",
-  "Smart Compress",
-  "Improve Prompt",
   "Cost Check",
-  "BYOK",
 ];
 
 export const journeySteps = [
@@ -35,7 +35,10 @@ export type NavItem = {
 
 export const nav: NavItem[] = [
   { label: "Features", href: "/#features", menu: "features" },
+  { label: "Terminal", href: "/#terminal" },
+  { label: "Models", href: "/#models" },
   { label: "Blog", href: "/blog" },
+  { label: "Docs", href: "/docs" },
   { label: "Pricing", href: "/pricing" },
 ];
 
@@ -55,7 +58,11 @@ export type FeatureMenuItem = {
     | "ledger"
     | "cost"
     | "models"
-    | "byok";
+    | "byok"
+    | "code"
+    | "terminal"
+    | "agents"
+    | "sessions";
 };
 
 export type FeatureMenuSection = {
@@ -63,8 +70,37 @@ export type FeatureMenuSection = {
   items: FeatureMenuItem[];
 };
 
-/** Navbar + mobile menu — grouped by the AI Context OS pillars. */
+/** Navbar + mobile menu — grouped by product pillars (Code + Context OS). */
 export const featureMenu: FeatureMenuSection[] = [
+  {
+    title: "Code",
+    items: [
+      {
+        title: "Coding Workspace",
+        description: "Web code editor — plain English in, working code out.",
+        href: "/code",
+        icon: "code",
+      },
+      {
+        title: "Browser Terminal",
+        description: "An opencode-style terminal that runs in your browser.",
+        href: "/code?tab=terminal",
+        icon: "terminal",
+      },
+      {
+        title: "Multi-Agent",
+        description: "Implement, review and test agents working in parallel.",
+        href: "/code?tab=agents",
+        icon: "agents",
+      },
+      {
+        title: "Run Sessions",
+        description: "Every run saved as a passport — resume anywhere.",
+        href: "/workspace",
+        icon: "sessions",
+      },
+    ],
+  },
   {
     title: "Rescue",
     items: [

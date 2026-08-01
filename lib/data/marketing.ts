@@ -2,7 +2,7 @@ import type { Plan, Testimonial, FaqItem, RoadmapPhase, UseCase } from "@/lib/ty
 
 export const site = {
   name: "LayerFlow",
-  tagline: "The AI Context Operating System",
+  tagline: "The AI Coding Platform",
   url: "https://layerflow.dev",
   workspaceHref: "/app",
   signupHref: "/sign-in",
@@ -191,10 +191,10 @@ export const ROADMAP: RoadmapPhase[] = [
   },
   {
     phase: "Phase 3",
-    title: "Companion",
-    description: "Capture and continue without leaving your AI tool of the moment.",
-    status: "planned",
-    items: ["Browser companion", "One-click chat capture", "Continue Pack injection", "Quick Cost Check", "Private / no-storage mode"],
+    title: "Web + Terminal Coding",
+    description: "Plain English → Improve → agents + browser terminal. Anyone can code.",
+    status: "building",
+    items: ["Coding Workspace", "Prompt Improver", "Multi-agent runs", "Browser terminal", "Run sessions", "Rescue Reports", "Cost Check"],
   },
   {
     phase: "Phase 4",
@@ -208,6 +208,12 @@ export const ROADMAP: RoadmapPhase[] = [
 // ── Use cases ────────────────────────────────────────────────
 
 export const USE_CASES: UseCase[] = [
+  {
+    title: "Code without coding",
+    description: "Write plain English, click Improve, and watch implement, review and test agents ship it — in your browser or terminal.",
+    example: "\"build me a landing page\" → improved prompt (92/100) → 3 agents → committed in one session.",
+    icon: "code",
+  },
   {
     title: "Limit Rescue",
     description: "Hit the ChatGPT or Claude cap mid-task? Paste the thread and continue in another model in under a minute.",
@@ -284,4 +290,49 @@ export const COMPARISON_ROWS: { label: string; layerflow: boolean; rawChat: bool
   { label: "Learning memory that compounds", layerflow: true, rawChat: false, extension: "No" },
   { label: "Works with every AI tool", layerflow: true, rawChat: true, extension: "Depends" },
   { label: "No extension install required", layerflow: true, rawChat: true, extension: "No" },
+];
+
+// ── Supported AI models (Free / Paid) ─────────────────────────
+
+export const SUPPORTED_MODELS: {
+  group: "Free" | "Paid";
+  note: string;
+  items: { name: string; provider: string }[];
+}[] = [
+  {
+    group: "Free",
+    note: "Zero-cost models for everyday runs — summarization, compression, prompts, quick fixes.",
+    items: [
+      { name: "DeepSeek V3.2", provider: "DeepSeek" },
+      { name: "Gemini 2.5 Flash", provider: "Google" },
+      { name: "GPT-5 Mini", provider: "OpenAI" },
+      { name: "Claude Haiku 4.5", provider: "Anthropic" },
+      { name: "Kimi K2", provider: "Moonshot" },
+      { name: "Llama 4 Maverick", provider: "Groq" },
+      { name: "Llama 4 Scout", provider: "Groq" },
+      { name: "Qwen 2.5", provider: "Alibaba" },
+      { name: "Mistral Small", provider: "Mistral" },
+      { name: "Command R+", provider: "Cohere" },
+      { name: "Grok 2", provider: "xAI" },
+      { name: "Llama 3.3 70B", provider: "OpenRouter" },
+    ],
+  },
+  {
+    group: "Paid",
+    note: "Frontier models for deep reasoning, writing, review and final output — you pay providers directly with BYOK.",
+    items: [
+      { name: "Claude Opus 4.5", provider: "Anthropic" },
+      { name: "Claude Sonnet 4.5", provider: "Anthropic" },
+      { name: "GPT-5", provider: "OpenAI" },
+      { name: "Gemini 2.5 Pro", provider: "Google" },
+      { name: "Grok 3", provider: "xAI" },
+      { name: "Grok 3 Mini", provider: "xAI" },
+      { name: "Mistral Large", provider: "Mistral" },
+      { name: "Qwen Max", provider: "Alibaba" },
+      { name: "GLM-4", provider: "Zhipu" },
+      { name: "Yi-Large", provider: "01.AI" },
+      { name: "DeepSeek R1", provider: "DeepSeek" },
+      { name: "Claude 3.7 Sonnet", provider: "Anthropic" },
+    ],
+  },
 ];
