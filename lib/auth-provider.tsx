@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useSession, signOut as authSignOut } from "@/lib/auth-client";
 import { mapUser } from "@/lib/api/mappers";
-import type { User } from "@/lib/types";
+import type { User } from "@/lib/api/legacy-types";
 
 type AuthContextValue = {
   user: User | null;
@@ -24,19 +24,19 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, isPending, refetch } = useSession();
 
-  const user = useMemo(() => {
-    if (!data?.user) return null;
-    return mapUser({
-      id: data.user.id,
-      name: data.user.name,
-      email: data.user.email,
-      image: data.user.image ?? null,
-      createdAt:
-        typeof data.user.createdAt === "string"
-          ? data.user.createdAt
-          : new Date(data.user.createdAt).toISOString(),
-    });
-  }, [data?.user]);
+  const user =
+    data?.user == null
+      ? null
+      : mapUser({
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          image: data.user.image ?? null,
+          createdAt:
+            typeof data.user.createdAt === "string"
+              ? data.user.createdAt
+              : new Date(data.user.createdAt).toISOString(),
+        });
 
   const signOut = useCallback(async () => {
     await authSignOut();

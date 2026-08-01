@@ -21,6 +21,8 @@ export function useAsyncData<T>(
 
   useEffect(() => {
     let cancelled = false;
+    // Reset to loading on every run (incl. reloads) — intentional.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState({ status: "loading", data: null, error: null });
     loader()
       .then((data) => {

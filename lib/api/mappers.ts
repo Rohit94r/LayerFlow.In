@@ -9,7 +9,6 @@ import type {
   Prompt as PromptDto,
   PromptOutput,
   PromptSession as PromptSessionDto,
-  PromptVariable,
   PromptVersion as PromptVersionDto,
   RoutingRule as RoutingRuleDto,
   SessionMessage,
@@ -32,7 +31,7 @@ import type {
   RoutingRule,
   User,
   WorkspaceSettings,
-} from "@/lib/types";
+} from "./legacy-types";
 
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
