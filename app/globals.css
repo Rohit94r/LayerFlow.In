@@ -11,9 +11,9 @@
   --color-muted: #9ca3ab;
   --color-faint: #6b7378;
 
-  --color-brand: #f59e0b;
+  --color-brand: #f97316;
   --color-brand-2: #44edbc;
-  --color-crimson: #f59e0b;
+  --color-crimson: #f97316;
   --color-magenta: #7c2d5b;
 
   --font-display: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -33,6 +33,8 @@
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --logo-invert: 0;
+  --glow-amber: rgba(249, 115, 22, 0.18);
+  --glow-mint: rgba(68, 237, 188, 0.12);
   color-scheme: dark;
 }
 
@@ -54,6 +56,8 @@ html.light {
   --btn-primary-fg: #ffffff;
   --glass-bg: rgba(9, 9, 18, 0.04);
   --glass-border: rgba(9, 9, 18, 0.12);
+  --glow-amber: rgba(249, 115, 22, 0.12);
+  --glow-mint: rgba(16, 185, 129, 0.08);
   --logo-invert: 1;
   color-scheme: light;
 }
@@ -81,8 +85,13 @@ html.light {
   }
 
   ::selection {
-    background: rgba(124, 92, 255, 0.35);
+    background: rgba(245, 158, 11, 0.35);
     color: #fff;
+  }
+
+  html.light ::selection {
+    background: rgba(245, 158, 11, 0.3);
+    color: #0b0b14;
   }
 
   h1, h2, h3, h4 {
@@ -90,9 +99,32 @@ html.light {
     font-weight: 600;
     letter-spacing: -0.02em;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
-/* MLflow-style underlined emphasis in hero copy */
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 8px;
+  border: 2px solid var(--color-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+/* ---------- Hero (landing) ---------- */
 .hero-title {
   font-weight: 400;
 }
@@ -103,7 +135,7 @@ html.light {
   text-decoration-thickness: 1px;
 }
 
-/* Navbar over hero — white links like mlflow.org */
+/* Navbar over hero — white links */
 .nav-on-hero .nav-link {
   color: rgba(255, 255, 255, 0.82);
 }
@@ -114,12 +146,7 @@ html.light {
   color: #ffffff;
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   PREMIUM HERO BACKGROUND — 6 animated layers, GPU-only, 60fps
-   Inspired by Vercel · Linear · Raycast · Stripe
-   ═══════════════════════════════════════════════════════════════════════════ */
-
-/* ── Layer 1 — Animated Gradient (slides left ↔ right, 40s loop) ── */
+/* Layer 1 — Animated Gradient */
 .hero-gradient-layer {
   position: absolute;
   inset: 0;
@@ -166,7 +193,7 @@ html.light {
   50% { transform: translate3d(25%, 0, 0); }
 }
 
-/* ── Layer 2 — Floating Vertical Lines (±25px drift, 18s loop) ── */
+/* Layer 2 — Floating Vertical Lines */
 .hero-stripes-layer {
   position: absolute;
   inset: -60px;
@@ -191,7 +218,7 @@ html.light {
   75% { transform: translate3d(25px, 0, 0); }
 }
 
-/* ── Layer 3 — Aurora Glow (3 giant blurred circles, 35s loop) ── */
+/* Layer 3 — Aurora Glow */
 .hero-aurora-layer {
   position: absolute;
   inset: 0;
@@ -255,7 +282,7 @@ html.light {
   66% { transform: translate3d(-8%, 5%, 0) rotate(-2deg); }
 }
 
-/* ── Layer 4 — Mouse Cursor Glow (subtle radial follow) ── */
+/* Layer 4 — Mouse Cursor Glow */
 .hero-mouse-glow {
   position: absolute;
   inset: 0;
@@ -274,7 +301,7 @@ html.light {
   opacity: 1;
 }
 
-/* ── Layer 5 — Noise (animated film grain, 3% opacity) ── */
+/* Layer 5 — Noise */
 .hero-noise-layer {
   position: absolute;
   inset: 0;
@@ -291,7 +318,7 @@ html.light {
   100% { background-position: 200px 200px; }
 }
 
-/* ── Layer 6 — Dark Overlay (ensures text readability) ── */
+/* Layer 6 — Dark Overlay */
 .hero-fade-layer {
   position: absolute;
   inset: 0;
@@ -305,30 +332,18 @@ html.light {
   );
 }
 
-.footer-glow {
-  background: linear-gradient(
-    100deg,
-    #f59e0b 0%,
-    #f97316 26%,
-    #c2410c 50%,
-    #7c2d12 74%,
-    #451a03 100%
-  );
-  filter: blur(2px);
-  opacity: 0.85;
-}
-
 /* ---------- Buttons ---------- */
 .btn-primary {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 24px -12px var(--glow-amber);
 }
 .btn-primary:hover {
   transform: scale(1.03);
+  box-shadow: 0 12px 32px -12px var(--glow-amber);
 }
 
-/* button that always sits on the colorful hero gradient (dark media) */
 .btn-on-media {
   background: #ffffff;
   color: #0e1416;
@@ -338,134 +353,13 @@ html.light {
   transform: scale(1.03);
 }
 
-/* ---------- Reusable bits ---------- */
-.text-gradient {
-  background: linear-gradient(90deg, var(--color-ink) 0%, #9abcf2 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-}
-
-/* mlflow.org-style subtle card hover: border + bg lift, no translate */
-.card-hover {
-  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-}
-.card-hover:hover {
-  border-color: rgba(247, 248, 248, 0.2);
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: var(--card-shadow);
-}
-
-html.light .card-hover:hover {
-  border-color: rgba(9, 9, 18, 0.16);
-  background: rgba(9, 9, 18, 0.02);
-}
-
-/* adaptive glass pill (sits on the page background) */
-.glass-pill {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(8px);
-}
-
-/* pill that always sits on the colorful hero gradient */
-.pill-on-media {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  backdrop-filter: blur(8px);
-  color: #fff;
-}
-
-.grid-lines {
-  background-image:
-    linear-gradient(to right, rgba(128, 128, 160, 0.12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(128, 128, 160, 0.12) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
-  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
-}
-
-.code-window {
-  background: #0d1117;
-  border: 1px solid rgba(247, 248, 248, 0.08);
-  border-radius: 0.9rem;
-  box-shadow: var(--card-shadow);
-}
-
-/* monochrome (white) brand logos: dim in dark, invert to black in light */
-/* Force every logo (solid, text, or gradient-masked) to a single flat color
-   so they all render consistently instead of washing out to empty shapes. */
-.logo-mono {
-  filter: brightness(0) invert(1);
-  opacity: 0.6;
-  transition: opacity 0.25s ease;
-}
-.logo-mono:hover {
-  opacity: 0.9;
-}
-html.light .logo-mono {
-  filter: brightness(0) invert(0);
-  opacity: 0.55;
-}
-html.light .logo-mono:hover {
-  opacity: 0.85;
-}
-
-/* dark chip that keeps colored logos visible in both themes */
-.logo-chip {
-  background: #0e1416;
-  border: 1px solid rgba(247, 248, 248, 0.08);
-}
-
-/* stacked feature card */
-.feature-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 1.5rem;
-  box-shadow: var(--card-shadow);
-}
-
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.animate-marquee {
-  animation: marquee 28s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-marquee,
-  .hero-gradient-layer::before,
-  .hero-stripes-layer,
-  .aurora-cyan,
-  .aurora-purple,
-  .aurora-blue,
-  .hero-noise-layer { animation: none; }
-  .hero-mouse-glow { opacity: 0 !important; }
-  html { scroll-behavior: auto; }
-}
-
-/* ---------- Workspace app shell ---------- */
-.app-shell {
-  background-color: var(--color-bg);
-  color: var(--color-ink);
-  font-size: 16px;
-  line-height: 1.5;
-}
-
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--color-border-strong);
-  border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.125rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-muted);
@@ -478,6 +372,77 @@ html.light .logo-mono:hover {
   background: var(--color-surface-2);
 }
 
+/* ---------- Glass + cards ---------- */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.glass-card {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 1.25rem;
+}
+
+.card-hover {
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+.card-hover:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-2);
+  box-shadow: var(--card-shadow);
+  transform: translateY(-2px);
+}
+
+.gradient-border {
+  position: relative;
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    linear-gradient(135deg, rgba(249, 115, 22, 0.55), rgba(249, 115, 22, 0.15)) border-box;
+  border: 1px solid transparent;
+}
+
+html.light .gradient-border {
+  background:
+    linear-gradient(#ffffff, #ffffff) padding-box,
+    linear-gradient(135deg, rgba(249, 115, 22, 0.65), rgba(249, 115, 22, 0.2)) border-box;
+  border: 1px solid transparent;
+}
+
+.text-gradient-soft {
+  background: linear-gradient(90deg, var(--color-ink) 0%, #9abcf2 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Grid + glow helpers ---------- */
+.grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(128, 128, 160, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(128, 128, 160, 0.1) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
+}
+
+/* ---------- Pills ---------- */
+.glass-pill {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(8px);
+}
+
+.pill-on-media {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  color: #fff;
+}
+
 .filter-pill {
   border-radius: 9999px;
   border: 1px solid transparent;
@@ -486,49 +451,43 @@ html.light .logo-mono:hover {
   font-weight: 500;
   color: var(--color-muted);
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  cursor: pointer;
 }
 .filter-pill:hover {
   color: var(--color-ink);
 }
 .filter-pill-active {
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
   background: var(--color-surface-2);
   color: var(--color-ink);
 }
 
+/* ---------- Inputs ---------- */
 .workspace-input {
   width: 100%;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   color: var(--color-ink);
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .workspace-input::placeholder {
   color: var(--color-faint);
 }
 .workspace-input:focus {
-  border-color: var(--color-border-strong);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px var(--glow-amber);
 }
 
-.workspace-stat {
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  padding: 0.75rem 1rem;
-}
-.workspace-stat-label {
-  font-size: 0.75rem;
-  color: var(--color-faint);
-}
-.workspace-stat-value {
-  margin-top: 0.125rem;
-  font-size: 1.125rem;
-  font-weight: 600;
+/* ---------- Workspace shell ---------- */
+.app-shell {
+  background-color: var(--color-bg);
   color: var(--color-ink);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .section-label {
@@ -549,31 +508,110 @@ html.light .logo-mono:hover {
   color: var(--color-ink);
 }
 
-/* Git-like timeline */
-.timeline-commit {
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: -0.01em;
+/* ---------- Animations ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 36s linear infinite;
+}
+.marquee-paused:hover .animate-marquee {
+  animation-play-state: paused;
 }
 
-.workspace-code-block {
-  background: #0d1117;
-  border: 1px solid var(--color-border);
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float-slow {
+  animation: float-slow 7s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, var(--glass-bg) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.4s linear infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes progress-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 24px 0; }
+}
+.progress-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.12) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 24px 24px;
+  animation: progress-stripes 1s linear infinite;
+}
+
+/* ---------- App layout helpers ---------- */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   border-radius: 0.75rem;
-  overflow: hidden;
-}
-.workspace-code-block pre {
-  overflow-x: auto;
-  padding: 1rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  line-height: 1.6;
-  color: var(--color-muted);
-}
-.workspace-code-header {
-  border-bottom: 1px solid var(--color-border);
-  padding: 0.625rem 1rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-muted);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.sidebar-link:hover {
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+}
+.sidebar-link-active {
+  color: var(--color-ink);
+  background: var(--glass-bg);
+  box-shadow: inset 0 0 0 1px var(--glass-border);
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 9999px;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-2);
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee,
+  .animate-float-slow,
+  .shimmer,
+  .progress-striped,
+  .animate-pulse-dot { animation: none; }
+  html { scroll-behavior: auto; }
 }
