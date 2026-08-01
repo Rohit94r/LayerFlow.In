@@ -269,11 +269,12 @@ export default function SignInForm() {
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col-reverse items-center justify-center gap-12 px-6 pb-16 pt-4 lg:flex-row lg:items-center lg:justify-between lg:gap-16 lg:px-10">
         <section className="w-full max-w-xl text-center lg:text-left">
           <h1 className="text-balance text-4xl font-medium leading-[1.08] tracking-[-0.025em] text-ink sm:text-5xl lg:text-[3.4rem]">
-            Never lose AI context again
+            Code with AI in your browser or terminal
           </h1>
           <p className="mx-auto mt-5 max-w-md text-pretty font-mono text-sm leading-6 text-muted lg:mx-0">
-            Paste any ChatGPT, Claude, Gemini, DeepSeek or Kimi conversation.
-            Continue in any model with better prompts and lower cost.
+            Write plain English, click Improve, and run working code with
+            multiple agents. Rescue dead chats into Context Passports and
+            continue in any model — with lower cost.
           </p>
         </section>
 

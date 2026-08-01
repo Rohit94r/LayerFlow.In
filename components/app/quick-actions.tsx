@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
+  Code2,
   LifeBuoy,
   Wand2,
   BookUser,
@@ -13,6 +14,13 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 const ACTIONS: { href: string; label: string; description: string; icon: LucideIcon; accent: string }[] = [
+  {
+    href: "/code",
+    label: "Start coding",
+    description: "Plain English → agents → terminal",
+    icon: Code2,
+    accent: "#f97316",
+  },
   {
     href: "/rescue",
     label: "Rescue a chat",
@@ -33,13 +41,6 @@ const ACTIONS: { href: string; label: string; description: string; icon: LucideI
     description: "Start from scratch, save context",
     icon: BookUser,
     accent: "#8b7cf8",
-  },
-  {
-    href: "/prompts",
-    label: "Browse prompts",
-    description: "Your scored prompt library",
-    icon: Library,
-    accent: "#38bdf8",
   },
   {
     href: "/workspace",

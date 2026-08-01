@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutGrid,
+  Code2,
   LifeBuoy,
   BookUser,
   Library,
@@ -25,6 +26,12 @@ interface NavSection {
 }
 
 const NAV: NavSection[] = [
+  {
+    title: "Code",
+    items: [
+      { href: "/code", label: "Coding Workspace", icon: Code2 },
+    ],
+  },
   {
     title: "Workspace",
     items: [
