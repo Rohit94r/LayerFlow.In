@@ -16,9 +16,9 @@
   --color-crimson: #f97316;
   --color-magenta: #7c2d5b;
 
-  --font-display: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-dm-sans), "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-dm-mono), "DM Mono", ui-monospace, monospace;
+  --font-display: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-geist-sans), "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
 
   --radius-xl: 1rem;
 }

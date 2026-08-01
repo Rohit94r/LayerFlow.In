@@ -1,44 +1,34 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { DM_Sans, DM_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
 import "./globals.css";
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
-  display: "swap",
-});
-
-const dmMono = DM_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-dm-mono",
-  display: "swap",
-});
 
 const SITE_URL = "https://layerflow.dev";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LayerFlow — Never lose AI context again",
+    default: "LayerFlow — Code with AI in your browser or terminal",
     template: "%s · LayerFlow",
   },
   description:
-    "Paste any ChatGPT, Claude, Gemini, DeepSeek or Kimi conversation. LayerFlow compresses it into a reusable Context Passport so you can continue in any AI model with better prompts and lower cost.",
+    "The AI coding platform. Write plain English, click Improve, and run working prompts — or use the browser terminal with multiple coding agents. Rescue dead AI chats, compress context, and control AI costs.",
   keywords: [
+    "AI coding platform",
+    "browser terminal",
+    "AI coding agent",
+    "multi-agent",
+    "prompt improver",
+    "plain english to code",
     "AI context",
     "context passport",
     "limit rescue",
     "chatgpt limit",
     "claude limit",
-    "continue in another AI",
-    "prompt improver",
     "AI cost comparison",
     "best AI model",
-    "context compression",
     "AI workspace",
     "LayerFlow",
   ],
@@ -50,16 +40,16 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "LayerFlow",
-    title: "LayerFlow — Never lose AI context again",
+    title: "LayerFlow — Code with AI in your browser or terminal",
     description:
-      "The AI Context Operating System. Rescue chats, compress context, improve prompts, and continue in any model.",
+      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with context passports and cost control.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — Never lose AI context again",
+    title: "LayerFlow — Code with AI in your browser or terminal",
     description:
-      "The AI Context Operating System. Rescue chats, compress context, improve prompts, and continue in any model.",
+      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with context passports and cost control.",
     images: ["/og.png"],
   },
   robots: {
@@ -91,7 +81,7 @@ export default function RootLayout({
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
     description:
-      "The AI Context Operating System — paste any AI conversation and continue in any model with better prompts and lower cost.",
+      "The AI coding platform — code in your browser or terminal, rescue messy AI chats, and continue in any model with better prompts and lower cost.",
     offers: {
       "@type": "Offer",
       price: "0",
@@ -102,7 +92,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${dmSans.variable} ${dmMono.variable}`}
+      className={`${GeistSans.variable} ${GeistMono.variable}`}
       suppressHydrationWarning
     >
       <body>
