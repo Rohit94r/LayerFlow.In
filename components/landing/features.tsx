@@ -12,6 +12,9 @@ import {
   Search,
   Brain,
   History,
+  Code2,
+  TerminalSquare,
+  Bot,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -21,6 +24,27 @@ const FEATURES: {
   description: string;
   badge?: string;
 }[] = [
+  {
+    icon: Code2,
+    title: "Web Coding Workspace",
+    description: "Write plain English, click Improve, and run working code in your browser — no install, no API keys, no setup.",
+    badge: "New",
+  },
+  {
+    icon: TerminalSquare,
+    title: "Browser Terminal",
+    description: "An opencode-style terminal that runs right in the browser. Agent output, shell commands and file diffs in one view.",
+  },
+  {
+    icon: Bot,
+    title: "Multi-Agent",
+    description: "Implement, review and test agents work in parallel — each with its own model, budget and output stream.",
+  },
+  {
+    icon: Wand2,
+    title: "Plain-English Improve",
+    description: "Write a vague ask, click Improve, and get a precise prompt with constraints, examples and format — scored from 0 to 100.",
+  },
   {
     icon: LifeBuoy,
     title: "Limit Rescue",
@@ -36,11 +60,6 @@ const FEATURES: {
     icon: FileDown,
     title: "Smart Compress",
     description: "15,000 words in, ~1,000 words out. Only the useful context survives — with a clear reduction count.",
-  },
-  {
-    icon: Wand2,
-    title: "Improve Prompt",
-    description: "Adds missing context, constraints, examples, format and clarity — and scores the result from 0 to 100.",
   },
   {
     icon: DollarSign,
@@ -92,12 +111,12 @@ export default function Features() {
           eyebrow="Features"
           title={
             <>
-              Everything you need to keep
+              Code with AI — and keep
               <br />
-              <span className="text-brand">AI context alive</span>
+              <span className="text-brand">every bit of context alive</span>
             </>
           }
-          description="Not another chat window. A system for preserving, improving and reusing the context you've already earned."
+          description="A coding platform, a browser terminal, and a rescue workflow for the context you've already earned. Not another chat window."
         />
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

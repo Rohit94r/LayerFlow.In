@@ -25,8 +25,9 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
     title: "Company",
     links: [
-      { label: "Docs", href: "/docs/alltechuse.md" },
-      { label: "Engineering", href: "/docs/workflow.md" },
+      { label: "Docs", href: "/docs" },
+      { label: "Install CLI", href: "/docs#install" },
+      { label: "Engineering", href: "/docs#architecture" },
       { label: "Sign in", href: "/sign-in" },
     ],
   },
@@ -40,8 +41,9 @@ export default function Footer() {
           <div>
             <Wordmark />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-              {site.tagline}. Paste any AI conversation — compress it into a
-              reusable Context Passport and continue in any model.
+              {site.tagline}. Code in your browser or terminal — write plain
+              English, click Improve, and run multi-agent sessions. Rescue dead
+              chats into Context Passports and continue in any model.
             </p>
             <p className="mt-5 text-xs text-faint">
               © {new Date().getFullYear()} LayerFlow. Built for people who never
@@ -69,14 +71,14 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-faint sm:flex-row">
-          <span>Never lose AI context again.</span>
+          <span>Code with AI. Never lose context.</span>
           <div className="flex items-center gap-6">
             <span>ChatGPT · Claude · Gemini · DeepSeek · Kimi · Groq</span>
           </div>
         </div>
 
-        <div className="pointer-events-none mt-12 select-none overflow-hidden" aria-hidden>
-          <p className="bg-gradient-to-b from-brand via-brand/70 to-brand/10 bg-clip-text text-center text-[clamp(3rem,14vw,15rem)] font-black leading-[0.85] tracking-[-0.045em] text-transparent">
+        <div className="pointer-events-none mt-12 select-none" aria-hidden>
+          <p className="bg-gradient-to-b from-brand to-brand/60 bg-clip-text text-center text-[clamp(2.5rem,11vw,11rem)] font-black leading-[1.05] tracking-[-0.03em] text-transparent">
             LayerFlow.dev
           </p>
         </div>

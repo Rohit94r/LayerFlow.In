@@ -20,6 +20,7 @@ const item = {
 
 export default function Hero() {
   const [copied, setCopied] = useState(false);
+  const [copiedInstall, setCopiedInstall] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
   const { scrollY } = useScroll();
@@ -41,6 +42,12 @@ export default function Hero() {
     await navigator.clipboard.writeText(site.docsCommand);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
+  };
+
+  const copyInstall = async () => {
+    await navigator.clipboard.writeText("npm install -g @layerflow/cli");
+    setCopiedInstall(true);
+    setTimeout(() => setCopiedInstall(false), 1800);
   };
 
   return (
@@ -117,7 +124,13 @@ export default function Hero() {
               href={site.signInHref}
               className="rounded-xl bg-white px-6 py-4 text-base font-medium text-black transition-transform hover:scale-[1.02]"
             >
-              Sign in
+              Start coding
+            </a>
+            <a
+              href="/code"
+              className="rounded-xl bg-white/10 px-6 py-4 text-base font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/15"
+            >
+              Try the terminal
             </a>
             <a
               href={site.pricingHref}
@@ -129,22 +142,38 @@ export default function Hero() {
 
           <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/50">
-              Paste a dead chat, get a living prompt — no SDK needed
+              Install the CLI — write plain English, click Improve, and run it in any terminal
             </p>
-            <button
-              onClick={copy}
-              className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
-            >
-              <span className="text-white/40">$</span>
-              <span className="truncate">{site.docsCommand}</span>
-              <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
-                {copied ? (
-                  <Check className="h-4 w-4 text-emerald-400" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </span>
-            </button>
+            <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
+              <button
+                onClick={copyInstall}
+                className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
+              >
+                <span className="text-emerald-400/80">$</span>
+                <span className="truncate">npm install -g @layerflow/cli</span>
+                <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
+                  {copiedInstall ? (
+                    <Check className="h-4 w-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </span>
+              </button>
+              <button
+                onClick={copy}
+                className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
+              >
+                <span className="text-white/40">$</span>
+                <span className="truncate">{site.docsCommand}</span>
+                <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
+                  {copied ? (
+                    <Check className="h-4 w-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </span>
+              </button>
+            </div>
           </motion.div>
 
           <motion.div

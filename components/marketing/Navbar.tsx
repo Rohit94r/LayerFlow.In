@@ -19,6 +19,10 @@ import {
   Cpu,
   KeyRound,
   ArrowRight,
+  Code2,
+  TerminalSquare,
+  Bot,
+  History,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +37,10 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 const featureIcons: Record<FeatureMenuItem["icon"], LucideIcon> = {
+  code: Code2,
+  terminal: TerminalSquare,
+  agents: Bot,
+  sessions: History,
   rescue: LifeBuoy,
   compress: Shrink,
   improve: Wand2,
@@ -182,12 +190,12 @@ export default function Navbar() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 6 }}
                           transition={{ duration: 0.18 }}
-                          className="absolute left-1/2 top-full z-50 mt-2 w-[min(920px,calc(100vw-2rem))] -translate-x-1/2"
+                          className="absolute left-1/2 top-full z-50 mt-2 w-[min(1120px,calc(100vw-2rem))] -translate-x-1/2"
                           onMouseEnter={openFeatures}
                           onMouseLeave={scheduleCloseFeatures}
                         >
                           <div className="overflow-hidden rounded-xl border border-border bg-bg/95 shadow-2xl shadow-black/10 backdrop-blur-xl">
-                            <div className="grid gap-0 p-2 sm:grid-cols-3">
+                            <div className="grid gap-0 p-2 sm:grid-cols-2 xl:grid-cols-4">
                               {featureMenu.map((section) => (
                                 <div key={section.title} className="px-2 py-3">
                                   <p className="px-3 pb-2 text-[11px] font-medium uppercase tracking-wider text-faint">
@@ -207,7 +215,7 @@ export default function Navbar() {
                             </div>
                             <div className="flex items-center justify-between border-t border-border bg-surface-1/50 px-5 py-3">
                               <p className="text-xs text-muted">
-                                The AI Context Operating System
+                                Code + AI Context — one platform
                               </p>
                               <Link
                                 href="/#features"

@@ -31,16 +31,17 @@ export default function CtaSection() {
               {TOOLS.join(" · ")}
             </p>
             <h2 className="mx-auto mt-6 max-w-2xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-              Your next AI conversation{" "}
-              <span className="text-brand">starts with everything you already know</span>
+              Write plain English.{" "}
+              <span className="text-brand">Ship with AI — web or terminal.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
-              Paste a chat, get your Context Passport, and never rebuild context from zero again.
+              Improve your prompt, run it with multiple agents, and keep every
+              decision in a Context Passport. Never rebuild context from zero again.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/rescue">
+              <Link href="/code">
                 <Button size="lg" icon={<ArrowRight className="h-4 w-4" />}>
-                  Rescue My Chat — it&apos;s free
+                  Start coding — it&apos;s free
                 </Button>
               </Link>
               <Link href="/rescue?mode=prompt">

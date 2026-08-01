@@ -21,7 +21,7 @@ export default function LogosStrip() {
     <section className="border-y border-border bg-surface/40 py-12">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <p className="text-center text-sm font-medium tracking-wide text-muted">
-          Rescue conversations from every major AI — continue anywhere
+          Code, run and rescue with every major AI — web or terminal
         </p>
 
         <div className="relative mt-8 overflow-hidden py-2" aria-hidden>

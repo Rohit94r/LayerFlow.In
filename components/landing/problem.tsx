@@ -13,12 +13,12 @@ export default function Problem() {
           eyebrow="The problem"
           title={
             <>
-              Your best AI work is trapped
+              AI is powerful — the setup{" "}
               <br />
-              in <span className="text-brand">dead chats</span>
+              is still <span className="text-brand">manual</span>
             </>
           }
-          description="Every week you switch models, hit limits, and lose the thread. That's not a tools problem — it's a context problem."
+          description="Terminal agents need installs and APIs. Chat tools lose your context. Vague prompts waste your money. Coding shouldn't feel like that."
         />
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

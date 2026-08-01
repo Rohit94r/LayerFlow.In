@@ -1,33 +1,33 @@
 "use client";
 
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
-import { ClipboardPaste, FileDown, Wand2, Send } from "lucide-react";
+import { Sparkles, Bot, TerminalSquare, Send, Wand2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 
 const STEPS: { icon: LucideIcon; title: string; description: string; detail: string }[] = [
   {
-    icon: ClipboardPaste,
-    title: "Paste any conversation",
-    description: "Copy your ChatGPT, Claude, Gemini, DeepSeek or Kimi thread — even after you've hit a limit.",
+    icon: Sparkles,
+    title: "Write plain English",
+    description: "No prompt engineering, no setup, no API keys. Say what you want in a sentence — or paste a messy AI chat you're stuck on.",
     detail: "Source detected automatically · works with partial threads",
   },
   {
-    icon: FileDown,
-    title: "Get your Context Passport",
-    description: "LayerFlow extracts the goal, decisions, constraints, failures and next action — and shows you exactly what it removed.",
-    detail: "8,000 words → ~1,000 words of useful context",
-  },
-  {
     icon: Wand2,
-    title: "Improve your next prompt",
-    description: "A scored, copy-ready prompt that's clearer, cheaper and more likely to get the right answer.",
+    title: "Click Improve",
+    description: "Your vague ask becomes a precise prompt — context, constraints, examples and output format — scored from 0 to 100.",
     detail: "Prompt Score across clarity, context, format & cost",
   },
   {
+    icon: Bot,
+    title: "Agents run it — web or terminal",
+    description: "Implement, review and test agents work in parallel with their own models. Watch it all live in the browser terminal.",
+    detail: "Same session in the `lf` CLI · cost checked before it runs",
+  },
+  {
     icon: Send,
-    title: "Continue in any model",
-    description: "Copy the Continue Pack, paste it into another AI, and pick up exactly where you stopped.",
+    title: "Continue anywhere",
+    description: "Every run is saved as a Context Passport with a Continue Pack — pick up in any model, never re-explain your work.",
     detail: "Cheapest good-enough model recommended with a reason",
   },
 ];
@@ -41,11 +41,11 @@ export default function HowItWorks() {
           eyebrow="How it works"
           title={
             <>
-              From messy chat to{" "}
-              <span className="text-brand">action-ready AI work</span>
+              From plain English to{" "}
+              <span className="text-brand">shipped code</span>
             </>
           }
-          description="One paste. Four steps. Every model you use now shares the same memory."
+          description="Improve the prompt, run it with agents, keep every bit of context. Any model, any tool — one memory."
         />
 
         <div className="relative mt-12">

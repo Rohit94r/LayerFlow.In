@@ -1,6 +1,7 @@
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { USE_CASES } from "@/lib/data/marketing";
 import {
+  Code2,
   LifeBuoy,
   Shuffle,
   PiggyBank,
@@ -11,6 +12,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
+  "code": Code2,
   "lifebuoy": LifeBuoy,
   "shuffle": Shuffle,
   "piggy-bank": PiggyBank,
