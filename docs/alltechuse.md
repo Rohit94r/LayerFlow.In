@@ -1,10 +1,11 @@
 # LayerFlow — All Technology Stack
 
-> LayerFlow is the AI Context Operating System.
-> Promise: **Never lose AI context again.**
+> LayerFlow is the AI Coding Platform — web + terminal, with a rescue workflow for AI context.
+> Promise: **Anyone can code with AI — and never lose context again.**
 
 This document defines the complete technology stack for LayerFlow: frontend,
-backend, data, AI workflows, infrastructure, and engineering standards.
+backend, data, AI workflows, the terminal CLI, agent runtime, infrastructure,
+and engineering standards.
 
 > **Status note:** The product is currently in a **frontend-first build phase**.
 > Everything below is the target architecture. The frontend runs on realistic
@@ -14,19 +15,27 @@ backend, data, AI workflows, infrastructure, and engineering standards.
 
 ## 1. Product Shape
 
-LayerFlow turns messy AI conversations into reusable, portable, cheaper AI work.
+LayerFlow is a web + terminal AI coding platform. It turns plain English into
+improved prompts, runs them with multiple agents, and turns messy AI
+conversations into reusable, portable, cheaper AI work.
 
 Core artifacts:
 
 | Artifact | What it is |
 | --- | --- |
+| Coding Workspace | Web editor — plain English → Improve → run with agents |
+| Browser Terminal | Same terminal as the CLI, live in the browser |
+| Agent Runtime | Implement / review / test agents, each with own model + budget |
 | Rescue Report | Full output of analyzing one pasted conversation |
 | Context Passport | Portable memory package (goal, state, decisions, constraints, next action…) |
 | Continue Pack | Copy-ready continuation for any AI model |
 | Prompt Library | Improved, versioned prompts with scores |
+| Prompt Improver | Plain English → scored, structured prompt (0–100) |
+| Auto Context Cutting | Long chats/repo context cut to only what the task needs |
 | Workspace | Projects, saved context, learnings, timeline, search |
 | Cost Engine | Dollar-based estimates across models |
 | Model Router | Best model suggestion with an explanation |
+| `lf` CLI | Terminal client, session-parity with web |
 
 ---
 
@@ -43,7 +52,7 @@ Core artifacts:
 | Forms | Native + zod validation | Enough for mock phase, contracts ready |
 | Auth client | better-auth (email + Google) | Existing setup, kept |
 | Theme | CSS variables, dark-first with light mode | Existing theme system, kept |
-| Fonts | DM Sans + DM Mono (next/font) | Existing brand fonts, kept |
+| Fonts | Geist Sans + Geist Mono (npm `geist`) | Vercel's brand font — terminal-native look |
 
 ### Frontend architecture
 
@@ -261,15 +270,127 @@ capped Pro credits.
 
 ---
 
-## 14. Future Architecture
+## 14. Terminal CLI (`lf`)
+
+### Install (end users)
+
+| Method | Command |
+| --- | --- |
+| npm (recommended) | `npm install -g @layerflow/cli` |
+| curl installer | `curl -fsSL https://layerflow.dev/install.sh \| bash` |
+| Homebrew (macOS) | `brew install layerflow/tap/lf` |
+| Verify | `lf --version` → `lf 0.4.1` |
+
+No API keys and no account needed to try it. Keys (BYOK) are stored in the OS
+keychain / `~/.layerflow/config.json` (encrypted) and sync with the web vault
+when the user signs in.
+
+### Commands (v1)
+
+| Command | What it does |
+| --- | --- |
+| `lf run "<plain english>"` | Improve prompt → pick model → check cost → run agents → save session |
+| `lf run --context repo` | Include repo context (LAYERFLOW.md + git + file tree), auto-cut to essentials |
+| `lf rescue <file-or-paste>` | Dead chat → Rescue Report → Continue Pack |
+| `lf improve "<prompt>"` | Score + improve a single prompt (0–100) |
+| `lf cost --repo` | Dollar estimate across models before running |
+| `lf agents --implement <m> --review <m> --test <m>` | Configure parallel agents |
+| `lf session --open <id>` | Reopen a past session (same context/decisions/files) |
+| `lf init` | Create `LAYERFLOW.md` + `.layerflow/` in a repo |
+| `lf context` | Build repo Context Passport |
+| `lf git` | Explain changes, draft commit notes |
+
+### CLI architecture
+
+```
+lf (Node/Bun binary, ~40KB core)
+  ├── commands/        one file per command (run, rescue, improve, cost…)
+  ├── tui/             raw TTY rendering (sessions, diffs, agent panels)
+  ├── runtime/         session client (JSON-RPC over WebSocket to API)
+  ├── context/         repo scanner → context cut (same engine as web)
+  ├── vault/           OS keychain wrapper + encrypted config
+  └── telemetry/       anonymized usage events
+```
+
+CLI ↔ API transport: **WebSocket (JSON-RPC)** for live agent events
+(streamed token chunks, tool calls, terminal output, status changes) with
+**REST fallback** for batch commands (`lf cost --repo`). Offline mode: cache
+last 20 sessions locally, queue events, sync on reconnect.
+
+Session parity rule: a session started in the web workspace and one started
+from `lf run` produce identical files — same passport fields, same prompt
+versions, same ledger events. Web and CLI are two frontends to one session
+store.
+
+### Terminal backend (how to build it)
+
+```
+POST /v1/sessions                 create session (plan, model picks)
+WS   /v1/sessions/:id/stream      live event stream (agent ↔ user)
+POST /v1/sessions/:id/command     user input → running agent
+POST /v1/sessions/:id/approve     human approval of tool call (write/exec)
+GET  /v1/sessions/:id/snapshot    full session state (resume)
+```
+
+Backend pieces:
+
+1. **Session store** — Redis for live state (TTL 24h) + PostgreSQL for
+   history. Every event is append-only (`session_events` table).
+2. **Event bus** — Redis pub/sub: agent runtime publishes
+   `session:<id>` events; both web (SSE) and CLI (WS) subscribe.
+3. **Agent runtime** — Vercel AI SDK `streamText` with a typed tool registry
+   (read_file, edit_file, run_command, write_file). Tool calls pause for
+   human approval when the action is destructive.
+4. **Execution** — web/managed: sandbox (E2B or Modal) per session; CLI:
+   local child processes with a permission prompt per command.
+5. **Cost guard** — before each run: `cost_estimates` check, model router
+   pick, budget cap enforced mid-stream (stream cancels over budget).
+6. **Context cutting** — shared `lib/context` engine: chat → clean → dedupe →
+   extract essentials → cut to token budget; repo → git-aware scanner →
+   relevant-file picker → same token budget.
+
+---
+
+## 15. Agent Runtime
+
+### v1: single implement agent (typed state machine)
+
+```
+state: improve → plan → run → review → fix → done
+```
+
+- Tool registry: `read_file`, `edit_file`, `write_file`, `run_command`.
+- Every step emits structured events (streamed to web + CLI).
+- Human approval required for: `run_command` with side effects, edits outside
+  the current file set.
+- Budget: model, max tokens, max tool calls per run (from Cost Engine).
+
+### v2: multi-agent (supervisor pattern, LangGraph.js)
+
+- Supervisor spawns: **implement** (writes code), **review** (a11y, DX,
+  correctness), **test** (build/test/lint), **docs** (optional).
+- Each agent has its own model + budget (e.g. implement=gpt-4.1,
+  review=claude-sonnet-4, test=gemini-flash).
+- Review output feeds back to implement (finite fix loop, max 2 rounds).
+- Checkpointing via LangGraph.js so runs resume after crashes.
+
+### Why not a big framework day one
+
+Same rule as the rescue pipeline: simple typed state machine first; adopt
+LangGraph.js only when branching/multi-agent checkpoints are required. Never
+start a run without the prompt improver + cost guard having run.
+
+---
+
+## 16. Future Architecture
 
 | Phase | Adds |
 | --- | --- |
-| Phase 1 (now) | Frontend with mock data, rescue flow UX |
+| Phase 1 (now) | Frontend with mock data, rescue flow UX, coding workspace mock |
 | Phase 2 | Hono API, Postgres, Redis, BullMQ, real rescue pipeline |
-| Phase 3 | Browser companion (capture + inject), search, local/private mode |
-| Phase 4 | Terminal `lf` CLI, repo passports, Git story |
-| Phase 5 | SDK, marketplace, teams |
+| Phase 3 | Web + terminal coding platform: agent runtime, browser terminal, prompt improver, cost guard |
+| Phase 4 | `lf` CLI parity, repo passports, Git story |
+| Phase 5 | Multi-agent supervisor, browser companion, SDK, marketplace, teams |
 
 Scaling path for heavy workloads: BullMQ → Temporal when workflows need
 checkpointing, resumability, or human-in-the-loop mid-run. Agent
@@ -278,13 +399,13 @@ required.
 
 ---
 
-## 15. Folder Structure
+## 17. Folder Structure
 
 ```
 LayerFlow/
 ├── app/                    # Next.js app router
 │   ├── (marketing)/        # Landing + pricing
-│   ├── (app)/              # Auth-gated workspace
+│   ├── (app)/              # Auth-gated workspace (incl. /code)
 │   ├── api/                # Hono mounts (/api, /v1)
 │   ├── sign-in/
 │   ├── globals.css
@@ -312,7 +433,7 @@ LayerFlow/
 
 ---
 
-## 16. Coding Standards
+## 18. Coding Standards
 
 - TypeScript strict, no `any`.
 - Zod schemas live in `packages/contracts`; UI types import from there.
@@ -324,7 +445,7 @@ LayerFlow/
 
 ---
 
-## 17. Deployment
+## 19. Deployment
 
 | Env | Target |
 | --- | --- |
@@ -340,7 +461,7 @@ Postgres + Redis + MinIO locally.
 
 ---
 
-## 18. Caching Strategy Summary
+## 20. Caching Strategy Summary
 
 | Layer | Key | TTL |
 | --- | --- | --- |
@@ -353,7 +474,7 @@ Every cache write honors user deletion requests (explicit invalidation).
 
 ---
 
-## 19. Environment Variables
+## 21. Environment Variables
 
 See `.env.example` — kept as the single source of truth. Never commit
 provider keys; BYOK keys are encrypted at rest with a key-encryption key

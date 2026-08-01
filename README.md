@@ -12,33 +12,31 @@
 <div align="center">
   <h1>LayerFlow</h1>
   <p>
-    <strong>The AI Context Operating System</strong>
+    <strong>The AI Coding Platform — web + terminal</strong>
   </p>
   <p>
-    <em>Never lose AI context again.</em>
+    <em>Code with AI in your browser or terminal.</em>
   </p>
   <p>
-    Paste any ChatGPT, Claude, Gemini, DeepSeek or Kimi conversation.
-    LayerFlow compresses it into a reusable <strong>Context Passport</strong> so you
-    can continue in any AI model with better prompts and lower cost.
+    Write plain English, click Improve, and run working code with multiple
+    agents. Rescue dead AI chats into <strong>Context Passports</strong> and
+    continue in any model with better prompts and lower cost.
   </p>
 </div>
 
 ## Why LayerFlow exists
 
-People switch between AI models constantly and lose:
+People lose time (and money) to three AI problems:
 
-- context
-- prompts
-- decisions
-- project memory
-- conversations
+- messy prompts that produce wrong output
+- dead chats and lost context when switching models
+- overspending on expensive models
 
-LayerFlow solves this with a **Rescue Report** pipeline:
+LayerFlow solves all three with one platform:
 
 ```text
-Paste chat → Clean → Compress → Improve prompt → Cost check
-→ Best model suggestion → Continue Pack → Save to workspace
+Plain English → Improve prompt → Multi-agent run → Browser terminal
+Paste chat → Clean → Compress → Improve → Cost check → Continue Pack
 ```
 
 ## What's inside
@@ -46,6 +44,8 @@ Paste chat → Clean → Compress → Improve prompt → Cost check
 | Surface | What it does |
 | --- | --- |
 | Landing page | Problem → How it works → Magic Moment → Features → Comparison → Use cases → Pricing → Roadmap → Testimonials → FAQ |
+| Coding Workspace | Plain English → Improve → run with parallel agents (implement / review / test) |
+| Browser Terminal | Live agent output, shell commands and file diffs — same as the `lf` CLI |
 | Rescue Chat | Paste any conversation, get a full Rescue Report in ~20s |
 | Context Passport | Portable memory package: goal, state, decisions, constraints, failures, next action |
 | Smart Compress | 15,000 words → ~1,000 words of useful context, with a Context Diff showing what was removed |
@@ -63,8 +63,8 @@ Paste chat → Clean → Compress → Improve prompt → Cost check
 The target architecture is documented in `docs/alltechuse.md` and the
 engineering workflow in `docs/workflow.md`.
 
-Not built yet (by design): terminal agent, SDK, IDE/browser extensions,
-marketplace, enterprise features, git automation, real AI calls.
+Not built yet (by design): real AI calls, SDK, IDE/browser extensions,
+marketplace, enterprise features, git automation.
 
 ## Getting started
 
@@ -122,8 +122,8 @@ docs/
 
 ## Roadmap
 
-1. **Live** — Rescue Reports (Limit Rescue, Passport, Compress, Diff, Improve, Cost, Model, Continue Pack)
+1. **Live** — Coding Workspace (plain-English improve + agents + browser terminal), Rescue Reports (Limit Rescue, Passport, Compress, Diff, Improve, Cost, Model, Continue Pack)
 2. **Building** — Workspace (projects, libraries, search, learnings, ledger, BYOK)
-3. **Planned** — Browser companion, private mode, developer CLI (`lf`), repo passports
+3. **Planned** — Real agent tool calls, `lf` CLI parity, browser companion, private mode, repo passports
 
 See `docs/workflow.md` for the full engineering plan.

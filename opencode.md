@@ -79,7 +79,7 @@ LayerFlow preserves repo context, Git reasoning, model cost, and AI-assisted dec
 
 ## Market Reality
 
-### Coding agents are not the first fight
+### Coding agents are crowded but not closed
 
 The AI coding-agent market is crowded:
 
@@ -87,7 +87,12 @@ The AI coding-agent market is crowded:
 - Claude Code, OpenAI Codex CLI, GitHub Copilot agents, Windsurf, and OpenCode already cover terminal/IDE coding agents.
 - OpenCode, Claude Code, Codex CLI, and Cursor already handle repo context, command execution, sessions, rules, agent workflows, and implementation.
 
-LayerFlow should not launch as an OpenCode or Cursor competitor.
+LayerFlow does not need to out-feature OpenCode. It needs to beat the entry point:
+
+- OpenCode and Claude Code are terminal-first: intimidating for non-developers, and they run locally.
+- LayerFlow is **web-first with a terminal**: anyone opens a browser, writes plain English, clicks Improve, and gets a working prompt — then runs it with one click, no install.
+- LayerFlow adds the Rescue Report workflow on top: improve the prompt, compress context, check cost, pick a model, then run the agent.
+- Multi-agent by default: parallel agents (implement, review, test) instead of one linear agent loop.
 
 ### Context memory is also crowded
 
@@ -344,7 +349,7 @@ Ship:
 Do not ship in Phase 1:
 
 - Browser extension.
-- Terminal agent.
+- Terminal agent (Phase 4).
 - SDK.
 - Team features.
 - Marketplace.
@@ -448,6 +453,82 @@ Developer positioning:
 LayerFlow remembers why the code changed, what AI context was used, what model helped, and what it cost.
 ```
 
+### Phase 4: Web + Terminal Coding Platform
+
+Timeline: after Phase 1 usage, can be built in parallel with Phase 2.
+
+This is the product direction the founder has chosen:
+
+```text
+LayerFlow is a web + terminal-based AI coding platform, similar to opencode, with improved features.
+Anyone can code. Multiple agents. Plain English in, better prompts out.
+```
+
+Goals:
+
+```text
+1. Anyone can code — no terminal install, no API keys, no setup.
+2. A real browser terminal for users who want the opencode experience.
+3. Multiple agents that work in parallel and review each other.
+4. Every Rescue Report feature (improve, compress, cost, model pick) feeds the agent loop.
+```
+
+Web-first surfaces (ship first):
+
+- Prompt box: "write plain english and click improve" -> prompt improves automatically (clarity, context, constraints, output format, examples, cost).
+- One-click run: improved prompt runs against the chosen model in a live session.
+- Browser terminal (xterm.js-style): agent output, shell commands, file diffs.
+- File tree + editor pane: agent edits files, user reviews diffs.
+- Agent panel: multiple agents (implement / review / test / docs), each with its own model, status, and output.
+- Session history: every run saved to the workspace (Context Passport + prompt library).
+
+Terminal parity (later):
+
+- `lf` CLI that mirrors the web session 1:1.
+- Same session files, same Context Passports, same cost ledger.
+- Users start in the browser, continue in the terminal, or vice versa.
+
+Differentiation vs opencode:
+
+```text
+OpenCode: terminal-only, developer-first, local.
+LayerFlow: web + terminal, plain-English prompt improver, multi-agent, cost check, rescue workflow.
+```
+
+How to do it (implementation path):
+
+1. Web editor: Next.js app page (`/code`) with a file tree, code viewer/editor, and a chat/prompt panel — mock-first with local state and mock data, then wire to the API.
+2. Browser terminal: use `@xterm/xterm` + `@xterm/addon-fit` in a React component; stream agent output through SSE or WebSocket.
+3. Agent loop (MVP): Vercel AI SDK `streamText` with tool calls (read_file, edit_file, run_command); typed tool registry; one implement agent first.
+4. Multi-agent (later): LangGraph.js with a supervisor that spawns implement/review/test agents; each agent has its own model and budget.
+5. Prompt improver: a cheaper/faster model rewrites the user's plain-English request into a structured prompt (existing Improve Prompt feature), then the improved prompt feeds the main agent.
+6. Cost + model pick: reuse Cost Check and Best Model Suggestion before the agent starts — show the run's estimated cost up front.
+7. Sessions: every run produces a Context Passport and saved prompt in the workspace.
+
+Tech stack additions (on top of the production stack table):
+
+| Layer | Choice |
+| --- | --- |
+| Terminal UI | `@xterm/xterm` + `@xterm/addon-fit` (web), raw TTY pipe for CLI |
+| Editor pane | CodeMirror 6 (light, Next.js-friendly) or Monaco for heavy users |
+| Streaming | SSE first, WebSocket when sessions need bidirectional input |
+| Agent loop | Vercel AI SDK tool calls -> typed state machine -> LangGraph.js for multi-agent |
+| Execution (web) | Managed sandbox (E2B or Modal) for `run_command`; local execution only in the CLI |
+| Session store | Redis for live session state, PostgreSQL for history |
+| CLI | Node + Bun as the `lf` binary, same session format as web |
+
+Do not ship in Phase 4 day one:
+
+- Full IDE (file explorer is enough; Monaco comes later).
+- Full autonomous implementation (`lf implement`) — keep agent suggestions reviewable.
+- Unlimited hosted model credits.
+
+Success metric:
+
+```text
+20 non-developer users write plain English, click Improve, and run a working session without installing anything.
+```
+
 ## What To Add Now
 
 ### 1. AI Work Rescue Report
@@ -542,7 +623,6 @@ BYOK is not just a developer feature. It is a margin and trust feature.
 
 Remove from first launch:
 
-- Terminal agent.
 - SDK.
 - Desktop app.
 - IDE extension.
@@ -565,7 +645,7 @@ Defer until usage proves demand:
 - Mobile app.
 - Team shared memory.
 - Fine-grained audit logs.
-- LangGraph multi-agent workflows.
+- LangGraph multi-agent workflows (Phase 4 day-one is a single implement agent; multi-agent comes after).
 
 Reason:
 
@@ -979,17 +1059,20 @@ Build next:
 4. Browser companion.
 5. Model compare.
 
-Build later:
+Build later (Phase 4, web + terminal coding platform):
 
-1. Terminal memory.
-2. Git Change Story.
-3. Team memory.
-4. Automations.
-5. SDK.
+1. Web coding workspace (`/code`): prompt improver, agent panel, file tree, editor.
+2. Browser terminal (xterm.js-style).
+3. Multi-agent (implement / review / test).
+4. `lf` CLI parity with web sessions.
+5. Git Change Story.
+6. Team memory.
+7. Automations.
+8. SDK.
 
 Do not build:
 
-1. Full OpenCode clone.
+1. A terminal-only clone of opencode with no web entry point and no prompt-improvement workflow.
 2. Full Cursor competitor.
 3. Enterprise-first observability platform.
 4. Unlimited credit plan.
@@ -1014,10 +1097,10 @@ The AI Work Rescue workspace that improves, compresses, prices, and preserves AI
 This is the path:
 
 ```text
-Web Rescue Report first -> Workspace second -> Browser companion third -> Developer memory later.
+Web Rescue Report first -> Workspace second -> Web + Terminal coding platform (Phase 4) -> Developer memory later.
 ```
 
-That path is more realistic in the current market and more defensible than a simple Limit Rescue or OpenCode-style terminal product.
+That path is more realistic in the current market and more defensible than a simple Limit Rescue product. The coding platform inherits everything the workspace already builds: Context Passports, prompt improver, cost check, model suggestion, and session history.
 
 ## Research Sources
 

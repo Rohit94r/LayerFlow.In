@@ -1,7 +1,7 @@
 # LayerFlow — Engineering Workflow
 
-> The AI Context Operating System.
-> From messy chat → Context Passport → continue anywhere.
+> The AI Coding Platform — web + terminal.
+> Plain English → Improve → agents + browser terminal. Messy chat → Context Passport → continue anywhere.
 
 This document describes how LayerFlow works end to end, stage by stage. It
 covers the frontend, backend, RAG, prompt improvement, context passports,
