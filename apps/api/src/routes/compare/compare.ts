@@ -25,7 +25,7 @@ compareRouter.post("/", async (c) => {
   const body = createCompareRequestSchema.parse(await c.req.json());
 
   let content: string | null = body.content ?? null;
-  let promptVersionId: string | null = body.promptVersionId ?? null;
+  const promptVersionId: string | null = body.promptVersionId ?? null;
 
   if (promptVersionId) {
     const version = await db.query.promptVersions.findFirst({

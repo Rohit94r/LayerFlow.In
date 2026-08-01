@@ -283,7 +283,7 @@ export async function settleBudget(input: SettleBudgetInput): Promise<{ ledgerId
   const client = input.redis ?? defaultRedis;
   const actualMicro = Math.max(0, Math.floor(input.actualMicro));
 
-  let reservation =
+  const reservation =
     softReservations.get(input.reservationId) ??
     (await loadReservation(client, input.reservationId).catch(() => null));
   if (!reservation) {
