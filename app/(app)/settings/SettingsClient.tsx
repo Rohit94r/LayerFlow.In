@@ -1,537 +1,158 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Copy, Check, Loader2, Trash2 } from "lucide-react";
-import PageHeader from "@/components/workspace/PageHeader";
-import ExecutionModeToggle from "@/components/workspace/ExecutionModeToggle";
-import RoutingRules from "@/components/workspace/RoutingRules";
-import { ErrorState, LoadingState } from "@/components/workspace/DataState";
-import { useAuth } from "@/lib/auth-provider";
-import { isAdminEmail } from "@/lib/admin";
-import { useAsyncData, errorMessage } from "@/lib/hooks/use-async-data";
-import type { ExecutionMode } from "@/lib/types";
-import {
-  getWorkspaceSettings,
-  updateWorkspaceSettings,
-  listRoutingRules,
-  createRoutingRule,
-  updateRoutingRule,
-  deleteRoutingRule,
-  listApiKeys,
-  createApiKey,
-  deleteApiKey,
-  listProviderKeys,
-  createProviderKey,
-  deleteProviderKey,
-  getCurrentBudget,
-  updateBudget,
-} from "@/lib/api";
-import { mapSettings, mapRoutingRule, mapApiKey, mapBudget } from "@/lib/api/mappers";
-import { usdToMicro } from "@/lib/api/money";
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-async function loadSettings() {
-  const [settingsRes, rulesRes, keysRes, providerRes, budgetRes] = await Promise.all([
-    getWorkspaceSettings(),
-    listRoutingRules(),
-    listApiKeys(),
-    listProviderKeys(),
-    getCurrentBudget(),
-  ]);
-  return {
-    settings: mapSettings(settingsRes.settings),
-    rules: rulesRes.rules.map(mapRoutingRule),
-    keys: keysRes.keys.map(mapApiKey),
-    providerKeys: providerRes.keys,
-    budget: mapBudget(budgetRes),
-  };
-}
+import { useState } from "react";
+import { User, Bell, Shield, KeyRound, Palette, CreditCard, Check } from "lucide-react";
+import { PageHeader } from "@/components/app/page-header";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Field, Input, Select } from "@/components/ui/input";
+import { useSession } from "@/lib/auth-client";
 
 export default function SettingsClient() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
-  const state = useAsyncData(loadSettings, []);
-  const [preferCheap, setPreferCheap] = useState(true);
-  const [executionMode, setExecutionMode] = useState<ExecutionMode>("suggest");
-  const [defaultModel, setDefaultModel] = useState("gemini-2.5-flash");
-  const [rules, setRules] = useState<ReturnType<typeof mapRoutingRule>[]>([]);
-  const [keys, setKeys] = useState<ReturnType<typeof mapApiKey>[]>([]);
-  const [providerKeys, setProviderKeys] = useState<
-    Awaited<ReturnType<typeof listProviderKeys>>["keys"]
-  >([]);
-  const [monthlyLimit, setMonthlyLimit] = useState("50");
-  const [dailyLimit, setDailyLimit] = useState("5");
-  const [alertAt, setAlertAt] = useState("80");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [newSecret, setNewSecret] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [provider, setProvider] = useState("openai");
-  const [providerSecret, setProviderSecret] = useState("");
-  const [providerLabel, setProviderLabel] = useState("");
-  const [keyName, setKeyName] = useState("Default gateway key");
+  const session = useSession();
+  const user = session.data?.user;
+  const [saved, setSaved] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (state.status !== "success" || !state.data) return;
-    const data = state.data;
-    setPreferCheap(data.settings.preferCheap);
-    setExecutionMode(data.settings.executionMode);
-    setDefaultModel(data.settings.defaultModel);
-    setRules(data.rules);
-    setKeys(data.keys);
-    setProviderKeys(data.providerKeys);
-    setMonthlyLimit(String(data.budget.monthlyLimit));
-    setDailyLimit(String(data.budget.dailyLimit));
-    setAlertAt(String(data.budget.alertThreshold));
-  }, [state.status, state.data]);
-
-  if (state.status === "loading") return <LoadingState label="Loading settings…" />;
-  if (state.status === "error") {
-    return <ErrorState message={errorMessage(state.error)} onRetry={state.reload} />;
+  function save(label: string) {
+    setSaved(label);
+    window.setTimeout(() => setSaved(null), 1800);
   }
 
-  const savePreferences = async () => {
-    setBusy("prefs");
-    setError(null);
-    setMessage(null);
-    try {
-      await updateWorkspaceSettings({ preferCheap, executionMode, defaultModel });
-      setMessage("Preferences saved");
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const toggleRule = async (id: string) => {
-    const rule = rules.find((r) => r.id === id);
-    if (!rule) return;
-    const next = !rule.enabled;
-    setRules((prev) => prev.map((r) => (r.id === id ? { ...r, enabled: next } : r)));
-    try {
-      await updateRoutingRule(id, { enabled: next });
-    } catch (err) {
-      setError(errorMessage(err));
-      state.reload();
-    }
-  };
-
-  const handleAddRule = async (condition: string, model: string) => {
-    const res = await createRoutingRule({ condition, targetModel: model, priority: 0, enabled: true });
-    const mapped = mapRoutingRule(res.rule);
-    setRules((prev) => [...prev, mapped]);
-  };
-
-  const handleDeleteRule = async (id: string) => {
-    await deleteRoutingRule(id);
-    setRules((prev) => prev.filter((r) => r.id !== id));
-  };
-
-  const handleCreateKey = async () => {
-    setBusy("key");
-    setError(null);
-    setNewSecret(null);
-    try {
-      const res = await createApiKey({ name: keyName.trim() || "Gateway key" });
-      setKeys((prev) => [mapApiKey(res.key), ...prev]);
-      setNewSecret(res.secret);
-      setMessage("API key created — copy the secret now; it won’t be shown again.");
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleDeleteKey = async (id: string) => {
-    setBusy(`del-${id}`);
-    try {
-      await deleteApiKey(id);
-      setKeys((prev) => prev.filter((k) => k.id !== id));
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleAddProviderKey = async () => {
-    setBusy("provider");
-    setError(null);
-    try {
-      const res = await createProviderKey({
-        provider,
-        secret: providerSecret,
-        label: providerLabel || undefined,
-      });
-      setProviderKeys((prev) => [res.key, ...prev]);
-      setProviderSecret("");
-      setProviderLabel("");
-      setMessage("Provider key saved (encrypted).");
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleDeleteProviderKey = async (id: string) => {
-    setBusy(`pdel-${id}`);
-    try {
-      await deleteProviderKey(id);
-      setProviderKeys((prev) => prev.filter((k) => k.id !== id));
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const saveBudgetDefaults = async () => {
-    setBusy("budget");
-    setError(null);
-    try {
-      await updateBudget({
-        monthlyLimitMicro: usdToMicro(Number(monthlyLimit) || 0),
-        dailyLimitMicro: usdToMicro(Number(dailyLimit) || 0),
-        alertAtPct: Number(alertAt) || 80,
-        hardBlock: true,
-      });
-      setMessage("Budget defaults saved");
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.replace("/sign-in");
-  };
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Workspace"
-        title="Settings"
-        description="Account, execution defaults, API keys, and routing preferences."
-      />
+    <div className="mx-auto max-w-3xl">
+      <PageHeader title="Settings" description="Your account, workspace, keys and plan." />
 
-      {(message || error) && (
-        <p
-          className={`rounded-lg border px-3 py-2 text-sm ${
-            error
-              ? "border-red-500/30 bg-red-500/10 text-red-500"
-              : "border-brand/30 bg-brand/10 text-brand"
-          }`}
-        >
-          {error ?? message}
-        </p>
-      )}
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Profile</h3>
-        <div className="mt-4 flex items-center gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border bg-surface-2 text-lg font-medium text-brand">
-            {user?.avatarInitials ?? "?"}
-          </div>
-          <div>
-            <p className="font-medium text-ink">{user?.name ?? "Signed in"}</p>
-            <p className="text-sm text-muted">{user?.email}</p>
-            <span className="mt-1 inline-block rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
-              Google account
-            </span>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          {isAdminEmail(user?.email) && (
-            <Link
-              href="/admin"
-              className="btn-secondary rounded-lg px-4 py-2 text-sm"
-            >
-              Admin analytics
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={handleSignOut}
-            className="btn-secondary rounded-lg px-4 py-2 text-sm"
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Execution defaults</h3>
-        <p className="mt-0.5 text-sm text-muted">Default mode for new prompts and runs.</p>
-
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-border px-4 py-3">
-          <div>
-            <p className="text-sm font-medium text-ink">Prefer cheap mode</p>
-            <p className="text-xs text-muted">Route simple tasks to budget tier models</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setPreferCheap(!preferCheap)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              preferCheap ? "bg-brand" : "bg-surface-2"
-            }`}
-            aria-label="Toggle prefer cheap"
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                preferCheap ? "left-[22px]" : "left-0.5"
-              }`}
-            />
-          </button>
-        </div>
-
-        <div className="mt-4">
-          <label className="mb-2 block text-xs text-muted">Default execution mode</label>
-          <ExecutionModeToggle value={executionMode} onChange={setExecutionMode} />
-        </div>
-
-        <div className="mt-4">
-          <label className="mb-1.5 block text-xs text-muted">Default model</label>
-          <select
-            className="workspace-input"
-            value={defaultModel}
-            onChange={(e) => setDefaultModel(e.target.value)}
-          >
-            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-            <option value="gpt-4o">gpt-4o</option>
-            <option value="gpt-4o-mini">gpt-4o-mini</option>
-            <option value="claude-sonnet-4">claude-sonnet-4</option>
-            <option value="deepseek-chat">deepseek-chat</option>
-          </select>
-        </div>
-
-        <button
-          type="button"
-          onClick={savePreferences}
-          disabled={busy === "prefs"}
-          className="btn-primary mt-4 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
-        >
-          {busy === "prefs" ? "Saving…" : "Save preferences"}
-        </button>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Routing rules</h3>
-        <p className="mt-0.5 text-sm text-muted">Rules evaluated by Auto Mode and recommend.</p>
-        <div className="mt-4">
-          <RoutingRules rules={rules} onToggle={toggleRule} onAdd={handleAddRule} onDelete={handleDeleteRule} />
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-ink">LayerFlow API keys</h3>
-            <p className="mt-0.5 text-sm text-muted">
-              Gateway keys for <code className="font-mono text-ink">/v1/*</code>. Secret shown once.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={keyName}
-              onChange={(e) => setKeyName(e.target.value)}
-              className="workspace-input max-w-[200px]"
-              placeholder="Key name"
-            />
-            <button
-              type="button"
-              onClick={handleCreateKey}
-              disabled={busy === "key"}
-              className="btn-primary rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-60"
-            >
-              {busy === "key" ? "Creating…" : "Create key"}
-            </button>
-          </div>
-        </div>
-
-        {newSecret && (
-          <div className="mb-4 rounded-lg border border-brand/30 bg-brand/10 p-3">
-            <p className="text-xs font-medium text-brand">Copy this secret now</p>
-            <div className="mt-2 flex items-center gap-2">
-              <code className="flex-1 break-all font-mono text-sm text-ink">{newSecret}</code>
-              <button
-                type="button"
-                className="btn-secondary px-2 py-1 text-xs"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(newSecret);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                }}
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              </button>
+      <div className="space-y-5">
+        {/* Profile */}
+        <Card>
+          <CardHeader title="Profile" description="Shown across your workspace" action={<User className="h-4 w-4 text-faint" />} />
+          <CardBody className="grid gap-4 sm:grid-cols-2">
+            <Field label="Name">
+              <Input defaultValue={user?.name ?? ""} />
+            </Field>
+            <Field label="Email">
+              <Input defaultValue={user?.email ?? ""} disabled />
+            </Field>
+            <Field label="Default target model" hint="Where Continue Packs are formatted for">
+              <Select defaultValue="gemini-flash">
+                <option value="gemini-flash">Gemini 2.5 Flash</option>
+                <option value="claude-sonnet">Claude Sonnet 4.5</option>
+                <option value="gpt-5">GPT-5</option>
+                <option value="deepseek-v3">DeepSeek V3.2</option>
+                <option value="kimi-k2">Kimi K2</option>
+              </Select>
+            </Field>
+            <Field label="Language">
+              <Select defaultValue="en">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="hi">हिन्दी</option>
+              </Select>
+            </Field>
+            <div className="sm:col-span-2">
+              <Button size="sm" onClick={() => save("Profile saved")} icon={saved === "Profile saved" ? <Check className="h-3.5 w-3.5" /> : undefined}>
+                {saved === "Profile saved" ? "Saved" : "Save profile"}
+              </Button>
             </div>
-          </div>
-        )}
+          </CardBody>
+        </Card>
 
-        <div className="space-y-2">
-          {keys.length === 0 ? (
-            <p className="text-sm text-muted">No gateway keys yet.</p>
-          ) : (
-            keys.map((key) => (
-              <div
-                key={key.id}
-                className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-ink">{key.name}</p>
-                  <p className="font-mono text-xs text-faint">{key.prefix}••••••••</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right text-xs text-faint">
-                    <p>Created {formatDate(key.createdAt)}</p>
-                    {key.lastUsed && <p>Last used {formatDate(key.lastUsed)}</p>}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteKey(key.id)}
-                    className="btn-secondary px-2 py-1 text-xs text-red-500"
-                    aria-label={`Revoke ${key.name}`}
-                  >
-                    {busy === `del-${key.id}` ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </div>
+        {/* Notifications */}
+        <Card>
+          <CardHeader title="Notifications" description="Keep your AI work top of mind" action={<Bell className="h-4 w-4 text-faint" />} />
+          <CardBody className="space-y-3">
+            {[
+              { label: "Weekly context digest", hint: "Summary of rescues, prompts and learnings every Monday" },
+              { label: "Cost alerts", hint: "When monthly spend passes 50% / 80% of your budget" },
+              { label: "BYOK health warnings", hint: "When a provider key starts failing" },
+              { label: "Outcome feedback reminders", hint: "Ask how a Continue Pack performed" },
+            ].map((n) => (
+              <label key={n.label} className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-border bg-surface-2/40 p-4">
+                <span>
+                  <span className="block text-sm font-medium text-ink">{n.label}</span>
+                  <span className="mt-0.5 block text-[11px] text-faint">{n.hint}</span>
+                </span>
+                <input type="checkbox" defaultChecked className="mt-1 h-4 w-4 accent-amber-500" />
+              </label>
+            ))}
+            <Button size="sm" onClick={() => save("Notification prefs saved")} icon={saved === "Notification prefs saved" ? <Check className="h-3.5 w-3.5" /> : undefined}>
+              {saved === "Notification prefs saved" ? "Saved" : "Save preferences"}
+            </Button>
+          </CardBody>
+        </Card>
+
+        {/* Plan */}
+        <Card>
+          <CardHeader title="Plan" description="Workflow value pricing — never pay per AI credit" action={<CreditCard className="h-4 w-4 text-faint" />} />
+          <CardBody>
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface-2/40 p-5">
+              <div>
+                <p className="text-sm font-semibold text-ink">Free plan</p>
+                <p className="mt-0.5 text-[11px] text-faint">
+                  3 Rescue Reports / month · Upgrade for unlimited reports + Cost Check + BYOK
+                </p>
               </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Provider keys (BYOK)</h3>
-        <p className="mt-0.5 text-sm text-muted">
-          Encrypted at rest. Used for workspace runs, compare, and gateway.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <select
-            className="workspace-input"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-          >
-            {["openai", "anthropic", "google", "deepseek", "groq", "xai", "openrouter"].map(
-              (p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ),
-            )}
-          </select>
-          <input
-            type="password"
-            className="workspace-input"
-            placeholder="Provider API secret"
-            value={providerSecret}
-            onChange={(e) => setProviderSecret(e.target.value)}
-            autoComplete="off"
-          />
-          <input
-            className="workspace-input"
-            placeholder="Label (optional)"
-            value={providerLabel}
-            onChange={(e) => setProviderLabel(e.target.value)}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={handleAddProviderKey}
-          disabled={busy === "provider" || providerSecret.length < 8}
-          className="btn-primary mt-3 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
-        >
-          {busy === "provider" ? "Saving…" : "Add provider key"}
-        </button>
-        <div className="mt-4 space-y-2">
-          {providerKeys.length === 0 ? (
-            <p className="text-sm text-muted">No provider keys yet — required to run models.</p>
-          ) : (
-            providerKeys.map((key) => (
-              <div
-                key={key.id}
-                className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-ink">
-                    {key.label || key.provider}
-                  </p>
-                  <p className="font-mono text-xs text-faint">
-                    {key.provider} · ••••{key.keyHint}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteProviderKey(key.id)}
-                  className="btn-secondary px-2 py-1 text-xs text-red-500"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm">Compare plans</Button>
+                <Button size="sm">Upgrade to Starter · $5</Button>
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            </div>
+          </CardBody>
+        </Card>
 
-      <div className="card p-6">
-        <h3 className="text-base font-semibold text-ink">Budget defaults</h3>
-        <p className="mt-0.5 text-sm text-muted">Workspace monthly and daily hard limits.</p>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Monthly limit ($)</label>
-            <input
-              type="number"
-              value={monthlyLimit}
-              onChange={(e) => setMonthlyLimit(e.target.value)}
-              className="workspace-input"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Daily limit ($)</label>
-            <input
-              type="number"
-              value={dailyLimit}
-              onChange={(e) => setDailyLimit(e.target.value)}
-              className="workspace-input"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Alert at (%)</label>
-            <input
-              type="number"
-              value={alertAt}
-              onChange={(e) => setAlertAt(e.target.value)}
-              className="workspace-input"
-            />
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={saveBudgetDefaults}
-          disabled={busy === "budget"}
-          className="btn-primary mt-4 rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
-        >
-          {busy === "budget" ? "Saving…" : "Save budget defaults"}
-        </button>
+        {/* Appearance */}
+        <Card>
+          <CardHeader title="Appearance" action={<Palette className="h-4 w-4 text-faint" />} />
+          <CardBody className="grid gap-4 sm:grid-cols-2">
+            <Field label="Theme">
+              <Select defaultValue="system">
+                <option value="system">System</option>
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+              </Select>
+            </Field>
+            <Field label="Density">
+              <Select defaultValue="comfortable">
+                <option value="comfortable">Comfortable</option>
+                <option value="compact">Compact</option>
+              </Select>
+            </Field>
+          </CardBody>
+        </Card>
+
+        {/* Privacy */}
+        <Card>
+          <CardHeader title="Privacy & data" action={<Shield className="h-4 w-4 text-faint" />} />
+          <CardBody className="space-y-4">
+            <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-border bg-surface-2/40 p-4">
+              <span>
+                <span className="block text-sm font-medium text-ink">Private mode (no storage)</span>
+                <span className="mt-0.5 block text-[11px] text-faint">
+                  Never store raw chats — only the derived report. Coming in Phase 3.
+                </span>
+              </span>
+              <input type="checkbox" className="mt-1 h-4 w-4 accent-amber-500" />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm">Export all data (.zip)</Button>
+              <Button variant="secondary" size="sm" className="text-rose-400 hover:text-rose-300">Delete workspace</Button>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Danger zone */}
+        <Card className="border-rose-500/20">
+          <CardHeader title="Danger zone" description="Irreversible actions" action={<KeyRound className="h-4 w-4 text-faint" />} />
+          <CardBody>
+            <p className="text-sm text-muted">
+              Signing out or clearing local data never touches your saved passports — they live in
+              your workspace. This build runs on mock data; nothing is actually deleted.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <Button variant="secondary" size="sm">Sign out</Button>
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </div>
   );
