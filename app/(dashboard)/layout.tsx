@@ -1,4 +1,4 @@
-import AppShell from "./AppShell";
+import AppShell from "./app-shell";
 
 /** Auth-gated workspace — skip static prerender (Better Auth hooks need a request). */
 export const dynamic = "force-dynamic";

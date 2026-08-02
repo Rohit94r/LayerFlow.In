@@ -42,8 +42,8 @@ export function PanelHeader({
   return (
     <div className={cn("flex items-start justify-between gap-4 border-b border-border px-5 py-4", className)}>
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        {description ? <p className="mt-0.5 text-xs text-muted">{description}</p> : null}
+        <h3 className="text-[15px] font-semibold tracking-tight text-ink">{title}</h3>
+        {description ? <p className="mt-0.5 text-[13px] text-muted">{description}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>

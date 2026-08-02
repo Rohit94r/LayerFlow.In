@@ -1,4 +1,4 @@
-import SettingsClient from "./SettingsClient";
+import SettingsClient from "./settings-client";
 
 export const metadata = {
   title: "Settings",

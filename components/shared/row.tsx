@@ -28,8 +28,8 @@ export function Row({
     <>
       {leading ? <span className="shrink-0">{leading}</span> : null}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-medium text-ink">{title}</span>
-        {subtitle ? <span className="mt-0.5 block truncate text-[11px] text-faint">{subtitle}</span> : null}
+        <span className="block truncate text-sm font-medium text-ink">{title}</span>
+        {subtitle ? <span className="mt-0.5 block truncate text-xs text-faint">{subtitle}</span> : null}
       </span>
       {trailing ? <span className="flex shrink-0 items-center gap-2 text-faint">{trailing}</span> : null}
     </>
