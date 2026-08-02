@@ -33,7 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/prompts", label: "Prompt Library", description: "Saved prompts, versioned", icon: Library },
   { href: "/passports", label: "Context Passports", description: "Portable project context", icon: BookUser },
   { href: "/rescue", label: "Continue Packs", description: "Rescue chats, continue anywhere", icon: LifeBuoy },
-  { href: "/code", label: "Terminal", description: "Browser terminal and agents", icon: TerminalSquare },
+  { href: "/code", label: "Terminal", description: "Browser terminal, agents — and the lf CLI", icon: TerminalSquare },
   { href: "/agents", label: "Agents", description: "Agent runs and status", icon: Bot },
   { href: "/models", label: "Model Hub", description: "Models, routing and BYOK", icon: Cpu },
   { href: "/history", label: "History", description: "Every run, one timeline", icon: History },

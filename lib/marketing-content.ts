@@ -10,10 +10,10 @@ export const site = {
 };
 
 export const proofPoints = [
-  "Coding Agents",
+  "Code with Agents",
   "Plain-English Improve",
-  "Browser Terminal",
-  "Multi-Agent",
+  "Browser + Terminal",
+  "`lf` CLI Agent",
   "Context Passport",
   "Cost Check",
 ];
@@ -81,8 +81,8 @@ export const featureMenu: FeatureMenuSection[] = [
         icon: "code",
       },
       {
-        title: "Browser Terminal",
-        description: "An opencode-style terminal that runs in your browser.",
+        title: "Terminal Agent",
+        description: "The same agents and session in your browser or the lf CLI — two faces, one run.",
         href: "/code?tab=terminal",
         icon: "terminal",
       },

@@ -15,6 +15,14 @@ The dashboard has 14 pages: home, workspace (+ `[projectId]`), prompts
 models, costs, billing, keys, settings. The navigation config drives the
 sidebar, topbar and command palette.
 
+## Terminal parity
+
+LayerFlow ships the browser and the terminal as one product. The `/code`
+dashboard is the browser face of the same session the `lf` CLI runs in — same
+Hono API, same agents, same Continue Packs and workspace. Keep both fronts on
+an equal footing: changes to a workflow in the dashboard should describe the
+`lf` command too, and contracts must stay shared (`@layerflow/contracts`).
+
 ## Layering
 
 ```

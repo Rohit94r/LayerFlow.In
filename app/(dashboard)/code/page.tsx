@@ -254,7 +254,7 @@ export default function CodePage() {
     <div>
       <PageHeader
         title="Coding workspace"
-        description="Plain English in, working code out — with agents, a terminal, and context that never gets lost."
+        description="Plain English in, working code out — with agents, a terminal, and context that never gets lost. The same session runs on the lf CLI in your own terminal."
         action={
           <Badge tone="amber">0 credits used this session</Badge>
         }
