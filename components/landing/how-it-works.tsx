@@ -1,34 +1,28 @@
 "use client";
 
-import { SectionHeading, Reveal } from "@/components/ui/reveal";
-import { Sparkles, Bot, TerminalSquare, Send, Wand2 } from "@/components/ui/icons";
+import { SectionHeading } from "@/components/ui/reveal";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "@/components/ui/icons";
 
-const STEPS: { icon: LucideIcon; title: string; description: string; detail: string }[] = [
+const STEPS: { title: string; description: string; hint: string }[] = [
   {
-    icon: Sparkles,
     title: "Write plain English",
     description: "No prompt engineering, no setup, no API keys. Say what you want in a sentence — or paste a messy AI chat you're stuck on.",
-    detail: "Source detected automatically · works with partial threads",
+    hint: "$ lf run \"build a landing page\"",
   },
   {
-    icon: Wand2,
     title: "Click Improve",
     description: "Your vague ask becomes a precise prompt — context, constraints, examples and output format — scored from 0 to 100.",
-    detail: "Prompt Score across clarity, context, format & cost",
+    hint: "score 92/100 · 3 constraints added",
   },
   {
-    icon: Bot,
     title: "Agents run it — web or terminal",
     description: "Implement, review and test agents work in parallel with their own models. Watch it all live in the browser terminal.",
-    detail: "Same session in the `lf` CLI · cost checked before it runs",
+    hint: "implement + review + test · in parallel",
   },
   {
-    icon: Send,
     title: "Continue anywhere",
     description: "Every run is saved as a Context Passport with a Continue Pack — pick up in any model, never re-explain your work.",
-    detail: "Cheapest good-enough model recommended with a reason",
+    hint: "passport saved · continue pack copied",
   },
 ];
 
@@ -38,7 +32,6 @@ export default function HowItWorks() {
       <div className="absolute inset-0 grid-lines opacity-40" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-
           title={
             <>
               From plain English to{" "}
@@ -48,33 +41,52 @@ export default function HowItWorks() {
           description="Improve the prompt, run it with agents, keep every bit of context. Any model, any tool — one memory."
         />
 
-        <div className="relative mt-12">
+        <div className="relative mt-14">
           <motion.div
-            className="absolute left-0 right-0 top-12 hidden h-px origin-left bg-gradient-to-r from-transparent via-brand/40 to-transparent lg:block"
+            className="absolute left-0 right-0 top-6 hidden h-0.5 origin-left bg-gradient-to-r from-transparent via-brand/40 to-transparent lg:block"
+            style={{ originX: 0 }}
             aria-hidden
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.2, ease: "easeInOut" }}
+            transition={{ duration: 1.4, ease: "easeInOut" }}
           />
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+
+          <div className="grid gap-10 lg:grid-cols-4 lg:gap-8">
             {STEPS.map((step, i) => (
-              <Reveal key={step.title} delay={i * 0.1}>
-                <div className="relative">
-                  <div className="relative z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border bg-surface text-brand shadow-lg">
-                    <step.icon className="h-5 w-5" />
-                    <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand text-[11px] font-bold text-[#0e1416]">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <h3 className="mt-5 text-lg font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{step.description}</p>
-                  <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-brand">
-                    <span className="h-1 w-1 rounded-full bg-brand" />
-                    {step.detail}
-                  </p>
+              <motion.div
+                key={step.title}
+                className="relative flex flex-col"
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 + i * 0.25, duration: 0.5 }}
+              >
+                <div className="flex items-center gap-3 lg:flex-col lg:items-start">
+                  <motion.span
+                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand/30 bg-surface font-mono text-sm font-bold text-brand shadow-[0_0_24px_rgba(249,115,22,0.15)]"
+                    initial={{ scale: 0 }}
+                    whileInView={{ scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 20,
+                      delay: 0.3 + i * 0.25,
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </motion.span>
+                  <h3 className="text-base font-semibold tracking-tight text-ink lg:mt-4">
+                    {step.title}
+                  </h3>
                 </div>
-              </Reveal>
+                <p className="mt-2.5 text-sm leading-relaxed text-muted lg:mt-3">{step.description}</p>
+                <code className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-brand">
+                  <span className="text-faint">▸</span>
+                  {step.hint}
+                </code>
+              </motion.div>
             ))}
           </div>
         </div>

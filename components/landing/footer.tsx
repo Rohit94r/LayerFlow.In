@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { site } from "@/lib/data/marketing";
 
@@ -35,17 +32,12 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   },
 ];
 
-const WORD = "LayerFlow.dev";
-
 export default function Footer() {
   return (
-    <footer className="border-t border-border bg-surface/40">
+    <footer className="relative overflow-hidden border-t border-border bg-surface/40">
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <p className="font-sans text-[17px] font-bold tracking-tight text-ink">
-              LayerFlow
-            </p>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
               {site.tagline}. Code in your browser or terminal — write plain
               English, click Improve, and run multi-agent sessions. Rescue dead
@@ -76,34 +68,21 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border pt-6 text-xs text-faint sm:flex-row">
-          <span>Code with AI. Never lose context.</span>
-          <span>LayerFlow © {new Date().getFullYear()}</span>
+        <div className="mt-10 border-t border-border pt-6 text-center text-xs text-faint">
+          Code with AI. Never lose context.
         </div>
+      </div>
 
-        <div className="pointer-events-none mt-12 select-none" aria-hidden>
-          <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-            {WORD.split("").map((ch, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, scale: 0, y: 24 }}
-                whileInView={{ opacity: 1, scale: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{
-                  type: "spring",
-                  stiffness: 500,
-                  damping: 24,
-                  delay: i * 0.045,
-                }}
-                className="flex h-12 w-12 items-center justify-center rounded-xl border border-brand/25 bg-surface shadow-[0_0_20px_rgba(249,115,22,0.12)] sm:h-16 sm:w-16 lg:h-20 lg:w-20"
-              >
-                <span className="bg-gradient-to-b from-brand to-brand/60 bg-clip-text font-black leading-none text-transparent [font-size:clamp(1.5rem,2.6vw,2.75rem)]">
-                  {ch === "." ? <span className="text-2xl sm:text-3xl lg:text-4xl">.</span> : ch}
-                </span>
-              </motion.span>
-            ))}
-          </div>
-        </div>
+      <div className="relative mx-auto w-full select-none pb-8 pt-6 sm:pb-10">
+        <p
+          aria-hidden
+          className="absolute inset-0 whitespace-nowrap bg-gradient-to-b from-brand/60 to-brand/20 bg-clip-text text-center font-mono font-medium leading-none tracking-tight text-transparent blur-[28px] [font-size:clamp(2.4rem,11vw,13rem)]"
+        >
+          LayerFlow.dev
+        </p>
+        <p className="relative whitespace-nowrap bg-gradient-to-b from-brand to-brand/40 bg-clip-text text-center font-mono font-medium leading-none tracking-tight text-transparent [font-size:clamp(2.4rem,11vw,13rem)]">
+          LayerFlow.dev
+        </p>
       </div>
     </footer>
   );
