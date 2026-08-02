@@ -1,7 +1,7 @@
 import { SectionHeading } from "@/components/ui/reveal";
 import { PROBLEM_POINTS } from "@/lib/data/marketing";
-import { MessageSquareWarning, Timer, History, DollarSign } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { MessageSquareWarning, Timer, History, DollarSign } from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const ICONS: LucideIcon[] = [MessageSquareWarning, Timer, History, DollarSign];
 
@@ -10,7 +10,7 @@ export default function Problem() {
     <section id="problem" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="The problem"
+
           title={
             <>
               AI is powerful — the setup{" "}

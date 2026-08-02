@@ -11,7 +11,7 @@ import {
   Pencil,
   Send,
   BookmarkPlus,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Dot } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

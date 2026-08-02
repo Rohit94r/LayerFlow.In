@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookUser, Star } from "lucide-react";
+import { BookUser, Star } from "@/components/ui/icons";
 import type { ContextPassport } from "@/lib/types";
 import { toolMeta } from "@/lib/data/providers";
 import { timeAgo, formatMoney } from "@/lib/data/providers";

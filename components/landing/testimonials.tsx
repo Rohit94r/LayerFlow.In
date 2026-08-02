@@ -1,6 +1,6 @@
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { TESTIMONIALS } from "@/lib/data/marketing";
-import { Star } from "lucide-react";
+import { Star } from "@/components/ui/icons";
 import { Avatar } from "@/components/ui/avatar";
 
 export default function Testimonials() {
@@ -9,7 +9,7 @@ export default function Testimonials() {
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/[0.03] to-transparent" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Testimonials"
+
           title={
             <>
               People who stopped{" "}

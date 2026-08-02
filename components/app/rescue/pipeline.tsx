@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Loader2, FileDown, Wand2, DollarSign, Cpu, CopyCheck, Sparkles } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Loader2, FileDown, Wand2, DollarSign, Cpu, CopyCheck, Sparkles } from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const STEPS: { icon: LucideIcon; label: string; detail: string }[] = [
   { icon: Sparkles, label: "Cleaning", detail: "dedupe · trim · strip chatter" },

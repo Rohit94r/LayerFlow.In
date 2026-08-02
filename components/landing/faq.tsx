@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/ui/icons";
 import { SectionHeading } from "@/components/ui/reveal";
 import { FAQS } from "@/lib/data/marketing";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,7 @@ export default function Faq() {
     <section id="faq" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-3xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="FAQ"
+
           title={
             <>
               Questions,{" "}

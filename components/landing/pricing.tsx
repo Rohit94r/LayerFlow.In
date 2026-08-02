@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight } from "@/components/ui/icons";
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { PLANS } from "@/lib/data/marketing";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ export default function Pricing() {
     <section id="pricing" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Pricing"
+
           title={
             <>
               Priced for the{" "}

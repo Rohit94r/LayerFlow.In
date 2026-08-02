@@ -15,8 +15,8 @@ import {
   Code2,
   TerminalSquare,
   Bot,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const FEATURES: {
   icon: LucideIcon;
@@ -109,7 +109,7 @@ export default function Features() {
       <div className="absolute inset-0 grid-lines opacity-30" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Features"
+
           title={
             <>
               Code with AI — and keep

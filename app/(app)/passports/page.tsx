@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, BookUser, Search } from "lucide-react";
+import { Plus, BookUser, Search } from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { PassportCard } from "@/components/app/passport-card";
 import { Input } from "@/components/ui/input";

@@ -1,6 +1,6 @@
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { ROADMAP } from "@/lib/data/marketing";
-import { CheckCircle2, CircleDashed, Hammer } from "lucide-react";
+import { CheckCircle2, CircleDashed, Hammer } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 const STATUS = {
@@ -14,7 +14,7 @@ export default function Roadmap() {
     <section id="roadmap" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Roadmap"
+
           title={
             <>
               One context system,{" "}

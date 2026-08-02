@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Lock, User as UserIcon, Eye, EyeOff } from "@/components/ui/icons";
 import { Wordmark } from "@/components/ui/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import SignInFlowField from "@/components/auth/SignInFlowField";

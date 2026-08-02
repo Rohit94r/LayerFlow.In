@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@/components/ui/icons";
 import { useState, useEffect, useRef } from "react";
 import { site, heroBadges } from "@/lib/marketing-content";
 

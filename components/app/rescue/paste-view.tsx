@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardPaste, Wand2 } from "lucide-react";
+import { ClipboardPaste, Wand2 } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 import { Field, Textarea } from "@/components/ui/input";
 import { ToolChip } from "@/components/ui/tool-logo";

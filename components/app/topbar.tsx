@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Plus } from "lucide-react";
+import { Search, Plus } from "@/components/ui/icons";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";

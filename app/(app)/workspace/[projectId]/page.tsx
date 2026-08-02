@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
-import { ArrowLeft, Pencil, BookUser, Library, Brain, Plus } from "lucide-react";
+import { ArrowLeft, Pencil, BookUser, Library, Brain, Plus } from "@/components/ui/icons";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

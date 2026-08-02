@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check } from "@/components/ui/icons";
 
 export function CodeBlock({ code, prompt = "$" }: { code: string; prompt?: string }) {
   const [copied, setCopied] = useState(false);

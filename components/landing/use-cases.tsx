@@ -13,8 +13,8 @@ import {
   GraduationCap,
   Users,
   ChevronDown,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const ICONS: Record<string, LucideIcon> = {
   "code": Code2,
@@ -34,7 +34,7 @@ export default function UseCases() {
       <div className="absolute inset-0 grid-lines opacity-30" aria-hidden />
       <div className="relative mx-auto max-w-4xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Use cases"
+
           title={
             <>
               Made for people who{" "}

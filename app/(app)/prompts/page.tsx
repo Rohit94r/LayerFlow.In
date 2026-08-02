@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Plus, Library, Search, Star } from "lucide-react";
+import { Plus, Library, Search, Star } from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

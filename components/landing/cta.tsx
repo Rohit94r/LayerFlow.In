@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
 
 const TOOLS = ["ChatGPT", "Claude", "Gemini", "DeepSeek", "Kimi", "Groq"];

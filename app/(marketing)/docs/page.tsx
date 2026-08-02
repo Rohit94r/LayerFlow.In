@@ -10,7 +10,7 @@ import {
   CopyCheck,
   Cpu,
   ArrowRight,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Reveal } from "@/components/ui/reveal";
 import { CodeBlock } from "@/components/marketing/CodeBlock";
 

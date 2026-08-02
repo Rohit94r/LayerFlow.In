@@ -1,7 +1,7 @@
 "use client";
 
-import { TrendingDown, TrendingUp } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { TrendingDown, TrendingUp } from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 import { Sparkline } from "@/components/ui/charts";
 import { cn } from "@/lib/utils";
 

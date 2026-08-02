@@ -14,7 +14,7 @@ import {
   Trash2,
   Layers,
   ArrowLeft,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { Tabs } from "@/components/ui/tabs";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge, Dot } from "@/components/ui/badge";

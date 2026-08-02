@@ -1,9 +1,9 @@
 "use client";
 
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
-import { Sparkles, Bot, TerminalSquare, Send, Wand2 } from "lucide-react";
+import { Sparkles, Bot, TerminalSquare, Send, Wand2 } from "@/components/ui/icons";
 import { motion } from "framer-motion";
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const STEPS: { icon: LucideIcon; title: string; description: string; detail: string }[] = [
   {
@@ -38,7 +38,7 @@ export default function HowItWorks() {
       <div className="absolute inset-0 grid-lines opacity-40" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="How it works"
+
           title={
             <>
               From plain English to{" "}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Bell, Shield, KeyRound, Palette, CreditCard, Check } from "lucide-react";
+import { User, Bell, Shield, KeyRound, Palette, CreditCard, Check } from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

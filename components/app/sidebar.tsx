@@ -13,8 +13,8 @@ import {
   Cpu,
   Settings,
   LogOut,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { useSession, signOut } from "@/lib/auth-client";

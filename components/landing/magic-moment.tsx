@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, FileDown, Wand2, DollarSign, Cpu, Copy } from "lucide-react";
+import { Sparkles, FileDown, Wand2, DollarSign, Cpu, Copy } from "@/components/ui/icons";
 import { Reveal, SectionHeading } from "@/components/ui/reveal";
 
 const PIPELINE = [
@@ -22,7 +22,6 @@ export default function MagicMoment() {
           <div>
             <SectionHeading
               align="left"
-              eyebrow="The magic moment"
               title={
                 <>
                   Hit a limit at 11pm?

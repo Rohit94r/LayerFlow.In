@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
-import { ArrowLeft, Copy, Check, Star, History, Play } from "lucide-react";
+import { ArrowLeft, Copy, Check, Star, History, Play } from "@/components/ui/icons";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RadialScore } from "@/components/ui/charts";

@@ -23,8 +23,8 @@ import {
   TerminalSquare,
   Bot,
   History,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {

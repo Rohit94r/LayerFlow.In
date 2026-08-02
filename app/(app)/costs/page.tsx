@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet, PiggyBank, Gauge, BarChart3 } from "lucide-react";
+import { Wallet, PiggyBank, Gauge, BarChart3 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";

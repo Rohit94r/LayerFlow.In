@@ -1,6 +1,6 @@
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { SUPPORTED_MODELS } from "@/lib/data/marketing";
-import { Sparkles, Cpu, Check } from "lucide-react";
+import { Sparkles, Cpu, Check } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
 export default function ModelSupport() {
@@ -8,7 +8,7 @@ export default function ModelSupport() {
     <section id="models" className="relative scroll-mt-20 py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Supported AI models"
+
           title={
             <>
               One platform.{" "}

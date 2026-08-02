@@ -10,8 +10,8 @@ import {
   Library,
   FolderKanban,
   ArrowRight,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+} from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const ACTIONS: { href: string; label: string; description: string; icon: LucideIcon; accent: string }[] = [
   {

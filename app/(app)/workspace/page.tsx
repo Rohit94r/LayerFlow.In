@@ -10,7 +10,7 @@ import {
   Plus,
   Pin,
   ArrowRight,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

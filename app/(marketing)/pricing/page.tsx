@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, ArrowRight, ShieldCheck } from "lucide-react";
+import { Check, ArrowRight, ShieldCheck } from "@/components/ui/icons";
 import type { Metadata } from "next";
 import { Reveal } from "@/components/ui/reveal";
 import { PLANS } from "@/lib/data/marketing";

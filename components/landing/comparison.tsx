@@ -1,4 +1,4 @@
-import { Check, X, Minus } from "lucide-react";
+import { Check, X, Minus } from "@/components/ui/icons";
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { COMPARISON_ROWS } from "@/lib/data/marketing";
 import { Wordmark } from "@/components/ui/logo";
@@ -8,7 +8,7 @@ export default function Comparison() {
     <section id="comparison" className="relative py-16 sm:py-20">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="Comparison"
+
           title={
             <>
               Copy-paste every time, or{" "}

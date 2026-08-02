@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
-import { Sparkles, Scissors, Bot, Wallet, CheckCircle2 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Sparkles, Scissors, Bot, Wallet, CheckCircle2 } from "@/components/ui/icons";
+import type { LucideIcon } from "@/components/ui/icons";
 
 const FEATURES: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -62,7 +62,7 @@ export default function TerminalSection() {
       <div className="absolute inset-0 grid-lines opacity-30" aria-hidden />
       <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
         <SectionHeading
-          eyebrow="The LayerFlow terminal"
+
           title={
             <>
               A terminal that{" "}

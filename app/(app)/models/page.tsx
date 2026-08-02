@@ -10,7 +10,7 @@ import {
   Zap,
   Award,
   DollarSign,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

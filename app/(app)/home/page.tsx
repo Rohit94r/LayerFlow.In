@@ -10,7 +10,7 @@ import {
   ArrowRight,
   Cpu,
   Sparkles,
-} from "lucide-react";
+} from "@/components/ui/icons";
 import { PageHeader } from "@/components/app/page-header";
 import { StatCard } from "@/components/app/stat-card";
 import { QuickActions } from "@/components/app/quick-actions";

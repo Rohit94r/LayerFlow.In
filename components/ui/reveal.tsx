@@ -27,13 +27,11 @@ export function Reveal({
 }
 
 export function SectionHeading({
-  eyebrow,
   title,
   description,
   align = "center",
   className,
 }: {
-  eyebrow?: string;
   title: React.ReactNode;
   description?: React.ReactNode;
   align?: "center" | "left";
@@ -47,13 +45,7 @@ export function SectionHeading({
           : `max-w-2xl ${className ?? ""}`
       }
     >
-      {eyebrow ? (
-        <span className="glass-pill inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide text-brand uppercase">
-          <span className="h-1.5 w-1.5 rounded-full bg-brand animate-pulse-dot" />
-          {eyebrow}
-        </span>
-      ) : null}
-      <h2 className="mt-5 text-3xl font-semibold tracking-tight text-ink sm:text-[2.6rem] sm:leading-[1.1]">
+      <h2 className="text-3xl font-semibold tracking-tight text-ink sm:text-[2.6rem] sm:leading-[1.1]">
         {title}
       </h2>
       {description ? <p className="mt-4 text-lg leading-relaxed text-muted">{description}</p> : null}
