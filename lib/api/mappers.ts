@@ -31,7 +31,7 @@ import type {
   RoutingRule,
   User,
   WorkspaceSettings,
-} from "./legacy-types";
+} from "./types";
 
 export function initialsFromName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

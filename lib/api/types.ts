@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────
-// Legacy API-layer types (kept for the existing Hono API client).
-// The new product domain types live in @/lib/types.
-// These are NOT used by the new UI — they only keep the API
-// client typechecked until the backend is rewritten.
+// Hono API client types.
+// Responses are validated at runtime via @layerflow/contracts
+// zod schemas (see ./index.ts); these types back the typed
+// helpers that map API responses into domain shapes (./mappers).
 // ─────────────────────────────────────────────────────────────
 
 export type DomainId = string;

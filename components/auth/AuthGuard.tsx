@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-provider";
+import { useAuth } from "@/lib/providers/auth-provider";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isPending } = useAuth();
