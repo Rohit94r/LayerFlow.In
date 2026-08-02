@@ -4,7 +4,6 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { Copy, Check } from "@/components/ui/icons";
 import { useState, useEffect, useRef } from "react";
 import { site, heroBadges } from "@/lib/marketing-content";
-
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
@@ -19,7 +18,6 @@ const item = {
 };
 
 export default function Hero() {
-  const [copied, setCopied] = useState(false);
   const [copiedInstall, setCopiedInstall] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
@@ -37,12 +35,6 @@ export default function Hero() {
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(site.docsCommand);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  };
 
   const copyInstall = async () => {
     await navigator.clipboard.writeText("npm install -g @layerflow/cli");
@@ -153,20 +145,6 @@ export default function Hero() {
                 <span className="truncate">npm install -g @layerflow/cli</span>
                 <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
                   {copiedInstall ? (
-                    <Check className="h-4 w-4 text-emerald-400" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </span>
-              </button>
-              <button
-                onClick={copy}
-                className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
-              >
-                <span className="text-white/40">$</span>
-                <span className="truncate">{site.docsCommand}</span>
-                <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
-                  {copied ? (
                     <Check className="h-4 w-4 text-emerald-400" />
                   ) : (
                     <Copy className="h-4 w-4" />

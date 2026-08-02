@@ -4,7 +4,6 @@ export const site = {
   subtitle:
     "The AI coding platform with a rescue workflow. Write plain English, click Improve, and run working prompts — or open the terminal and let multiple agents build with you. Rescue dead chats, carry context between tools and models, and control every penny you spend on AI.",
   tagline: "The AI Coding Platform",
-  docsCommand: "lf run \"build a landing page\"",
   workspaceHref: "/home",
   signInHref: "/sign-in",
   pricingHref: "/pricing",
