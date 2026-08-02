@@ -615,6 +615,19 @@ html.light .gradient-border {
   color: var(--color-muted);
 }
 
+/* Interactive card — subtle lift on hover, no glow. */
+.card-lift {
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+.card-lift:hover {
+  transform: translateY(-3px);
+  background-color: var(--color-surface-2);
+  border-color: var(--color-border-strong);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-marquee,
   .animate-float-slow,

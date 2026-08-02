@@ -23,7 +23,7 @@ export function Sidebar() {
     href === "/home" ? pathname === "/home" : pathname.startsWith(href);
 
   return (
-    <aside className="flex h-full w-16 shrink-0 flex-col border-r border-border bg-surface/40 lg:w-64">
+    <aside className="flex h-full w-16 shrink-0 flex-col border-r border-border bg-surface/40 lg:w-[280px]">
       {/* Workspace switcher */}
       <div className="flex h-14 shrink-0 items-center border-b border-border px-3">
         <DropdownMenu

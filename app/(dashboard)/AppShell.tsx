@@ -18,7 +18,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex min-w-0 flex-1 flex-col">
             <Topbar onOpenCommand={() => command.setOpen(true)} />
             <main className="flex-1 overflow-y-auto">
-              <div className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8">{children}</div>
+              <div className="w-full px-4 py-6 md:px-6 md:py-7 xl:px-8">{children}</div>
             </main>
           </div>
         </div>
