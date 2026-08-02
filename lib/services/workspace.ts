@@ -4,8 +4,8 @@
 //
 // The current implementation is backed by static mock data
 // (lib/data/workspace.ts). To move to the live Hono API,
-// replace the bodies with the typed calls in lib/api/index.ts
-// (listProjects, listActivity, …) — signatures stay identical.
+// replace the bodies with fetch calls to apps/api/src/routes
+// (projects, activity, analytics) — signatures stay identical.
 // ─────────────────────────────────────────────────────────────
 
 import {

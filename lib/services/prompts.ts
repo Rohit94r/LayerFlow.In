@@ -2,9 +2,8 @@
 // Prompt library service.
 //
 // Mock-backed today (lib/data/prompts.ts). To move to the live
-// API, swap the bodies for lib/api/index.ts (listPrompts,
-// getPrompt, listPromptVersions, …) without changing the
-// signatures.
+// API, swap the bodies for fetch calls to the Hono backend
+// (apps/api) without changing the signatures.
 // ─────────────────────────────────────────────────────────────
 
 import { PROMPTS, PROMPT_BY_ID } from "@/lib/data/prompts";

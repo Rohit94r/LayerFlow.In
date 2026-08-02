@@ -3,7 +3,7 @@
 // projects, prompts, passports, learnings and timeline events.
 //
 // Mock-backed today; the live backend exposes a workspace-scoped
-// search endpoint via lib/api/index.ts (search()).
+// search endpoint (apps/api/src/routes/search.ts).
 // ─────────────────────────────────────────────────────────────
 
 import { PROJECTS, TIMELINE, LEARNINGS } from "@/lib/data/workspace";

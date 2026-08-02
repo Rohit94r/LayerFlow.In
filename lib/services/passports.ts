@@ -2,7 +2,7 @@
 // Context passport + rescue service.
 //
 // Mock-backed today (lib/data/passports.ts). The live backend
-// exposes sessions, runs and compare jobs via lib/api/index.ts.
+// exposes sessions, runs and compare jobs under apps/api.
 // ─────────────────────────────────────────────────────────────
 
 import { PASSPORTS, PASSPORT_BY_ID, RESCUE_REPORTS, REPORT_BY_ID } from "@/lib/data/passports";
