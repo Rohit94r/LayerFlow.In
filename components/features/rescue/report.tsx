@@ -16,7 +16,7 @@ import {
   ArrowLeft,
 } from "@/components/ui/icons";
 import { Tabs } from "@/components/ui/tabs";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Badge, Dot } from "@/components/ui/badge";
 import { RadialScore } from "@/components/ui/charts";
 import { ToolChip } from "@/components/ui/tool-logo";
@@ -256,9 +256,9 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
       <div className="mt-5">
         {tab === "summary" ? (
           <div className="grid gap-5 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader title="Compression" description="Original vs useful context" />
-              <CardBody>
+            <Panel className="lg:col-span-2">
+              <PanelHeader title="Compression" description="Original vs useful context" />
+              <PanelBody>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="rounded-xl border border-border bg-surface-2/40 p-4 text-center">
                     <p className="stat-value text-amber-400">{report.originalWords.toLocaleString()}</p>
@@ -290,13 +290,13 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
                   </div>
                   <p className="mt-2.5 text-xs leading-relaxed text-muted">{report.recommendedReason}</p>
                 </div>
-              </CardBody>
-            </Card>
+              </PanelBody>
+            </Panel>
 
             <div className="space-y-5">
-              <Card>
-                <CardHeader title="Prompt score" />
-                <CardBody className="flex flex-col items-center">
+              <Panel>
+                <PanelHeader title="Prompt score" />
+                <PanelBody className="flex flex-col items-center">
                   <RadialScore value={report.promptScore} size={104} label="improved" />
                   <div className="mt-4 grid w-full grid-cols-2 gap-x-4 gap-y-1.5">
                     {report.promptScores.map((s) => (
@@ -306,12 +306,12 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
                       </span>
                     ))}
                   </div>
-                </CardBody>
-              </Card>
+                </PanelBody>
+              </Panel>
 
-              <Card>
-                <CardHeader title="Outcome feedback" description="Helps LayerFlow learn" />
-                <CardBody className="flex flex-wrap gap-1.5">
+              <Panel>
+                <PanelHeader title="Outcome feedback" description="Helps LayerFlow learn" />
+                <PanelBody className="flex flex-wrap gap-1.5">
                   {(
                     [
                       { id: "worked", label: "Worked well" },
@@ -335,74 +335,74 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
                       {f.label}
                     </button>
                   ))}
-                </CardBody>
-              </Card>
+                </PanelBody>
+              </Panel>
             </div>
           </div>
         ) : null}
 
         {tab === "passport" ? (
-          <Card>
-            <CardHeader
+          <Panel>
+            <PanelHeader
               title="Context Passport"
               description="Editable memory package — all fields are portable to any model"
               action={<CopyButton label="Copy passport" text={JSON.stringify(report.passport, null, 2)} />}
             />
-            <CardBody>
+            <PanelBody>
               <PassportGrid report={report} />
-            </CardBody>
-          </Card>
+            </PanelBody>
+          </Panel>
         ) : null}
 
         {tab === "diff" ? (
-          <Card>
-            <CardHeader
+          <Panel>
+            <PanelHeader
               title="Smart Compress + Context Diff"
               description="Exactly what LayerFlow kept, removed, and flagged"
             />
-            <CardBody>
+            <PanelBody>
               <DiffView report={report} />
-            </CardBody>
-          </Card>
+            </PanelBody>
+          </Panel>
         ) : null}
 
         {tab === "prompt" ? (
-          <Card>
-            <CardHeader
+          <Panel>
+            <PanelHeader
               title="Improved prompt"
               description={`Scored ${report.promptScore}/100 — copy and continue in ${MODEL_BY_ID[report.recommendedModelId].name}`}
               action={<CopyButton label="Copy prompt" text={report.improvedPrompt} />}
             />
-            <CardBody>
+            <PanelBody>
               <pre className="whitespace-pre-wrap rounded-xl border border-border bg-[#0d1117] p-5 font-mono text-[13px] leading-relaxed text-emerald-100/90">
                 {report.improvedPrompt}
               </pre>
-            </CardBody>
-          </Card>
+            </PanelBody>
+          </Panel>
         ) : null}
 
         {tab === "cost" ? (
-          <Card>
-            <CardHeader
+          <Panel>
+            <PanelHeader
               title="Cost Check"
               description={`Estimated from ${formatTokens(report.costs[0].inputTokens)} input / ${formatTokens(report.costs[0].outputTokens)} output tokens`}
             />
-            <CardBody>
+            <PanelBody>
               <CostView report={report} />
-            </CardBody>
-          </Card>
+            </PanelBody>
+          </Panel>
         ) : null}
 
         {tab === "pack" ? (
-          <Card>
-            <CardHeader
+          <Panel>
+            <PanelHeader
               title="Continue Pack"
               description={`Ready to paste into any AI — copy it and continue in another model instantly`}
             />
-            <CardBody>
+            <PanelBody>
               <ContinuePackView report={report} />
-            </CardBody>
-          </Card>
+            </PanelBody>
+          </Panel>
         ) : null}
       </div>
 
