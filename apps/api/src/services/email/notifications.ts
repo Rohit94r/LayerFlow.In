@@ -1,6 +1,6 @@
 import { and, eq, gte, lt, sql } from "drizzle-orm";
 import { db } from "../../db/client";
-import { budgets, usageLedger, usageRollups } from "../../db/schema/cost";
+import { budgets, usageLedger } from "../../db/schema/cost";
 import { emailEvents } from "../../db/schema/email";
 import { users } from "../../db/schema/auth";
 import { workspaces } from "../../db/schema/tenancy";

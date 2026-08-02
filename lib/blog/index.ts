@@ -142,7 +142,8 @@ export function getTags(): string[] {
 }
 
 export function toMeta(post: BlogPost): BlogPostMeta {
-  const { blocks: _, ...meta } = post;
+  const { blocks: _blocks, ...meta } = post;
+  void _blocks;
   return meta;
 }
 

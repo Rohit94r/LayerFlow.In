@@ -138,7 +138,7 @@ lib/                       # everything NOT a React component
 ├── data/      # realistic MOCK data (workspace, passports, prompts, providers, …)
 ├── services/  # repo-style async API each page consumes (see §7)
 ├── api/       # real typed client helper (mappers, money, types) + unit tests
-├── server/api.ts # embedded Hono handler (shared by app/api + app/v1)
+├── server/hono-app.ts   # embedded Hono handler (shared by app/api + app/v1)
 ├── providers/ # auth-provider.tsx
 ├── hooks/     # use-copy, use-is-mobile, use-command-menu (barrel index)
 ├── blog/      # canonical blog helpers (publishedAt logic, categories, related)

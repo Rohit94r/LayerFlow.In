@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { Check, ChevronDown, LogOut, Settings } from "@/components/ui/icons";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Avatar, LogoMark } from "@/components/ui/avatar";

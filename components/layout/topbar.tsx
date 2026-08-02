@@ -39,7 +39,7 @@ export function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
         <ThemeToggle />
         <DropdownMenu
           align="end"
-          trigger={(open) => (
+          trigger={() => (
             <button
               type="button"
               aria-label="Account menu"

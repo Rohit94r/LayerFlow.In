@@ -745,34 +745,6 @@ const posts = defs.map((def) => {
 });
 
 const outPath = path.join(root, "content/blog/posts.ts");
-const header = `import type { BlogPost } from "@/lib/blog/types";
-
-/**
- * LayerFlow blog corpus — 40 SEO posts.
- * Generated/maintained for ranking on prompt workspace, cost control, compare, gateway, and BYOK keywords.
- */
-export const posts: BlogPost[] = `;
-
-const body = JSON.stringify(posts, null, 2)
-  .replace(/"type":/g, "type:")
-  .replace(/"id":/g, "id:")
-  .replace(/"text":/g, "text:")
-  .replace(/"items":/g, "items:")
-  .replace(/"q":/g, "q:")
-  .replace(/"a":/g, "a:")
-  .replace(/"slug":/g, "slug:")
-  .replace(/"title":/g, "title:")
-  .replace(/"metaTitle":/g, "metaTitle:")
-  .replace(/"description":/g, "description:")
-  .replace(/"publishedAt":/g, "publishedAt:")
-  .replace(/"category":/g, "category:")
-  .replace(/"tags":/g, "tags:")
-  .replace(/"primaryKeyword":/g, "primaryKeyword:")
-  .replace(/"secondaryKeywords":/g, "secondaryKeywords:")
-  .replace(/"readingTime":/g, "readingTime:")
-  .replace(/"author":/g, "author:")
-  .replace(/"relatedSlugs":/g, "relatedSlugs:")
-  .replace(/"blocks":/g, "blocks:");
 
 // Actually JSON.stringify with unquoted keys is messy. Better emit as TS with JSON.parse or just use `as const` with proper JSON.
 // Simplest reliable: export as JSON-compatible TS using satisfies.
