@@ -215,6 +215,16 @@ export interface ModelSpend {
   tokensOut: number;
 }
 
+export interface CostAnalytics {
+  monthlySpend: number;
+  monthlySavings: number;
+  budgetLimit: number;
+  averageRunCost: number;
+  byModel: CostPoint[];
+  savingsByMonth: CostPoint[];
+  spendByModel: ModelSpend[];
+}
+
 // ── Dashboard ────────────────────────────────────────────────
 
 export interface DashboardStats {
