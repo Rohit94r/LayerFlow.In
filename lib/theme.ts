@@ -35,6 +35,13 @@ export function persistTheme(theme: Theme): void {
   }
 }
 
+export const THEME_EVENT = "lf:theme-toggle";
+
+/** Emitted so every mounted ThemeToggle stays in sync. */
+export function emitThemeToggle(): void {
+  window.dispatchEvent(new CustomEvent(THEME_EVENT));
+}
+
 /**
  * Inline bootstrap script — runs before paint.
  * Saved light → light; saved dark → dark; no save → system preference.

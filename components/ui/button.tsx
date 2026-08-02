@@ -5,7 +5,7 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Loader2 } from "@/components/ui/icons";
 import { cn } from "@/lib/utils";
 
-type Variant = "primary" | "secondary" | "ghost" | "outline" | "gradient";
+type Variant = "primary" | "secondary" | "ghost" | "outline" | "gradient" | "danger";
 type Size = "sm" | "md" | "lg";
 
 const VARIANTS: Record<Variant, string> = {
@@ -15,6 +15,7 @@ const VARIANTS: Record<Variant, string> = {
   secondary: "btn-secondary",
   ghost: "text-muted hover:text-ink hover:bg-surface-2 rounded-xl",
   outline: "border border-border-strong text-ink hover:bg-surface-2 rounded-xl",
+  danger: "text-white bg-crimson hover:opacity-90",
 };
 
 const SIZES: Record<Size, string> = {

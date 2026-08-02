@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "@/components/ui/icons";
-import { applyTheme, readStoredTheme, resolveInitialTheme, persistTheme } from "@/lib/theme";
+import { applyTheme, readStoredTheme, resolveInitialTheme, persistTheme, THEME_EVENT } from "@/lib/theme";
 import type { Theme } from "@/lib/theme";
 
 export function ThemeToggle({ className }: { className?: string }) {
@@ -14,6 +14,10 @@ export function ThemeToggle({ className }: { className?: string }) {
     // the correct class to <html> before paint.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(readStoredTheme() ?? resolveInitialTheme());
+    const onExternalToggle = () =>
+      setTheme(readStoredTheme() ?? resolveInitialTheme());
+    window.addEventListener(THEME_EVENT, onExternalToggle);
+    return () => window.removeEventListener(THEME_EVENT, onExternalToggle);
   }, []);
 
   function toggle() {
