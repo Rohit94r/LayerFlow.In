@@ -1,15 +1,57 @@
 # LayerFlow — Engineering Workflow
 
-> The AI Coding Platform — web + terminal.
-> Plain English → Improve → agents + browser terminal. Messy chat → Context Passport → continue anywhere.
+> **Build model — browser + terminal, in parallel (not phasewise).**
+> One product, two surfaces shipped together:
+> the **web dashboard** (`layerflow-web`) and the **`lf` terminal agent** (CLI).
+> Both talk to the same **Hono API** (`apps/api`) and shared packages
+> (`@layerflow/contracts`, `@layerflow/model-registry`).
 
-This document describes how LayerFlow works end to end, stage by stage. It
-covers the frontend, backend, RAG, prompt improvement, context passports,
-continue packs, the cost engine, BYOK, model routing, and the future
-terminal/SDK layers.
+## Feature Status — what is done, what remains
 
-**Build status:** Frontend-first with realistic mock data. Each workflow below
-is implemented in the UI; the backend pipeline is the target architecture.
+Legend: ✅ built · 🟡 partially built · ⬜ not started
+Backend bars reflect authored modules in `apps/api`; in every row the web UI is
+mock-backed until the service layer is wired to the API (§ "Wiring remaining").
+
+| Area | Web | Terminal | Backend | Status | Remaining work |
+|---|---|---|---|---|---|
+| Marketing site (landing, pricing, blog, docs) | ✅ | — | — | 🟡 | Blog corpus + SEO live; CMS/tips n/a. 5% |
+| Auth (sign-in, sessions) | ✅ | ⬜ | ✅ | 🟡 | better-auth done; CLI login (`lf auth login`) pending |
+| Dashboard shell + 14 pages | ✅ | — | — | ✅ | Full UI built on mocks — 0% |
+| Rescue Chat / Report UI | ✅ | ⬜ | ✅ | 🟡 | Real extract/compress/improve engine call; pipeline polish |
+| Context Passport CRUD + search | ✅ | 🟡 | ✅ | 🟡 | `lf context` create/mem; passport history/diff UI |
+| Smart Compress engine | 🟡 | ⬜ | ✅ | 🟡 | Web currently mock; engine is API-side — wire it |
+| Improve Prompt + scoring | 🟡 | ⬜ | ✅ | 🟡 | Web mock; CLI bounce reuse |
+| Continue Pack (copy/export) | ✅ | 🟡 | 🟡 | 🟡 | one-click web copy done; markdown export + CLI pack |
+| Cost Analytics + engine | 🟡 | ⬜ | ✅ | 🟡 | budgets routes live; web chart mocks → real |
+| Model suggestion + routing | 🟡 | ⬜ | ✅ | 🟡 | gateway/router live; routing rules UI pending |
+| BYOK (vault, health, keys) | ✅ | ⬜ | ✅ | 🟡 | web UI + API keys routes done; encryption audit pending |
+| Workspace (projects, timeline, learnings, ledger) | ✅ | 🟡 | ✅ | 🟡 | web done; `lf` project/ledger repo binds pending |
+| Global search (incl. memory) | ✅ | ⬜ | ✅ | 🟡 | web + pgvector backend; CLI search pending |
+| Browser terminal (`/code`) + agent mesh | 🟡 | — | 🟡 | 🟡 | today = UI preview; real PTY + agent tool-loop pending |
+| CLI agent (TUI, tools: read/write/run/git) | — | ⬜ | 🟡 | ⬜ | **not built — the core remaining track** |
+| SDK `@layerflow/sdk` | — | — | — | ⬜ | after CLI reaches steady state |
+| Browser companion extension | — | — | — | ⬜ | after SDK |
+| Web → API wiring (swap mocks) | — | — | ✅ | 🟡 | the single biggest remaining task |
+| Marketplace / pricing of sub-products | — | — | 🟡 | ⬜ | after usage validates |
+
+### How much work remains (estimate)
+
+| Track | Done | In progress | Remaining |
+|---|---|---|---|
+| Web product UI | 80% | wiring | 20% (real data + QA) |
+| Backend API (`apps/api`) | 60% | hardening | 40% (tests, TLS/domains deploy, audits) |
+| Terminal `lf` | 0% | start | 100% scaffold → parity with web agents |
+| SDK + companion | 0% | — | 100% (after platform) |
+
+### What's happening now — parallel tracks
+1. **Web track:** wire `lib/services/*` to the live API; QA the 14 dashboard
+   pages; ship Empty/Error states and loading skeletons.
+2. **Terminal track (new):** scaffold the `lf` CLI monorepo app
+   (`apps/cli`), first milestones: `lf init` (LAYERFLOW.md) + `lf context`
+   (repo passport) + `lf agent` (read/write/run/git loop) using `apps/api`.
+3. **Shared track:** keep changing `@layerflow/contracts` as the single DTO
+   truth so web, CLI and API stay in lockstep.
+4. **Ops:** wire DEV behind API. No feature is blocked on another surface.
 
 ---
 
@@ -332,30 +374,44 @@ All mock data in the frontend phase.
 
 ---
 
-## 14. Future: Terminal Agent (`lf`)
+## 14. Terminal Agent (`lf`) — active parallel track
 
-After web traction:
+Built now, alongside the web. A real TUI/CLI that is a first-class citizen of
+the same Hono API, not a thin wrapper.
 
 ```text
-lf init       creates LAYERFLOW.md
-lf context    creates repo Context Passport
-lf cost       estimates repo context cost
-lf suggest    suggests improvements
-lf memory     local memory store
-lf git        explains changes, drafts commits
+lf init          creates LAYERFLOW.md + repo Context Passport
+lf context       pull/update the repo passport (web + CLI share it)
+lf rescue        paste a dead chat → passport + continue pack (reuses API)
+lf agent         interactive agent loop: read/write files, run commands, git
+lf memory        local + server memory store, searchable
+lf cost          estimates repo context cost (cost engine)
+lf suggest       suggests prompt/memory improvements
+lf git           explains changes, drafts commits
+lf pack          export/import a Continue Pack
+lf sync          two-way sync with the web workspace
 ```
 
-Not built now. Design constraint: work *with* Cursor/Claude Code/Codex/OpenCode,
-not against them.
+**Milestones (in this order):**
+1. ✅ Repo/DTO contract (`@layerflow/contracts`) — done as part of API.
+2. ⬜ `apps/cli` scaffold + `lf init` + `lf auth login`.
+3. ⬜ `lf context` — build/refresh the repo passport (tree, deps, README, git log).
+4. ⬜ `lf agent` — model loop with tool calls (filesystem, bash, git) via gateway.
+5. ⬜ `lf resume` / `lf cost` / `lf memory` — reuses API endpoints.
+6. ⬜ `lf sync` — two-way with the web workspace.
+7. ⬜ TUI ergonomics: status line, diff preview, cost-per-run footer.
+
+Design constraint (kept): work *with* Cursor/Claude Code/Codex/Opencode, not
+against them — the CLI can import/export their contexts and never locks files.
 
 ---
 
-## 15. Future: SDK & Browser Companion
+## 15. SDK & Browser Companion — after terminal parity
 
-- Browser companion: capture current chat → workspace; inject Continue Pack;
-  quick cost check.
-- SDK: `@layerflow/sdk` wraps the API + passport schema for app developers.
-- Marketplace: only after usage proves demand.
+- **Browser companion:** capture current chat → workspace; inject Continue Pack;
+  quick cost check. Built after `lf` reaches parity with the web agents.
+- **SDK:** `@layerflow/sdk` wraps the API + passport schema for app
+  developers — only when the API + CLI shapes are stable.
 
 ---
 

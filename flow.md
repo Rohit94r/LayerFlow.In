@@ -15,15 +15,16 @@ LayerFlow is a **managed npm workspaces monorepo** with three layers:
 │ root  (layerflow-web)   Next.js 16 web app — the product surface        │
 ├────────────────────────────────────────────────────────────────────────┤
 │ apps/api                 Hono backend + BullMQ worker (production API)  │
+│ apps/cli                 lf terminal agent (TUI) — ACTIVE, in build     │
 │ packages/contracts       Shared zod schemas / DTOs (web + api + workers)│
 │ packages/model-registry  Shared AI model catalogue & routing data       │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **Frontend-first build mode.** The web app currently ships on realistic
-> mock data through a thin `lib/services/*` layer (see §7). The full backend
-> lives in `apps/api` and is production-ready on its own; wiring the web app
-> to it is a drop-in swap at the service layer. Nothing else changes.
+> **Build model — browser + terminal in parallel.** The web app currently ships
+> on realistic mock data through a thin `lib/services/*` layer; the full
+> backend lives in `apps/api` and the `lf` CLI is being built to match. The
+> same Hono API serves both surfaces.
 
 ---
 
