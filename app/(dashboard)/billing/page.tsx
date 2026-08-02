@@ -61,7 +61,7 @@ export default async function BillingPage() {
   const analytics = await workspaceService.getCostAnalytics();
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Billing"
         description="Workflow value pricing — you pay for the workflow, not the tokens."

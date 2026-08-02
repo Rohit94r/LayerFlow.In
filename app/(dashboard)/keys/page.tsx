@@ -73,7 +73,7 @@ export default function KeysPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="API Keys"
         description="Keys for the LayerFlow CLI, API and CI pipelines. Keep them secret."

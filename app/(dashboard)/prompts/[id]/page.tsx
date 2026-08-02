@@ -23,7 +23,7 @@ export default async function PromptDetailPage({ params }: { params: Promise<{ i
   ];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <Link
         href="/prompts"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-ink"

@@ -49,7 +49,7 @@ export default function SearchPage() {
   }, [debounced]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Search"
         description="One search across projects, prompts, passports, learnings and the work ledger."

@@ -44,7 +44,7 @@ export default async function PassportDetailPage({ params }: { params: Promise<{
   ].join("\n");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <Link
         href="/passports"
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted transition-colors hover:text-ink"

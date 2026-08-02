@@ -50,7 +50,7 @@ export default function SettingsClient() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div>
       <PageHeader title="Settings" description="Your account, workspace, keys and plan." />
 
       <div className="space-y-5">

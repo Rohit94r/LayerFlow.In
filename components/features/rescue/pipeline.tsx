@@ -15,7 +15,7 @@ const STEPS: { icon: LucideIcon; label: string; detail: string }[] = [
 
 export function RescuePipeline() {
   return (
-    <div className="mx-auto max-w-2xl py-10">
+    <div className="py-10">
       <div className="mb-8 text-center">
         <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-brand/30 bg-brand/10">
           <Loader2 className="h-5 w-5 animate-spin text-brand" />
