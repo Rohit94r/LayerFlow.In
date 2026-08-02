@@ -4,7 +4,7 @@ export const site = {
   name: "LayerFlow",
   tagline: "The AI Coding Platform",
   url: "https://layerflow.dev",
-  workspaceHref: "/app",
+  workspaceHref: "/home",
   signupHref: "/sign-in",
 };
 

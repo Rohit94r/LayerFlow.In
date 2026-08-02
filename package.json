@@ -2,7 +2,7 @@
   "name": "layerflow-web",
   "version": "1.0.0",
   "private": true,
-  "description": "LayerFlow — the production infrastructure platform for AI applications.",
+  "description": "LayerFlow — the AI coding platform. Rescue chats, carry context between AI tools, and control AI spend.",
   "workspaces": [
     "apps/*",
     "packages/*"
