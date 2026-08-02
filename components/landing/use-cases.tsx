@@ -1,114 +1,71 @@
 "use client";
 
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { SectionHeading, Reveal } from "@/components/ui/reveal";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { USE_CASES } from "@/lib/data/marketing";
-import {
-  Code2,
-  LifeBuoy,
-  Shuffle,
-  PiggyBank,
-  Briefcase,
-  GraduationCap,
-  Users,
-  ChevronDown,
-} from "@/components/ui/icons";
-import type { LucideIcon } from "@/components/ui/icons";
-
-const ICONS: Record<string, LucideIcon> = {
-  "code": Code2,
-  "lifebuoy": LifeBuoy,
-  "shuffle": Shuffle,
-  "piggy-bank": PiggyBank,
-  "briefcase": Briefcase,
-  "graduation-cap": GraduationCap,
-  "users": Users,
-};
+import { ArrowRight } from "@/components/ui/icons";
 
 export default function UseCases() {
-  const [open, setOpen] = useState<number | null>(0);
-
   return (
-    <section id="use-cases" className="relative py-16 sm:py-20">
-      <div className="absolute inset-0 grid-lines opacity-30" aria-hidden />
-      <div className="relative mx-auto max-w-4xl px-5 sm:px-8">
-        <SectionHeading
+    <section id="use-cases" className="relative overflow-hidden py-24 sm:py-32">
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-transparent via-brand/[0.02] to-transparent"
+        aria-hidden
+      />
+      <div className="relative mx-auto max-w-7xl px-5 sm:px-8">
+        <div className="relative mx-auto max-w-3xl text-center">
+          <div
+            className="pointer-events-none absolute -top-44 left-1/2 h-[400px] w-[760px] -translate-x-1/2 rounded-full bg-brand/[0.05] blur-[130px]"
+            aria-hidden
+          />
+         
+          <h2 className="relative mt-5 text-4xl font-semibold leading-[1.06] tracking-tight text-ink sm:text-5xl lg:text-[64px]">
+            Made for people who
+            <br />
+            <span className="text-brand">live in AI tools.</span>
+          </h2>
+          <p className="relative mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted">
+            Whether you&apos;re a founder, developer, student or freelancer,
+            LayerFlow adapts to your workflow instead of forcing you into
+            another chat app.
+          </p>
+        </div>
 
-          title={
-            <>
-              Made for people who{" "}
-              <span className="text-brand">live in AI tools</span>
-            </>
-          }
-          description="Founders, writers, students, engineers — anyone whose work spans multiple AI models. Tap a topic to see how it works."
-        />
+        <div className="relative mt-20 grid gap-x-12 gap-y-16 md:grid-cols-2 lg:grid-cols-3">
+          {USE_CASES.map((uc, i) => (
+            <motion.div
+              key={uc.title}
+              className="group flex cursor-pointer flex-col"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.7, delay: (i % 3) * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ y: -4 }}
+            >
+              <p className="font-mono text-sm font-medium text-faint transition-colors duration-300 group-hover:text-brand">
+                {String(i + 1).padStart(2, "0")}
+              </p>
+              <h3 className="mt-4 max-w-[340px] text-[24px] font-semibold leading-[1.3] tracking-tight text-ink transition-colors duration-300 group-hover:text-brand lg:text-[28px]">
+                {uc.title}
+              </h3>
+              <p className="mt-3 max-w-[340px] text-[17px] leading-relaxed text-muted">
+                {uc.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
 
-        <div className="mt-10 space-y-3">
-          {USE_CASES.map((uc, i) => {
-            const Icon = ICONS[uc.icon] ?? LifeBuoy;
-            const isOpen = open === i;
-            return (
-              <Reveal key={uc.title} delay={(i % 3) * 0.05}>
-                <div
-                  className={`overflow-hidden rounded-2xl border transition-colors ${
-                    isOpen ? "border-brand/30 bg-surface-2/60" : "border-border bg-surface-2/30 hover:border-border-strong"
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    aria-expanded={isOpen}
-                    className="flex w-full items-center gap-4 px-5 py-4 text-left"
-                  >
-                    <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-colors ${
-                        isOpen
-                          ? "border-brand/40 bg-brand/10 text-brand"
-                          : "border-border bg-surface-2 text-muted"
-                      }`}
-                    >
-                      <Icon className="h-4.5 w-4.5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[15px] font-semibold text-ink">{uc.title}</span>
-                    </span>
-                    <span
-                      className={`font-mono text-xs transition-colors ${
-                        isOpen ? "text-brand" : "text-faint"
-                      }`}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <ChevronDown
-                      className={`h-4 w-4 shrink-0 text-faint transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-brand" : ""
-                      }`}
-                    />
-                  </button>
-
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-5 pb-5">
-                          <p className="text-sm leading-relaxed text-muted">{uc.description}</p>
-                          <p className="mt-3 rounded-xl border border-brand/15 bg-brand/5 px-3.5 py-2.5 font-mono text-[11px] leading-relaxed text-brand/90">
-                            {uc.example}
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </Reveal>
-            );
-          })}
+        <div className="relative mt-24 text-center">
+          <p className="mx-auto max-w-xl text-2xl font-semibold tracking-tight text-ink">
+            Ready to stop rebuilding context?
+          </p>
+          <Link
+            href="/sign-in"
+            className="group mt-7 inline-flex items-center gap-2 text-lg font-semibold text-ink"
+          >
+            Start free
+            <ArrowRight className="h-5 w-5 text-brand transition-transform duration-300 group-hover:translate-x-1" />
+          </Link>
         </div>
       </div>
     </section>

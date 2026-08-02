@@ -1,7 +1,6 @@
 import { Check, X, Minus } from "@/components/ui/icons";
 import { SectionHeading, Reveal } from "@/components/ui/reveal";
 import { COMPARISON_ROWS } from "@/lib/data/marketing";
-import { Wordmark } from "@/components/ui/logo";
 
 export default function Comparison() {
   return (
@@ -25,7 +24,7 @@ export default function Comparison() {
               <span className="w-28 text-center">Raw chats</span>
               <span className="w-28 text-center">Extensions</span>
               <span className="w-28 text-center">
-                <Wordmark />
+                <span className="font-semibold tracking-tight text-ink">LayerFlow</span>
               </span>
             </div>
 

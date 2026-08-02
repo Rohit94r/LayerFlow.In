@@ -32,6 +32,8 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   },
 ];
 
+const WORD = "LayerFlow.dev";
+
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border bg-surface/40">
@@ -74,14 +76,15 @@ export default function Footer() {
       </div>
 
       <div className="relative mx-auto w-full select-none pb-8 pt-6 sm:pb-10">
-        <p
-          aria-hidden
-          className="absolute inset-0 whitespace-nowrap bg-gradient-to-b from-brand/60 to-brand/20 bg-clip-text text-center font-mono font-medium leading-none tracking-tight text-transparent blur-[28px] [font-size:clamp(2.4rem,11vw,13rem)]"
-        >
-          LayerFlow.dev
-        </p>
-        <p className="relative whitespace-nowrap bg-gradient-to-b from-brand to-brand/40 bg-clip-text text-center font-mono font-medium leading-none tracking-tight text-transparent [font-size:clamp(2.4rem,11vw,13rem)]">
-          LayerFlow.dev
+        <p className="whitespace-nowrap text-center font-mono font-medium leading-none tracking-tight [font-size:clamp(2.4rem,11vw,13rem)]">
+          {WORD.split("").map((ch, i) => (
+            <span
+              key={i}
+              className="inline-block cursor-default bg-gradient-to-b from-brand to-brand/50 bg-clip-text text-transparent transition-transform duration-200 ease-out hover:scale-[1.3] hover:drop-shadow-[0_0_18px_rgba(249,115,22,0.55)] will-change-transform"
+            >
+              {ch}
+            </span>
+          ))}
         </p>
       </div>
     </footer>

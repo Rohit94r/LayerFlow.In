@@ -79,51 +79,57 @@ export const PLANS: Plan[] = [
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "I hit the Claude limit at 11pm with a design doc half-written. LayerFlow rebuilt the whole context in 20 seconds and I finished on Gemini Flash. Cost me $0.01.",
+      "Claude hit its limit while I was writing a design document. LayerFlow rebuilt everything in seconds.",
     name: "Aarav Mehta",
     role: "Founder, Shipyard Labs",
     initials: "AM",
     color: "#f59e0b",
+    highlights: ["rebuilt everything in seconds"],
   },
   {
     quote:
-      "The Context Passport is the first thing that actually captures *why* we made decisions. My co-founder picks up work from a passport and it's like we never switched tools.",
+      "I switched from GPT to Gemini without losing any project context.",
     name: "Sofia Reyes",
     role: "CTO, Loopline",
     initials: "SR",
     color: "#44edbc",
+    highlights: ["without losing any project context"],
   },
   {
     quote:
-      "Cost Check paid for itself in a week. I moved summaries from Opus to Gemini Flash and saved roughly $140/month without noticing any quality difference.",
+      "My AI costs dropped because LayerFlow recommended the cheapest model.",
     name: "Daniel Kim",
     role: "Indie hacker",
     initials: "DK",
     color: "#8b7cf8",
+    highlights: ["recommended the cheapest model"],
   },
   {
     quote:
-      "I switched ChatGPT → Claude → Gemini constantly for client work. Continue Pack means I never have to re-paste a 9,000-word brief ever again.",
+      "I stopped storing prompts everywhere — Notion, ChatGPT, random files. Now everything lives in LayerFlow.",
     name: "Priya Sharma",
     role: "Marketing consultant",
     initials: "PS",
     color: "#f472b6",
+    highlights: ["stopped storing prompts everywhere"],
   },
   {
     quote:
-      "Prompt Score stopped me from shipping vague prompts. My improved prompt for webhook design got a 94 and the Claude output genuinely needed zero rewrites.",
+      "Half my work happens at 1am across three AIs. LayerFlow keeps the thread intact between all of them.",
     name: "Marcus Chen",
     role: "Staff engineer, Northwind",
     initials: "MC",
     color: "#38bdf8",
+    highlights: ["keeps the thread intact"],
   },
   {
     quote:
-      "As a student, hitting the ChatGPT cap mid-essay was my whole week. LayerFlow rescued the essay, improved my next prompt, and I finished in DeepSeek for free.",
+      "My teammate picked up my entire project from a passport — zero re-explaining.",
     name: "Ananya Iyer",
     role: "CS student",
     initials: "AI",
     color: "#a3e635",
+    highlights: ["zero re-explaining"],
   },
 ];
 
@@ -210,46 +216,41 @@ export const ROADMAP: RoadmapPhase[] = [
 export const USE_CASES: UseCase[] = [
   {
     title: "Code without coding",
-    description: "Write plain English, click Improve, and watch implement, review and test agents ship it — in your browser or terminal.",
+    description: "Build features using natural language without losing context.",
     example: "\"build me a landing page\" → improved prompt (92/100) → 3 agents → committed in one session.",
     icon: "code",
   },
   {
     title: "Limit Rescue",
-    description: "Hit the ChatGPT or Claude cap mid-task? Paste the thread and continue in another model in under a minute.",
+    description: "Continue after ChatGPT or Claude usage limits.",
     example: "Rescued a 6,400-word outreach sequence after the GPT-5 limit at email 3.",
     icon: "lifebuoy",
   },
   {
-    title: "Switch tools weekly",
-    description: "Work in ChatGPT, think in Claude, summarize in Gemini — without re-explaining your project every time.",
+    title: "Switch tools freely",
+    description: "Move between GPT, Claude and Gemini with zero context loss.",
     example: "7 passports for the webhook API; each model picks up the same decisions.",
     icon: "shuffle",
   },
   {
-    title: "Cut AI spend",
-    description: "Cost Check surfaces the cheapest model that's good enough for the task. Most users save 60–90% per run.",
+    title: "Reduce AI costs",
+    description: "Automatically choose the cheapest model for the same task.",
     example: "$0.08 → $0.007 per webhook design run with DeepSeek.",
     icon: "piggy-bank",
   },
   {
     title: "Keep client work alive",
-    description: "Freelancers and agencies never lose a brief, a brand voice, or an approved direction between sessions.",
+    description: "Never rewrite project context again.",
     example: "A 9,000-word brand brief fits in a passport that any model can continue.",
     icon: "briefcase",
   },
   {
-    title: "Studying & research",
-    description: "Preserve the thread of your research across models, including what failed so you don't retry dead ends.",
+    title: "Study & research",
+    description: "Turn conversations into searchable knowledge.",
     example: "Essay rescue after the cap — finished in DeepSeek with all citations intact.",
     icon: "graduation-cap",
   },
-  {
-    title: "Team handoff",
-    description: "Share a project's context so the next person (or AI) starts from decisions, not from zero.",
-    example: "Co-founder opens a passport and continues a design doc without a 30-minute brief.",
-    icon: "users",
-  },
+  
 ];
 
 // ── Problem section copy ─────────────────────────────────────

@@ -252,6 +252,7 @@ export interface Testimonial {
   role: string;
   initials: string;
   color: string;
+  highlights?: string[];
 }
 
 export interface FaqItem {
