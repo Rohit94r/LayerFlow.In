@@ -42,7 +42,8 @@ Paste chat / problem
 ### Stack
 
 Next.js 16 App Router, React 19, TypeScript, Tailwind v4, Framer Motion,
-Lucide. Mock data in `lib/data` with typed query functions.
+Hugeicons (shimmed). Mock data in `lib/data` behind an async service layer
+(`lib/services`) with typed query functions.
 
 ### Routing
 
@@ -51,26 +52,37 @@ Lucide. Mock data in `lib/data` with typed query functions.
 | `/` | Landing |
 | `/pricing` | Pricing |
 | `/sign-in` | Auth (better-auth, kept) |
-| `/app` | Dashboard home |
-| `/app/rescue` | Rescue Chat |
-| `/app/passports` · `/app/passports/[id]` | Context Passport library + detail |
-| `/app/prompts` · `/app/prompts/[id]` | Prompt Library + detail |
-| `/app/workspace` · `/app/workspace/[projectId]` | Workspace (projects, timeline, learnings, search) |
-| `/app/costs` | Cost Analytics |
-| `/app/models` | Models + BYOK |
-| `/app/settings` | Settings |
+| `/home` | Dashboard home (work hub) |
+| `/rescue` | Rescue Chat / Continue Packs |
+| `/passports` · `/passports/[id]` | Context Passport library + detail |
+| `/prompts` · `/prompts/[id]` | Prompt Library + detail |
+| `/workspace` · `/workspace/[projectId]` | Workspace (projects, timeline, learnings) + detail |
+| `/code` | Terminal + agent mesh demo |
+| `/agents` | Agent roster |
+| `/history` | Work Ledger |
+| `/search` | Global context search |
+| `/costs` | Cost Analytics |
+| `/models` | Models + BYOK |
+| `/billing` | Plans + billing history |
+| `/keys` | API keys |
+| `/settings` | Settings |
 
 ### State
 
-- Server components render lists from `lib/data`.
+- Server components render lists through `lib/services/*` (async, promise-based).
 - Client components own interaction state (tabs, filters, copy buttons).
+- Detail pages follow the server page + small client "actions" pattern
+  (`PassportActions`, `PromptActions`) so only interactive bits are client-side.
 - No global store yet — props + URL params are enough for this phase.
-- Mock layer returns promises to mirror the future API (`getPassports()`, `getProjects()`…).
+- Services return promises to mirror the future API, so swapping the mock
+  backend for `lib/api/*` is a drop-in change.
 
 ### Component conventions
 
-- One feature = one directory under `components/app/*`.
-- Cards, badges, stat blocks are shared primitives in `lib/ui` or `components/app/_ui`.
+- Dashboard shell lives in `components/layout/*` (sidebar, topbar, command menu).
+- Feature components live under `components/features/<feature>/*`.
+- Cross-page primitives (`components/shared/*`): page-header, section, row, stat, quick-actions.
+- Design-system primitives live in `components/ui/*` (panel, button, badge, tabs, table, dialog, dropdown-menu, switch, skeleton, empty-state, error-state, progress, kbd).
 - Empty states are first-class: icon, title, action.
 
 ---

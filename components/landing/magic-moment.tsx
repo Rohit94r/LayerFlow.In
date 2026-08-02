@@ -72,8 +72,6 @@ export default function MagicMoment() {
     let alive = true;
     const timers: ReturnType<typeof setTimeout>[] = [];
     let s = 0;
-    setStep(0);
-    setDone(false);
 
     const tick = () => {
       if (!alive) return;
@@ -95,6 +93,13 @@ export default function MagicMoment() {
       }
     };
 
+    timers.push(
+      setTimeout(() => {
+        if (!alive) return;
+        setStep(0);
+        setDone(false);
+      }, 0),
+    );
     timers.push(setTimeout(tick, 350));
     return () => {
       alive = false;
