@@ -62,8 +62,8 @@ Paste chat → Clean → Compress → Improve → Cost check → Continue Pack
 **Frontend-first build.** Everything renders with realistic mock data behind a
 service layer (`lib/services/*`, backed by `lib/data/*`) so the UX can be
 validated before the backend is wired in. The target architecture is
-documented in `docs/alltechuse.md`, the engineering workflow in
-`docs/workflow.md`, and the dashboard architecture in `docs/ARCHITECTURE.md`.
+documented in `docs/tech-stack.md`, the engineering workflow in
+`docs/workflow.md`, and the dashboard architecture in `docs/architecture.md`.
 
 Not built yet (by design): real AI calls, SDK, IDE/browser extensions,
 marketplace, enterprise features, git automation.
@@ -97,17 +97,19 @@ the workspace runs on mock data regardless.
 ## Project structure
 
 ```
+flow.md            Repo map · tech stack · page map · conventions (START HERE)
 app/
-  (marketing)/     Landing + pricing
+  (marketing)/     Landing, pricing, blog, docs
   (auth)/          Sign-in (better-auth)
   (dashboard)/     Auth-gated workspace — home, workspace, prompts, passports,
                    rescue, code, models, costs, history, search, agents,
                    billing, keys, settings
 components/
   landing/         Marketing sections
+  marketing/       Marketing shell (navbar, hero, footer, theme toggle)
   layout/          Dashboard shell (sidebar, topbar, command menu)
-  shared/          Cross-page primitives (page header, section, row, stat, quick actions)
-  features/        Feature components (workspace, prompts, passports, rescue, history)
+  shared/          Cross-page primitives (page header, section, row, stat)
+  features/        Feature components (workspace, prompts, passports, rescue, history, home)
   auth/            Auth flow (kept)
   ui/              Design system primitives (panel, button, tabs, table, badge…)
 lib/
@@ -115,13 +117,13 @@ lib/
   services/        Async service layer (workspace, prompts, passports, models, search)
   data/            Mock data layer (types + providers + passports + prompts + workspace + marketing)
   hooks/           use-copy, use-command-menu, use-is-mobile
-  providers/       Auth + theme providers
-  api/             Typed API client (kept for the future backend)
+  providers/       Auth provider
+  api/             Typed API client helpers (kept for the future backend)
   auth-client.ts   better-auth browser client (kept)
 docs/
-  alltechuse.md    Full technology stack
+  tech-stack.md    Full technology stack
   workflow.md      Engineering workflows
-  ARCHITECTURE.md  Dashboard architecture + conventions
+  architecture.md  Dashboard architecture + conventions
 ```
 
 ## Product principles
