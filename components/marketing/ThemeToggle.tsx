@@ -28,7 +28,6 @@ export function ThemeToggle({ overHero = false }: ThemeToggleProps) {
     applyTheme(initial);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initial);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
