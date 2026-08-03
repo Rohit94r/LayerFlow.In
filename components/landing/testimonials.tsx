@@ -111,10 +111,7 @@ export default function Testimonials() {
             className="pointer-events-none absolute -top-48 left-1/2 h-[420px] w-[820px] -translate-x-1/2 rounded-full bg-brand/[0.07] blur-[130px]"
             aria-hidden
           />
-          <p className="relative inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-brand">
-            <span className="h-1 w-1 rounded-full bg-brand" />
-            Loved by AI builders
-          </p>
+          
           <h2 className="relative mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl">
             People who stopped
             <br />
