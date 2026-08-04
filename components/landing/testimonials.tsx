@@ -69,28 +69,42 @@ function QuoteBody({ quote, highlights }: { quote: string; highlights?: string[]
 function Review({ t, i }: { t: Testimonial; i: number }) {
   return (
     <motion.figure
-      className="group flex flex-col"
+      className="group flex h-full flex-col rounded-2xl border border-border bg-surface/50 p-7 transition-colors duration-150 hover:border-border-strong hover:bg-surface-2/40"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.7, delay: (i % 3) * 0.12, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -4 }}
     >
-      <div className="flex items-center gap-1" aria-label="5 out of 5 stars">
-        {Array.from({ length: 5 }).map((_, s) => (
-          <Star key={s} className="h-4 w-4 fill-brand text-brand" />
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1" aria-label="5 out of 5 stars">
+          {Array.from({ length: 5 }).map((_, s) => (
+            <Star key={s} className="h-4 w-4 fill-brand text-brand" />
+          ))}
+        </div>
+        <span className="font-mono text-3xl leading-none text-brand/30" aria-hidden>
+          ”
+        </span>
       </div>
-      <blockquote className="mt-6 max-w-[340px] text-[24px] leading-[1.35] tracking-tight text-ink lg:text-[32px]">
+      <blockquote className="mt-5 flex-1 text-lg leading-[1.4] tracking-tight text-ink lg:text-[19px]">
         <QuoteBody quote={t.quote} highlights={t.highlights} />
       </blockquote>
-      <figcaption className="mt-8 flex items-center gap-3.5">
-        <Avatar
-          initials={t.initials}
-          color={t.color}
-          size="md"
-          className="h-10 w-10 text-[11px] transition-transform duration-300 group-hover:scale-[1.04]"
-        />
+      <figcaption className="mt-8 flex items-center gap-3.5 border-t border-border pt-5">
+        {t.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={t.photo}
+            alt={t.name}
+            className="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-border transition-transform duration-300 group-hover:scale-[1.05]"
+          />
+        ) : (
+          <Avatar
+            initials={t.initials}
+            color={t.color}
+            size="md"
+            className="h-11 w-11 text-[12px] transition-transform duration-300 group-hover:scale-[1.05]"
+          />
+        )}
         <div>
           <p className="text-sm font-semibold tracking-tight text-ink">{t.name}</p>
           <p className="mt-0.5 text-xs text-muted">{t.role}</p>
@@ -119,11 +133,11 @@ export default function Testimonials() {
           </h2>
           <p className="relative mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-muted">
             Founders, developers, students and freelancers use LayerFlow to
-            keep their AI context alive.
+            keep their AI context alive — in the browser and in the terminal.
           </p>
         </div>
 
-        <div className="relative mt-20 grid gap-x-12 gap-y-16 md:grid-cols-2 lg:grid-cols-3">
+        <div className="relative mt-20 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {TESTIMONIALS.map((t, i) => (
             <Review key={t.name} t={t} i={i} />
           ))}

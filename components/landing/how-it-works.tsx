@@ -52,7 +52,7 @@ export default function HowItWorks() {
             transition={{ duration: 1.4, ease: "easeInOut" }}
           />
 
-          <div className="grid gap-10 lg:grid-cols-4 lg:gap-8">
+          <div className="grid gap-10 lg:grid-cols-4 lg:gap-6">
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.title}
@@ -62,30 +62,34 @@ export default function HowItWorks() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 + i * 0.25, duration: 0.5 }}
               >
-                <div className="flex items-center gap-3 lg:flex-col lg:items-start">
-                  <motion.span
-                    className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-brand/30 bg-surface font-mono text-sm font-bold text-brand shadow-[0_0_24px_rgba(249,115,22,0.15)]"
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 20,
-                      delay: 0.3 + i * 0.25,
-                    }}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </motion.span>
-                  <h3 className="text-base font-semibold tracking-tight text-ink lg:mt-4">
+                <motion.span
+                  className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center self-start rounded-2xl border border-brand/30 bg-surface font-mono text-sm font-bold text-brand shadow-[0_0_24px_rgba(249,115,22,0.15)]"
+                  initial={{ scale: 0 }}
+                  whileInView={{ scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 400,
+                    damping: 20,
+                    delay: 0.3 + i * 0.25,
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </motion.span>
+
+                <div className="mt-5 flex h-full flex-col rounded-2xl border border-border bg-surface/50 p-6 transition-colors duration-150 hover:border-border-strong hover:bg-surface-2/40">
+                  <h3 className="text-base font-semibold tracking-tight text-ink">
                     {step.title}
                   </h3>
+                  <p className="mt-2.5 text-sm leading-relaxed text-muted">
+                    {step.description}
+                  </p>
+                  <div className="flex-1" />
+                  <code className="mt-6 inline-flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-brand">
+                    <span className="text-faint">▸</span>
+                    {step.hint}
+                  </code>
                 </div>
-                <p className="mt-2.5 text-sm leading-relaxed text-muted lg:mt-3">{step.description}</p>
-                <code className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 font-mono text-[11px] text-brand">
-                  <span className="text-faint">▸</span>
-                  {step.hint}
-                </code>
               </motion.div>
             ))}
           </div>

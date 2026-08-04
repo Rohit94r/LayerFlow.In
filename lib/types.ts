@@ -262,6 +262,7 @@ export interface Testimonial {
   role: string;
   initials: string;
   color: string;
+  photo?: string;
   highlights?: string[];
 }
 
