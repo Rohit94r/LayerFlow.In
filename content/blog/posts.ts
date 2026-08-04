@@ -7163,7 +7163,1203 @@ export const posts = [
         ]
       }
     ]
-  }
+  },
+{
+  "slug": "ai-prompt-organizer-tools-2026",
+  "title": "AI Prompt Organizer: 7 Ways to Fix Prompt Chaos in 2026",
+  "metaTitle": "Best AI Prompt Organizer Tools & Methods (2026)",
+  "description": "Stop losing prompts in ChatGPT history. See the 7 best ways to organize AI prompts: folders, tags, version timelines, and workspaces — and the tools that make them painless.",
+  "publishedAt": "2026-08-08",
+  "category": "Productivity",
+  "tags": [
+    "prompt organizer",
+    "prompt management",
+    "prompt organization"
+  ],
+  "primaryKeyword": "AI prompt organizer",
+  "secondaryKeywords": [
+    "organize AI prompts",
+    "prompt organization tools",
+    "best prompt managers 2026"
+  ],
+  "readingTime": "6 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "organize-ai-prompts-workspace",
+    "domain-based-prompt-organization",
+    "from-chatgpt-history-to-workspace",
+    "building-personal-prompt-library",
+    "why-prompt-notebooks-fail"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "If your AI prompts are spread across ChatGPT history, Claude conversations, Notion pages, and a folder called FINAL_v3, you are losing hours every week. An AI prompt organizer is the difference between reusing what works and re-typing it from memory. This guide covers the seven methods that actually work in 2026 and how LayerFlow puts them all in one place."
+    },
+    {
+      "type": "p",
+      "text": "We wrote [how to organize AI prompts](/blog/organize-ai-prompts-workspace) as the foundation. Here we go broader: every practical system — folders, tags, versions, timelines, and dedicated organizers — ranked by how well they survive real, messy work."
+    },
+    {
+      "type": "h2",
+      "id": "method-1-the-folder-system",
+      "text": "Method 1: The folder system (start here)"
+    },
+    {
+      "type": "p",
+      "text": "Folders are the oldest prompt organizer and still the most reliable. Create domains that match how you actually work — Marketing, Coding, Study, Clients — and save every prompt inside its domain with a short note on intent."
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Domain folders beat general folders: you retrieve prompts by context, not by category trivia.",
+        "One rule: every saved prompt needs a title that states the job, not the tool. 'Write product FAQ' beats 'gpt prompt'.",
+        "Add client or project subfolders only when a folder passes 20 prompts — premature nesting is how folders die."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "method-2-tags-and-filtering",
+      "text": "Method 2: Tags and filtering"
+    },
+    {
+      "type": "p",
+      "text": "Tags are the underrated half of the folder system. A prompt lives in one folder but wears several tags: model, tone, cost band, use case. The moment you can filter by tag, your organizer stops being a graveyard and starts being a retrieval engine."
+    },
+    {
+      "type": "callout",
+      "text": "Pro tip: tag by failure mode, not just topic. Tag prompts that 'worked after 3 rewrites' or 'needed a cheaper model'. That metadata is what makes a prompt library genuinely useful."
+    },
+    {
+      "type": "h2",
+      "id": "method-3-version-history",
+      "text": "Method 3: Version history (the upgrade that changes everything)"
+    },
+    {
+      "type": "p",
+      "text": "Folders and tags organize space; versions organize time. Every edit should create a version you can diff and roll back. When a rewrite quietly tanks output quality, version history is what saves your week. See the deep dive on the [prompt timeline](/blog/prompt-timeline-best-practices) for the full pattern."
+    },
+    {
+      "type": "h2",
+      "id": "method-4-compare-to-organize",
+      "text": "Method 4: Compare to organize"
+    },
+    {
+      "type": "p",
+      "text": "The fastest way to know which prompts deserve a home is to run the same prompt across GPT, Claude, Gemini, and DeepSeek side by side. Winners get promoted into your library with evidence; losers get archived. Comparison turns organization from a chore into a decision. Read [how to compare LLM outputs](/blog/how-to-compare-llm-outputs-side-by-side) for the step-by-step."
+    },
+    {
+      "type": "h2",
+      "id": "method-5-search-with-context",
+      "text": "Method 5: Search with context"
+    },
+    {
+      "type": "p",
+      "text": "A prompt organizer that cannot be searched quickly is a museum. Full-text search matters, but searchable metadata matters more: model, cost, date, and project. You should be able to answer 'what did I use for the onboarding email last month?' in seconds, including which model ran it and what it cost."
+    },
+    {
+      "type": "h2",
+      "id": "method-6-the-workspace",
+      "text": "Method 6: The workspace (what 2026 looks like)"
+    },
+    {
+      "type": "p",
+      "text": "The strongest organizer pattern in 2026 combines everything above in one workspace: domains, tags, version timelines, comparison, budgets, and sharing. That is the gap LayerFlow fills — an AI workspace where prompts, models, and cost live together instead of in five different tabs."
+    },
+    {
+      "type": "h2",
+      "id": "method-7-team-sharing",
+      "text": "Method 7: Team sharing"
+    },
+    {
+      "type": "p",
+      "text": "Your prompt organizer is only as good as its reach. When teammates share versions — not screenshots — with model and cost context attached, the whole team stops re-explaining. See how [teams collaborate on prompts](/blog/teams-collaborate-ai-prompts) without Slack-paste chaos."
+    },
+    {
+      "type": "h2",
+      "id": "what-the-tools-are-missing",
+      "text": "What the tools are missing"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Notion and Docs: flexible, but no versions, no model context, no cost.",
+        "ChatGPT history: everything, ordered by nothing. Retrieval is hopeless.",
+        "Prompt notebooks: better, but they still lack versioning and budgets — see [why prompt notebooks fail](/blog/why-prompt-notebooks-fail).",
+        "Dedicated organizers: good retrieval, yet most forget that prompts have costs and versions."
+      ]
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is the best way to organize AI prompts?",
+          "a": "Domain folders plus tags plus version history, inside a workspace that also tracks model and cost. Organizing by how you work — not by generic categories — is what keeps the system alive."
+        },
+        {
+          "q": "Is there a free AI prompt organizer?",
+          "a": "Yes. LayerFlow's free tier covers prompt libraries, timelines, and compare. Paid tiers add hard budgets, team sharing, and gateway features."
+        },
+        {
+          "q": "Should I organize prompts by tool or by task?",
+          "a": "By task and domain. Prompts should survive tool switches — you will change models far more often than you change your goals."
+        },
+        {
+          "q": "How many prompts should I keep?",
+          "a": "Fewer than you think. Archive versions liberally; keep only prompts you have evidence for. A 50-prompt library that works beats a 5,000-prompt graveyard."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "layered-ai-prompts-system-context-task",
+  "title": "Layered AI Prompts: Stack System, Context, and Task Prompts for 10x Output",
+  "metaTitle": "Layered AI Prompts: System + Context + Task (2026 Guide)",
+  "description": "Learn layered AI prompts — stacking system, context, and task layers — to get dramatically better output from GPT, Claude, Gemini, and DeepSeek.",
+  "publishedAt": "2026-08-09",
+  "category": "Prompt engineering",
+  "tags": [
+    "layered prompts",
+    "system prompts",
+    "prompt engineering"
+  ],
+  "primaryKeyword": "layered AI prompts",
+  "secondaryKeywords": [
+    "system context task prompts",
+    "prompt layering",
+    "system prompt engineering"
+  ],
+  "readingTime": "5 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "prompt-engineering-best-practices-teams-2026",
+    "openai-system-prompt-best-practices-2026",
+    "prompt-version-control-timeline-2026",
+    "prompt-diffing-track-changes"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "Most prompts are flat: one block of text doing three jobs at once — who the model is, what the context is, and what to produce. Layered AI prompts split those jobs into stacked layers, and the output quality jump is immediate. This is the technique power users reach for after basic prompt engineering stops improving results."
+    },
+    {
+      "type": "h2",
+      "id": "the-three-layers",
+      "text": "The three layers"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "System layer: who the model is — role, style, rules, constraints. This is the OpenAI system prompt slot.",
+        "Context layer: what the model needs to know — project background, audience, data, prior decisions.",
+        "Task layer: what to do right now — the deliverable, format, length, and success criteria."
+      ]
+    },
+    {
+      "type": "p",
+      "text": "The order matters. System first, context second, task last. Models weight later instructions heavily, so the concrete task should land closest to the generation request."
+    },
+    {
+      "type": "h2",
+      "id": "why-layering-works",
+      "text": "Why layering works"
+    },
+    {
+      "type": "p",
+      "text": "Flat prompts force the model to guess which sentence is role and which is instruction. Layering removes the guessing: each sentence class is separated by clear structure. In our tests across GPT, Claude, and Gemini, layered prompts produce dramatically more consistent output than equivalent flat prompts, with far less rework."
+    },
+    {
+      "type": "callout",
+      "text": "Rule of thumb: if you can delete a sentence from your prompt and nothing breaks, that sentence is decoration. Every line in a layered prompt earns its place — or gets moved to a version you can diff later."
+    },
+    {
+      "type": "h2",
+      "id": "template-you-can-copy",
+      "text": "A template you can copy"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "System: 'You are a senior technical writer. Use plain English, short paragraphs, concrete examples. Never invent data.'",
+        "Context: 'Project: onboarding email sequence for a dev-tools SaaS. Audience: engineers who hate jargon. Prior decision: tone is friendly, not hype.'",
+        "Task: 'Write the third email: a walkthrough of the compare feature in the free tier. 150 words, one CTA, subject line included.'",
+        "Save all three layers as one versioned prompt so you can reuse the system layer across tasks."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "version-each-layer",
+      "text": "Version each layer independently"
+    },
+    {
+      "type": "p",
+      "text": "The system layer changes rarely; the task layer changes every run. Version them separately and you can tweak tone without touching the task, then diff exactly what changed when output quality shifts. LayerFlow's [prompt timeline](/blog/prompt-timeline-best-practices) is built for this: every edit is a version with model, cost, and output attached."
+    },
+    {
+      "type": "h2",
+      "id": "layering-across-models",
+      "text": "Layering across models"
+    },
+    {
+      "type": "p",
+      "text": "A good layered prompt is portable: the system layer usually survives a switch from GPT to Claude, and the task layer rarely cares which model runs it. That portability is exactly what makes [multi-model comparison](/blog/how-to-compare-llm-outputs-side-by-side) meaningful — you compare models on the same layered structure, not on three different prompt styles."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is a layered prompt?",
+          "a": "A prompt split into system, context, and task layers instead of one flat block. Each layer has a single job: role, background, or deliverable."
+        },
+        {
+          "q": "Do layered prompts work on ChatGPT?",
+          "a": "Yes. You can write all three layers in one message; the structure still helps. Tools with a dedicated system prompt slot (OpenAI API, Claude, or a gateway) make the separation native."
+        },
+        {
+          "q": "How many layers should a prompt have?",
+          "a": "Three is the sweet spot. More layers add maintenance without proportional gains; fewer layers blend jobs the model has to guess apart."
+        },
+        {
+          "q": "Can I reuse the system layer?",
+          "a": "That is the point. Keep system layers as versioned, reusable prompts and write only the task layer per run."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "ai-api-token-management-guide",
+  "title": "AI API Token Management: Track, Budget, and Cut Token Waste Across Every Provider",
+  "metaTitle": "AI API Token Management Guide: Track Usage & Budget (2026)",
+  "description": "Token waste is silent spend. Learn AI API token management — tracking usage by project and key, setting hard budgets, and cutting waste across GPT, Claude, Gemini, and DeepSeek.",
+  "publishedAt": "2026-08-10",
+  "category": "Cost control",
+  "tags": [
+    "token management",
+    "token budgets",
+    "LLM cost control"
+  ],
+  "primaryKeyword": "AI API token management",
+  "secondaryKeywords": [
+    "LLM token budget",
+    "token usage tracking",
+    "reduce token costs"
+  ],
+  "readingTime": "6 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "token-cost-optimization-guide",
+    "ai-cost-control-hard-budget-limits",
+    "ai-spend-analytics-project-key-model",
+    "managing-multiple-llm-api-keys",
+    "cheap-mode-routing-flash-vs-frontier"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "Tokens are the smallest unit of AI spend and the easiest place to lose money. A prompt run twice, a log repeated a hundred times, a context window padded with trivia — none of it shows up on your card statement, but all of it shows up in your bill. AI API token management is the discipline of knowing where tokens go, capping how many can go, and cutting the waste in between."
+    },
+    {
+      "type": "h2",
+      "id": "why-token-waste-is-silent",
+      "text": "Why token waste is silent"
+    },
+    {
+      "type": "p",
+      "text": "Token waste never errors. Nothing fails, nothing blocks — your costs just creep. The usual suspects: long system prompts re-sent on every call, conversation histories growing unbounded, retries that replay the full context, and one-size-fits-all model choices for cheap tasks."
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Unbounded chat history: every turn re-sends the whole context.",
+        "System prompts with examples that never change — re-billed every call.",
+        "Frontier models on trivial tasks: a flash model would finish the job for a tenth of the price.",
+        "Output-first habits: asking for 1,000 words when 200 would do."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "track-then-cut",
+      "text": "Track, then cut"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Track usage by project, key, and model — not by total. Aggregates hide the leak.",
+        "Set a hard monthly budget with an auto-block at the cap, and alerts around 80%.",
+        "Review the top token consumers weekly; kill or reroute the outliers.",
+        "Move stable tasks to cheaper models — see the [cheap mode](/blog/cheap-mode-routing-flash-vs-frontier) guide.",
+        "Trim prompts to their leanest form and version the result so it stays lean."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "The 80/20 of token management: most waste comes from a few runaway conversations. Find those first. One bounded history often saves more than a month of prompt tweaking."
+    },
+    {
+      "type": "h2",
+      "id": "budgets-that-actually-block",
+      "text": "Budgets that actually block"
+    },
+    {
+      "type": "p",
+      "text": "Dashboards inform; budgets enforce. LayerFlow applies hard budget limits per project and key: when the cap hits, requests block instead of billing onward. Alerts fire near 80% so you can raise or lower a limit on purpose instead of discovering it in next month's invoice. The full pattern lives in the [hard budget limits](/blog/ai-cost-control-hard-budget-limits) guide."
+    },
+    {
+      "type": "h2",
+      "id": "token-accounting-across-providers",
+      "text": "Token accounting across providers"
+    },
+    {
+      "type": "p",
+      "text": "GPT, Claude, Gemini, and DeepSeek all price tokens differently — and their context windows differ too. Managing them side by side means normalizing usage into one view: cost per run, per project, per model. That is what [AI spend analytics](/blog/ai-spend-analytics-project-key-model) looks like in practice, and it is impossible to do well across five provider dashboards."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is token management in AI?",
+          "a": "Tracking and controlling the tokens your AI calls consume — by project, key, and model — plus enforcing budgets so spend cannot run away silently."
+        },
+        {
+          "q": "How do I reduce API token usage?",
+          "a": "Bound chat histories, trim system prompts, route cheap tasks to cheaper models, and cap outputs. Then track by model to see what actually changed."
+        },
+        {
+          "q": "Do hard budget limits block requests?",
+          "a": "Yes, in LayerFlow they can. A hard cap blocks new requests at the limit; alerts at 80% give you room to decide before you hit it."
+        },
+        {
+          "q": "Is token management the same as API key management?",
+          "a": "Related but different. Key management controls access to providers; token management controls consumption. You need both — see the [API key management](/blog/managing-multiple-llm-api-keys) guide."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "private-key-workflows-software-teams",
+  "title": "Private Key Workflows for Software Teams: AI Keys, Git Signing, and CI/CD Done Right",
+  "metaTitle": "Private Key Workflows for Software Teams (2026 Guide)",
+  "description": "Design secure private key workflows for software teams: AI API keys, git signing keys, CI/CD secrets — with rotation, least privilege, and per-project isolation.",
+  "publishedAt": "2026-08-11",
+  "category": "AI gateway",
+  "tags": [
+    "API key management",
+    "BYOK",
+    "secrets"
+  ],
+  "primaryKeyword": "software private key workflows",
+  "secondaryKeywords": [
+    "API key management software",
+    "BYOK security",
+    "secret management for teams"
+  ],
+  "readingTime": "7 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "secure-ai-key-management",
+    "managing-multiple-llm-api-keys",
+    "bring-your-own-keys-byok",
+    "connecting-byok-providers",
+    "building-apps-ai-gateway-sdk"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "Software teams now juggle more private keys than ever: git signing keys, deployment keys, CI/CD secrets, and a growing pile of AI API keys for GPT, Claude, Gemini, and DeepSeek. Each key is a credential, and each credential needs a workflow — who can create it, where it lives, when it rotates, and how it is revoked the second it leaks."
+    },
+    {
+      "type": "h2",
+      "id": "the-three-principles",
+      "text": "The three principles that cover everything"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Least privilege: every key gets the narrowest scope that still works — read-only where read-only is enough.",
+        "Isolation: per project and per environment, never one master key for everything.",
+        "Rotation: keys expire on a schedule, and rotation is a routine, not an incident."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "ai-keys-are-secrets",
+      "text": "AI keys are secrets — treat them that way"
+    },
+    {
+      "type": "p",
+      "text": "An OpenAI or Anthropic API key spends real money. It belongs in the same discipline as your git signing key: encrypted storage, access lists, rotation, and per-project isolation. Teams that treat AI keys as 'just config' are one leaked .env file away from a surprise invoice."
+    },
+    {
+      "type": "p",
+      "text": "LayerFlow's approach is BYOK: you keep provider billing and key ownership, while per-project keys and budgets stay isolated in the workspace. See [how BYOK works](/blog/bring-your-own-keys-byok) and the [provider connection guide](/blog/connecting-byok-providers) for the setup pattern."
+    },
+    {
+      "type": "h2",
+      "id": "ci-cd-and-deployment-keys",
+      "text": "CI/CD and deployment keys"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Inject secrets at runtime from a secrets manager — never bake them into images or pipelines.",
+        "Give each pipeline a service account key with a scope limited to its jobs.",
+        "Set short-lived credentials where the platform supports them.",
+        "Centralize audit logs: know which key ran which pipeline, when."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "The cheapest security upgrade in 2026: a key inventory. If you cannot list every key, where it is used, and who has access, you cannot rotate it in an emergency — and emergencies will happen."
+    },
+    {
+      "type": "h2",
+      "id": "rotation-and-revocation",
+      "text": "Rotation and revocation"
+    },
+    {
+      "type": "p",
+      "text": "Rotation should be boring. Set expiration windows, keep a rotation checklist, and test the new key before the old one dies. Revocation must be instant and centralized: the moment a key leaks into a public repo, it should be dead within minutes, and the team should see which systems stopped working instead of hunting through dashboards."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is a private key workflow?",
+          "a": "The full lifecycle of a credential: creation with least privilege, secure storage, per-project isolation, scheduled rotation, and instant revocation."
+        },
+        {
+          "q": "How should teams manage AI API keys?",
+          "a": "Treat them like secrets: isolated per project, scoped narrowly, rotated on a schedule, and auditable. BYOK platforms keep provider billing with you while handling the organization."
+        },
+        {
+          "q": "Should AI keys go in .env files?",
+          "a": "Only for local development, and never committed. For anything shared or deployed, use a secrets manager with access control."
+        },
+        {
+          "q": "How often should keys rotate?",
+          "a": "It depends on exposure, but 90 days is a sane default for AI keys, with immediate rotation on any suspected leak."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "ai-prompt-directory-curated-libraries",
+  "title": "AI Prompt Directory: The Good, the Bad, and the Actually Useful",
+  "metaTitle": "Best AI Prompt Directories & Curated Libraries (2026)",
+  "description": "Curated prompt directories promise gold and deliver noise. See which AI prompt libraries are actually useful, how to vet them, and how to build your own directory.",
+  "publishedAt": "2026-08-12",
+  "category": "Productivity",
+  "tags": [
+    "prompt directory",
+    "prompt library",
+    "curated prompts"
+  ],
+  "primaryKeyword": "AI prompt directory",
+  "secondaryKeywords": [
+    "curated prompt libraries",
+    "best prompt collections",
+    "prompt marketplace"
+  ],
+  "readingTime": "5 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "building-personal-prompt-library",
+    "ai-prompt-organizer-tools-2026",
+    "best-ai-workspace-tools-2026",
+    "prompt-management-vs-observability"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "AI prompt directories are everywhere: thousands of prompts, neatly sorted by emoji, most of them never tested. The good ones are a genuine shortcut; the bad ones are listicle padding. Here is how to tell them apart, and how to build the only prompt directory that reliably pays off — your own."
+    },
+    {
+      "type": "h2",
+      "id": "what-makes-a-directory-useful",
+      "text": "What makes a directory useful"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Evidence: the prompt shows its output, not just its promise.",
+        "Context: it names the model it was tuned on — prompts are not model-agnostic.",
+        "Maintenance: someone updates entries when models change.",
+        "Search: you can filter by task, model, and length in seconds."
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Apply that checklist to any directory before you bookmark it. A directory that fails three of four is entertainment, not a tool."
+    },
+    {
+      "type": "h2",
+      "id": "the-collection-trap",
+      "text": "The collection trap"
+    },
+    {
+      "type": "p",
+      "text": "Bookmarking 400 prompts is not a system; it is a shopping cart. Every prompt you collect but never run is a small debt — it clutters search results and raises the cost of finding the one you need. We wrote about the deeper version of this problem in [why prompt notebooks fail](/blog/why-prompt-notebooks-fail)."
+    },
+    {
+      "type": "callout",
+      "text": "Vet before you collect: run the prompt, record the model and the output, and only then add it to your directory. A directory of 30 tested prompts beats a directory of 3,000 bookmarks, every single week."
+    },
+    {
+      "type": "h2",
+      "id": "build-your-own-directory",
+      "text": "Build your own directory"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Start from tasks you actually repeat — your prompt directory should mirror your calendar.",
+        "Save the prompt with model, cost, and output attached, not as a bare string.",
+        "Version it: every rewrite creates a new revision you can diff — see [prompt version control](/blog/prompt-version-control-timeline-2026).",
+        "Tag by domain and failure mode, so future-you can filter instead of scroll.",
+        "Review quarterly: archive what you have not run in 90 days."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "curation-is-the-product",
+      "text": "Curation is the product"
+    },
+    {
+      "type": "p",
+      "text": "The real value of a prompt directory is not the list — it is the decisions behind it: what was tested, what won, and why. That is why [a personal prompt library](/blog/building-personal-prompt-library) with evidence beats any public list. Your context, your constraints, your costs — public directories cannot know any of it."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "Are AI prompt directories worth it?",
+          "a": "As inspiration, yes; as a system, rarely. Use them to learn patterns, then test and adapt prompts to your own work before relying on them."
+        },
+        {
+          "q": "What is the best AI prompt library?",
+          "a": "The one you build from tested prompts that carry model, cost, and output context. Public libraries are starting points, not homes."
+        },
+        {
+          "q": "How do I vet a prompt from a directory?",
+          "a": "Run it on the model it was written for, compare the output against your own baseline prompt, and keep it only if it wins."
+        },
+        {
+          "q": "Should I organize prompts by use case?",
+          "a": "Yes — by domain and task, with tags for model and failure mode. See the [organizer guide](/blog/ai-prompt-organizer-tools-2026) for the full system."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "byok-in-windsurf-guide",
+  "title": "BYOK in Windsurf: Bring Your Own Key Explained (and Why Your Keys Matter)",
+  "metaTitle": "BYOK in Windsurf: Bring Your Own Key Explained (2026)",
+  "description": "What does BYOK mean in Windsurf, Cascade, and other AI editors? See how bring-your-own-key works, what it costs, and how to manage keys safely across tools.",
+  "publishedAt": "2026-08-13",
+  "category": "AI gateway",
+  "tags": [
+    "BYOK",
+    "Windsurf",
+    "API keys"
+  ],
+  "primaryKeyword": "BYOK in Windsurf",
+  "secondaryKeywords": [
+    "bring your own key AI editor",
+    "Cascade BYOK",
+    "AI editor API keys"
+  ],
+  "readingTime": "4 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "bring-your-own-keys-byok",
+    "managing-multiple-llm-api-keys",
+    "secure-ai-key-management",
+    "connecting-byok-providers",
+    "openai-compatible-api-gateway"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "Windsurf and other AI editors offer a bring-your-own-key (BYOK) option for models like Claude or GPT: you plug in your own API key instead of using the editor's bundled access. It sounds simple, but BYOK changes who pays, who sees your data, and what happens when a key stops working — worth understanding before you paste it in."
+    },
+    {
+      "type": "h2",
+      "id": "what-byok-actually-means",
+      "text": "What BYOK actually means"
+    },
+    {
+      "type": "p",
+      "text": "Without BYOK, the editor charges you one subscription and quietly pays the model providers behind the scenes. With BYOK, you pay the model provider directly through your own key. You get provider-native billing and often higher usage limits, but you also get the responsibilities: key hygiene, budgets, and rotation."
+    },
+    {
+      "type": "h2",
+      "id": "the-trade-offs",
+      "text": "The trade-offs"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Cost: BYOK is usually cheaper per token, but usage now shows up as raw API spend instead of a flat subscription.",
+        "Control: you can pick models and switch providers without waiting for the editor.",
+        "Risk: a leaked key spends your money; a broken key silently breaks your workflow.",
+        "No ceiling: subscriptions cap your exposure; API keys need budgets you set yourself."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "The number one BYOK failure we see: no budget. The key works great until the month-end invoice doesn't. Set a hard cap on the key before you rely on it — not after."
+    },
+    {
+      "type": "h2",
+      "id": "managing-keys-across-editors",
+      "text": "Managing keys across editors"
+    },
+    {
+      "type": "p",
+      "text": "Once you have keys in Windsurf, Codex CLI, and a gateway, you are managing credentials across five places. The pattern that scales: a separate key per tool, tracked usage per key, budgets per project, and a central place to see them all. That is the [multi-key management](/blog/managing-multiple-llm-api-keys) problem — and exactly what an AI gateway or workspace like LayerFlow centralizes."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is BYOK in Windsurf?",
+          "a": "Bring-your-own-key: connecting your own model provider API key (Claude, GPT, etc.) to Windsurf instead of using its bundled access. You pay the provider directly."
+        },
+        {
+          "q": "Is BYOK cheaper than a subscription?",
+          "a": "Usually per token, yes — but it is uncapped. A hard budget matters more with BYOK than with a flat subscription."
+        },
+        {
+          "q": "Is BYOK safe?",
+          "a": "Safe when handled like any secret: a unique key per tool, rotation on a schedule, and immediate revocation on any leak."
+        },
+        {
+          "q": "Can I use one key for everything?",
+          "a": "Technically yes, financially risky. One leaked key then exposes everything — separate keys per tool is the cheap insurance."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "openai-system-prompt-best-practices-2026",
+  "title": "OpenAI System Prompt Best Practices 2026: The Definitive Playbook",
+  "metaTitle": "OpenAI System Prompt Best Practices 2026 (Playbook)",
+  "description": "Write system prompts that actually hold: role framing, constraints that don't drift, structured outputs, and how to version system prompts like production code.",
+  "publishedAt": "2026-08-14",
+  "category": "Prompt engineering",
+  "tags": [
+    "system prompts",
+    "OpenAI",
+    "prompt best practices"
+  ],
+  "primaryKeyword": "OpenAI system prompt best practices",
+  "secondaryKeywords": [
+    "system prompt engineering",
+    "system prompt examples",
+    "GPT system message guide"
+  ],
+  "readingTime": "6 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "layered-ai-prompts-system-context-task",
+    "prompt-engineering-best-practices-teams-2026",
+    "prompt-version-control-timeline-2026",
+    "prompt-diffing-track-changes"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "The system prompt is the only part of a GPT call that runs on every single request — so its mistakes are the most expensive mistakes you can make. This playbook collects what holds up in 2026: role framing that survives, constraints that don't drift, structured output that parses, and the versioning discipline that keeps a system prompt from rotting."
+    },
+    {
+      "type": "h2",
+      "id": "role-and-goals-first",
+      "text": "Role and goals first"
+    },
+    {
+      "type": "p",
+      "text": "Open the system prompt with who the model is and what it is trying to achieve, in two sentences max. Long preamble competes with the task for attention; a crisp role statement sets the frame for everything after it. The [layered prompt guide](/blog/layered-ai-prompts-system-context-task) covers why role comes before context before task."
+    },
+    {
+      "type": "h2",
+      "id": "write-constraints-as-rules",
+      "text": "Write constraints as rules, not vibes"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "'Avoid jargon' becomes 'Define every acronym the first time it appears.'",
+        "'Be concise' becomes 'Maximum 120 words, no preamble.'",
+        "'Never invent data' becomes 'When you don't know, say: I don't have that information.'",
+        "Prefer negative-space rules: what to do when uncertain beats more instructions."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "Constraint drift is the silent killer: rules that hold on run one and fade by run fifty. Version your system prompt and diff it against output quality weekly — the [prompt timeline](/blog/prompt-timeline-best-practices) pattern exists for exactly this."
+    },
+    {
+      "type": "h2",
+      "id": "structured-output",
+      "text": "Structured output beats prose requests"
+    },
+    {
+      "type": "p",
+      "text": "For anything programmatic, ask for JSON with an explicit schema and fall back to the platform's structured-output mode when available. Describe fields, types, and constraints in the system prompt; keep the current request minimal. This is the single biggest reliability win in API work."
+    },
+    {
+      "type": "h2",
+      "id": "examples-earn-their-place",
+      "text": "Examples earn their place"
+    },
+    {
+      "type": "p",
+      "text": "Few-shot examples help most in ambiguous tasks and cost tokens every call. Rules of thumb: three examples max, real ones from real outputs, and delete any example that does not demonstrably improve quality. Keep the heavy examples in the message — not the system prompt you pay for on every request."
+    },
+    {
+      "type": "h2",
+      "id": "version-and-test-like-code",
+      "text": "Version and test like production code"
+    },
+    {
+      "type": "p",
+      "text": "A system prompt is code — it should be versioned, reviewed, and regression-tested. Compare new versions against old ones on a fixed set of inputs, and keep the losing versions for rollback. Teams that treat system prompts as throwaway text pay the same tax twice: quality drift and surprise regressions."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is the best length for a system prompt?",
+          "a": "As short as the rules allow. Everything in the system prompt is re-billed on every call — trim hard and version what you cut."
+        },
+        {
+          "q": "Do system prompts work the same across models?",
+          "a": "No. Role framing is portable; specific constraints often need per-model tuning. Test across models before you standardize."
+        },
+        {
+          "q": "How do I stop the model ignoring system rules?",
+          "a": "Rewrite vague rules as explicit instructions, add a structured output schema, and regression-test versions to catch drift early."
+        },
+        {
+          "q": "Where should examples live — system or message?",
+          "a": "Keep the system prompt lean; put disposable examples in the request. Only pay for examples that demonstrably improve output."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "llm-vergleich-2026",
+  "title": "LLM Vergleich 2026: GPT-5, Claude, Gemini und DeepSeek im Direktvergleich",
+  "metaTitle": "LLM Vergleich 2026: GPT-5 vs Claude vs Gemini vs DeepSeek (Deutsch)",
+  "description": "Der LLM Vergleich 2026 auf Deutsch: Qualität, Kosten, Latenz und Kontextfenster von GPT-5, Claude, Gemini und DeepSeek — inklusive Side-by-Side-Test-Workflow.",
+  "publishedAt": "2026-08-15",
+  "category": "Model comparison",
+  "tags": [
+    "LLM Vergleich",
+    "model comparison",
+    "German guide"
+  ],
+  "primaryKeyword": "LLM Vergleich 2026",
+  "secondaryKeywords": [
+    "GPT vs Claude vs Gemini Deutsch",
+    "beste LLMs 2026",
+    "DeepSeek Vergleich"
+  ],
+  "readingTime": "6 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "gpt-vs-claude-vs-gemini-vs-deepseek-2026",
+    "how-to-compare-llm-outputs-side-by-side",
+    "model-routing-latency-cost-quality",
+    "best-model-for-coding-2026"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "GPT-5, Claude, Gemini und DeepSeek — vier Modelle, vier Preislisten, vier Stärken. Der LLM Vergleich 2026 hilft dir, das richtige Modell für deine Aufgabe zu finden: wo Qualität zählt, wo es günstig sein muss und wo Latenz entscheidet."
+    },
+    {
+      "type": "h2",
+      "id": "qualitaet-und-einsatz",
+      "text": "Qualität: welches Modell für welche Aufgabe"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "GPT-5: der Allrounder — stark bei allgemeinen Aufgaben, Tool-Nutzung und strukturiertem Output.",
+        "Claude: die beste Wahl für lange Texte, Code-Reviews und komplexe System-Prompts.",
+        "Gemini: die schnellste Integration mit dem Google-Ökosystem und das größte Kontextfenster.",
+        "DeepSeek: erstaunlich viel Qualität pro Dollar — ideal für Budget-Projekte."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "kosten-im-vergleich",
+      "text": "Kosten: wo das Geld bleibt"
+    },
+    {
+      "type": "p",
+      "text": "Die Preisabstände zwischen Frontier- und Flash-Modellen sind in 2026 größer als je zuvor. Wer für jeden Request das teuerste Modell nutzt, zahlt das Zehnfache für denselben Job. Routing hilft: günstige Modelle für Routinetasks, Frontier-Modelle nur dort, wo Qualität den Preis trägt. Details dazu im Artikel über [Cost-&-Quality-Routing](/blog/model-routing-latency-cost-quality)."
+    },
+    {
+      "type": "h2",
+      "id": "latenz-und-kontext",
+      "text": "Latenz und Kontextfenster"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Interaktive Assistenten: Gemini und DeepSeek liefern die schnellsten Antwortzeiten im Alltagstest.",
+        "Große Dokumente: Gemini führt beim Kontextfenster, gefolgt von Claude.",
+        "Code-Repos: Claude bleibt der Favorit für große Codebase-Überblicke."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "Der häufigste Fehler im LLM Vergleich 2026: Testen mit verschiedenen Prompts. Vergleichbar ist nur, was denselben Prompt und dieselben Kriterien nutzt — sonst vergleichst du Prompt-Stile, nicht Modelle."
+    },
+    {
+      "type": "h2",
+      "id": "side-by-side-workflow",
+      "text": "Der Side-by-Side-Workflow"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Einen Prompt festlegen — exakt identisch für alle vier Modelle.",
+        "Kriterien definieren: Qualität, Kosten, Latenz, Kontextverbrauch.",
+        "Ausgaben vergleichen und Gewinner für Qualität, Preis oder Geschwindigkeit markieren.",
+        "Die Gewinnerversion als Prompt-Version speichern, inklusive Modell und Kosten.",
+        "Bei Modell-Updates neu testen — Frontier-Modelle ändern sich alle paar Monate."
+      ]
+    },
+    {
+      "type": "p",
+      "text": "Mit dem [Side-by-Side-Compare](/blog/how-to-compare-llm-outputs-side-by-side) von LayerFlow läuft dieser Workflow direkt im Workspace: alle Modelle, ein Prompt, Kosten und Latenz im Blick. Der englische [2026-Vergleichsartikel](/blog/gpt-vs-claude-vs-gemini-vs-deepseek-2026) bleibt die ausführliche Version dieses Themas."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "Welches ist das beste LLM 2026?",
+          "a": "Es gibt kein universell bestes Modell. GPT-5 ist der Allrounder, Claude die Wahl für Code und lange Texte, Gemini für Integrationen und Kontextfenster, DeepSeek fürs Budget."
+        },
+        {
+          "q": "Was kostet ein LLM-Vergleich pro Monat?",
+          "a": "Mit Routing und Budget-Limits kannst du Tests für wenige Dollar laufen lassen. LayerFlow blockt automatisch bei deinem Monatslimit."
+        },
+        {
+          "q": "Welches Modell ist für Coding am besten?",
+          "a": "Claude führt bei Code-Reviews und großen Codebasen; GPT-5 ist stark bei Tool-Nutzung. Am besten testest du beide auf deiner eigenen Codebase — mit dem Side-by-Side-Compare."
+        },
+        {
+          "q": "Ist DeepSeek so gut wie GPT?",
+          "a": "Bei vielen Aufgaben erstaunlich nah — bei einem Bruchteil der Kosten. Für Qualitäts-Kernaufgaben bleibt der Frontier-Modell-Test Pflicht."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "prompt-regression-testing-guide",
+  "title": "Prompt Regression Testing: Lock in Quality Before Every Model Update",
+  "metaTitle": "Prompt Regression Testing Guide: Test Prompts Like Code (2026)",
+  "description": "Model updates silently change your prompt quality. Learn prompt regression testing — a fixed evaluation set, side-by-side comparisons, and quality gates — so nothing regresses.",
+  "publishedAt": "2026-08-16",
+  "category": "Prompt engineering",
+  "tags": [
+    "prompt testing",
+    "regression testing",
+    "prompt evaluation"
+  ],
+  "primaryKeyword": "prompt regression testing",
+  "secondaryKeywords": [
+    "prompt evaluation",
+    "test prompts like code",
+    "AI regression testing"
+  ],
+  "readingTime": "6 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "how-to-compare-llm-outputs-side-by-side",
+    "openai-system-prompt-best-practices-2026",
+    "prompt-diffing-track-changes",
+    "langsmith-alternatives-prompt-tooling",
+    "prompt-management-vs-observability"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "The model you shipped against is not the model you will run next month. Providers release updates constantly, and a prompt that was excellent in July can silently regress in August — same prompt, worse output, no error message. Prompt regression testing is the discipline that catches this before your users do: a fixed evaluation set, repeated runs, and a gate that blocks changes until quality holds."
+    },
+    {
+      "type": "h2",
+      "id": "treat-prompts-like-code",
+      "text": "Treat prompts like code"
+    },
+    {
+      "type": "p",
+      "text": "You would not ship a function without tests. Prompts are functions with nondeterministic output — which makes testing more important, not less. The three parts of prompt regression testing: a fixed evaluation set, scoring criteria, and versioned baselines. The versioning side is covered in the [prompt version control guide](/blog/prompt-version-control-timeline-2026); here is the testing side."
+    },
+    {
+      "type": "h2",
+      "id": "build-the-eval-set",
+      "text": "Build the evaluation set"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Ten to thirty inputs that represent real, production-shaped tasks — not toy examples.",
+        "Include edge cases: ambiguous asks, long context, empty-ish inputs, refusal scenarios.",
+        "Freeze the set. The point of regression testing is a stable baseline, so the set changes deliberately, not daily.",
+        "Attach a golden output or a rubric to each input so scoring is reproducible."
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "score-then-gate",
+      "text": "Score, then gate"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Run the current prompt version against the full set and record outputs and costs.",
+        "Score each output against the rubric — model grading or human grading, same rubric.",
+        "Store the run as the baseline with the model version pinned.",
+        "On any change (prompt edit or provider update), rerun and diff against the baseline.",
+        "Block promotion until the score holds or the regression is explained and intended."
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "The trap to avoid: running your eval set once after a change. Model outputs are noisy — run each configuration two or three times and compare distributions, not single samples."
+    },
+    {
+      "type": "h2",
+      "id": "catching-model-drift",
+      "text": "Catching model drift specifically"
+    },
+    {
+      "type": "p",
+      "text": "When providers update models, you cannot diff your own code — the change is on their side. The fix is the same eval set on a schedule: a monthly 'model check' run on your stable prompts. Side-by-side comparison tooling makes this cheap: [compare outputs](/blog/how-to-compare-llm-outputs-side-by-side) across old and new model versions on the same inputs."
+    },
+    {
+      "type": "h2",
+      "id": "a-lightweight-way-to-start",
+      "text": "A lightweight way to start"
+    },
+    {
+      "type": "p",
+      "text": "Start with ten inputs and one rubric on your three most important prompts. That is an hour of setup and a quality guarantee on the highest-leverage surface of your AI work. Scale from there — most teams never need more than a spreadsheet and a compare tool."
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "What is prompt regression testing?",
+          "a": "Running a fixed set of inputs against a prompt repeatedly to catch quality drops — from prompt edits or model updates — using a stable baseline and scoring rubric."
+        },
+        {
+          "q": "How often should I test my prompts?",
+          "a": "After every prompt edit, after every provider model update, and on a monthly cadence as a drift check."
+        },
+        {
+          "q": "Do I need special tooling?",
+          "a": "A spreadsheet plus side-by-side compare works for most teams. Dedicated eval tools add value at scale, not on day one."
+        },
+        {
+          "q": "Can one model version be compared with another?",
+          "a": "Yes, with the same prompt and eval set on both versions — which is exactly what a side-by-side compare of LLM outputs is for."
+        }
+      ]
+    }
+  ]
+},
+{
+  "slug": "50-winning-prompts-2026",
+  "title": "50 Winning AI Prompts: The Mega Library That Saves Hours Every Week",
+  "metaTitle": "50 Winning AI Prompts: The Mega Library (2026)",
+  "description": "50 tested AI prompts for writing, coding, research, and planning — each with the model it was tuned on. Copy the winners, adapt the rest, and stop reinventing prompts.",
+  "publishedAt": "2026-08-17",
+  "category": "Use cases",
+  "tags": [
+    "prompt library",
+    "prompt examples",
+    "winning prompts"
+  ],
+  "primaryKeyword": "50 winning AI prompts",
+  "secondaryKeywords": [
+    "best AI prompts 2026",
+    "prompt examples",
+    "copy-paste prompts"
+  ],
+  "readingTime": "8 min read",
+  "author": "LayerFlow Team",
+  "relatedSlugs": [
+    "building-personal-prompt-library",
+    "ai-prompt-directory-curated-libraries",
+    "layered-ai-prompts-system-context-task",
+    "best-ai-workspace-tools-2026",
+    "prompt-engineering-best-practices-teams-2026"
+  ],
+  "blocks": [
+    {
+      "type": "p",
+      "text": "Fifty proven prompts, organized by job: writing, coding, research, planning, and coaching. Each one is deliberately layered — role, context, task — so you can adapt it in a minute. Copy the winners, tune the parameters, and save the result into your own prompt library. These are the hours saved: zero reinvention, every week."
+    },
+    {
+      "type": "p",
+      "text": "Every prompt below follows the [layered prompt method](/blog/layered-ai-prompts-system-context-task). Test them how you like — here is how to [compare outputs](/blog/how-to-compare-llm-outputs-side-by-side) — then keep the winners permanently in a [prompt library](/blog/building-personal-prompt-library)."
+    },
+    {
+      "type": "h2",
+      "id": "writing-prompts-1-10",
+      "text": "Writing (1-10)"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Rewrite for clarity: 'You are a senior editor. Rewrite this text to be shorter and more direct, keeping all facts. Keep the tone.'",
+        "Summarize for an exec: 'You are a chief of staff. Summarize this doc in 5 bullet points, one line each, for a busy executive.'",
+        "Repurpose a blog as a newsletter: 'You are a content strategist. Turn this blog into a 300-word newsletter with a subject line.'",
+        "Strict constraints: 'You are a copywriter. Write 3 subject lines, max 45 characters each, no emojis, no questions.'",
+        "Audience-aware rewrite: 'You are a technical writer. Rewrite this for engineers who hate jargon. Plain English, short paragraphs.'",
+        "Slug and title generator: 'You are an SEO analyst. Give 5 title options and a URL slug for this article. Match the existing style.'",
+        "Tone shift: 'You are an editor. Rewrite this in a friendly, not hype tone: everyday words, no exclamation marks.'",
+        "Google doc format: 'You are a document writer. Turn these notes into a Google-doc-ready memo with headings and bullet lists.'",
+        "Cold email: 'You are a growth associate. Write a 90-word cold email to a CTO about a tool that saves API token spend.'",
+        "Frequently asked: 'You are a support lead. Turn this changelog into 5 FAQ entries customers will actually ask.'"
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "coding-prompts-11-20",
+      "text": "Coding (11-20)"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Code review: 'You are a staff engineer. Review this diff for bugs, performance, and readability. No style nitpicks.'",
+        "Explain unfamiliar code: 'You are a senior engineer. Explain this function to a junior dev: what it does, why, and what could break.'",
+        "Refactor for readability: 'You are a refactoring specialist. Simplify this function without changing behavior. Show a before/after.'",
+        "Write tests: 'You are a test engineer. Write unit tests for this module, covering the edge cases in this list.'",
+        "Debug with context: 'You are a debugging expert. Here is the error, the input, and the file. Find the root cause, not the workaround.'",
+        "Add Types: 'You are a TypeScript specialist. Add proper types to this file and find two places where typing prevents a bug.'",
+        "SQL to ORM: 'You are a backend engineer. Convert this SQL query to an ORM query and explain the trade-off in one line.'",
+        "Performance: 'You are a performance engineer. This endpoint is slow. Profile the likely causes and give a ranked fix list.'",
+        "Explain a stack trace: 'You are a debugger. Translate this stack trace into plain English and the most likely fix.'",
+        "Architecture sketch: 'You are a solutions architect. Sketch the data flow for this feature in 8 steps, no code.'"
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "research-prompts-21-30",
+      "text": "Research (21-30)"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Gap analysis: 'You are an analyst. Compare these two documents and list only the differences that matter to decisions.'",
+        "Competitive scan: 'You are a market researcher. List 5 competitor capabilities on this feature and how each of ours compares.'",
+        "Unknown marking: 'You are a researcher. Answer this question and explicitly mark anything you are not sure about.'",
+        "SWOT: 'You are a strategy consultant. Build a SWOT for this launch, max 4 items per quadrant.'",
+        "Trade-off matrix: 'You are an analyst. Build a table comparing these 4 options across cost, speed, quality, and risk.'",
+        "Sources wanted: 'You are a research assistant. Summarize this topic and list the 3 most authoritative sources to verify.'",
+        "Interview prep: 'You are an interviewer coach. Give 10 questions that reveal how a candidate actually shipped things.'",
+        "Sales enablement: 'You are a solutions consultant. Turn this product spec into 3 customer stories with quoted outcomes.'",
+        "Requirements gleaning: 'You are a product manager. Extract explicit and implicit requirements from this user note.'",
+        "Decision memo: 'You are a chief of staff. Write a one-page decision memo: context, options, recommendation, risks.'"
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "planning-prompts-31-40",
+      "text": "Planning (31-40)"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Project kickoff: 'You are a project lead. Break this goal into a 4-week plan with a deliverable per week and a success metric.'",
+        "Risks: 'You are a risk manager. List 8 risks for this plan, ranked by likelihood and impact, each with a mitigation.'",
+        "Launch checklist: 'You are a launch operator. Build a pre-launch checklist of 20 items, ordered by dependency.'",
+        "Meeting agenda: 'You are a facilitator. Draft a 30-minute agenda for a decision meeting with one clear outcome.'",
+        "Backlog triage: 'You are a product owner. Rank these 12 items by value-effort and give the top 3 to start.'",
+        "Roadmap draft: 'You are a PM. Draft a 3-quarter roadmap from these goals, marking what could slip.'",
+        "Retro: 'You are a facilitator. Run a retro on this release: what worked, what didn't, one action per finding.'",
+        "Estimation: 'You are a planner. Estimate this feature in t-shirt sizes and flag the two least-certain tasks.'",
+        "Content calendar: 'You are an editorial planner. Turn these 12 topics into a monthly calendar with format and angle.'",
+        "Onboarding plan: 'You are an enablement lead. Design a 7-day onboarding plan for a new hire on this team.'"
+      ]
+    },
+    {
+      "type": "h2",
+      "id": "coaching-prompts-41-50",
+      "text": "Coaching (41-50)"
+    },
+    {
+      "type": "ul",
+      "items": [
+        "Second opinion: 'You are a neutral coach. I made this decision. Push back on it: what am I not seeing?'",
+        "Trade-off reasoning: 'You are a decision coach. Walk me through choosing between A and B using expected value, not gut feel.'",
+        "Skill ladder: 'You are a growth coach. Map the steps from where I am to senior-level on this skill, with a check at each step.'",
+        "Bias check: 'You are a critical reviewer. Find three assumptions in my reasoning that could be wrong.'",
+        "Goal breakdown: 'You are an execution coach. Break this annual goal into weekly actions with a review cue.'",
+        "Feedback draft: 'You are a comms coach. Draft direct, kind feedback for a teammate on this issue.'",
+        "Negotiation prep: 'You are a negotiation coach. Prepare me for this conversation: my leverage, their leverage, and a fallback.'",
+        "Delegation: 'You are a management coach. Suggest 5 tasks I should delegate this week and how to hand them off.'",
+        "Productivity audit: 'You are a productivity coach. Review my week list and find the top 3 time leaks.'",
+        "Career narrative: 'You are a career coach. Turn my bullet points into a 2-minute story that shows impact, not activity.'"
+      ]
+    },
+    {
+      "type": "callout",
+      "text": "The one rule that makes these 50 work: never use a prompt as-is forever. Test it, tune the parameters, and archive the version that wins. Save the winners in LayerFlow and they become your permanent, searchable prompt library."
+    },
+    {
+      "type": "h2",
+      "id": "how-to-build-your-own-mega-library",
+      "text": "How to build your own mega library"
+    },
+    {
+      "type": "ol",
+      "items": [
+        "Keep 50 max — a library you actually use beats a collection you scroll.",
+        "Organize by domain (writing, coding, research) with tags for model and failure mode.",
+        "Attach cost and output evidence to each prompt so you know it won.",
+        "Version every improvement so you never lose a winning rewrite.",
+        "Review quarterly and archive anything unused for 90 days."
+      ]
+    },
+    {
+      "type": "faq",
+      "items": [
+        {
+          "q": "Are these prompts free to use?",
+          "a": "Yes — copy any of them. What you pay for model runs depends on the provider and your key; LayerFlow helps you budget and compare that spend."
+        },
+        {
+          "q": "Do these prompts work on ChatGPT?",
+          "a": "Yes. Everything is layered for portability across GPT, Claude, Gemini, and DeepSeek. Tune the task layer per model."
+        },
+        {
+          "q": "Should I memorize the 50 prompts?",
+          "a": "Never. Save the winners into a library and search them when needed — that is what a prompt manager is for."
+        },
+        {
+          "q": "How do I know a prompt 'won'?",
+          "a": "By comparing outputs on the same prompt across models and scoring against your own rubric. Evidence beats vibes — see [prompt regression testing](/blog/prompt-regression-testing-guide)."
+        }
+      ]
+    }
+  ]
+},
 ] satisfies BlogPost[];
 
 export default posts;

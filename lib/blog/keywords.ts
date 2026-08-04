@@ -106,6 +106,29 @@ export const keywordClusters = {
     "Helicone alternatives",
     "best LLM gateway for individuals",
   ],
+  /** Wave 3 — Search Console top queries (Aug 2026) */
+  wave3: [
+    "AI prompt organizer",
+    "organize AI prompts",
+    "layered AI prompts",
+    "system context task prompts",
+    "AI API token management",
+    "LLM token budget",
+    "software private key workflows",
+    "BYOK security",
+    "AI prompt directory",
+    "curated prompt libraries",
+    "BYOK in Windsurf",
+    "bring your own key AI editor",
+    "OpenAI system prompt best practices",
+    "system prompt engineering",
+    "LLM Vergleich 2026",
+    "beste LLMs 2026",
+    "prompt regression testing",
+    "prompt evaluation",
+    "50 winning AI prompts",
+    "best AI prompts 2026",
+  ],
 } as const;
 
 export const allKeywords = Object.values(keywordClusters).flat();

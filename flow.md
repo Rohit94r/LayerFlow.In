@@ -244,6 +244,7 @@ live `fetch` without touching page code — **signatures never change**.
 | `docs/architecture.md` | Dashboard architecture & conventions (route groups, layers) |
 | `docs/workflow.md` | The product engineering workflow (end-to-end plan) |
 | `docs/tech-stack.md` | Full target technology stack (web + terminal + agents + infra) |
+| `docs/infor.md` | Product overview — browser + terminal surfaces, `lf`/research agent direction, ideas |
 | `docs/blog-publish-schedule.md` | Blog auto-publish calendar |
 
 ## 9. Rules for new contributors

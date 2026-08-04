@@ -31,6 +31,17 @@ export const publishOrder = [
   "best-model-for-coding-2026", // Blog 36 best AI models 2026
   "prompt-engineering-best-practices-teams-2026", // Blog 31 prompt engineering 2026
   "token-cost-optimization-guide", // Blog 20 reduce OpenAI bill
+  // Wave 3 — Search Console top queries (Aug 2026): new posts, 1/day from day 10
+  "ai-prompt-organizer-tools-2026", // "ai prompt organizer"
+  "layered-ai-prompts-system-context-task", // "layered ai prompts"
+  "ai-api-token-management-guide", // "ai api token management"
+  "private-key-workflows-software-teams", // "software private key workflows"
+  "ai-prompt-directory-curated-libraries", // "ai prompt directory"
+  "byok-in-windsurf-guide", // "what is byok in windsurf"
+  "openai-system-prompt-best-practices-2026", // "openai system prompt best practices 2026"
+  "llm-vergleich-2026", // "llm vergleich 2026" (German)
+  "prompt-regression-testing-guide", // "promptfoo 3x'ed engineering team" / prompt testing
+  "50-winning-prompts-2026", // "winning prompts" mega library
   // Remaining corpus — SEO affinity order, 1/day
   "from-chatgpt-history-to-workspace", // scattered prompts / ChatGPT history
   "domain-based-prompt-organization", // developer prompt management
