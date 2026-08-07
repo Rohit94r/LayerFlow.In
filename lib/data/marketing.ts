@@ -84,7 +84,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Full-stack developer",
     initials: "AR",
     color: "#f59e0b",
-    photo: "/images/ambassadors/Alfonso Roa Redondo .png",
+    photo: "/images/doodles/groovy.svg",
     highlights: ["rebuilt everything in seconds"],
   },
   {
@@ -94,7 +94,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Frontend engineer",
     initials: "HA",
     color: "#44edbc",
-    photo: "/images/ambassadors/Hadil Affes.jpg",
+    photo: "/images/doodles/selfie.svg",
     highlights: ["without losing any project context"],
   },
   {
@@ -104,7 +104,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Indie hacker",
     initials: "AF",
     color: "#8b7cf8",
-    photo: "/images/ambassadors/Alvin Rindra Fazrie.jpg",
+    photo: "/images/doodles/reading-side.svg",
     highlights: ["recommended the cheapest model"],
   },
   {
@@ -114,7 +114,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "AI tinkerer",
     initials: "IS",
     color: "#f472b6",
-    photo: "/images/ambassadors/Imen Selmi.jpg",
+    photo: "/images/doodles/meditating.svg",
     highlights: ["stopped storing prompts everywhere"],
   },
   {
@@ -124,7 +124,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Founder",
     initials: "AK",
     color: "#38bdf8",
-    photo: "/images/ambassadors/Aman Kumar.png",
+    photo: "/images/doodles/sitting-reading.svg",
     highlights: ["keeps the thread intact"],
   },
   {
@@ -134,7 +134,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Freelance developer",
     initials: "HG",
     color: "#a3e635",
-    photo: "/images/ambassadors/Hamza usman ghani.jpeg",
+    photo: "/images/doodles/coffee.svg",
     highlights: ["zero re-explaining"],
   },
 ];

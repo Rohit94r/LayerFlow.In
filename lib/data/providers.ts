@@ -1,4 +1,4 @@
-import type { AiTool, ModelInfo, ProviderKey, ModelClass } from "@/lib/types";
+import type { AiTool, ModelInfo, ModelClass } from "@/lib/types";
 
 // ── AI tool brand metadata ───────────────────────────────────
 
@@ -45,6 +45,12 @@ export const AI_TOOLS: Record<AiTool, AiToolMeta> = {
     label: "Groq",
     color: "#f55036",
     brand: "Groq",
+  },
+  grok: {
+    id: "grok",
+    label: "xAI (Grok)",
+    color: "#26282b",
+    brand: "Grok",
   },
   openrouter: {
     id: "openrouter",
@@ -186,13 +192,37 @@ export const MODELS: ModelInfo[] = [
     supportsByok: true,
   },
   {
-    id: "groq-llama",
-    provider: "Groq",
-    name: "Llama 4 Maverick",
+    id: "grok-3",
+    provider: "xAI",
+    name: "Grok 3",
+    class: fl,
+    quality: 93,
+    costIn: 3.0,
+    costOut: 15.0,
+    speed: 5,
+    bestFor: "Fast reasoning, coding, real-time answers",
+    supportsByok: true,
+  },
+  {
+    id: "grok-3-mini",
+    provider: "xAI",
+    name: "Grok 3 mini",
     class: cl,
-    quality: 79,
+    quality: 86,
     costIn: 0.3,
-    costOut: 0.6,
+    costOut: 0.5,
+    speed: 8,
+    bestFor: "Cheap fast reasoning for everyday tasks",
+    supportsByok: true,
+  },
+  {
+    id: "llama-3.3-70b-versatile",
+    provider: "Groq",
+    name: "Llama 3.3 70B (Groq)",
+    class: cl,
+    quality: 82,
+    costIn: 0.59,
+    costOut: 0.79,
     speed: 10,
     bestFor: "Speed-critical interactive tasks",
     supportsByok: true,
@@ -201,17 +231,30 @@ export const MODELS: ModelInfo[] = [
 
 export const MODEL_BY_ID = Object.fromEntries(MODELS.map((m) => [m.id, m]));
 
-// ── BYOK vault (mock) ────────────────────────────────────────
+/** Human labels for backend provider slugs shown in Rescue reports / Cost. */
+export const PROVIDER_LABELS: Record<string, string> = {
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  google: "Google Gemini",
+  deepseek: "DeepSeek",
+  groq: "Groq",
+  xai: "xAI (Grok)",
+  kimi: "Kimi (Moonshot)",
+  openrouter: "OpenRouter",
+};
 
-export const PROVIDER_KEYS: ProviderKey[] = [
-  { provider: "Anthropic", label: "Anthropic API", status: "connected", addedAt: "Jul 12, 2026", lastUsed: "2h ago" },
-  { provider: "OpenAI", label: "OpenAI API", status: "connected", addedAt: "Jun 30, 2026", lastUsed: "1d ago" },
-  { provider: "Google", label: "Gemini API", status: "connected", addedAt: "Jul 2, 2026", lastUsed: "4h ago" },
-  { provider: "DeepSeek", label: "DeepSeek API", status: "connected", addedAt: "Jul 20, 2026", lastUsed: "6d ago" },
-  { provider: "Moonshot", label: "Kimi API", status: "needs_attention", addedAt: "Jul 8, 2026", lastUsed: "3w ago" },
-  { provider: "Groq", label: "Groq API", status: "not_added" },
-  { provider: "OpenRouter", label: "OpenRouter", status: "not_added" },
-];
+/** Model display names for the backend model catalog (model-registry). */
+export const RESCUE_MODEL_NAMES: Record<string, string> = {
+  "gpt-4o": "GPT-4o",
+  "gpt-4o-mini": "GPT-4o mini",
+  "claude-sonnet-4": "Claude Sonnet 4",
+  "claude-3-5-haiku": "Claude 3.5 Haiku",
+  "gemini-2.5-flash": "Gemini 2.5 Flash",
+  "deepseek-chat": "DeepSeek V3 (chat)",
+  "llama-3.3-70b-versatile": "Llama 3.3 70B (Groq)",
+  "grok-3-mini": "Grok 3 mini",
+  "kimi-k2": "Kimi K2",
+};
 
 // ── Helpers ──────────────────────────────────────────────────
 

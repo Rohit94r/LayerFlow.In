@@ -10,6 +10,7 @@ export type AiTool =
   | "deepseek"
   | "kimi"
   | "groq"
+  | "grok"
   | "openrouter"
   | "perplexity"
   | "generic";
@@ -180,6 +181,7 @@ export interface ModelInfo {
 }
 
 export interface ProviderKey {
+  id: string;
   provider: string;
   label: string;
   status: "connected" | "needs_attention" | "not_added";
