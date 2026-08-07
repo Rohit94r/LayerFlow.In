@@ -17,9 +17,9 @@ import {
   workspaceSettings,
 } from "../../db/schema/intelligence";
 import { promptVersions } from "../../db/schema/prompts";
-import { analyzePrompt } from "../../intelligence/analyze";
-import { recommend } from "../../intelligence/recommend";
-import { routeModel } from "../../intelligence/route";
+import { analyzePrompt } from "../../services/intelligence/analyze";
+import { recommend } from "../../services/intelligence/recommend";
+import { routeModel } from "../../services/intelligence/route";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
 import type { AppEnv } from "../../types";

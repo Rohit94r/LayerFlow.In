@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { speechRequestSchema, type AudioStatusResponse } from "@layerflow/contracts";
-import { releaseBudget, reserveBudget, settleBudget } from "../../budgets/enforce";
+import { releaseBudget, reserveBudget, settleBudget } from "../../services/budgets/enforce";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
 import { rateLimit } from "../../middleware/rate-limit";

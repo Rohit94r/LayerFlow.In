@@ -51,6 +51,20 @@ projectsRouter.get("/", async (c) => {
   return c.json(response);
 });
 
+// GET /api/projects/:id
+projectsRouter.get("/:id", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const id = c.req.param("id");
+
+  const project = await db.query.projects.findFirst({
+    where: (p, { and, eq }) => and(eq(p.id, id), eq(p.workspaceId, workspaceId)),
+  });
+  if (!project) throw new AppError(404, "not_found", "Project not found");
+
+  const response: ProjectResponse = { project: toProjectDto(project) };
+  return c.json(response);
+});
+
 // POST /api/projects
 projectsRouter.post("/", async (c) => {
   const workspaceId = c.get("workspaceId");

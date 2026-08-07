@@ -5,7 +5,7 @@ import { emailEvents } from "../../db/schema/email";
 import { users } from "../../db/schema/auth";
 import { workspaces } from "../../db/schema/tenancy";
 import { logger } from "../../config/logger";
-import { getLiveMonthlySpent, currentPeriod } from "../../budgets/enforce";
+import { getLiveMonthlySpent, currentPeriod } from "../budgets/enforce";
 import { sendEmail } from "./resend";
 import { budgetBlockedEmail, budgetWarningEmail, weeklyDigestEmail } from "./templates";
 
