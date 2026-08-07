@@ -88,7 +88,7 @@ export function PasteView({
             {isPrompt ? "Model to improve for" : "Detected source"}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(["chatgpt", "claude", "gemini", "deepseek", "kimi", "groq"] as AiTool[]).map((t) => (
+            {(["chatgpt", "claude", "gemini", "deepseek", "kimi", "groq", "grok"] as AiTool[]).map((t) => (
               <button
                 key={t}
                 type="button"
@@ -112,7 +112,7 @@ export function PasteView({
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-faint">Continue in</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(["claude", "gemini", "deepseek", "kimi", "groq", "chatgpt"] as AiTool[]).map((t) => (
+            {(["claude", "gemini", "deepseek", "kimi", "groq", "chatgpt", "grok"] as AiTool[]).map((t) => (
               <button
                 key={t}
                 type="button"

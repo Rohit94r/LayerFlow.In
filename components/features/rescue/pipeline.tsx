@@ -13,7 +13,7 @@ const STEPS: { icon: LucideIcon; label: string; detail: string }[] = [
   { icon: CopyCheck, label: "Packing", detail: "assembling Continue Pack" },
 ];
 
-export function RescuePipeline() {
+export function RescuePipeline({ words = 0 }: { words?: number }) {
   return (
     <div className="py-10">
       <div className="mb-8 text-center">
@@ -21,7 +21,11 @@ export function RescuePipeline() {
           <Loader2 className="h-5 w-5 animate-spin text-brand" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-ink">Building your Rescue Report</h2>
-        <p className="mt-1 text-sm text-muted">Compressing 8,150 words into usable context…</p>
+        <p className="mt-1 text-sm text-muted">
+          {words > 0
+            ? `Compressing ${words.toLocaleString()} words into usable context…`
+            : "Cleaning, compressing and packing your context…"}
+        </p>
       </div>
 
       <div className="space-y-2.5">

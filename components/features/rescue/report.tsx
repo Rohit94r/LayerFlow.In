@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Copy,
@@ -14,6 +15,8 @@ import {
   Trash2,
   Layers,
   ArrowLeft,
+  AiChat,
+  Loader2,
 } from "@/components/ui/icons";
 import { Tabs } from "@/components/ui/tabs";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
@@ -22,7 +25,14 @@ import { RadialScore } from "@/components/ui/charts";
 import { ToolChip } from "@/components/ui/tool-logo";
 import { Button } from "@/components/ui/button";
 import { RESCUE_REPORTS } from "@/lib/data/passports";
-import { MODEL_BY_ID, formatMoney, formatTokens } from "@/lib/data/providers";
+import {
+  MODEL_BY_ID,
+  PROVIDER_LABELS,
+  RESCUE_MODEL_NAMES,
+  formatMoney,
+  formatTokens,
+} from "@/lib/data/providers";
+import { chatService } from "@/lib/services/chat";
 import type { RescueReport } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -139,7 +149,7 @@ function CostView({ report }: { report: RescueReport }) {
             )}
           >
             <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-              {MODEL_BY_ID[c.modelId]?.provider} · {c.model}
+              {PROVIDER_LABELS[c.provider] ?? c.provider} · {RESCUE_MODEL_NAMES[c.modelId] ?? c.model}
               {c.recommended ? (
                 <Badge tone="green">recommended</Badge>
               ) : c.modelId === cheapest.modelId ? (
@@ -197,8 +207,28 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
   const [tab, setTab] = useState("summary");
   const [saved, setSaved] = useState(report.saved);
   const [feedback, setFeedback] = useState<RescueReport["feedback"] | null>(report.feedback ?? null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const router = useRouter();
 
   const recommended = MODEL_BY_ID[report.recommendedModelId];
+  const recommendedName = RESCUE_MODEL_NAMES[report.recommendedModelId] ?? recommended?.name ?? report.recommendedModelId;
+
+  async function continueHere() {
+    if (importing) return;
+    setImporting(true);
+    setImportError(null);
+    try {
+      const created = await chatService.create({
+        rescueReportId: report.id,
+        summary: report.summary.length ? report.summary : undefined,
+      });
+      router.push(`/chat/${created.session.id}`);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : "Could not start this conversation.");
+      setImporting(false);
+    }
+  }
 
   return (
     <div>
@@ -237,6 +267,32 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
             Export .md
           </Button>
         </div>
+      </div>
+
+      {/* Continue-here CTA — the wedge between Rescue and Chat */}
+      <div className="mt-5 flex flex-wrap items-center gap-3 rounded-2xl gradient-border p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-emerald-400 text-[#0e1416]">
+          <AiChat className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-ink">
+            Continue this conversation here — in your workspace chat
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted">
+            Starts a live chat pre-loaded with this entire rescue report. Any model, auto-switch when
+            a key runs out.
+          </p>
+        </div>
+        <Button
+          variant="gradient"
+          size="md"
+          onClick={continueHere}
+          disabled={importing}
+          icon={importing ? <Loader2 className="h-4 w-4 animate-spin" /> : <AiChat className="h-4 w-4" />}
+        >
+          {importing ? "Starting…" : "Continue this conversation here"}
+        </Button>
+        {importError ? <p className="w-full text-xs text-rose-400">{importError}</p> : null}
       </div>
 
       <Tabs
@@ -278,13 +334,14 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
                     <Sparkles className="h-3.5 w-3.5" /> Best model suggestion
                   </p>
                   <div className="mt-2 flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-emerald-400 text-sm font-bold text-[#0e1416]">
-                      {recommended.provider.charAt(0)}
+                                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-emerald-400 text-sm font-bold text-[#0e1416]">
+                      {recommendedName.charAt(0).toUpperCase()}
                     </span>
                     <div>
-                      <p className="text-sm font-bold text-ink">{recommended.name}</p>
+                      <p className="text-sm font-bold text-ink">{recommendedName}</p>
                       <p className="text-[11px] text-faint">
-                        {formatMoney(report.costs.find((c) => c.recommended)?.cost ?? 0)} · {recommended.bestFor}
+                        {formatMoney(report.costs.find((c) => c.recommended)?.cost ?? 0)} ·{" "}
+                        {recommended?.bestFor ?? report.recommendedReason}
                       </p>
                     </div>
                   </div>
@@ -370,7 +427,7 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
           <Panel>
             <PanelHeader
               title="Improved prompt"
-              description={`Scored ${report.promptScore}/100 — copy and continue in ${MODEL_BY_ID[report.recommendedModelId].name}`}
+              description={`Scored ${report.promptScore}/100 — copy and continue in ${recommendedName}`}
               action={<CopyButton label="Copy prompt" text={report.improvedPrompt} />}
             />
             <PanelBody>
