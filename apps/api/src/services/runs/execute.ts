@@ -10,8 +10,8 @@ import {
   resolveProviderFromModel,
   type ChatCompletionResult,
   type ProviderAdapter,
-} from "../../providers";
-import { estimateTokens } from "../../intelligence/analyze";
+} from "../ai/providers";
+import { estimateTokens } from "../intelligence/analyze";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../../cache/exact";
 import { budgetRelease, budgetReserve, budgetSettle } from "./budget-hook";
 import { buildRunSavings, prepareRunCall } from "../savings/prepare";

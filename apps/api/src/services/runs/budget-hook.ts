@@ -11,7 +11,7 @@ import {
   releaseBudget,
   reserveBudget,
   settleBudget,
-} from "../../budgets/enforce";
+} from "../budgets/enforce";
 
 export interface BudgetReserveArgs {
   workspaceId: string;

@@ -7,7 +7,7 @@ import {
 import { MODELS } from "@layerflow/model-registry";
 import { Hono } from "hono";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../cache/exact";
-import { releaseBudget, reserveBudget, settleBudget } from "../budgets/enforce";
+import { releaseBudget, reserveBudget, settleBudget } from "../services/budgets/enforce";
 import { db } from "../db/client";
 import { gatewayLogs } from "../db/schema/gateway";
 import { requireApiKey } from "../middleware/api-key-auth";
@@ -16,11 +16,11 @@ import { rateLimit } from "../middleware/rate-limit";
 import {
   loadProviderApiKey,
   resolveProviderFromModel,
-} from "../providers";
+} from "../services/ai/providers";
 import { listConfiguredProviders } from "../services/keys/provider-keys";
 import { buildRunSavings, prepareRunCall } from "../services/savings/prepare";
 import type { AppEnv } from "../types";
-import type { ChatMessage } from "../providers/types";
+import type { ChatMessage } from "../services/ai/providers/types";
 
 export const gatewayRouter = new Hono<AppEnv>();
 
