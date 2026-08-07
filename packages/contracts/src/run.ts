@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { idSchema, microDollarsSchema, timestampSchema } from "./common";
 
-export const runSourceSchema = z.enum(["compare", "playground", "gateway", "session", "replay"]);
+export const runSourceSchema = z.enum(["compare", "playground", "gateway", "session", "replay", "rescue"]);
 export type RunSource = z.infer<typeof runSourceSchema>;
 
 export const runStatusSchema = z.enum(["pending", "running", "succeeded", "failed", "blocked"]);

@@ -17,5 +17,7 @@ export * from "./audio";
 export * from "./search";
 export * from "./memory";
 export * from "./learning";
+export * from "./rescue";
+export * from "./chat";
 export * from "./community";
 export * from "./admin";
