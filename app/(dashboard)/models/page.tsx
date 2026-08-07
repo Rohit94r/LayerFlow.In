@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Cpu,
   KeyRound,
@@ -10,15 +10,32 @@ import {
   Zap,
   Award,
   DollarSign,
+  Trash2,
 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { MODELS, PROVIDER_KEYS, formatMoney } from "@/lib/data/providers";
-import type { ModelClass } from "@/lib/types";
+import { MODELS, formatMoney } from "@/lib/data/providers";
+import { modelService } from "@/lib/services/models";
+import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
+import { recommendResponseSchema } from "@layerflow/contracts";
+import type { ModelClass, ProviderKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const RECOMMEND_TASK = "Summarize and continue a long multi-tool AI chat conversation";
+const MODEL_LABELS: Record<string, string> = {
+  "gpt-4o": "GPT-4o",
+  "gpt-4o-mini": "GPT-4o mini",
+  "claude-sonnet-4": "Claude Sonnet 4",
+  "claude-3-5-haiku": "Claude Haiku 3.5",
+  "deepseek-chat": "DeepSeek Chat",
+  "gemini-2.5-flash": "Gemini 2.5 Flash",
+  "llama-3.3-70b-versatile": "Llama 3.3 70B (Groq)",
+  "grok-3-mini": "Grok 3 mini",
+  "kimi-k2": "Kimi K2",
+};
 
 const CLASS_META: Record<ModelClass, { label: string; cls: string }> = {
   flagship: { label: "Flagship", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
@@ -26,17 +43,116 @@ const CLASS_META: Record<ModelClass, { label: string; cls: string }> = {
   cheap: { label: "Cheap & fast", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
 };
 
-export default function ModelsClient() {
-  const [keys, setKeys] = useState(PROVIDER_KEYS);
+const KNOWN_PROVIDERS: { slug: string; label: string }[] = [
+  { slug: "openai", label: "OpenAI" },
+  { slug: "anthropic", label: "Anthropic" },
+  { slug: "google", label: "Google (Gemini)" },
+  { slug: "deepseek", label: "DeepSeek" },
+  { slug: "groq", label: "Groq" },
+  { slug: "xai", label: "xAI (Grok)" },
+  { slug: "kimi", label: "Kimi (Moonshot)" },
+  { slug: "openrouter", label: "OpenRouter" },
+];
 
-  function toggleKey(provider: string) {
-    setKeys((ks) =>
-      ks.map((k) =>
-        k.provider === provider
-          ? { ...k, status: k.status === "connected" ? "not_added" : "connected" as const }
-          : k,
-      ),
-    );
+export default function ModelsClient() {
+  const [keys, setKeys] = useState<ProviderKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [provider, setProvider] = useState("openai");
+  const [secret, setSecret] = useState("");
+  const [label, setLabel] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [recommendation, setRecommendation] = useState<{
+    recommendedModel: string;
+    reason: string;
+  } | null>(null);
+  const [recError, setRecError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getServerCookieHeader();
+        const res = await apiFetch(
+          "/api/intelligence/recommend",
+          {
+            method: "POST",
+            body: { content: RECOMMEND_TASK, persist: false },
+            ...(headers.Cookie ? { headers } : {}),
+          },
+          recommendResponseSchema,
+        );
+        if (!cancelled) setRecommendation(res.recommendation);
+      } catch {
+        if (!cancelled) setRecError("Recommendation unavailable right now.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const refresh = useCallback(async () => {
+    try {
+      const ks = await modelService.listProviderKeys();
+      setKeys(ks);
+    } catch {
+      setKeys([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const ks = await modelService.listProviderKeys();
+        if (!cancelled) setKeys(ks);
+      } catch {
+        if (!cancelled) setKeys([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const keyFor = (slug: string) => keys.find((k) => k.provider === slug);
+
+  async function saveKey() {
+    if (!secret.trim() || busy) return;
+    setBusy("save");
+    setSaveError(null);
+    try {
+      await modelService.createProviderKey({
+        provider,
+        secret: secret.trim(),
+        label: label.trim() || undefined,
+      });
+      setSecret("");
+      setLabel("");
+      await refresh();
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Could not save the key.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function revoke(id: string, providerSlug: string) {
+    if (busy) return;
+    setBusy(providerSlug);
+    try {
+      await modelService.revokeProviderKey(id);
+      await refresh();
+    } catch {
+      setSaveError("Could not revoke the key.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
@@ -47,50 +163,55 @@ export default function ModelsClient() {
       />
 
       {/* ── Best model suggestion ── */}
-      <Panel className="gradient-border mb-6">
-        <PanelHeader
-          title="Best Model Suggestion"
-          description="For your most common task type: summarization + continuation"
-          action={<Cpu className="h-4 w-4 text-brand" />}
-        />
-        <PanelBody>
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-            <div className="flex flex-wrap items-center gap-4">
-              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-emerald-400 text-lg font-bold text-[#0e1416]">
-                G
-              </span>
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="text-base font-bold text-ink">Gemini 2.5 Flash</p>
-                  <Badge tone="green">
-                    <Award className="h-3 w-3" /> recommended
-                  </Badge>
+      {recommendation ? (
+        <Panel className="gradient-border mb-6">
+          <PanelHeader
+            title="Best Model Suggestion"
+            description="Recommended by your routing rules and workspace settings"
+            action={<Cpu className="h-4 w-4 text-brand" />}
+          />
+          <PanelBody>
+            <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
+              <div className="flex flex-wrap items-center gap-4">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-emerald-400 text-lg font-bold text-[#0e1416]">
+                  {MODEL_LABELS[recommendation.recommendedModel]?.[0] ?? "?"}
+                </span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-ink">
+                      {MODEL_LABELS[recommendation.recommendedModel] ?? recommendation.recommendedModel}
+                    </p>
+                    <Badge tone="green">
+                      <Award className="h-3 w-3" /> recommended
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-muted">
+                    For your most common task type: summarization + continuation
+                  </p>
                 </div>
-                <p className="mt-0.5 text-xs text-muted">
-                  Summaries, extraction, cheap continuations · 86 quality · fast
-                </p>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-center">
+                  <p className="text-sm font-bold text-ink">{recommendation.recommendedModel}</p>
+                  <p className="text-[10px] text-faint">model id</p>
+                </div>
+                <Button size="sm">Use for routing</Button>
               </div>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <p className="text-sm font-bold text-emerald-400">{formatMoney(0.008)}</p>
-                <p className="text-[10px] text-faint">per typical run</p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold text-ink">-87%</p>
-                <p className="text-[10px] text-faint">vs Claude Sonnet</p>
-              </div>
-              <Button size="sm">Use for routing</Button>
-            </div>
-          </div>
-          <p className="mt-4 rounded-xl border border-border bg-surface-2/40 p-3.5 text-xs leading-relaxed text-muted">
-            <strong className="font-semibold text-ink">Why:</strong> your last 20 rescues were
-            summarization and continuation tasks — exactly what Gemini Flash handles cheaply and
-            fast. Claude Sonnet stays the default for design docs and polished writing. Confidence
-            <span className="font-semibold text-ink"> 92%</span>.
-          </p>
-        </PanelBody>
-      </Panel>
+            <p className="mt-4 rounded-xl border border-border bg-surface-2/40 p-3.5 text-xs leading-relaxed text-muted">
+              <strong className="font-semibold text-ink">Why:</strong> {recommendation.reason}
+            </p>
+          </PanelBody>
+        </Panel>
+      ) : recError ? (
+        <Panel className="mb-6">
+          <PanelBody>
+            <p className="flex items-center gap-2 text-xs text-muted">
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-400" /> {recError}
+            </p>
+          </PanelBody>
+        </Panel>
+      ) : null}
 
       {/* ── Model table ── */}
       <Panel className="mb-6">
@@ -145,48 +266,49 @@ export default function ModelsClient() {
       <Panel>
         <PanelHeader
           title="BYOK Vault"
-          description="Bring your own API keys — encrypted, health-checked, and used directly by Cost Check and Continue Packs."
+          description="Bring your own API keys — encrypted with your workspace KEK, and used directly by the rescue pipeline, Cost Check and Continue Packs."
           action={<KeyRound className="h-4 w-4 text-brand-2" />}
         />
         <PanelBody>
           <div className="grid gap-3 sm:grid-cols-2">
-            {keys.map((k) => (
-              <div
-                key={k.provider}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/40 p-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink">{k.label}</p>
-                  <p className="text-[11px] text-faint">
-                    {k.status === "connected" ? `last used ${k.lastUsed}` : k.status === "needs_attention" ? "health check failing" : "not added"}
-                  </p>
+            {KNOWN_PROVIDERS.map((p) => {
+              const key = keyFor(p.slug);
+              const connected = Boolean(key);
+              return (
+                <div
+                  key={p.slug}
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface-2/40 p-4"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-ink">{p.label}</p>
+                    <p className="text-[11px] text-faint">
+                      {connected
+                        ? `connected${key?.lastUsed ? ` · last used ${key.lastUsed}` : ""}`
+                        : "not added"}
+                    </p>
+                  </div>
+                  {connected ? (
+                    <button
+                      type="button"
+                      disabled={busy !== null}
+                      onClick={() => key && revoke(key.id, p.slug)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400 transition-colors hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400"
+                    >
+                      {busy === p.slug ? <Zap className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                      {busy === p.slug ? "…" : "Connected"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setProvider(p.slug)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-semibold text-muted transition-colors hover:border-border-strong hover:text-ink"
+                    >
+                      <Plus className="h-3 w-3" /> Add key
+                    </button>
+                  )}
                 </div>
-                {k.status === "connected" ? (
-                  <button
-                    type="button"
-                    onClick={() => toggleKey(k.provider)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400 transition-colors hover:bg-emerald-500/20"
-                  >
-                    <Check className="h-3 w-3" /> Connected
-                  </button>
-                ) : k.status === "needs_attention" ? (
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-400 transition-colors hover:bg-amber-500/20"
-                  >
-                    <AlertTriangle className="h-3 w-3" /> Needs attention
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => toggleKey(k.provider)}
-                    className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[11px] font-semibold text-muted transition-colors hover:border-border-strong hover:text-ink"
-                  >
-                    <Plus className="h-3 w-3" /> Add key
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-5 rounded-xl border border-dashed border-border p-4">
@@ -194,25 +316,49 @@ export default function ModelsClient() {
               <DollarSign className="h-3.5 w-3.5 text-brand" />
               Add a provider key
             </p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+            <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
               <Field label="Provider">
-                <select className="workspace-input">
-                  <option>OpenRouter</option>
-                  <option>Groq</option>
-                  <option>Local / OpenAI-compatible</option>
+                <select className="workspace-input" value={provider} onChange={(e) => setProvider(e.target.value)}>
+                  {KNOWN_PROVIDERS.map((p) => (
+                    <option key={p.slug} value={p.slug}>
+                      {p.label}
+                    </option>
+                  ))}
                 </select>
               </Field>
               <Field label="API key">
-                <Input type="password" placeholder="sk-…" />
+                <Input
+                  type="password"
+                  value={secret}
+                  onChange={(e) => setSecret(e.target.value)}
+                  placeholder="sk-…"
+                />
+              </Field>
+              <Field label="Label (optional)">
+                <Input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder="e.g. work account"
+                />
               </Field>
               <div className="flex items-end">
-                <Button size="sm">Save key</Button>
+                <Button size="sm" disabled={!secret.trim() || busy !== null} onClick={saveKey}>
+                  {busy === "save" ? <Zap className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  Save key
+                </Button>
               </div>
             </div>
-            <p className="mt-3 text-[11px] text-faint">
-              Keys are encrypted at rest with your workspace&apos;s KEK and never leave your workspace
-              vault. Simulated — no real keys are stored in this build.
-            </p>
+            {saveError ? (
+              <p className="mt-2 flex items-center gap-1.5 text-[11px] text-rose-400">
+                <AlertTriangle className="h-3 w-3" /> {saveError}
+              </p>
+            ) : (
+              <p className="mt-3 text-[11px] text-faint">
+                Keys are encrypted at rest with your workspace&apos;s KEK and never leave your
+                workspace vault. The last 4 characters are stored as a hint only.
+                {loading ? " Loading keys…" : ` ${keys.length} active key${keys.length === 1 ? "" : "s"} in this vault.`}
+              </p>
+            )}
           </div>
         </PanelBody>
       </Panel>

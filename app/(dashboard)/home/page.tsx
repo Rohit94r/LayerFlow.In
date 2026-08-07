@@ -1,20 +1,12 @@
 import Link from "next/link";
-import { LifeBuoy, Library, Plus, TerminalSquare } from "@/components/ui/icons";
+import { LifeBuoy, Sparkles, ArrowRight, Library, DollarSign, History as HistoryIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
-import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+import { Panel, PanelBody } from "@/components/ui/panel";
 import { Row } from "@/components/shared/row";
-import { Section } from "@/components/shared/section";
-import { Reveal } from "@/components/ui/reveal";
-import { ContinuePackRow } from "@/components/features/home/continue-pack-row";
+import { NAV_GROUPS } from "@/lib/config/navigation";
 import { workspaceService } from "@/lib/services/workspace";
 import { passportService } from "@/lib/services/passports";
 import { promptService } from "@/lib/services/prompts";
-import { modelService } from "@/lib/services/models";
-import { AGENTS } from "@/lib/data/code";
-import type { AgentStatus } from "@/lib/data/code";
-import { cn } from "@/lib/utils";
 
 const today = new Date().toLocaleDateString("en-US", {
   weekday: "long",
@@ -22,342 +14,146 @@ const today = new Date().toLocaleDateString("en-US", {
   day: "numeric",
 });
 
-const AGENT_DOT: Record<AgentStatus, string> = {
-  running: "bg-brand",
-  reviewing: "bg-amber-400",
-  done: "bg-brand-2",
-  idle: "bg-surface-2",
-};
-
-function Widget({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Panel>
-      <PanelHeader title={title} action={action} />
-      <PanelBody className="space-y-3.5 pt-2.5">{children}</PanelBody>
-    </Panel>
-  );
-}
-
 export default async function HomePage() {
-  const [projects, timeline, costs, passports, prompts, reports, providerKeys] = await Promise.all([
-    workspaceService.listProjects(),
+  const [timeline, costs, reports, prompts] = await Promise.all([
     workspaceService.listTimeline(),
     workspaceService.getCostAnalytics(),
-    passportService.listPassports(),
-    promptService.listPrompts(),
     passportService.listRescueReports(),
-    modelService.listProviderKeys(),
+    promptService.listPrompts(),
   ]);
 
-  const recentProjects = [...projects]
-    .filter((p) => p.stage !== "done")
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  const recentEvents = [...timeline]
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+    .slice(0, 5);
 
-  const pinnedProject = recentProjects[0];
-  const recentEvents = [...timeline].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  const latestEvent = recentEvents[0];
-
-  const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  const currentPassport = [...passports].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-
-  const recentPrompts = [...prompts].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  const recentPassports = [...passports].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-
-  const connectedProviders = providerKeys.filter((k) => k.status === "connected").length;
-  const spendPct = Math.round((costs.monthlySpend / costs.budgetLimit) * 100);
-  const runningAgents = [...AGENTS].slice(0, 3);
-
-  const quickActions = [
-    { label: "New Continue Pack", description: "Paste a dead chat", href: "/rescue", icon: LifeBuoy },
-    { label: "New prompt", description: "Save or improve one", href: "/prompts", icon: Library },
-    { label: "Open terminal", description: "lf run, agents, models", href: "/code", icon: TerminalSquare },
-    { label: "New project", description: "Start a workspace", href: "/workspace", icon: Plus },
+  const stats = [
+    { label: "Continue Packs", value: String(reports.length), icon: LifeBuoy },
+    { label: "Prompts saved", value: String(prompts.length), icon: Library },
+    { label: "Spent this month", value: `$${costs.monthlySpend.toFixed(2)}`, icon: DollarSign },
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       {/* ── Header ───────────────────────────────────────── */}
-      <Reveal>
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-faint">{today}</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
-              Today&apos;s Workspace
-            </h1>
-            <p className="mt-1.5 text-sm text-muted">Pick up where you left off — everything is here.</p>
-          </div>
-          <Button asChild icon={<LifeBuoy className="h-4 w-4" />}>
-            <Link href="/rescue">New Continue Pack</Link>
-          </Button>
-        </div>
-      </Reveal>
-
-      {/* ── Main + utility column ────────────────────────── */}
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:gap-8">
-        <div className="min-w-0 space-y-6">
-          {/* Continue working */}
-          <Reveal delay={0.05}>
-            <Section title="Continue working" description="Your next moves, ready to go">
-              <div className="space-y-0.5">
-                {pinnedProject ? (
-                  <Row
-                    href={`/workspace/${pinnedProject.id}`}
-                    leading={
-                      <span
-                        className="mt-1 h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: pinnedProject.color }}
-                      />
-                    }
-                    title={pinnedProject.name}
-                    subtitle={pinnedProject.description}
-                    trailing={
-                      <Badge tone={pinnedProject.stage === "active" ? "mint" : "neutral"}>
-                        {pinnedProject.stage}
-                      </Badge>
-                    }
-                  />
-                ) : null}
-                {latestEvent ? (
-                  <Row
-                    href="/history"
-                    leading={<span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand" />}
-                    title={latestEvent.title}
-                    subtitle={latestEvent.description}
-                    trailing={<span className="font-mono text-[11px] text-faint">{latestEvent.meta}</span>}
-                  />
-                ) : null}
-                {latestReport ? (
-                  <ContinuePackRow
-                    title={latestReport.title}
-                    source={`${latestReport.sourceTool} → ${latestReport.sourceModel} · ${latestReport.compressionPercent}% compressed`}
-                    fields={latestReport.continuePack}
-                  />
-                ) : null}
-              </div>
-            </Section>
-          </Reveal>
-
-          {/* Current context */}
-          {currentPassport ? (
-            <Reveal delay={0.1}>
-              <Panel>
-                <PanelHeader
-                  title="Current context"
-                  description="Most recent context passport"
-                  action={
-                    <Button asChild variant="secondary" size="sm">
-                      <Link href={`/passports/${currentPassport.id}`}>Open passport</Link>
-                    </Button>
-                  }
-                />
-                <PanelBody className="space-y-1.5">
-                  <h3 className="text-[15px] font-semibold tracking-tight text-ink">
-                    {currentPassport.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted">
-                    {currentPassport.fields.goal}
-                  </p>
-                  <p className="pt-1 text-[13px] leading-relaxed text-faint">
-                    <span className="font-medium text-brand-2">Next:</span>{" "}
-                    {currentPassport.fields.nextAction}
-                  </p>
-                </PanelBody>
-              </Panel>
-            </Reveal>
-          ) : null}
-
-          {/* Recent sessions */}
-          <Reveal delay={0.15}>
-            <Section
-              title="Recent sessions"
-              description="Every run, one ledger"
-              href="/history"
-              hrefLabel="Full history"
-            >
-              <div className="space-y-0.5">
-                {recentEvents.slice(0, 5).map((evt) => (
-                  <Row
-                    key={evt.id}
-                    href="/history"
-                    leading={
-                      <span
-                        className={cn(
-                          "mt-1 h-2 w-2 shrink-0 rounded-full",
-                          evt.type === "rescue"
-                            ? "bg-brand"
-                            : evt.type === "prompt"
-                              ? "bg-brand-2"
-                              : "bg-white/30",
-                        )}
-                      />
-                    }
-                    title={evt.title}
-                    subtitle={evt.description}
-                    trailing={<span className="font-mono text-[11px] text-faint">{evt.meta}</span>}
-                  />
-                ))}
-              </div>
-            </Section>
-          </Reveal>
-        </div>
-
-        {/* ── Utility column ─────────────────────────────── */}
-        <aside className="min-w-0 space-y-6 xl:sticky xl:top-6">
-          <Reveal delay={0.05}>
-            <Widget title="Quick actions">
-              <div className="space-y-0.5">
-                {quickActions.map((a) => (
-                  <Row
-                    key={a.href}
-                    href={a.href}
-                    leading={
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2">
-                        <a.icon className="h-4 w-4 text-brand" />
-                      </span>
-                    }
-                    title={a.label}
-                    subtitle={a.description}
-                  />
-                ))}
-              </div>
-            </Widget>
-          </Reveal>
-
-          <Reveal delay={0.1}>
-            <Widget title="Running agents" action={`${AGENTS.length} total`}>
-              {runningAgents.map((agent) => (
-                <Row
-                  key={agent.id}
-                  href="/agents"
-                  leading={
-                    <span className={cn("mt-1 h-2 w-2 shrink-0 rounded-full", AGENT_DOT[agent.status])} />
-                  }
-                  title={agent.name}
-                  subtitle={agent.detail}
-                  trailing={<span className="font-mono text-[11px] text-faint">{agent.model}</span>}
-                />
-              ))}
-            </Widget>
-          </Reveal>
-
-          <Reveal delay={0.15}>
-            <Widget title="Upcoming limits">
-              <div>
-                <div className="flex items-baseline justify-between text-xs">
-                  <span className="text-muted">Monthly budget</span>
-                  <span className="font-mono text-faint">
-                    ${costs.monthlySpend.toFixed(2)} / ${costs.budgetLimit.toFixed(0)}
-                  </span>
-                </div>
-                <Progress
-                  value={costs.monthlySpend}
-                  max={costs.budgetLimit}
-                  className="mt-2"
-                  barClassName={spendPct > 80 ? "bg-rose-500" : "bg-brand"}
-                />
-              </div>
-              <div className="space-y-2.5 border-t border-border pt-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">Continue Packs exported</span>
-                  <span className="font-mono text-faint">{reports.length} / 5</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted">Provider keys connected</span>
-                  <span className="font-mono text-faint">
-                    {connectedProviders} / {providerKeys.length}
-                  </span>
-                </div>
-              </div>
-            </Widget>
-          </Reveal>
-        </aside>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-widest text-faint">{today}</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">Home</h1>
+        <p className="mt-1.5 text-sm text-muted">
+          Rescue a dead chat and keep going — every other feature is one click away.
+        </p>
       </div>
 
-      {/* ── Bottom — one system, four lists ──────────────── */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Reveal delay={0.05}>
-          <Section title="Recent projects" href="/workspace" hrefLabel="All projects">
-            <div className="space-y-0.5">
-              {recentProjects.slice(0, 4).map((p) => (
-                <Row
-                  key={p.id}
-                  href={`/workspace/${p.id}`}
-                  leading={
-                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: p.color }} />
-                  }
-                  title={p.name}
-                  subtitle={p.description}
-                  trailing={
-                    <Badge tone={p.stage === "active" ? "mint" : "neutral"}>
-                      {p.stage === "active" ? "active" : "paused"}
-                    </Badge>
-                  }
-                />
-              ))}
+      {/* ── Main action ───────────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Panel className="gradient-border lg:col-span-2">
+          <PanelBody className="p-7 sm:p-8">
+            <div className="flex flex-wrap items-center justify-between gap-5">
+              <div className="max-w-md">
+                <p className="font-mono text-sm font-medium tracking-wide text-brand">Your #1 action</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-ink">
+                  Rescue a dead chat
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Paste any ChatGPT, Claude or Gemini conversation — get a clean
+                  Continue Pack you can take to any model.
+                </p>
+              </div>
+              <Button asChild size="lg" icon={<LifeBuoy className="h-4 w-4" />}>
+                <Link href="/rescue">Rescue a chat</Link>
+              </Button>
             </div>
-          </Section>
-        </Reveal>
+            <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-5">
+              <Link
+                href="/prompts"
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink transition-colors hover:text-brand"
+              >
+                <Sparkles className="h-4 w-4 text-brand-2" />
+                Improve a prompt
+              </Link>
+              <Link
+                href="/models"
+                className="inline-flex items-center gap-2 text-sm font-medium text-ink transition-colors hover:text-brand"
+              >
+                <ArrowRight className="h-4 w-4 text-brand-2" />
+                Check model costs
+              </Link>
+            </div>
+          </PanelBody>
+        </Panel>
 
-        <Reveal delay={0.08}>
-          <Section title="Continue Packs" href="/rescue" hrefLabel="Rescue hub">
-            <div className="space-y-0.5">
-              {reports.slice(0, 4).map((r) => (
-                <Row
-                  key={r.id}
-                  href="/rescue"
-                  leading={<span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-brand-2" />}
-                  title={r.title}
-                  subtitle={`${r.sourceTool} → ${r.sourceModel} · ${r.summary}`}
-                  trailing={
-                    <span className="font-mono text-[11px] text-faint">
-                      {r.compressionPercent}% compressed
-                    </span>
-                  }
-                />
-              ))}
+        {/* ── Quick stats ─────────────────────────────────── */}
+        <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
+          {stats.map((s) => (
+            <div key={s.label} className="flex items-center gap-3 rounded-2xl border border-border bg-surface/40 p-4">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2">
+                <s.icon className="h-4 w-4 text-brand" />
+              </span>
+              <div>
+                <p className="text-lg font-semibold tracking-tight text-ink">{s.value}</p>
+                <p className="text-[11px] text-faint">{s.label}</p>
+              </div>
             </div>
-          </Section>
-        </Reveal>
+          ))}
+        </div>
+      </div>
 
-        <Reveal delay={0.05}>
-          <Section title="Prompt library" href="/prompts" hrefLabel="All prompts">
-            <div className="space-y-0.5">
-              {recentPrompts.slice(0, 4).map((p) => (
+      {/* ── Recent activity ───────────────────────────────── */}
+      <div>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold tracking-tight text-ink">Recent activity</h2>
+          <Link href="/history" className="inline-flex items-center gap-1.5 text-xs font-medium text-brand hover:underline">
+            <HistoryIcon className="h-3.5 w-3.5" />
+            View all
+          </Link>
+        </div>
+        <Panel>
+          <PanelBody className="space-y-0.5">
+            {recentEvents.length ? (
+              recentEvents.map((evt) => (
                 <Row
-                  key={p.id}
-                  href={`/prompts/${p.id}`}
-                  leading={<Badge tone="amber">{p.score}</Badge>}
-                  title={p.title}
-                  subtitle={p.tags.slice(0, 2).map((t) => `#${t}`).join(" ")}
+                  key={evt.id}
+                  href="/history"
+                  title={evt.title}
+                  subtitle={evt.description}
+                  trailing={<span className="font-mono text-[11px] text-faint">{evt.meta}</span>}
                 />
-              ))}
-            </div>
-          </Section>
-        </Reveal>
+              ))
+            ) : (
+              <p className="px-4 py-8 text-center text-sm text-faint">
+                Nothing yet — rescue a chat and your work shows up here.
+              </p>
+            )}
+          </PanelBody>
+        </Panel>
+      </div>
 
-        <Reveal delay={0.08}>
-          <Section title="Context passports" href="/passports" hrefLabel="All passports">
-            <div className="space-y-0.5">
-              {recentPassports.slice(0, 4).map((p) => (
-                <Row
-                  key={p.id}
-                  href={`/passports/${p.id}`}
-                  leading={<Badge tone="violet">{p.wordCount.toLocaleString()}w</Badge>}
-                  title={p.title}
-                  subtitle={`${p.meta.sourceTool} → ${p.meta.sourceModel}`}
-                />
+      {/* ── Everything, in one place ──────────────────────── */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold tracking-tight text-ink">Everything in LayerFlow</h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label} className="space-y-2">
+              <p className="px-1 text-[10px] font-bold uppercase tracking-widest text-faint">{group.label}</p>
+              {group.items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group flex items-center gap-3 rounded-xl border border-border bg-surface/40 p-3 transition-colors duration-150 hover:border-border-strong hover:bg-surface-2/50"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2">
+                    <item.icon className="h-4 w-4 text-brand" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-ink transition-colors group-hover:text-brand">
+                      {item.label}
+                    </p>
+                    <p className="truncate text-[11px] text-faint">{item.description}</p>
+                  </div>
+                </Link>
               ))}
             </div>
-          </Section>
-        </Reveal>
+          ))}
+        </div>
       </div>
     </div>
   );
