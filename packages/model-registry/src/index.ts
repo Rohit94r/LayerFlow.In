@@ -15,6 +15,7 @@ export const PROVIDERS = [
   "deepseek",
   "groq",
   "xai",
+  "kimi",
   "openrouter",
 ] as const;
 
@@ -221,6 +222,30 @@ export const MODELS: readonly ModelInfo[] = [
     contextWindow: 131_072,
     capabilities: { streaming: true, toolCalling: true, vision: false, reasoning: true },
   },
+
+  // --- Kimi (Moonshot AI) ---
+  {
+    id: "kimi-k2",
+    provider: "kimi",
+    displayName: "Kimi K2",
+    inputPricePerMTokMicro: 400_000,
+    outputPricePerMTokMicro: 1_600_000,
+    cachedInputPricePerMTokMicro: 100_000,
+    contextWindow: 200_000,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "kimi-k2-thinking",
+    provider: "kimi",
+    displayName: "Kimi K2 Thinking",
+    inputPricePerMTokMicro: 400_000,
+    outputPricePerMTokMicro: 1_600_000,
+    cachedInputPricePerMTokMicro: 100_000,
+    contextWindow: 200_000,
+    maxOutputTokens: 65_536,
+    capabilities: { streaming: true, toolCalling: true, vision: false, reasoning: true },
+  },
 ] as const;
 
 const MODELS_BY_ID = new Map(MODELS.map((m) => [m.id, m]));
@@ -281,6 +306,7 @@ export function resolveProvider(modelId: string): Provider | undefined {
     [/^(gemini-|gemma-)/, "google"],
     [/^deepseek-/, "deepseek"],
     [/^grok-/, "xai"],
+    [/^(kimi-|moonshot-)/, "kimi"],
     [/^(llama-|llama3|mixtral-|qwen-)/, "groq"],
   ];
   for (const [pattern, provider] of prefixMap) {
