@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllPosts } from "@/lib/blog";
+import { getPublishedPosts } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -28,7 +28,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  for (const post of getAllPosts()) {
+  for (const post of getPublishedPosts()) {
     entries.push({
       url: `${base}/blog/${post.slug}`,
       lastModified: now,
