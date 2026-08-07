@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FolderKanban, History, Brain, Search, Plus, Pin } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ProjectCard } from "@/components/features/workspace/project-card";
+import { ProjectFormModal } from "@/components/features/workspace/project-form-modal";
 import { Timeline } from "@/components/features/history/timeline";
 import { workspaceService } from "@/lib/services/workspace";
 import { timeAgo } from "@/lib/data/providers";
@@ -18,12 +20,15 @@ type WorkspaceClientProps = {
   projects: Awaited<ReturnType<typeof workspaceService.listProjects>>;
   timeline: Awaited<ReturnType<typeof workspaceService.listTimeline>>;
   learnings: Awaited<ReturnType<typeof workspaceService.listLearnings>>;
+  domains: Awaited<ReturnType<typeof workspaceService.listDomains>>;
 };
 
-export default function WorkspaceClient({ projects, timeline, learnings }: WorkspaceClientProps) {
+export default function WorkspaceClient({ projects, timeline, learnings, domains }: WorkspaceClientProps) {
+  const router = useRouter();
   const [tab, setTab] = useState("projects");
   const [query, setQuery] = useState("");
   const [tag, setTag] = useState("All");
+  const [showNewProject, setShowNewProject] = useState(false);
 
   const allTags = useMemo(
     () => ["All", ...Array.from(new Set(learnings.flatMap((l) => l.tags)))],
@@ -47,7 +52,7 @@ export default function WorkspaceClient({ projects, timeline, learnings }: Works
         title="Projects"
         description="Projects, the AI Work Ledger, and your Learning Memory — everything your AI work has produced."
         action={
-          <Button size="sm" icon={<Plus className="h-4 w-4" />}>
+          <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setShowNewProject(true)}>
             New project
           </Button>
         }
@@ -81,7 +86,7 @@ export default function WorkspaceClient({ projects, timeline, learnings }: Works
             title="No projects yet"
             description="Create a project to group passports, prompts and learnings."
             action={
-              <Button size="sm" icon={<Plus className="h-4 w-4" />}>
+              <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setShowNewProject(true)}>
                 New project
               </Button>
             }
@@ -152,6 +157,13 @@ export default function WorkspaceClient({ projects, timeline, learnings }: Works
           )}
         </div>
       ) : null}
+
+      <ProjectFormModal
+        open={showNewProject}
+        onClose={() => setShowNewProject(false)}
+        domains={domains}
+        onCreated={() => router.refresh()}
+      />
     </div>
   );
 }
