@@ -1,0 +1,2 @@
+DROP INDEX "provider_key_health_workspace_key_uq";--> statement-breakpoint
+CREATE UNIQUE INDEX "provider_key_health_workspace_key_hint_uq" ON "provider_key_health" USING btree ("workspace_id","provider","key_hint");
