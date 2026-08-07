@@ -5,7 +5,7 @@ import { db } from "../../db/client";
 import { usageLedger, usageRollups } from "../../db/schema/cost";
 import { budgets } from "../../db/schema/cost";
 import { redis as defaultRedis } from "../../redis/client";
-import { currentPeriod, monthlyKey } from "../../budgets/redis-keys";
+import { currentPeriod, monthlyKey } from "./redis-keys";
 
 /**
  * Usage rollups + reconciliation.

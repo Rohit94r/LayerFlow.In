@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import type { Budget, CurrentBudgetResponse } from "@layerflow/contracts";
-import { getLiveDailySpent, getLiveMonthlySpent, currentPeriod } from "../../budgets/enforce";
+import { getLiveDailySpent, getLiveMonthlySpent, currentPeriod } from "./enforce";
 import { db } from "../../db/client";
 import { budgets } from "../../db/schema/cost";
 import { AppError } from "../../middleware/app-error";
