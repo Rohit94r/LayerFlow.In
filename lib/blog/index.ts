@@ -1,5 +1,15 @@
 import type { BlogPost, BlogPostMeta, BlogPublishStatus } from "./types";
 import { posts as rawPosts } from "@/content/blog/posts";
+import { todayPosts } from "@/content/blog/trending/today";
+import { corpusA1 } from "@/content/blog/trending/corpus-a";
+import { corpusB } from "@/content/blog/trending/corpus-b";
+import { corpusC } from "@/content/blog/trending/corpus-c";
+import { corpusD } from "@/content/blog/trending/corpus-d";
+import { corpusE } from "@/content/blog/trending/corpus-e";
+import { corpusF } from "@/content/blog/trending/corpus-f";
+import { corpusG } from "@/content/blog/trending/corpus-g";
+import { corpusH } from "@/content/blog/trending/corpus-h";
+import { corpusI } from "@/content/blog/trending/corpus-i";
 import {
   scheduledPublishDate,
   toBlogDateString,
@@ -58,7 +68,19 @@ export function isPostPublished(
 }
 
 /** All posts with schedule overlay applied (includes future/scheduled) */
-const posts: BlogPost[] = rawPosts.map(applySchedule);
+const posts: BlogPost[] = [
+  ...rawPosts,
+  ...todayPosts,
+  ...corpusA1,
+  ...corpusB,
+  ...corpusC,
+  ...corpusD,
+  ...corpusE,
+  ...corpusF,
+  ...corpusG,
+  ...corpusH,
+  ...corpusI,
+].map(applySchedule);
 
 const bySlug = new Map(posts.map((p) => [p.slug, p]));
 
