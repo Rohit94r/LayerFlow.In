@@ -10,6 +10,7 @@ import {
   getRelatedPosts,
   SITE_URL,
 } from "@/lib/blog";
+import { doodleForSlug } from "@/lib/doodles";
 
 type Params = Promise<{ slug: string }>;
 
@@ -42,6 +43,7 @@ export async function generateMetadata({
       url,
       title: post.metaTitle,
       description: post.description,
+      images: [{ url: `${SITE_URL}${doodleForSlug(post.slug)}` }],
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author],
@@ -51,6 +53,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: post.metaTitle,
       description: post.description,
+      images: [`${SITE_URL}${doodleForSlug(post.slug)}`],
     },
   };
 }
@@ -163,6 +166,15 @@ export default async function BlogPostPage({ params }: { params: Params }) {
             <span>{post.readingTime}</span>
           </div>
         </header>
+
+        <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface/50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={doodleForSlug(post.slug)}
+            alt={`${post.title} — LayerFlow blog illustration`}
+            className="h-52 w-full object-cover sm:h-72"
+          />
+        </div>
 
         <div className="mx-auto mt-10 grid max-w-7xl gap-10 lg:grid-cols-[minmax(0,1fr)_240px]">
           <div className="min-w-0 lg:order-1">

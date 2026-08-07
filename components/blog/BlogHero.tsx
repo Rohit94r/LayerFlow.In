@@ -8,6 +8,13 @@ export default function BlogHero() {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_20%_0%,rgba(245,158,11,0.12),transparent_50%),radial-gradient(ellipse_at_90%_20%,rgba(68,237,188,0.08),transparent_45%)]"
       />
       <div className="relative mx-auto max-w-7xl px-6 pb-16 pt-32 sm:px-8 sm:pb-20 sm:pt-36">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/doodles/reading-side.svg"
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-8 top-28 hidden w-64 select-none opacity-90 lg:block"
+        />
         <p className="font-mono text-sm font-medium tracking-wide text-brand">
           LayerFlow Blog
         </p>
