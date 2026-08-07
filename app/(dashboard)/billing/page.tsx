@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { CreditCard, Check, Zap, Shield, Users, ArrowRight } from "@/components/ui/icons";
+import { CreditCard, Check, Zap, Shield, Users } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
@@ -8,9 +7,11 @@ import { Stat } from "@/components/shared/stat";
 import { Table, THead, TBody, TR, TH, TD } from "@/components/ui/table";
 import { workspaceService } from "@/lib/services/workspace";
 import { cn } from "@/lib/utils";
+import { CheckoutButton } from "@/components/billing/checkout-button";
 
 const PLANS = [
   {
+    id: "free",
     name: "Free",
     price: "$0",
     period: "/forever",
@@ -20,6 +21,7 @@ const PLANS = [
     current: true,
   },
   {
+    id: "starter",
     name: "Starter",
     price: "$5",
     period: "/month",
@@ -36,8 +38,9 @@ const PLANS = [
     highlighted: true,
   },
   {
+    id: "pro",
     name: "Pro",
-    price: "$12",
+    price: "$14",
     period: "/month",
     description: "For teams and heavy AI workflows.",
     features: [
@@ -77,7 +80,7 @@ export default async function BillingPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         {PLANS.map((plan) => (
           <Panel
-            key={plan.name}
+            key={plan.id}
             className={cn(
               "relative flex flex-col p-6",
               plan.highlighted && "border-brand/40 bg-gradient-to-b from-brand/10 to-surface/60",
@@ -108,11 +111,12 @@ export default async function BillingPage() {
                   Current plan
                 </Button>
               ) : (
-                <Link href="/settings">
-                  <Button variant={plan.highlighted ? "primary" : "outline"} className="w-full">
-                    {plan.cta} <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </Link>
+                <CheckoutButton
+                  plan={plan.id as "starter" | "pro"}
+                  label={plan.cta}
+                  variant={plan.highlighted ? "primary" : "outline"}
+                  className="w-full"
+                />
               )}
             </div>
           </Panel>
@@ -149,7 +153,8 @@ export default async function BillingPage() {
             </TBody>
           </Table>
           <p className="mt-3 text-[11px] text-faint">
-            No real payments are processed in this build — upgrading routes to Settings.
+            Payments are processed securely by Dodo Payments (cards + crypto). Access is
+            granted automatically once the payment is confirmed.
           </p>
         </PanelBody>
       </Panel>
