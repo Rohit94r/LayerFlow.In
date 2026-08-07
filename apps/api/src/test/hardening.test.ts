@@ -135,7 +135,7 @@ describe("production hardening", () => {
   describe("platform provider key fallback", () => {
     it("falls back to the platform Groq/Gemini keys and prefers BYOK", async () => {
       const { createTestSession } = await import("./auth");
-      const { loadProviderApiKey } = await import("../providers");
+      const { loadProviderApiKey } = await import("../services/ai/providers");
       const { createProviderKey, revokeProviderKey } = await import(
         "../services/keys/provider-keys"
       );
@@ -177,7 +177,7 @@ describe("production hardening", () => {
       const { createTestSession } = await import("./auth");
       const { db } = await import("../db/client");
       const { budgets, usageLedger } = await import("../db/schema/cost");
-      const { currentPeriod } = await import("../budgets/redis-keys");
+      const { currentPeriod } = await import("../services/budgets/redis-keys");
       const { eq, and } = await import("drizzle-orm");
 
       const session = await createTestSession();
@@ -325,7 +325,7 @@ describe("production hardening", () => {
       const { createTestSession } = await import("./auth");
       const { db } = await import("../db/client");
       const { budgets, usageLedger } = await import("../db/schema/cost");
-      const { currentPeriod } = await import("../budgets/redis-keys");
+      const { currentPeriod } = await import("../services/budgets/redis-keys");
       const { reconcileBudgets } = await import("../services/budgets/rollup");
       const { and, eq } = await import("drizzle-orm");
 

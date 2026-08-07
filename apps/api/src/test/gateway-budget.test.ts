@@ -53,7 +53,7 @@ describe("keys, BYOK, budget, gateway", () => {
   });
 
   afterAll(async () => {
-    const { resetAdapterForTests } = await import("../providers");
+    const { resetAdapterForTests } = await import("../services/ai/providers");
     resetAdapterForTests("openai");
     const { pool } = await import("../db/client");
     const { redis } = await import("../redis/client");
@@ -173,7 +173,7 @@ describe("keys, BYOK, budget, gateway", () => {
     const { createTestSession } = await import("./auth");
     const { updateCurrentBudget } = await import("../services/budgets/current");
     const { reserveBudget, seedBudgetCounter, monthlyKey, currentPeriod } =
-      await import("../budgets/enforce");
+      await import("../services/budgets/enforce");
     const { redis } = await import("../redis/client");
 
     const session = await createTestSession();
@@ -209,7 +209,7 @@ describe("keys, BYOK, budget, gateway", () => {
   it("gateway chat completions works with mocked provider adapter", async () => {
     const { createApp } = await import("../app");
     const { createTestSession } = await import("./auth");
-    const { setAdapterForTests } = await import("../providers");
+    const { setAdapterForTests } = await import("../services/ai/providers");
     const app = createApp();
     const session = await createTestSession();
 

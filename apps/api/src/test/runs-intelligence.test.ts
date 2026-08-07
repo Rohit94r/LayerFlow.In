@@ -1,6 +1,6 @@
 import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import type { ProviderAdapter } from "../providers";
+import type { ProviderAdapter } from "../services/ai/providers";
 
 /**
  * Integration tests for runs + intelligence.
@@ -84,7 +84,7 @@ describe("runs + intelligence APIs", () => {
 
     const { createApp } = await import("../app");
     const { createTestSession } = await import("./auth");
-    const { setAdapterForTests } = await import("../providers");
+    const { setAdapterForTests } = await import("../services/ai/providers");
     const { encryptSecret } = await import("../services/crypto");
     const { providerKeys } = await import("../db/schema/gateway");
 
@@ -106,7 +106,7 @@ describe("runs + intelligence APIs", () => {
   });
 
   afterAll(async () => {
-    const { resetAdapterForTests } = await import("../providers");
+    const { resetAdapterForTests } = await import("../services/ai/providers");
     resetAdapterForTests("openai");
     const { pool } = await import("../db/client");
     const { redis } = await import("../redis/client");
