@@ -1,10 +1,10 @@
 import { and, eq, isNull } from "drizzle-orm";
 import type { Provider } from "@layerflow/model-registry";
-import { db } from "../db/client";
-import { getEnv } from "../config/env";
-import { providerKeys } from "../db/schema/gateway";
-import { AppError } from "../middleware/app-error";
-import { decryptSecret } from "../services/crypto";
+import { db } from "../../../db/client";
+import { getEnv } from "../../../config/env";
+import { providerKeys } from "../../../db/schema/gateway";
+import { AppError } from "../../../middleware/app-error";
+import { decryptSecret } from "../../../services/crypto";
 
 /**
  * Platform-level provider keys read from the environment. Used only as a
@@ -20,6 +20,12 @@ function platformProviderKey(provider: Provider): string | undefined {
       return env.GROQ_API_KEY;
     case "google":
       return env.GEMINI_API_KEY;
+    case "deepseek":
+      return env.DEEPSEEK_API_KEY;
+    case "kimi":
+      return env.KIMI_API_KEY;
+    case "xai":
+      return env.XAI_API_KEY;
     default:
       return undefined;
   }
@@ -37,6 +43,12 @@ export function platformDefaultModel(provider: Provider): string | undefined {
       return env.GROQ_MODEL;
     case "google":
       return env.GEMINI_MODEL;
+    case "deepseek":
+      return env.DEEPSEEK_MODEL;
+    case "kimi":
+      return env.KIMI_MODEL;
+    case "xai":
+      return env.XAI_MODEL;
     default:
       return undefined;
   }
@@ -77,4 +89,31 @@ export async function loadProviderApiKey(
     "provider_key_missing",
     `No ${provider} API key configured for this workspace. Add one under Settings → Provider keys.`,
   );
+}
+
+/**
+ * True when a call to `loadProviderApiKey` would succeed: a non-revoked BYOK
+ * key for the workspace, or a platform key configured in the environment.
+ * Lets callers (e.g. the rescue pipeline) pick a provider that can actually
+ * run instead of failing on the first model whose key is missing.
+ */
+export async function hasProviderKey(workspaceId: string, provider: Provider): Promise<boolean> {
+  const row = await db.query.providerKeys.findFirst({
+    where: and(
+      eq(providerKeys.workspaceId, workspaceId),
+      eq(providerKeys.provider, provider),
+      isNull(providerKeys.revokedAt),
+    ),
+  });
+  if (row) return true;
+  return Boolean(platformProviderKey(provider));
+}
+
+/**
+ * The platform env key for a provider (or undefined). Public read of the
+ * private env lookup — used by the chat router to build per-provider key
+ * candidate lists alongside workspace BYOK keys.
+ */
+export function platformApiKey(provider: Provider): string | undefined {
+  return platformProviderKey(provider);
 }

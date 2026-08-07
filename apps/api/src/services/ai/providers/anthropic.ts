@@ -1,4 +1,4 @@
-import { AppError } from "../middleware/app-error";
+import { AppError } from "../../../middleware/app-error";
 import { parseSseJson } from "./sse";
 import type {
   ChatCompletionRequest,

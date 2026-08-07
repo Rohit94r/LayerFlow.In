@@ -1,16 +1,17 @@
 import { resolveProvider, type Provider } from "@layerflow/model-registry";
-import { AppError } from "../middleware/app-error";
+import { AppError } from "../../../middleware/app-error";
 import { anthropicAdapter } from "./anthropic";
 import { deepseekAdapter } from "./deepseek";
 import { googleAdapter } from "./google";
 import { groqAdapter } from "./groq";
+import { kimiAdapter } from "./kimi";
 import { openaiAdapter } from "./openai";
 import { openrouterAdapter } from "./openrouter";
 import { xaiAdapter } from "./xai";
 import type { ProviderAdapter } from "./types";
 
 export type { ChatMessage, ChatCompletionRequest, ChatCompletionResult, ProviderAdapter } from "./types";
-export { loadProviderApiKey, platformDefaultModel } from "./keys";
+export { hasProviderKey, loadProviderApiKey, platformApiKey, platformDefaultModel } from "./keys";
 
 const ADAPTERS: Record<Provider, ProviderAdapter> = {
   openai: openaiAdapter,
@@ -19,6 +20,7 @@ const ADAPTERS: Record<Provider, ProviderAdapter> = {
   deepseek: deepseekAdapter,
   groq: groqAdapter,
   xai: xaiAdapter,
+  kimi: kimiAdapter,
   openrouter: openrouterAdapter,
 };
 
@@ -58,6 +60,7 @@ export function resetAdapterForTests(provider: Provider): void {
     deepseek: deepseekAdapter,
     groq: groqAdapter,
     xai: xaiAdapter,
+    kimi: kimiAdapter,
     openrouter: openrouterAdapter,
   };
   ADAPTERS[provider] = originals[provider];
