@@ -1,7 +1,7 @@
-import { logger } from "../config/logger";
-import { getEnv } from "../config/env";
-import { db } from "../db/client";
-import { decryptSecret } from "../services/crypto";
+import { logger } from "../../config/logger";
+import { getEnv } from "../../config/env";
+import { db } from "../../db/client";
+import { decryptSecret } from "../../services/crypto";
 
 /**
  * Text → vector embedding, with two interchangeable backends:

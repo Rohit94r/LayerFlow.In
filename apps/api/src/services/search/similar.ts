@@ -1,7 +1,7 @@
 import type { SimilarHit } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { AppError } from "../../middleware/app-error";
-import { embedText } from "../../search/embeddings";
+import { embedText } from "./embeddings";
 import {
   findSimilarMemories,
   memoriesByIds,
