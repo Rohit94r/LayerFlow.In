@@ -46,12 +46,40 @@ export const envSchema = z.object({
   GROQ_MODEL: z.string().optional(),
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().optional(),
+  DEEPSEEK_API_KEY: z.string().optional(),
+  DEEPSEEK_MODEL: z.string().optional(),
+  /** Kimi (Moonshot AI) — OpenAI-compatible chat API. */
+  KIMI_API_KEY: z.string().optional(),
+  KIMI_MODEL: z.string().optional(),
+  /** Kimi API base URL — defaults to api.moonshot.ai (international). */
+  KIMI_BASE_URL: z.url().optional(),
+  /** xAI (Grok). */
+  XAI_API_KEY: z.string().optional(),
+  XAI_MODEL: z.string().optional(),
   /** ElevenLabs — reserved for future audio / sound-effect features. */
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(),
   ELEVENLABS_MODEL_ID: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /**
+   * Dodo Payments (crypto + card checkout). All optional for local dev —
+   * the billing routes return 503 "billing_not_configured" until the API key
+   * is set. Generate keys at app.dodopayments.com → Developer → API.
+   */
+  DODO_PAYMENTS_API_KEY: z.string().optional(),
+  /** Webhook signing secret (Standard Webhooks) — from Developer → Webhooks. */
+  DODO_PAYMENTS_WEBHOOK_KEY: z.string().optional(),
+  /** "test_mode" | "live_mode". Defaults to test_mode until you go live. */
+  DODO_PAYMENTS_ENVIRONMENT: z.enum(["test_mode", "live_mode"]).default("test_mode"),
+  /** Where to send the customer after the hosted checkout (defaults to WEB_URL/billing). */
+  DODO_PAYMENTS_RETURN_URL: z.string().optional(),
+  /** Billing currency for checkout (ISO 4217). Defaults to USD. */
+  DODO_BILLING_CURRENCY: z.string().default("USD"),
+  /** Dodo product IDs for each plan (create the product in the dashboard). */
+  DODO_PRODUCT_STARTER: z.string().optional(),
+  DODO_PRODUCT_PRO: z.string().optional(),
+  DODO_PRODUCT_TEAM: z.string().optional(),
   /** Resend (transactional email). Without it the email service logs a no-op. */
   RESEND_API_KEY: z.string().optional(),
   /** Sender for all outgoing email, e.g. `LayerFlow <alerts@layerflow.dev>`. */

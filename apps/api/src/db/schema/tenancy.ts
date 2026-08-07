@@ -71,12 +71,33 @@ export const subscriptions = pgTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
-    plan: text("plan").$type<"free" | "pro" | "team">().notNull().default("free"),
+    /** Dodo Payments provider IDs (used by the billing service). */
+    dodoCustomerId: text("dodo_customer_id"),
+    dodoSubscriptionId: text("dodo_subscription_id"),
+    plan: text("plan").$type<"free" | "starter" | "pro" | "team">().notNull().default("free"),
     status: text("status").notNull().default("active"),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     ...timestamps,
   },
   (t) => [uniqueIndex("subscriptions_workspace_id_uq").on(t.workspaceId)],
+);
+
+/**
+ * One row per processed Dodo webhook event (keyed on the Standard-Webhooks
+ * "webhook-id"). Used for idempotency: Dodo retries webhooks until we ACK, so
+ * we must never apply the same event twice.
+ */
+export const billingEvents = pgTable(
+  "billing_events",
+  {
+    id: idColumn("bev"),
+    eventId: text("event_id").notNull().unique(),
+    type: text("type").notNull(),
+    workspaceId: text("workspace_id").references(() => workspaces.id, { onDelete: "set null" }),
+    payload: jsonb("payload"),
+    processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("billing_events_event_id_idx").on(t.eventId)],
 );
 
 export const entitlements = pgTable(

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
+import { hashPassword } from "better-auth/crypto";
 import { db, pool } from "./client";
-import { users } from "./schema/auth";
+import { accounts, users } from "./schema/auth";
 import { promptTags, prompts, promptVersions } from "./schema/prompts";
 import { promptSessions, sessionMessages } from "./schema/sessions";
 import { activityEvents, projects } from "./schema/workspace";
@@ -46,6 +47,8 @@ async function seed() {
   assertSafeToSeed();
 
   const DEV_USER_ID = "user_dev_alex";
+  /** Dev-only login for the seeded account (never used in production). */
+  const DEV_PASSWORD = "layerflow123";
 
   const pricingCount = await seedModelPricingIfEmpty();
   if (pricingCount > 0) {
@@ -59,6 +62,17 @@ async function seed() {
       name: "Alex Chen",
       email: "alex@layerflow.dev",
       emailVerified: true,
+    })
+    .onConflictDoNothing();
+
+  await db
+    .insert(accounts)
+    .values({
+      id: crypto.randomUUID(),
+      userId: DEV_USER_ID,
+      providerId: "credential",
+      accountId: DEV_USER_ID,
+      password: await hashPassword(DEV_PASSWORD),
     })
     .onConflictDoNothing();
 

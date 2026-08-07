@@ -10,7 +10,7 @@ import {
 import { createdAtOnly, idColumn, microDollars } from "./_helpers";
 import { promptVersions } from "./prompts";
 import { workspaces } from "./tenancy";
-import type { RunSavings } from "@layerflow/contracts";
+import type { RunSavings, RunSource } from "@layerflow/contracts";
 
 /** One model call — from the workspace (compare/playground/session) or the gateway. */
 export const runs = pgTable(
@@ -24,7 +24,7 @@ export const runs = pgTable(
       onDelete: "set null",
     }),
     source: text("source")
-      .$type<"compare" | "playground" | "gateway" | "session" | "replay">()
+      .$type<RunSource>()
       .notNull(),
     provider: text("provider").notNull(),
     model: text("model").notNull(),
