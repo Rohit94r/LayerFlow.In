@@ -49,10 +49,10 @@ describe("getApiBaseUrl", () => {
     vi.unstubAllEnvs();
   });
 
-  it("uses local API on localhost even when prod NEXT_PUBLIC_API_URL is set", () => {
+  it("uses same-origin web host on localhost even when prod NEXT_PUBLIC_API_URL is set", () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.layerflow.dev");
     expect(window.location.hostname).toMatch(/localhost|127\.0\.0\.1/);
-    expect(getApiBaseUrl()).toBe("http://localhost:8787");
+    expect(getApiBaseUrl()).toBe(window.location.origin);
   });
 
   it("uses same-origin on layerflow.dev even when NEXT_PUBLIC_API_URL points at Fly", () => {
@@ -96,7 +96,7 @@ describe("apiFetch", () => {
     const data = await apiFetch<{ ok: boolean }>("/api/health-check");
     expect(data.ok).toBe(true);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      "http://localhost:8787/api/health-check",
+      `${window.location.origin}/api/health-check`,
       expect.objectContaining({ credentials: "include" }),
     );
   });

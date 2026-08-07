@@ -31,6 +31,8 @@ export type ApiRequestOptions = {
   signal?: AbortSignal;
   /** Skip JSON parse (e.g. empty 204). */
   parseJson?: boolean;
+  /** Extra request headers (e.g. forwarded Cookie on the server). */
+  headers?: HeadersInit;
 };
 
 function buildUrl(path: string, query?: ApiRequestOptions["query"]): string {
@@ -72,9 +74,10 @@ export async function apiFetch<T>(
   options: ApiRequestOptions = {},
   schema?: z.ZodType<T>,
 ): Promise<T> {
-  const { method = "GET", body, query, signal, parseJson = true } = options;
+  const { method = "GET", body, query, signal, parseJson = true, headers: extra } = options;
   const headers: HeadersInit = {
     Accept: "application/json",
+    ...(extra as Record<string, string>),
   };
   if (body !== undefined) {
     headers["Content-Type"] = "application/json";
@@ -113,4 +116,24 @@ export async function apiFetch<T>(
 
 export function toQuery(params: Record<string, string | number | boolean | undefined | null>) {
   return params;
+}
+
+/**
+ * Server-only helper: returns the Better Auth session cookie (if any) so RSC /
+ * route handlers can forward it to the API. Dynamically imports next/headers so
+ * client bundles never pull in server code. Never resolves on the client.
+ */
+export async function getServerCookieHeader(): Promise<Record<string, string>> {
+  if (typeof window !== "undefined") return {};
+  try {
+    const { cookies } = await import("next/headers");
+    const store = await cookies();
+    const cookie = store
+      .getAll()
+      .map((c) => `${c.name}=${c.value}`)
+      .join("; ");
+    return cookie ? { Cookie: cookie } : {};
+  } catch {
+    return {};
+  }
 }
