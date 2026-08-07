@@ -4,7 +4,7 @@ import { logger } from "../../config/logger";
 import { db } from "../../db/client";
 import { memoryEmbeddings } from "../../db/schema/memory";
 import { enqueue } from "../../jobs/queues";
-import { embedText } from "../../search/embeddings";
+import { embedText } from "../search/embeddings";
 
 export interface EmbedMemoryPayload {
   memoryId: string;

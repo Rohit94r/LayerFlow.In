@@ -3,8 +3,8 @@ import type { ExecutionMode, RunMessage, RunSavings } from "@layerflow/contracts
 import type { RoutingRuleConfig } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { routingRules, workspaceSettings } from "../../db/schema/intelligence";
-import { routeModel } from "../../intelligence/route";
-import { estimateTokens } from "../../intelligence/analyze";
+import { routeModel } from "../intelligence/route";
+import { estimateTokens } from "../intelligence/analyze";
 import { getSavingsEnv } from "../../config/savings-env";
 import { compressMessages, type CompressResult } from "./compress";
 import { estimateRunSavings } from "./estimate";

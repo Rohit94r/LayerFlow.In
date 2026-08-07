@@ -8,7 +8,7 @@ import type {
 import { db } from "../../db/client";
 import { memories } from "../../db/schema/memory";
 import { AppError } from "../../middleware/app-error";
-import { embedText } from "../../search/embeddings";
+import { embedText } from "../search/embeddings";
 import {
   findSimilarMemories,
   memoriesByIds,

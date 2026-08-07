@@ -1,5 +1,5 @@
 import type { RunMessage } from "@layerflow/contracts";
-import { estimateTokens } from "../../intelligence/analyze";
+import { estimateTokens } from "../intelligence/analyze";
 
 export interface CompressOptions {
   /** Keep the last N non-system messages fully intact. Default 4. */
