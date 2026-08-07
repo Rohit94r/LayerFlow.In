@@ -1,12 +1,14 @@
 // ─────────────────────────────────────────────────────────────
-// Prompt library service.
-//
-// Mock-backed today (lib/data/prompts.ts). To move to the live
-// API, swap the bodies for fetch calls to the Hono backend
-// (apps/api) without changing the signatures.
+// Prompt library service — live Hono API (apps/api/src/routes/prompts).
 // ─────────────────────────────────────────────────────────────
 
-import { PROMPTS, PROMPT_BY_ID } from "@/lib/data/prompts";
+import {
+  listPromptsResponseSchema,
+  promptResponseSchema,
+  type Prompt as PromptDto,
+} from "@layerflow/contracts";
+import type { z } from "zod";
+import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
 import type { Prompt } from "@/lib/types";
 
 export interface PromptLibraryService {
@@ -15,23 +17,47 @@ export interface PromptLibraryService {
   search(query: string): Promise<Prompt[]>;
 }
 
+async function authedFetch<T>(path: string, schema?: z.ZodType<T>): Promise<T> {
+  const headers = await getServerCookieHeader();
+  return apiFetch<T>(path, { ...(headers.Cookie ? { headers } : {}) }, schema);
+}
+
+function mapPromptDto(prompt: PromptDto, content = ""): Prompt {
+  return {
+    id: prompt.id,
+    title: prompt.title,
+    description: prompt.description ?? "",
+    content,
+    score: 50,
+    tags: prompt.tags,
+    model: "gpt-4o",
+    version: 1,
+    favorite: prompt.favorite,
+    usageCount: 0,
+    createdAt: prompt.createdAt,
+    updatedAt: prompt.updatedAt,
+  };
+}
+
 export const promptService: PromptLibraryService = {
   async listPrompts() {
-    return PROMPTS;
+    const res = await authedFetch("/api/prompts?limit=100", listPromptsResponseSchema);
+    return res.prompts.map((p) => mapPromptDto(p));
   },
 
   async getPrompt(id) {
-    return PROMPT_BY_ID[id] ?? null;
+    try {
+      const res = await authedFetch(`/api/prompts/${id}`, promptResponseSchema);
+      return mapPromptDto(res.prompt, res.currentVersion?.body ?? "");
+    } catch {
+      return null;
+    }
   },
 
   async search(query) {
-    const q = query.trim().toLowerCase();
-    if (!q) return PROMPTS;
-    return PROMPTS.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        p.tags.some((t) => t.toLowerCase().includes(q)),
-    );
+    const q = query.trim();
+    if (!q) return this.listPrompts();
+    const res = await authedFetch(`/api/prompts?q=${encodeURIComponent(q)}&limit=100`, listPromptsResponseSchema);
+    return res.prompts.map((p) => mapPromptDto(p));
   },
 };
