@@ -13,3 +13,5 @@ export * from "./gateway";
 export * from "./memory";
 export * from "./learning";
 export * from "./community";
+export * from "./rescue";
+export * from "./chat";
