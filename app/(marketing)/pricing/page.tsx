@@ -66,7 +66,7 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <Link href={plan.href} className="mt-8">
+              <Link href={plan.id === "free" ? plan.href : "/billing"} className="mt-8">
                 <button
                   type="button"
                   className={cn(

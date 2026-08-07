@@ -6,11 +6,13 @@ import { Check, ChevronDown, LogOut, Settings } from "@/components/ui/icons";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { Avatar, LogoMark } from "@/components/ui/avatar";
 import { useSession, signOut } from "@/lib/auth-client";
-import { NAV_ITEMS } from "@/lib/config/navigation";
+import { NAV_GROUPS } from "@/lib/config/navigation";
+import { doodleForName } from "@/lib/doodles";
 import { cn } from "@/lib/utils";
 
 /**
- * Application sidebar — icon-first navigation.
+ * Application sidebar — icon-first navigation, grouped into
+ * Start / Build / Learn / Manage so the flow is easy to follow.
  * Collapsed (icon-only) below lg, expanded on lg+.
  */
 export function Sidebar() {
@@ -65,33 +67,41 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 lg:px-3" aria-label="Main">
-        <div className="space-y-0.5">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={item.label}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-colors duration-100",
-                  active ? "bg-surface-2 text-ink" : "text-muted hover:bg-surface-2/60 hover:text-ink",
-                )}
-              >
-                <item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-brand" : "text-muted group-hover:text-ink")} />
-                <span className="hidden min-w-0 truncate lg:block">{item.label}</span>
-                {active ? <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand" /> : null}
-              </Link>
-            );
-          })}
-        </div>
+        {NAV_GROUPS.map((group) => (
+          <div key={group.label} className="mb-4 last:mb-0">
+            <p className="hidden px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-faint lg:block">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={item.label}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "group relative flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-[13px] font-medium transition-colors duration-100",
+                      active ? "bg-surface-2 text-ink" : "text-muted hover:bg-surface-2/60 hover:text-ink",
+                    )}
+                  >
+                    <item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-brand" : "text-muted group-hover:text-ink")} />
+                    <span className="hidden min-w-0 truncate lg:block">{item.label}</span>
+                    {active ? <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand" /> : null}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* Profile */}
       <div className="shrink-0 border-t border-border p-2 lg:p-3">
         <div className="flex items-center gap-2.5 rounded-xl px-2 py-2">
           <Avatar
+            src={doodleForName(user?.name)}
             initials={(user?.name ?? "LF").slice(0, 2).toUpperCase()}
             color="#f97316"
             size="sm"

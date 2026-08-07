@@ -8,6 +8,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Avatar } from "@/components/ui/avatar";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { useSession, signOut } from "@/lib/auth-client";
+import { doodleForName } from "@/lib/doodles";
 
 export function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
   const session = useSession();
@@ -45,7 +46,12 @@ export function Topbar({ onOpenCommand }: { onOpenCommand: () => void }) {
               aria-label="Account menu"
               className="ml-1 rounded-full ring-brand/50 transition-shadow duration-150 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              <Avatar initials={(user?.name ?? "LF").slice(0, 2).toUpperCase()} color="#f97316" size="sm" />
+              <Avatar
+                src={doodleForName(user?.name)}
+                initials={(user?.name ?? "LF").slice(0, 2).toUpperCase()}
+                color="#f97316"
+                size="sm"
+              />
             </button>
           )}
           items={[
