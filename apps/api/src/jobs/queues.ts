@@ -17,7 +17,8 @@ export type JobName =
   | "embeddings"
   | "usage-rollup"
   | "budget-alerts"
-  | "weekly-digest";
+  | "weekly-digest"
+  | "rescue";
 
 let queue: Queue | undefined;
 

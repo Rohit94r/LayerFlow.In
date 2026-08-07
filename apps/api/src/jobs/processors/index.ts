@@ -4,6 +4,7 @@ import { processBudgetAlerts } from "./budget-alerts";
 import { processCompare } from "./compare";
 import { processEmbeddings } from "./embed";
 import { processExample } from "./example";
+import { processRescue } from "./rescue";
 import { processUsageRollup } from "./usage-rollup";
 import { processWeeklyDigest } from "./weekly-digest";
 
@@ -17,4 +18,5 @@ export const processors: Partial<Record<JobName, JobProcessor>> = {
   "usage-rollup": processUsageRollup,
   "budget-alerts": processBudgetAlerts,
   "weekly-digest": processWeeklyDigest,
+  rescue: processRescue,
 };
