@@ -31,7 +31,7 @@ const MODEL_LABELS: Record<string, string> = {
   "claude-sonnet-4": "Claude Sonnet 4",
   "claude-3-5-haiku": "Claude Haiku 3.5",
   "deepseek-chat": "DeepSeek Chat",
-  "gemini-2.5-flash": "Gemini 2.5 Flash",
+  "gemini-flash-latest": "Gemini Flash",
   "llama-3.3-70b-versatile": "Llama 3.3 70B (Groq)",
   "grok-3-mini": "Grok 3 mini",
   "kimi-k2": "Kimi K2",

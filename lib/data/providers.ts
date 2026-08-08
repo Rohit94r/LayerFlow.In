@@ -146,7 +146,7 @@ export const MODELS: ModelInfo[] = [
   {
     id: "gemini-flash",
     provider: "Google",
-    name: "Gemini 2.5 Flash",
+    name: "Gemini Flash",
     class: cl,
     quality: 86,
     costIn: 0.3,
@@ -249,7 +249,7 @@ export const RESCUE_MODEL_NAMES: Record<string, string> = {
   "gpt-4o-mini": "GPT-4o mini",
   "claude-sonnet-4": "Claude Sonnet 4",
   "claude-3-5-haiku": "Claude 3.5 Haiku",
-  "gemini-2.5-flash": "Gemini 2.5 Flash",
+  "gemini-flash-latest": "Gemini Flash",
   "deepseek-chat": "DeepSeek V3 (chat)",
   "llama-3.3-70b-versatile": "Llama 3.3 70B (Groq)",
   "grok-3-mini": "Grok 3 mini",

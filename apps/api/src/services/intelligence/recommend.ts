@@ -96,7 +96,7 @@ export function recommend(input: RecommendInput): {
   } else if (input.executionMode === "auto-fastest") {
     // Flash/mini class models are the latency picks in our catalog.
     recommendedModel =
-      getModel("gemini-2.5-flash")?.id ??
+      getModel("gemini-flash-latest")?.id ??
       getModel("gpt-4o-mini")?.id ??
       analysis.recommended.model;
     reason = `Auto-fastest: ${recommendedModel}`;

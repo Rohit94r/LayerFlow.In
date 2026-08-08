@@ -225,7 +225,7 @@ async function seed() {
       workspaceId,
       version: 1,
       body: "Rewrite the following resume bullet points to emphasize measurable impact: {{bullets}}",
-      modelHint: "gemini-2.5-flash",
+      modelHint: "gemini-flash-latest",
       createdByUserId: DEV_USER_ID,
     })
     .returning();

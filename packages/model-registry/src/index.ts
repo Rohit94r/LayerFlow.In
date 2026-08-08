@@ -156,9 +156,9 @@ export const MODELS: readonly ModelInfo[] = [
     capabilities: REASONING_CAPS,
   },
   {
-    id: "gemini-2.5-flash",
+    id: "gemini-flash-latest",
     provider: "google",
-    displayName: "Gemini 2.5 Flash",
+    displayName: "Gemini Flash",
     inputPricePerMTokMicro: 300_000,
     outputPricePerMTokMicro: 2_500_000,
     cachedInputPricePerMTokMicro: 75_000,

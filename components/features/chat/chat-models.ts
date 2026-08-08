@@ -17,7 +17,7 @@ export const PICKER_MODELS: PickerModel[] = [
   { id: "auto", provider: "auto", label: "Auto (best available)", auto: true },
   { id: "gpt-4o-mini", provider: "openai", label: "GPT-4o mini", kind: "cheap" },
   { id: "gpt-4o", provider: "openai", label: "GPT-4o", kind: "balanced" },
-  { id: "gemini-2.5-flash", provider: "google", label: "Gemini 2.5 Flash", kind: "cheap" },
+  { id: "gemini-flash-latest", provider: "google", label: "Gemini Flash", kind: "cheap" },
   { id: "gemini-2.5-pro", provider: "google", label: "Gemini 2.5 Pro", kind: "flagship" },
   { id: "claude-sonnet-4", provider: "anthropic", label: "Claude Sonnet 4", kind: "flagship" },
   { id: "claude-3-5-haiku", provider: "anthropic", label: "Claude 3.5 Haiku", kind: "cheap" },

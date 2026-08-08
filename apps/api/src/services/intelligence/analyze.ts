@@ -61,14 +61,14 @@ function pickCheapestGood(taskType: TaskType, complexity: Complexity): ModelInfo
   // High-complexity reasoning prefers a stronger cheap option.
   if (complexity === "high" || taskType === "reasoning") {
     return (
-      getModel("gemini-2.5-flash") ??
+      getModel("gemini-flash-latest") ??
       getModel("gpt-4o-mini") ??
       MODELS[0]!
     );
   }
   if (taskType === "coding") {
     return (
-      getModel("gemini-2.5-flash") ??
+      getModel("gemini-flash-latest") ??
       getModel("deepseek-chat") ??
       getModel("gpt-4o-mini") ??
       MODELS[0]!
@@ -77,7 +77,7 @@ function pickCheapestGood(taskType: TaskType, complexity: Complexity): ModelInfo
   // Short drafting / summarization → budget tier.
   return (
     getModel("gpt-4o-mini") ??
-    getModel("gemini-2.5-flash") ??
+    getModel("gemini-flash-latest") ??
     getModel("deepseek-chat") ??
     MODELS[0]!
   );
