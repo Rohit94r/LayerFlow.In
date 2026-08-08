@@ -205,10 +205,6 @@ chatRouter.post("/:id/messages", async (c) => {
   });
 });
 
-async function runChatTurn(input: Parameters<typeof runChatMessage>[0]): Promise<void> {
-  await runChatMessage(input);
-}
-
 /** Map the router's events to the public SSE contract. */
 function toSseEvent(e: ChatRunEvent): ChatEvent | null {
   switch (e.type) {

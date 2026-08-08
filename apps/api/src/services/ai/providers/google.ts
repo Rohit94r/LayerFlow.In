@@ -64,7 +64,7 @@ export const googleAdapter: ProviderAdapter = {
         (body as { error?: { message?: string } }).error?.message ??
         `google returned ${res.status}`;
       throw new AppError(
-        res.status === 401 || res.status === 403 ? 400 : 502,
+        res.status >= 500 ? 502 : (res.status as 400 | 401 | 402 | 403 | 404 | 429),
         "provider_error",
         message,
       );

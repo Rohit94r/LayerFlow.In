@@ -142,7 +142,11 @@ export async function getChatSession(
   sessionId: string,
 ): Promise<{ session: ChatSession; messages: ChatMessageRecord[] } | null> {
   const row = await db.query.aiChatSessions.findFirst({
-    where: and(eq(aiChatSessions.id, sessionId), eq(aiChatSessions.workspaceId, workspaceId)),
+    where: and(
+      eq(aiChatSessions.id, sessionId),
+      eq(aiChatSessions.workspaceId, workspaceId),
+      eq(aiChatSessions.status, "active"),
+    ),
   });
   if (!row) return null;
 

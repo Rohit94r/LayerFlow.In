@@ -57,17 +57,29 @@ export async function markKeyHealthy(id: KeyHealthIdentity): Promise<void> {
  *   402      → expired  (quota exceeded)
  *   429      → degrading + short cooldown (rate limited)
  *   other    → degrading (provider outage, not the key)
+ *
+ * Billing/quota wording in the error body (no credits, insufficient balance,
+ * quota exceeded, suspended) upgrades any status to `expired` — the key is
+ * fine but the account is out of money, so it should not be retried on the
+ * next message (failover skips it until the account is topped up).
  */
 export async function markKeyFailed(
   id: KeyHealthIdentity,
-  input: { statusCode: number; code?: string; cooldownSeconds?: number },
+  input: { statusCode: number; code?: string; errorMessage?: string; cooldownSeconds?: number },
 ): Promise<void> {
-  const status: KeyStatus =
+  const billingLike = /no credits|insufficient balance|insufficient_quota|quota exceeded|billing|suspended|payment required/i;
+  const isBilling = Boolean(
+    (input.code ?? "").match(billingLike) ||
+      (input.errorMessage ?? "").match(billingLike),
+  );
+  let status: KeyStatus =
     input.statusCode === 401 || input.statusCode === 403
       ? "dead"
       : input.statusCode === 402
         ? "expired"
         : "degrading";
+
+  if (status !== "dead" && isBilling) status = "expired";
 
   const existing = await db.query.providerKeyHealth.findFirst({
     where: and(
@@ -142,6 +154,55 @@ export function platformKeyIdentity(
 }
 
 /**
+ * True when a provider has at least one usable key (workspace BYOK or the
+ * platform env fallback) that is not dead/expired and not in cooldown.
+ * Unknown keys count as usable (no health row yet = try first).
+ */
+export async function hasUsableProviderKey(
+  workspaceId: string,
+  provider: Provider,
+): Promise<boolean> {
+  const [byok, healthRows] = await Promise.all([
+    db.query.providerKeys.findMany({
+      where: and(
+        eq(providerKeys.workspaceId, workspaceId),
+        eq(providerKeys.provider, provider),
+        isNull(providerKeys.revokedAt),
+      ),
+    }),
+    listKeyHealth(workspaceId),
+  ]);
+  const healthByHint = new Map(healthRows.map((h) => [h.keyHint, h]));
+  if (byok.some((row) => isKeyUsable(healthByHint.get(row.keyHint)))) return true;
+  return Boolean(
+    platformApiKey(provider) && isKeyUsable(await platformKeyHealth(provider)),
+  );
+}
+
+const STATUS_RANK: Record<KeyStatus, number> = { healthy: 0, degrading: 1, expired: 2, dead: 3 };
+
+/**
+ * The platform env key is shared across every workspace, so its health is
+ * global too: any workspace that observed it fail affects all workspaces.
+ * The most-recently observed state wins, so a successful call anywhere (after
+ * e.g. an account is topped up) re-enables the key everywhere — otherwise a
+ * stale expired row in an old workspace would block it forever.
+ */
+export async function platformKeyHealth(
+  provider: string,
+): Promise<ProviderKeyHealthRow | undefined> {
+  const rows = await db.query.providerKeyHealth.findMany({
+    where: eq(providerKeyHealth.keyHint, `platform:${provider}`),
+  });
+  if (rows.length === 0) return undefined;
+  return rows.sort((a, b) => {
+    const at = (r: ProviderKeyHealthRow) => (r.lastErrorAt ? r.lastErrorAt.getTime() : 0);
+    const byTime = at(b) - at(a);
+    return byTime !== 0 ? byTime : STATUS_RANK[b.status] - STATUS_RANK[a.status];
+  })[0];
+}
+
+/**
  * Health snapshot for the model picker: every provider, with one entry per
  * workspace BYOK key plus the platform env key. Providers with zero keys show
  * "missing"; untried keys are reported as "healthy" (unknown = try first).
@@ -180,7 +241,7 @@ export async function chatKeyHealthSnapshot(
     }
 
     if (platformApiKey(provider as Provider)) {
-      const h = healthByHint.get(`platform:${provider}`);
+      const h = await platformKeyHealth(provider);
       entries.push({
         keyHint: `platform:${provider}`,
         source: "platform",

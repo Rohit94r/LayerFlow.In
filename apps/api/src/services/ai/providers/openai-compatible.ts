@@ -58,7 +58,7 @@ export function createOpenAICompatibleAdapter(opts: {
           (typeof body.error === "string" ? body.error : undefined) ??
           `${opts.provider} returned ${res.status}`;
         throw new AppError(
-          res.status === 401 || res.status === 403 ? 400 : 502,
+          res.status >= 500 ? 502 : (res.status as 400 | 401 | 402 | 403 | 404 | 429),
           "provider_error",
           message,
         );
@@ -120,7 +120,7 @@ export function createOpenAICompatibleAdapter(opts: {
           (body as { error?: { message?: string } }).error?.message ??
           `${opts.provider} returned ${res.status}`;
         throw new AppError(
-          res.status === 401 || res.status === 403 ? 400 : 502,
+          res.status >= 500 ? 502 : (res.status as 400 | 401 | 402 | 403 | 404 | 429),
           "provider_error",
           message,
         );

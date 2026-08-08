@@ -7,7 +7,6 @@ import { providerKeys } from "../../db/schema/gateway";
 import { AppError } from "../../middleware/app-error";
 import { decryptSecret } from "../crypto";
 import {
-  hasProviderKey,
   platformApiKey,
   resolveAdapter,
   type ChatCompletionResult,
@@ -19,6 +18,7 @@ import {
   listKeyHealth,
   markKeyFailed,
   markKeyHealthy,
+  platformKeyHealth,
 } from "./health";
 import {
   countSessionMessages,
@@ -37,7 +37,7 @@ import {
  */
 export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   { model: "gpt-4o-mini", provider: "openai" },
-  { model: "gemini-2.5-flash", provider: "google" },
+  { model: "gemini-flash-latest", provider: "google" },
   { model: "llama-3.3-70b-versatile", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
@@ -82,23 +82,25 @@ interface KeyPayload {
 /**
  * Choose the model for a chat turn:
  * explicit user pick > session default > first provider with a usable key.
+ * Skips providers whose keys are already known-bad (dead/expired) so "auto"
+ * never wastes a turn on an account that is out of credits.
  * Returns undefined when no provider is configured at all.
  */
 export async function pickChatModel(
   workspaceId: string,
   opts: { userModel?: string; defaultModel?: string | null } = {},
 ): Promise<string | undefined> {
-  if (opts.userModel) {
-    const info = getModel(opts.userModel);
-    if (info && (await hasProviderKey(workspaceId, info.provider))) return opts.userModel;
-  }
-  if (opts.defaultModel) {
-    const info = getModel(opts.defaultModel);
-    if (info && (await hasProviderKey(workspaceId, info.provider))) return opts.defaultModel;
-  }
+  const usableProvider = async (model: string): Promise<boolean> => {
+    const info = getModel(model);
+    if (!info) return false;
+    const candidates = await buildCandidates(workspaceId, info.provider);
+    return candidates.length > 0;
+  };
+  if (opts.userModel && (await usableProvider(opts.userModel))) return opts.userModel;
+  if (opts.defaultModel && (await usableProvider(opts.defaultModel))) return opts.defaultModel;
   for (const cand of CHAT_MODEL_PRIORITY) {
     if (!getModel(cand.model)) continue;
-    if (await hasProviderKey(workspaceId, cand.provider)) return cand.model;
+    if (await usableProvider(cand.model)) return cand.model;
   }
   return undefined;
 }
@@ -127,7 +129,7 @@ async function buildCandidates(workspaceId: string, provider: Provider): Promise
   }
 
   const platform = platformApiKey(provider);
-  if (platform && isKeyUsable(healthByHint.get(`platform:${provider}`))) {
+  if (platform && isKeyUsable(await platformKeyHealth(provider))) {
     candidates.push({
       keyId: null,
       keyHint: `platform:${provider}`,
@@ -187,6 +189,7 @@ async function runSingleCall(input: {
     await markKeyFailed(identity, {
       statusCode: status,
       code,
+      errorMessage: err instanceof Error ? err.message : undefined,
       cooldownSeconds: status === 429 ? 60 : undefined,
     });
     throw err;

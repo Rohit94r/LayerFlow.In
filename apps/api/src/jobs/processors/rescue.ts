@@ -7,7 +7,7 @@ import { logger } from "../../config/logger";
 import { db } from "../../db/client";
 import { rescueReports } from "../../db/schema/rescue";
 import { executeRun } from "../../services/runs/execute";
-import { hasProviderKey } from "../../services/ai/providers";
+import { hasUsableProviderKey } from "../../services/chat/health";
 import { recordActivity } from "../../services/workspace/activity";
 import { estimateTokens } from "../../services/intelligence/analyze";
 
@@ -30,7 +30,7 @@ const DEFAULT_RESCUE_MODEL = "gpt-4o-mini";
  */
 const RESCUE_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   { model: "gpt-4o-mini", provider: "openai" },
-  { model: "gemini-2.5-flash", provider: "google" },
+  { model: "gemini-flash-latest", provider: "google" },
   { model: "llama-3.3-70b-versatile", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
@@ -39,13 +39,15 @@ const RESCUE_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
 
 /**
  * Choose the model for a rescue run. An explicit valid target wins; otherwise
- * pick the first candidate whose provider has a key available.
+ * pick the first candidate whose provider has a usable key — presence alone is
+ * not enough, since a key with an out-of-credits account (health status
+ * `expired`) would make the whole rescue fail.
  */
 async function pickRescueModel(workspaceId: string, targetModel?: string): Promise<string> {
   if (targetModel && getModel(targetModel)) return targetModel;
   for (const candidate of RESCUE_MODEL_PRIORITY) {
     if (!getModel(candidate.model)) continue;
-    if (await hasProviderKey(workspaceId, candidate.provider)) return candidate.model;
+    if (await hasUsableProviderKey(workspaceId, candidate.provider)) return candidate.model;
   }
   return DEFAULT_RESCUE_MODEL;
 }
@@ -116,7 +118,7 @@ function costRows(input: {
     "gpt-4o-mini",
     "claude-sonnet-4",
     "claude-3-5-haiku",
-    "gemini-2.5-flash",
+    "gemini-flash-latest",
     "deepseek-chat",
     "llama-3.3-70b-versatile",
     "grok-3-mini",
@@ -159,7 +161,7 @@ Rules:
 - passport: structured context fields extracted from the conversation (leave arrays empty when unknown).
 - diff: what you kept / removed / added in improvedPrompt vs the original (keep only 1-2 items per list, terse).
 - promptScore: 0-100 how complete the ORIGINAL prompt/conversation is; promptScores: 3-5 {label, value} axes (e.g. Context, Clarity, Constraints, Format).
-- recommendedModelId: one of gpt-4o, gpt-4o-mini, claude-3-5-haiku, claude-sonnet-4, gemini-2.5-flash, deepseek-chat, grok-3-mini, kimi-k2 best suited to continue this work.
+- recommendedModelId: one of gpt-4o, gpt-4o-mini, claude-3-5-haiku, claude-sonnet-4, gemini-flash-latest, deepseek-chat, grok-3-mini, kimi-k2 best suited to continue this work.
 - recommendedReason: one sentence why.
 
 Respond with ONLY valid JSON matching this shape:
