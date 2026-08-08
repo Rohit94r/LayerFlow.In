@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Call, Globe, Instagram, Linkedin, Mail, Twitter } from "@/components/ui/icons";
 import { site } from "@/lib/data/marketing";
 
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
@@ -32,13 +33,22 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   },
 ];
 
+const CONNECT: { label: string; href: string; icon: typeof Mail; external?: boolean }[] = [
+  { label: "dev.by.rohit@gmail.com", href: "mailto:dev.by.rohit@gmail.com", icon: Mail, external: true },
+  { label: "Instagram", href: "https://www.instagram.com/dev.by.rohit/", icon: Instagram, external: true },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/rohit-jadhav94/", icon: Linkedin, external: true },
+  { label: "Portfolio", href: "https://www.rohitjadhav.online/", icon: Globe, external: true },
+  { label: "X (Twitter)", href: "https://x.com/RohitJadhav9409", icon: Twitter, external: true },
+  { label: "+91 84592 62203", href: "tel:+918459262203", icon: Call, external: true },
+];
+
 const WORD = "LayerFlow.dev";
 
 export default function Footer() {
   return (
     <footer className="relative overflow-hidden border-t border-border bg-surface/40">
       <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
           <div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
               {site.tagline}. Code in your browser or terminal — write plain
@@ -68,6 +78,25 @@ export default function Footer() {
               </ul>
             </div>
           ))}
+
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-faint">Connect</h3>
+            <ul className="mt-4 space-y-2.5">
+              {CONNECT.map((l) => (
+                <li key={l.label}>
+                  <a
+                    href={l.href}
+                    target={l.external ? "_blank" : undefined}
+                    rel={l.external ? "noopener noreferrer" : undefined}
+                    className="inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
+                  >
+                    <l.icon className="h-4 w-4 shrink-0 text-faint" />
+                    <span className="truncate">{l.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-center text-xs text-faint">
