@@ -21,7 +21,7 @@ import { MessageBubble, TypingIndicator, type UiMessage } from "./message-bubble
 import { ModelPicker } from "./model-picker";
 import { PICKER_MODELS } from "./chat-models";
 
-const SESSION_HEIGHT = "h-[calc(100dvh-8rem)]";
+const SESSION_HEIGHT = "h-[calc(100dvh-7rem)]";
 
 function toUi(m: ChatMessageRecord): UiMessage {
   return {
@@ -52,12 +52,12 @@ function SessionItem({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full rounded-xl px-3 py-2.5 text-left transition-colors",
+        "w-full rounded-lg px-2.5 py-2 text-left transition-colors",
         active ? "bg-surface-2 text-ink" : "text-muted hover:bg-surface-2/60 hover:text-ink",
       )}
     >
-      <div className="flex items-center gap-2.5">
-        <AiChat className={cn("h-4 w-4 shrink-0", active ? "text-brand" : "text-faint")} />
+      <div className="flex items-center gap-2">
+        <AiChat className={cn("h-4 w-4 shrink-0", active ? "text-ink" : "text-faint")} />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-medium">{session.title}</p>
           <p className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-faint">
@@ -87,12 +87,10 @@ function Hero({
   busy: "rescue" | "new" | null;
 }) {
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-1 px-4 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-emerald-400 text-[#0e1416]">
-        <AiChat className="h-6 w-6" />
-      </span>
-      <h2 className="mt-3 text-xl font-semibold tracking-tight text-ink">Continue any chat, on any AI</h2>
-      <p className="mt-1 max-w-sm text-sm leading-relaxed text-muted">
+    <div className="flex h-full flex-col items-center justify-center gap-1.5 px-4 text-center">
+      <AiChat className="h-7 w-7 text-faint" />
+      <h2 className="mt-2 text-xl font-semibold tracking-tight text-ink">Continue any chat, on any AI</h2>
+      <p className="max-w-md text-sm leading-relaxed text-muted">
         Pick a model per message — or let LayerFlow auto-switch when a key runs out. Your thread and
         context never get lost.
       </p>
@@ -102,7 +100,7 @@ function Hero({
           onClick={onNewChat}
           icon={busy === "new" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
         >
-          Start a new chat
+          New chat
         </Button>
         <Button
           variant="outline"
@@ -419,13 +417,12 @@ export function ChatClient() {
   }
 
   return (
-    <div className={cn("flex gap-4", SESSION_HEIGHT)}>
+    <div className={cn("flex overflow-hidden", SESSION_HEIGHT)}>
       {/* Sessions rail */}
-      <aside className="hidden w-64 shrink-0 flex-col rounded-2xl border border-border bg-surface/40 lg:flex">
-        <div className="border-b border-border p-3">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-surface/60 lg:flex">
+        <div className="p-3">
           <Button
             size="sm"
-            variant="gradient"
             className="w-full"
             onClick={newSession}
             icon={busy === "new" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
@@ -433,9 +430,9 @@ export function ChatClient() {
             New chat
           </Button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
           {sessions.length === 0 ? (
-            <p className="px-3 py-4 text-[11.5px] leading-relaxed text-faint">
+            <p className="px-2.5 py-3 text-[11.5px] leading-relaxed text-faint">
               No chats yet. Start with a prompt, or import a rescued conversation.
             </p>
           ) : (
@@ -460,7 +457,7 @@ export function ChatClient() {
       </aside>
 
       {/* Thread */}
-      <section className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-surface/40">
+      <section className="flex min-w-0 flex-1 flex-col bg-bg">
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-muted" />
@@ -470,7 +467,7 @@ export function ChatClient() {
         ) : (
           <>
             {/* Header */}
-            <div className="flex items-center gap-3 border-b border-border px-4 py-2.5">
+            <div className="flex items-center gap-3 border-b border-border px-4 py-2.5 md:px-6">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <h1 className="truncate text-sm font-semibold text-ink">{active.title}</h1>
@@ -489,7 +486,7 @@ export function ChatClient() {
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-[11px] font-semibold text-ink transition-colors hover:border-border-strong"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-3 text-[11px] font-medium text-ink transition-colors hover:bg-surface-2"
               >
                 {PICKER_MODELS.find((m) => m.id === (currentModel ?? "auto"))?.label}
               </button>
@@ -497,33 +494,39 @@ export function ChatClient() {
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 aria-label="Delete chat"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-faint transition-colors hover:bg-surface-2 hover:text-rose-400"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 md:px-6">
-              {messages.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <p className="max-w-xs text-center text-xs leading-relaxed text-faint">
-                    This thread is brand new — type the first question and pick a model.
-                  </p>
-                </div>
-              ) : (
-                messages.map((m) => (
-                  <MessageBubble
-                    key={m.id}
-                    message={m.id === stream?.placeholderId ? { ...m, content: stream.content } : m}
-                  />
-                ))
-              )}
-              {streaming ? <TypingIndicator /> : null}
+            <div
+              ref={scrollRef}
+              onScroll={onScroll}
+              className="min-h-0 flex-1 overflow-y-auto"
+            >
+              <div className="mx-auto w-full max-w-3xl space-y-5 px-4 py-6 md:px-6">
+                {messages.length === 0 ? (
+                  <div className="flex h-full items-center justify-center">
+                    <p className="max-w-xs py-20 text-center text-xs leading-relaxed text-faint">
+                      This thread is brand new — type the first question and pick a model.
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((m) => (
+                    <MessageBubble
+                      key={m.id}
+                      message={m.id === stream?.placeholderId ? { ...m, content: stream.content } : m}
+                    />
+                  ))
+                )}
+                {streaming ? <TypingIndicator /> : null}
+              </div>
             </div>
 
             {/* Composer */}
-            <div className="border-t border-border p-3">
+            <div className="mx-auto w-full max-w-3xl px-4 pb-4 md:px-6">
               <Composer
                 value={draft}
                 onChange={setDraft}

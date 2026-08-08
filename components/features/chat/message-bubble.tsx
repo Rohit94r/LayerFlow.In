@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, Loader2, Refresh } from "@/components/ui/icons";
+import { AlertTriangle, Loader2, Refresh } from "@/components/ui/icons";
 import { formatMoney } from "@/lib/data/providers";
 import { cn } from "@/lib/utils";
 import { providerLabel } from "./chat-models";
@@ -18,43 +18,16 @@ export interface UiMessage {
   switchedFrom?: { fromModel: string; toModel: string; reason: string } | null;
 }
 
-const PROVIDER_COLORS: Record<string, string> = {
-  openai: "#10a37f",
-  anthropic: "#d97757",
-  google: "#8b7cf8",
-  deepseek: "#4d6bfe",
-  groq: "#f55036",
-  xai: "#22c55e",
-  kimi: "#f7c948",
-  openrouter: "#8b5cf6",
-};
-
-/** Fall back to the attempted model name when the provider color is unknown. */
-function ProviderBadge({ provider, model }: { provider?: string | null; model?: string | null }) {
-  if (!provider) return null;
-  const color = PROVIDER_COLORS[provider] ?? "#9ca3ab";
-  const name = providerLabel(provider);
+function ModelLabel({ message }: { message: UiMessage }) {
+  if (!message.provider) return null;
   return (
-    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-faint">
-      <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
-      {name}
-      {model && model !== "auto" ? (
-        <span className="normal-case tracking-normal text-faint/80">· {model}</span>
+    <p className="mb-1.5 flex items-center gap-2 text-[10.5px] font-medium text-faint">
+      <span>{providerLabel(message.provider)}</span>
+      {message.model && message.model !== "auto" ? <span>· {message.model}</span> : null}
+      {typeof message.cost === "number" && message.cost > 0 ? (
+        <span>· {formatMoney(message.cost)}</span>
       ) : null}
-    </span>
-  );
-}
-
-function AssistantAvatar({ provider }: { provider?: string | null }) {
-  const color = PROVIDER_COLORS[provider ?? ""] ?? "url(#grad)";
-  return (
-    <span
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold text-white"
-      style={{ backgroundColor: color, backgroundImage: provider ? undefined : "linear-gradient(135deg,#fbbf24,#34d399)" }}
-      aria-hidden
-    >
-      {provider ? providerLabel(provider).charAt(0).toUpperCase() : "LF"}
-    </span>
+    </p>
   );
 }
 
@@ -62,22 +35,19 @@ export function MessageBubble({ message }: { message: UiMessage }) {
   if (message.role === "system") {
     if (message.switchedFrom) {
       return (
-        <div className="mx-auto my-3 flex max-w-xl flex-col items-center gap-1 text-center">
-          <div className="flex items-center gap-2 rounded-full border border-brand/20 bg-brand/5 px-4 py-2 text-[11.5px] text-brand">
-            <Loader2 className="h-3 w-3" />
+        <div className="my-3 flex flex-col items-center gap-1 text-center">
+          <div className="flex items-center gap-2 rounded-full border border-border bg-surface px-4 py-1.5 text-[11px] text-muted">
+            <Loader2 className="h-3 w-3 animate-spin" />
             {message.switchedFrom.toModel} is now answering this conversation
           </div>
-          <p className="px-4 text-[10.5px] text-faint">
-            {message.content}
-          </p>
+          {message.content ? <p className="px-4 text-[10.5px] text-faint">{message.content}</p> : null}
         </div>
       );
     }
     return (
       <div className="my-2 flex items-center gap-2 text-[11px] text-faint">
-        <span className="inline-flex items-center gap-1.5">
-          <Refresh className="h-3 w-3" /> {message.content}
-        </span>
+        <Refresh className="h-3 w-3" />
+        <span>{message.content}</span>
       </div>
     );
   }
@@ -87,48 +57,39 @@ export function MessageBubble({ message }: { message: UiMessage }) {
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[82%] rounded-2xl rounded-br-md border border-brand/20 bg-brand/[0.06] px-4 py-2.5 text-sm text-ink/90">
+        <div className="max-w-[82%] rounded-2xl rounded-br-md bg-surface-2 px-4 py-2.5 text-sm leading-relaxed text-ink">
           {renderMessage(message.content, "")}
         </div>
       </div>
     );
   }
 
-  // Assistant / streaming / error
   const failed = Boolean(message.error);
   return (
-    <div className="flex items-start gap-3">
-      <AssistantAvatar provider={message.provider} />
-      <div className="min-w-0 flex-1">
-        {message.provider ? (
-          <div className="mb-1 flex items-center gap-2">
-            <ProviderBadge provider={message.provider} model={message.model} />
-            <span className="flex-1" />
-            {typeof message.cost === "number" && message.cost > 0 ? (
-              <span className="text-[10.5px] font-medium text-faint">{formatMoney(message.cost)}</span>
-            ) : null}
-          </div>
-        ) : null}
-        <div
-          className={cn(
-            "max-w-full rounded-2xl rounded-tl-md px-4 py-2.5 text-sm text-ink/90",
-            failed ? "border border-rose-500/30 bg-rose-500/[0.06]" : "bg-surface-2/70",
-          )}
-        >
-          {failed ? (
+    <div className="flex flex-col">
+      <ModelLabel message={message} />
+      <div
+        className={cn(
+          "max-w-full text-sm leading-relaxed text-ink/90",
+          failed ? "rounded-2xl border border-rose-500/25 bg-rose-500/[0.05] px-4 py-2.5" : "px-0.5",
+        )}
+      >
+        {failed ? (
+          <div className="space-y-1.5">
+            {message.content.length > 0 ? <div>{renderMessage(message.content)}</div> : null}
             <div className="flex items-start gap-2 text-[13px] text-rose-400">
               <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{message.error}</span>
             </div>
-          ) : (
-            <div>
-              {renderMessage(message.content)}
-              {message.streaming ? (
-                <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-brand align-middle" />
-              ) : null}
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div>
+            {renderMessage(message.content)}
+            {message.streaming ? (
+              <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse rounded-sm bg-ink align-middle" />
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -136,12 +97,9 @@ export function MessageBubble({ message }: { message: UiMessage }) {
 
 export function TypingIndicator() {
   return (
-    <div className="flex items-start gap-3">
-      <AssistantAvatar />
-      <div className="flex items-center gap-2 rounded-2xl rounded-tl-md bg-surface-2/70 px-4 py-3">
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-muted" />
-        <span className="text-xs text-muted">Thinking…</span>
-      </div>
+    <div className="flex items-center gap-2 text-sm text-faint">
+      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      <span>Thinking…</span>
     </div>
   );
 }

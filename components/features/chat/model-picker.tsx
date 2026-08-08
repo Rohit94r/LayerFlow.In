@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 import { PICKER_MODELS, STATUS_META, providerLabel, providerStatus } from "./chat-models";
 
 const KIND_LABELS: Record<string, { label: string; cls: string }> = {
-  cheap: { label: "Cheap & fast", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  balanced: { label: "Balanced", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  flagship: { label: "Flagship", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
+  cheap: { label: "Cheap & fast", cls: "border-border bg-surface-2/40 text-faint" },
+  balanced: { label: "Balanced", cls: "border-border bg-surface-2/40 text-faint" },
+  flagship: { label: "Flagship", cls: "border-border bg-surface-2/40 text-faint" },
 };
 
 export function ModelPicker({
@@ -62,7 +62,7 @@ export function ModelPicker({
               )}
             >
               {m.auto ? (
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-emerald-400 text-[#0e1416]">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink">
                   <Sparkles className="h-4 w-4" />
                 </span>
               ) : (
