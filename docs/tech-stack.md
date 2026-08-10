@@ -450,7 +450,7 @@ LayerFlow/
 | Env | Target |
 | --- | --- |
 | Prod web | Vercel (Next) |
-| Prod API/worker | Fly.io (Hono + BullMQ worker) — existing `fly.toml` |
+| Prod API/worker | Render (Hono + BullMQ worker) — `render.yaml` blueprint |
 | DB | Managed Postgres (Neon/Supabase/RDS) |
 | Redis | Upstash / managed |
 | Storage | Cloudflare R2 |

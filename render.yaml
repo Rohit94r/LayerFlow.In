@@ -1,0 +1,97 @@
+# Render Blueprint for the LayerFlow backend (apps/api).
+#
+# Deploy:
+#   1. Push this file to GitHub (it lives at the repo ROOT).
+#   2. Render Dashboard → New → Blueprint → pick the LayerFlow.In repo.
+#   3. Render prompts for every `sync: false` env var below (paste the values
+#      from the local, gitignored `fly.env` file).
+#   4. Deploy. The API runs at <app>.onrender.com; point `api.layerflow.dev`
+#      there (CNAME) and add the URL to the Google OAuth redirect URIs.
+#
+# Both services build the SAME image (apps/api/Dockerfile) with the repo root
+# as build context (monorepo: bundles @layerflow/contracts + model-registry).
+# `dockerCommand` overrides the Dockerfile CMD per process. Drizzle migrations
+# run automatically before each deploy of the web service (preDeployCommand).
+
+services:
+  # ── API (Hono, port 8787; Render health-checks /health) ───────────────
+  - type: web
+    name: layerflow-api
+    runtime: docker
+    repo: https://github.com/Rohit94r/LayerFlow.In
+    branch: main
+    region: virginia # US-East — same region as the Neon database
+    plan: starter # paid: free tier sleeps and kills SSE streams / jobs
+    autoDeploy: true
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    dockerCommand: node apps/api/dist/index.js
+    preDeployCommand: npm run db:migrate --workspace @layerflow/api
+    healthCheckPath: /health
+    envVars: &api_env
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: PROVIDER_KEYS_KEK
+        sync: false
+      - key: WEB_URL
+        sync: false
+      - key: API_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        sync: false
+      - key: ELEVENLABS_MODEL_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DODO_PAYMENTS_API_KEY
+        sync: false
+      - key: DODO_PAYMENTS_WEBHOOK_KEY
+        sync: false
+      - key: DODO_PAYMENTS_ENVIRONMENT
+        sync: false
+      - key: DODO_PRODUCT_STARTER
+        sync: false
+      - key: DODO_PRODUCT_PRO
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: COOKIE_DOMAIN
+        sync: false
+      - key: FROM_EMAIL
+        sync: false
+
+  # ── Worker (BullMQ: compare, rescue, embeddings, alerts, digests) ─────
+  - type: worker
+    name: layerflow-api-worker
+    runtime: docker
+    repo: https://github.com/Rohit94r/LayerFlow.In
+    branch: main
+    region: virginia
+    plan: starter # must stay awake — scheduled jobs depend on it
+    autoDeploy: true
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    dockerCommand: node apps/api/dist/worker.js
+    envVars: *api_env
