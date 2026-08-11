@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getPublishedPosts } from "@/lib/blog";
+import { getPublishedPosts, categoryMeta } from "@/lib/blog";
 
 export const revalidate = 3600;
 
@@ -23,15 +23,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
     {
       url: `${base}/blog`,
       lastModified: now,
-      changeFrequency: "weekly",
+      changeFrequency: "daily",
       priority: 0.7,
     },
   ];
 
+  for (const meta of Object.values(categoryMeta)) {
+    entries.push({
+      url: `${base}/blog/category/${meta.slug}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    });
+  }
+
   for (const post of getPublishedPosts()) {
     entries.push({
       url: `${base}/blog/${post.slug}`,
-      lastModified: now,
+      lastModified: post.updatedAt ?? post.publishedAt,
       changeFrequency: "monthly",
       priority: 0.6,
     });
