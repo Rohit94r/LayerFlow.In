@@ -10,6 +10,11 @@ import { corpusF } from "@/content/blog/trending/corpus-f";
 import { corpusG } from "@/content/blog/trending/corpus-g";
 import { corpusH } from "@/content/blog/trending/corpus-h";
 import { corpusI } from "@/content/blog/trending/corpus-i";
+import { corpusSC1 } from "@/content/blog/searchconsole/corpus-1";
+import { corpusSC2 } from "@/content/blog/searchconsole/corpus-2";
+import { corpusSC3 } from "@/content/blog/searchconsole/corpus-3";
+import { corpusSC4 } from "@/content/blog/searchconsole/corpus-4";
+import { corpusSC5 } from "@/content/blog/searchconsole/corpus-5";
 import {
   scheduledPublishDate,
   toBlogDateString,
@@ -80,6 +85,11 @@ const posts: BlogPost[] = [
   ...corpusG,
   ...corpusH,
   ...corpusI,
+  ...corpusSC1,
+  ...corpusSC2,
+  ...corpusSC3,
+  ...corpusSC4,
+  ...corpusSC5,
 ].map(applySchedule);
 
 const bySlug = new Map(posts.map((p) => [p.slug, p]));
@@ -199,3 +209,71 @@ export function slugifyHeading(text: string): string {
 
 export const SITE_URL = "https://layerflow.dev";
 export const BLOG_AUTHOR = "LayerFlow Team";
+
+/** Category → SEO metadata + URL slug for pillar pages (/blog/category/[slug]) */
+export interface CategoryMeta {
+  slug: string;
+  title: string;
+  h1: string;
+  description: string;
+}
+
+export const categoryMeta: Record<string, CategoryMeta> = {
+  "Prompt engineering": {
+    slug: "prompt-engineering",
+    title: "Prompt Engineering Guides | LayerFlow Blog",
+    h1: "Prompt engineering and prompt organization guides",
+    description:
+      "How to organize AI prompts, build prompt libraries, use layered prompts, and manage prompt versions — prompt engineering best practices for teams in 2026.",
+  },
+  "Cost control": {
+    slug: "cost-control",
+    title: "LLM Cost Control Guides | LayerFlow Blog",
+    h1: "LLM cost control and AI budget guides",
+    description:
+      "Cut LLM costs with model routing, hard budget limits, spend analytics, token optimization, and semantic caching — without sacrificing output quality.",
+  },
+  "Model comparison": {
+    slug: "model-comparison",
+    title: "Model Comparison Guides | LayerFlow Blog",
+    h1: "LLM comparison and model selection guides",
+    description:
+      "Compare GPT vs Claude vs Gemini vs DeepSeek side by side, read model benchmarks, run LLM evals, and pick the best model per task for your workload.",
+  },
+  "AI gateway": {
+    slug: "ai-gateway",
+    title: "AI Gateway & BYOK Guides | LayerFlow Blog",
+    h1: "AI gateway, BYOK, and API key guides",
+    description:
+      "LLM gateway architecture, bring-your-own-key (BYOK) setup, API key management and rotation, and data privacy for AI tools — security without the ops burden.",
+  },
+  Productivity: {
+    slug: "productivity",
+    title: "AI Productivity Guides | LayerFlow Blog",
+    h1: "AI productivity and workspace guides",
+    description:
+      "AI workspaces, prompt libraries, and freelancer or team workflows that cut overhead — practical productivity guides for working with LLMs.",
+  },
+  "Getting started": {
+    slug: "getting-started",
+    title: "Getting Started with AI | LayerFlow Blog",
+    h1: "Getting started with AI workspaces and prompts",
+    description:
+      "New to AI workspaces, BYOK, or prompt management? Start here: setup guides, tutorials, and first workflows for developers and non-developers.",
+  },
+  "Use cases": {
+    slug: "use-cases",
+    title: "AI Use Cases Guides | LayerFlow Blog",
+    h1: "AI use cases by audience",
+    description:
+      "AI for students, freelancers, agencies, and marketing teams — practical use cases and workflows for getting real work done with LLMs.",
+  },
+};
+
+export function getCategorySlug(category: string): string {
+  return categoryMeta[category]?.slug ?? category.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+export function getCategoryBySlug(slug: string): CategoryMeta | undefined {
+  return Object.values(categoryMeta).find((c) => c.slug === slug);
+}

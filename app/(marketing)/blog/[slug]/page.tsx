@@ -8,6 +8,7 @@ import {
   getAllSlugs,
   getPublishedPostBySlug,
   getRelatedPosts,
+  getCategorySlug,
   SITE_URL,
 } from "@/lib/blog";
 import { doodleForSlug } from "@/lib/doodles";
@@ -111,6 +112,31 @@ export default async function BlogPostPage({ params }: { params: Params }) {
     keywords: [post.primaryKeyword, ...post.secondaryKeywords].join(", "),
   };
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Blog",
+        item: `${SITE_URL}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: post.category,
+        item: `${SITE_URL}/blog/category/${getCategorySlug(post.category)}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: post.title,
+        item: `${SITE_URL}/blog/${post.slug}`,
+      },
+    ],
+  };
+
   const faqBlock = post.blocks.find((b) => b.type === "faq");
   const faqJsonLd =
     faqBlock && faqBlock.type === "faq"
@@ -134,6 +160,10 @@ export default async function BlogPostPage({ params }: { params: Params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {faqJsonLd ? (
         <script
           type="application/ld+json"
@@ -143,12 +173,17 @@ export default async function BlogPostPage({ params }: { params: Params }) {
 
       <article className="mx-auto max-w-7xl px-6 pb-24 pt-32 sm:px-8">
         <header className="mx-auto max-w-3xl">
-          <nav className="text-sm text-faint">
+          <nav className="text-sm text-faint" aria-label="Breadcrumb">
             <Link href="/blog" className="hover:text-ink">
               Blog
             </Link>
             <span className="mx-2">/</span>
-            <span className="text-muted">{post.category}</span>
+            <Link
+              href={`/blog/category/${getCategorySlug(post.category)}`}
+              className="text-muted hover:text-ink"
+            >
+              {post.category}
+            </Link>
           </nav>
           <h1 className="mt-4 font-sans text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
             {post.title}

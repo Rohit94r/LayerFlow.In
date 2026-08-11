@@ -19,12 +19,30 @@ export default function BlogHero() {
           LayerFlow Blog
         </p>
         <h1 className="mt-4 max-w-3xl font-sans text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">
-          Guides for prompts, models, and cost
+          AI prompt guides: organization, model comparison, and cost control
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-          Practical SEO-ready writing on prompt workspaces, LLM budgets,
-          multi-model compare, BYOK, and gateway workflows.
+          Practical, SEO-ready guides on organizing AI prompts, comparing
+          LLMs side by side, routing models for cost and quality, BYOK key
+          management, and building AI workspaces.
         </p>
+        <nav aria-label="Blog topics" className="mt-6 flex flex-wrap gap-2">
+          {[
+            { label: "Prompt engineering", href: "/blog/category/prompt-engineering" },
+            { label: "Cost control", href: "/blog/category/cost-control" },
+            { label: "Model comparison", href: "/blog/category/model-comparison" },
+            { label: "AI gateway", href: "/blog/category/ai-gateway" },
+            { label: "Getting started", href: "/blog/category/getting-started" },
+          ].map((topic) => (
+            <Link
+              key={topic.href}
+              href={topic.href}
+              className="rounded-full border border-border-strong bg-surface/50 px-3.5 py-1.5 text-sm font-medium text-muted transition-colors hover:border-brand/60 hover:text-ink"
+            >
+              {topic.label}
+            </Link>
+          ))}
+        </nav>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/sign-in"

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { getCategorySlug } from "@/lib/blog";
 
 export default function BlogFilters({
   categories,
@@ -24,6 +25,8 @@ export default function BlogFilters({
     router.push(qs ? `/blog?${qs}` : "/blog");
   };
 
+  const categoryLink = (cat: string) => `/blog/category/${getCategorySlug(cat)}`;
+
   return (
     <div className="flex flex-col gap-4 border-b border-border pb-8">
       <div className="flex flex-wrap items-center gap-2">
@@ -42,10 +45,9 @@ export default function BlogFilters({
           All
         </button>
         {categories.map((cat) => (
-          <button
+          <Link
             key={cat}
-            type="button"
-            onClick={() => setFilter("category", cat)}
+            href={categoryLink(cat)}
             className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
               activeCategory === cat
                 ? "bg-ink text-[var(--btn-primary-fg)]"
@@ -53,7 +55,7 @@ export default function BlogFilters({
             }`}
           >
             {cat}
-          </button>
+          </Link>
         ))}
       </div>
       {activeTag ? (

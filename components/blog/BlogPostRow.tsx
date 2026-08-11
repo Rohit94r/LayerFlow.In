@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { BlogPost } from "@/lib/blog/types";
+import { getCategorySlug } from "@/lib/blog";
 import { doodleForSlug } from "@/lib/doodles";
 
 function formatDate(iso: string) {
@@ -18,7 +19,7 @@ export default function BlogPostRow({ post }: { post: BlogPost }) {
           <time dateTime={post.publishedAt}>{formatDate(post.publishedAt)}</time>
           <span aria-hidden>·</span>
           <Link
-            href={`/blog?category=${encodeURIComponent(post.category)}`}
+            href={`/blog/category/${getCategorySlug(post.category)}`}
             className="text-brand hover:underline"
           >
             {post.category}

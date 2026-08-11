@@ -15,7 +15,8 @@ import {
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title:
+    "Blog — AI Prompts, LLM Cost Control & Model Comparison | LayerFlow",
   description:
     "Guides on AI prompt management, LLM cost control, multi-model comparison, BYOK, and OpenAI-compatible gateways from LayerFlow.",
   alternates: { canonical: "/blog" },
@@ -59,11 +60,51 @@ export default async function BlogIndexPage({
       "Guides on AI prompt management, LLM cost control, multi-model comparison, and gateways.",
   };
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "LayerFlow Blog posts",
+    url: `${SITE_URL}/blog`,
+    itemListElement: posts.slice(0, 10).map((post, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/blog/${post.slug}`,
+      name: post.title,
+    })),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${SITE_URL}/blog`,
+      },
+    ],
+  };
+
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       <BlogHero />
       <div className="mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-16">
