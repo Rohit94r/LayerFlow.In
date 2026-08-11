@@ -6,6 +6,9 @@
  * priority queue, then the Search Console top queries (Aug 2026), then
  * the 100-post trending SEO corpus (5/day for 20 days).
  *
+ * The 50-post Search Console corpus (content/blog/searchconsole/*) uses
+ * explicit DAY_OVERRIDES instead: 10/day on Aug 11-15, 2026.
+ *
  * See docs/blog-publish-schedule.md for the human-readable calendar.
  */
 
@@ -24,6 +27,8 @@ export const BLOG_SCHEDULE_START = "2026-07-29";
  * Indices 45-49: 5 big blogs for TODAY (Aug 7) — Search Console top queries.
  * Indices 50-54: original corpus part 2 (5 posts, Aug 8).
  * Indices 55-154: 100-post trending SEO corpus, 5/day Aug 9 - Aug 28.
+ * Indices 155-204: 50-post Search Console corpus, dates via DAY_OVERRIDES
+ *   (10/day Aug 11 - Aug 15).
  */
 export const publishOrder = [
   // Original corpus — all live by day 9 (Aug 7)
@@ -185,9 +190,123 @@ export const publishOrder = [
   "ai-sentiment-analysis-guide",
   "llm-cost-monitoring-open-source",
   "ai-automation-playbook-2026",
+  // 50-post Search Console corpus — dates via DAY_OVERRIDES (Aug 11-15)
+  "organize-ai-prompts-2026-system",
+  "layered-ai-prompts-layers-explained",
+  "ai-prompt-organizer-checklist",
+  "prompt-library-best-practices",
+  "prompts-as-code-workflow",
+  "prompt-folder-structure-design",
+  "ai-prompt-workspace-vs-tools",
+  "find-prompt-fast-search",
+  "prompt-management-enterprise-guide",
+  "ai-chat-rescue-continue-sessions",
+  "context-engineering-guide",
+  "ai-context-loss-problem",
+  "context-portability-models",
+  "context-compression-techniques",
+  "claude-code-md-project-context",
+  "multi-model-workflow-design",
+  "ai-project-memory-guide",
+  "context-window-budgeting",
+  "ai-conversation-handoff-team",
+  "long-context-vs-compression",
+  "llm-routing-implementation-guide",
+  "llm-cost-per-task-analysis",
+  "reduce-llm-spend-15-ways",
+  "llm-gateway-vs-direct-api",
+  "startup-ai-stack-guide",
+  "llm-pricing-comparison-2026",
+  "semantic-caching-guide",
+  "ai-spend-analytics-dashboard",
+  "hard-budgets-ai-teams",
+  "model-fallback-strategies-guide",
+  "byok-for-beginners-guide",
+  "byok-vs-platform-credits",
+  "llm-api-key-management-guide",
+  "team-api-keys-security",
+  "software-private-key-workflows-2026",
+  "ai-tool-security-audit",
+  "api-key-rotation-automation",
+  "data-privacy-ai-tools-byok",
+  "ai-governance-small-teams",
+  "ai-cost-per-client-tracking",
+  "compare-llm-outputs-tools-2026",
+  "llm-evals-workflow-guide",
+  "ai-model-benchmarks-2026",
+  "best-model-per-task-2026",
+  "prompt-engineering-news-2026",
+  "llm-market-news-2026",
+  "ai-for-students-guide-2026",
+  "freelancer-ai-workflow-2026",
+  "ai-for-non-developers-guide",
+  "layerflow-workspace-tour",
 ] as const;
 
 export type ScheduledSlug = (typeof publishOrder)[number];
+
+/**
+ * Explicit publish day (0-indexed from BLOG_SCHEDULE_START) for slugs that
+ * do not follow POSTS_PER_DAY pacing. The 50-post Search Console corpus
+ * publishes 10/day on days 13-17 (Aug 11-15, 2026).
+ */
+const DAY_OVERRIDES: Record<string, number> = {
+  // Aug 11 — prompt organization
+  "organize-ai-prompts-2026-system": 13,
+  "layered-ai-prompts-layers-explained": 13,
+  "ai-prompt-organizer-checklist": 13,
+  "prompt-library-best-practices": 13,
+  "prompts-as-code-workflow": 13,
+  "prompt-folder-structure-design": 13,
+  "ai-prompt-workspace-vs-tools": 13,
+  "find-prompt-fast-search": 13,
+  "prompt-management-enterprise-guide": 13,
+  "ai-chat-rescue-continue-sessions": 13,
+  // Aug 12 — context engineering
+  "context-engineering-guide": 14,
+  "ai-context-loss-problem": 14,
+  "context-portability-models": 14,
+  "context-compression-techniques": 14,
+  "claude-code-md-project-context": 14,
+  "multi-model-workflow-design": 14,
+  "ai-project-memory-guide": 14,
+  "context-window-budgeting": 14,
+  "ai-conversation-handoff-team": 14,
+  "long-context-vs-compression": 14,
+  // Aug 13 — routing, cost, gateway
+  "llm-routing-implementation-guide": 15,
+  "llm-cost-per-task-analysis": 15,
+  "reduce-llm-spend-15-ways": 15,
+  "llm-gateway-vs-direct-api": 15,
+  "startup-ai-stack-guide": 15,
+  "llm-pricing-comparison-2026": 15,
+  "semantic-caching-guide": 15,
+  "ai-spend-analytics-dashboard": 15,
+  "hard-budgets-ai-teams": 15,
+  "model-fallback-strategies-guide": 15,
+  // Aug 14 — BYOK, keys, security
+  "byok-for-beginners-guide": 16,
+  "byok-vs-platform-credits": 16,
+  "llm-api-key-management-guide": 16,
+  "team-api-keys-security": 16,
+  "software-private-key-workflows-2026": 16,
+  "ai-tool-security-audit": 16,
+  "api-key-rotation-automation": 16,
+  "data-privacy-ai-tools-byok": 16,
+  "ai-governance-small-teams": 16,
+  "ai-cost-per-client-tracking": 16,
+  // Aug 15 — comparison, evals, news, global use cases
+  "compare-llm-outputs-tools-2026": 17,
+  "llm-evals-workflow-guide": 17,
+  "ai-model-benchmarks-2026": 17,
+  "best-model-per-task-2026": 17,
+  "prompt-engineering-news-2026": 17,
+  "llm-market-news-2026": 17,
+  "ai-for-students-guide-2026": 17,
+  "freelancer-ai-workflow-2026": 17,
+  "ai-for-non-developers-guide": 17,
+  "layerflow-workspace-tour": 17,
+};
 
 function addUtcDays(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split("-").map(Number);
@@ -200,6 +319,10 @@ function addUtcDays(isoDate: string, days: number): string {
 
 /** YYYY-MM-DD for a slug in the schedule, or undefined if unscheduled */
 export function scheduledPublishDate(slug: string): string | undefined {
+  const overrideDay = DAY_OVERRIDES[slug];
+  if (overrideDay !== undefined) {
+    return addUtcDays(BLOG_SCHEDULE_START, overrideDay);
+  }
   const idx = publishOrder.indexOf(slug as ScheduledSlug);
   if (idx < 0) return undefined;
   return addUtcDays(BLOG_SCHEDULE_START, Math.floor(idx / POSTS_PER_DAY));

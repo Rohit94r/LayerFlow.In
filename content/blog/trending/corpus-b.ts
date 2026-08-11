@@ -98,7 +98,7 @@ export const corpusB: BlogPost[] = [
     "secondaryKeywords": ["LLM context window", "context management", "prompt context"],
     "readingTime": "6 min read",
     "author": "LayerFlow Team",
-    "relatedSlugs": ["context-window-costs", "llm-context-compression", "token-cost-optimization-guide"],
+    "relatedSlugs": ["llm-context-window-costs", "llm-context-compression", "token-cost-optimization-guide"],
     "blocks": [
       { "type": "p", "text": "Your context window is finite and priced. Context window optimization is about fitting the most useful information into it — because noisy context hurts both answer quality and your bill." },
       { "type": "h2", "id": "quality-vs-quantity", "text": "More context is not better" },

@@ -7,6 +7,7 @@ Day-by-day auto-publish for the LayerFlow SEO corpus.
 - Source of truth for **order**: [`content/blog/publish-schedule.ts`](../content/blog/publish-schedule.ts) (`publishOrder`)
 - At load time, each post’s `publishedAt` is overwritten from the schedule (existing article bodies stay intact)
 - **`POSTS_PER_DAY`** slugs unlock per calendar day — currently **5/day**
+- The 50-post Search Console corpus uses **`DAY_OVERRIDES`**: **10/day** on Aug 11–15, 2026
 - Public surfaces use `getPublishedPosts(now)` — only posts with `publishedAt` calendar day ≤ editorial **today** (`Asia/Kolkata`)
 - Unpublished slug URLs return **404** (still in `generateStaticParams` so builds stay stable)
 - Sitemap includes **published posts only**
@@ -14,12 +15,13 @@ Day-by-day auto-publish for the LayerFlow SEO corpus.
 
 ## Calendar
 
-Start: **2026-07-29** (Day 0). **5 posts per day**, 155 posts total, running through **2026-08-28**.
+Start: **2026-07-29** (Day 0). **5 posts per day**, 155 posts total, running through **2026-08-28**. Then the 50-post Search Console corpus at **10/day**, Aug 11–15 (overlapping the trending tail).
 
 - Indices **0–44** — original 50-post corpus part 1 (Jul 29 – Aug 6)
 - Indices **45–49** — 5 big blogs, live Aug 7 (Search Console top queries)
 - Indices **50–54** — original corpus part 2 (Aug 8)
 - Indices **55–154** — 100-post trending SEO corpus, 5/day Aug 9 – Aug 28
+- **Search Console corpus** — `content/blog/searchconsole/corpus-1.ts` … `corpus-5.ts`, 50 posts, 10/day Aug 11 – Aug 15 (dates via `DAY_OVERRIDES` in `publish-schedule.ts`)
 
 | # | Date | Slug | Notes |
 |---|------|------|-------|
@@ -177,13 +179,64 @@ Start: **2026-07-29** (Day 0). **5 posts per day**, 155 posts total, running thr
 | 151 | 2026-08-28 | `llm-accuracy-benchmarks-2026` | Trending corpus |
 | 152 | 2026-08-28 | `ai-sentiment-analysis-guide` | Trending corpus |
 | 153 | 2026-08-28 | `llm-cost-monitoring-open-source` | Trending corpus |
-| 154 | 2026-08-28 | `ai-automation-playbook-2026` | Trending corpus |
+| 154 | 2026-08-28 | `ai-automation-playbook-2026` | |
+| 155 | 2026-08-11 | `organize-ai-prompts-2026-system` | Search Console corpus 1 — prompt org |
+| 156 | 2026-08-11 | `layered-ai-prompts-layers-explained` | Search Console corpus 1 — prompt org |
+| 157 | 2026-08-11 | `ai-prompt-organizer-checklist` | Search Console corpus 1 — prompt org |
+| 158 | 2026-08-11 | `prompt-library-best-practices` | Search Console corpus 1 — prompt org |
+| 159 | 2026-08-11 | `prompts-as-code-workflow` | Search Console corpus 1 — prompt org |
+| 160 | 2026-08-11 | `prompt-folder-structure-design` | Search Console corpus 1 — prompt org |
+| 161 | 2026-08-11 | `ai-prompt-workspace-vs-tools` | Search Console corpus 1 — prompt org |
+| 162 | 2026-08-11 | `find-prompt-fast-search` | Search Console corpus 1 — prompt org |
+| 163 | 2026-08-11 | `prompt-management-enterprise-guide` | Search Console corpus 1 — prompt org |
+| 164 | 2026-08-11 | `ai-chat-rescue-continue-sessions` | Search Console corpus 1 — prompt org |
+| 165 | 2026-08-12 | `context-engineering-guide` | Search Console corpus 2 — context |
+| 166 | 2026-08-12 | `ai-context-loss-problem` | Search Console corpus 2 — context |
+| 167 | 2026-08-12 | `context-portability-models` | Search Console corpus 2 — context |
+| 168 | 2026-08-12 | `context-compression-techniques` | Search Console corpus 2 — context |
+| 169 | 2026-08-12 | `claude-code-md-project-context` | Search Console corpus 2 — context |
+| 170 | 2026-08-12 | `multi-model-workflow-design` | Search Console corpus 2 — context |
+| 171 | 2026-08-12 | `ai-project-memory-guide` | Search Console corpus 2 — context |
+| 172 | 2026-08-12 | `context-window-budgeting` | Search Console corpus 2 — context |
+| 173 | 2026-08-12 | `ai-conversation-handoff-team` | Search Console corpus 2 — context |
+| 174 | 2026-08-12 | `long-context-vs-compression` | Search Console corpus 2 — context |
+| 175 | 2026-08-13 | `llm-routing-implementation-guide` | Search Console corpus 3 — routing/cost |
+| 176 | 2026-08-13 | `llm-cost-per-task-analysis` | Search Console corpus 3 — routing/cost |
+| 177 | 2026-08-13 | `reduce-llm-spend-15-ways` | Search Console corpus 3 — routing/cost |
+| 178 | 2026-08-13 | `llm-gateway-vs-direct-api` | Search Console corpus 3 — routing/cost |
+| 179 | 2026-08-13 | `startup-ai-stack-guide` | Search Console corpus 3 — routing/cost |
+| 180 | 2026-08-13 | `llm-pricing-comparison-2026` | Search Console corpus 3 — routing/cost |
+| 181 | 2026-08-13 | `semantic-caching-guide` | Search Console corpus 3 — routing/cost |
+| 182 | 2026-08-13 | `ai-spend-analytics-dashboard` | Search Console corpus 3 — routing/cost |
+| 183 | 2026-08-13 | `hard-budgets-ai-teams` | Search Console corpus 3 — routing/cost |
+| 184 | 2026-08-13 | `model-fallback-strategies-guide` | Search Console corpus 3 — routing/cost |
+| 185 | 2026-08-14 | `byok-for-beginners-guide` | Search Console corpus 4 — BYOK/keys |
+| 186 | 2026-08-14 | `byok-vs-platform-credits` | Search Console corpus 4 — BYOK/keys |
+| 187 | 2026-08-14 | `llm-api-key-management-guide` | Search Console corpus 4 — BYOK/keys |
+| 188 | 2026-08-14 | `team-api-keys-security` | Search Console corpus 4 — BYOK/keys |
+| 189 | 2026-08-14 | `software-private-key-workflows-2026` | Search Console corpus 4 — BYOK/keys |
+| 190 | 2026-08-14 | `ai-tool-security-audit` | Search Console corpus 4 — BYOK/keys |
+| 191 | 2026-08-14 | `api-key-rotation-automation` | Search Console corpus 4 — BYOK/keys |
+| 192 | 2026-08-14 | `data-privacy-ai-tools-byok` | Search Console corpus 4 — BYOK/keys |
+| 193 | 2026-08-14 | `ai-governance-small-teams` | Search Console corpus 4 — BYOK/keys |
+| 194 | 2026-08-14 | `ai-cost-per-client-tracking` | Search Console corpus 4 — BYOK/keys |
+| 195 | 2026-08-15 | `compare-llm-outputs-tools-2026` | Search Console corpus 5 — comparison/news |
+| 196 | 2026-08-15 | `llm-evals-workflow-guide` | Search Console corpus 5 — comparison/news |
+| 197 | 2026-08-15 | `ai-model-benchmarks-2026` | Search Console corpus 5 — comparison/news |
+| 198 | 2026-08-15 | `best-model-per-task-2026` | Search Console corpus 5 — comparison/news |
+| 199 | 2026-08-15 | `prompt-engineering-news-2026` | Search Console corpus 5 — comparison/news |
+| 200 | 2026-08-15 | `llm-market-news-2026` | Search Console corpus 5 — comparison/news |
+| 201 | 2026-08-15 | `ai-for-students-guide-2026` | Search Console corpus 5 — comparison/news |
+| 202 | 2026-08-15 | `freelancer-ai-workflow-2026` | Search Console corpus 5 — comparison/news |
+| 203 | 2026-08-15 | `ai-for-non-developers-guide` | Search Console corpus 5 — comparison/news |
+| 204 | 2026-08-15 | `layerflow-workspace-tour` | Search Console corpus 5 — comparison/news |
 
 ## Changing the schedule
 
 1. Edit `publishOrder` in `content/blog/publish-schedule.ts`
-2. Optionally tweak title/meta/keywords on the rematched post in `content/blog/posts.ts`
-3. Do **not** mass-rewrite article bodies unless intentionally expanding a priority post
+2. For non-uniform pacing (e.g. 10/day bursts), add the slug to `DAY_OVERRIDES` with the day number (0-indexed from `BLOG_SCHEDULE_START`)
+3. Optionally tweak title/meta/keywords on the rematched post in `content/blog/posts.ts`
+4. Do **not** mass-rewrite article bodies unless intentionally expanding a priority post
 
 ## Verify
 

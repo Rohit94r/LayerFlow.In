@@ -489,7 +489,7 @@ export const corpusC: BlogPost[] = [
     "secondaryKeywords": ["compress context tokens", "long context management", "prompt compression"],
     "readingTime": "6 min read",
     "author": "LayerFlow Team",
-    "relatedSlugs": ["context-window-optimization", "token-cost-optimization-guide", "context-window-costs"],
+    "relatedSlugs": ["context-window-optimization", "token-cost-optimization-guide", "llm-context-window-costs"],
     "blocks": [
       { "type": "p", "text": "Context compression fits long conversations or documents into less space — cutting cost and latency while keeping the information the model needs. It's the practical answer to growing context windows." },
       { "type": "h2", "id": "why-compress", "text": "Why compress at all" },
