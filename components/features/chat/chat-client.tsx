@@ -253,6 +253,16 @@ export function ChatClient() {
 
   async function chooseModel(model: string) {
     if (!sessionId) return;
+    // Reset the live stream before switching: abort the current provider call,
+    // drop the temporary assistant draft, and clear cached stream state so the
+    // next send goes to the NEW model with a clean provider session.
+    if (streaming) {
+      streamAbortRef.current?.abort();
+      streamAbortRef.current = null;
+      contentRef.current = "";
+      setStream(null);
+      setMessages((prev) => prev.filter((m) => m.id !== stream?.placeholderId));
+    }
     try {
       const res = await chatService.switchModel(sessionId, model);
       setActive(res.session);
@@ -390,11 +400,18 @@ export function ChatClient() {
       await streamChatMessage({
         sessionId,
         content: text,
+        model: active.defaultModel ?? undefined,
         autoSwitch,
         signal: controller.signal,
         onEvent,
       });
     } catch (err) {
+      // An intentional abort (model switched mid-stream) is a clean reset —
+      // the temporary draft is already gone; do not surface it as an error.
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setStream(null);
+        return;
+      }
       const hasContent = contentRef.current.length > 0;
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== placeholderId),

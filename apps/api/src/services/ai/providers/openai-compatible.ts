@@ -38,6 +38,7 @@ export function createOpenAICompatibleAdapter(opts: {
             model: req.model,
             messages: req.messages,
             stream: false,
+            ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
           }),
         });
@@ -103,6 +104,7 @@ export function createOpenAICompatibleAdapter(opts: {
             // Ask for real usage in the final chunk (supported by OpenAI,
             // Groq, DeepSeek, xAI, OpenRouter).
             stream_options: { include_usage: true },
+            ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
           }),
         });

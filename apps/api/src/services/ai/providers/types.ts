@@ -20,6 +20,12 @@ export interface ChatCompletionRequest {
   stream?: boolean;
   /** Cap completion length (Prefer-cheap / tokenSaver short answers). */
   maxTokens?: number;
+  /**
+   * Sampling temperature (0..2). Omit to use the provider default; the chat
+   * router sets a per-provider default so switching models never inherits the
+   * previous model's temperature.
+   */
+  temperature?: number;
 }
 
 export interface ChatCompletionResult {

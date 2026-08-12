@@ -129,6 +129,18 @@ export function createApp(): Hono<AppEnv> {
   // Better Auth owns everything under /api/auth/* (Google OAuth callback, session...).
   app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
+  // Root banner: hitting the Render URL in a browser should make it obvious
+  // this is the API (JSON), not the web app — the frontend lives on Vercel.
+  app.get("/", (c) =>
+    c.json({
+      name: "LayerFlow API",
+      status: "ok",
+      web: env.WEB_URL,
+      health: "/health",
+      docs: "https://github.com/Rohit94r/LayerFlow.In",
+    }),
+  );
+
   // Liveness: process is up (no dependency checks — for container restarts).
   app.get("/health/live", (c) => c.json({ status: "ok" }));
 

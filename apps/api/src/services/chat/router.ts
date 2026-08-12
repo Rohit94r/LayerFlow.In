@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { computeCostMicro, getModel, type Provider } from "@layerflow/model-registry";
 import type { ChatMessageRecord } from "@layerflow/contracts";
 import { db } from "../../db/client";
@@ -12,6 +12,10 @@ import {
   type ChatCompletionResult,
   type ProviderAdapter,
 } from "../ai/providers";
+import { estimateTokens } from "../intelligence/analyze";
+import { buildMessages } from "./context";
+import { normalizeMarkdown } from "./markdown";
+import { defaultTemperature } from "./prompts";
 import { budgetRelease, budgetReserve, budgetSettle } from "../runs/budget-hook";
 import {
   isKeyUsable,
@@ -45,7 +49,6 @@ export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
 ];
 
 const MAX_CHAT_OUTPUT_TOKENS = 2048;
-const HISTORY_WINDOW = 40;
 
 /** Short human reason for a failed provider attempt. */
 function reasonForStatus(status: number): string {
@@ -169,7 +172,14 @@ async function runSingleCall(input: {
     throw new AppError(500, "key_decrypt_failed", "Could not decrypt the API key for this provider");
   }
 
-  const req = { model, messages, apiKey, maxTokens: MAX_CHAT_OUTPUT_TOKENS };
+  // Per-provider temperature so a model switch never inherits the last model's.
+  const req = {
+    model,
+    messages,
+    apiKey,
+    maxTokens: MAX_CHAT_OUTPUT_TOKENS,
+    temperature: defaultTemperature(provider),
+  };
 
   try {
     let result: ChatCompletionResult;
@@ -248,19 +258,17 @@ export async function runChatMessage(input: {
 
   const chosenProvider = getModel(chosenModel)!.provider;
 
-  // Provider context: the last N user/assistant turns (imports arrive as user messages).
-  const allMessages = await db.query.aiChatMessages.findMany({
-    where: eq(aiChatMessages.sessionId, sessionId),
-    orderBy: [asc(aiChatMessages.createdAt)],
+  // Provider isolation: rebuild a clean message array from stored rows for the
+  // selected model — provider system prompt + last 8 messages + summarized
+  // older history, token-budgeted, with provider metadata stripped.
+  const estimateMessages = await buildMessages({
+    workspaceId,
+    sessionId,
+    model: chosenModel,
   });
-  const history = allMessages
-    .filter((m) => m.role === "user" || (m.role === "assistant" && m.content.length > 0))
-    .slice(-HISTORY_WINDOW)
-    .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
-
-  const estInput =
-    Math.ceil(history.reduce((a, m) => a + m.content.length, 0) / 4) +
-    Math.ceil(content.length / 4);
+  const estInput = estimateTokens(
+    estimateMessages.map((m) => m.content).join("\n"),
+  );
   const estimateCost = computeCostMicro(chosenModel, estInput, MAX_CHAT_OUTPUT_TOKENS) ?? 50_000;
 
   // Stable row for the streaming reply; updated in place when a call succeeds.
@@ -289,6 +297,11 @@ export async function runChatMessage(input: {
 
   let lastError: { status: number; code: string; message: string } | null = null;
 
+  // Rebuilt once per provider in the chain so the system prompt always belongs
+  // to the model actually answering (never the previously requested one).
+  let builtForModel: string | null = null;
+  let builtMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> | null = null;
+
   for (const choice of chain) {
     if (!getModel(choice.model)) continue;
     const candidates = await buildCandidates(workspaceId, choice.provider);
@@ -304,11 +317,15 @@ export async function runChatMessage(input: {
 
     for (const payload of candidates) {
       try {
+        if (choice.model !== builtForModel) {
+          builtMessages = await buildMessages({ workspaceId, sessionId, model: choice.model });
+          builtForModel = choice.model;
+        }
         const result = await runSingleCall({
           workspaceId,
           provider: choice.provider,
           model: choice.model,
-          messages: history,
+          messages: builtMessages!,
           adapter: resolveAdapter(choice.provider),
           payload,
           onDelta: (text) => input.onEvent({ type: "delta", text }),
@@ -327,7 +344,7 @@ export async function runChatMessage(input: {
             : undefined;
 
         const row = await updateChatMessage(assistantMessage.id, {
-          content: result.content,
+          content: normalizeMarkdown(result.content),
           model: choice.model,
           provider: choice.provider,
           keyHint: payload.keyHint,

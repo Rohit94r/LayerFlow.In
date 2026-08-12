@@ -57,6 +57,7 @@ export const anthropicAdapter: ProviderAdapter = {
         body: JSON.stringify({
           model: req.model,
           max_tokens: req.maxTokens ?? 4096,
+          ...(req.temperature != null ? { temperature: req.temperature } : {}),
           ...(system ? { system } : {}),
           messages,
         }),
@@ -122,6 +123,7 @@ export const anthropicAdapter: ProviderAdapter = {
           model: req.model,
           max_tokens: req.maxTokens ?? 4096,
           stream: true,
+          ...(req.temperature != null ? { temperature: req.temperature } : {}),
           ...(system ? { system } : {}),
           messages,
         }),
