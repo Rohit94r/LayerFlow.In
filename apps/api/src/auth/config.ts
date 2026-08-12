@@ -34,21 +34,39 @@ export function sharedParentDomain(hostA: string, hostB: string): string | null 
   return shared.join(".");
 }
 
+/** True when `domain` (with or without a leading dot) is the host itself or a parent of it. */
+export function hostCovers(domain: string, host: string): boolean {
+  const d = domain.replace(/^\./, "").toLowerCase();
+  const h = host.toLowerCase();
+  return h === d || h.endsWith(`.${d}`);
+}
+
 /**
  * Cookie domain for cross-subdomain sessions. Explicit COOKIE_DOMAIN wins;
  * otherwise derived from WEB_URL/API_URL in production only. Returns
  * undefined for local dev (host-only cookies on localhost).
+ *
+ * Hardening: a cookie Domain the browser would reject (because the web host
+ * is not inside it — e.g. a stale COOKIE_DOMAIN or API_URL left over from a
+ * hosting migration) makes every Set-Cookie silently dropped, so users are
+ * logged out on the very next request after a successful sign-in. Any
+ * candidate that does not cover the web host falls back to a host-only
+ * cookie, which is exactly right for the same-origin deployment where the
+ * API is mounted on the web host.
  */
 export function deriveCookieDomain(env: Pick<Env, "NODE_ENV" | "COOKIE_DOMAIN" | "WEB_URL" | "API_URL">): string | undefined {
-  if (env.COOKIE_DOMAIN) {
-    return env.COOKIE_DOMAIN.startsWith(".") ? env.COOKIE_DOMAIN : `.${env.COOKIE_DOMAIN}`;
-  }
-  if (env.NODE_ENV !== "production") return undefined;
   const webHost = new URL(env.WEB_URL).hostname;
-  const apiHost = new URL(env.API_URL).hostname;
-  if (webHost === apiHost) return undefined; // same host — host-only cookie is fine
-  const parent = sharedParentDomain(webHost, apiHost);
-  return parent ? `.${parent}` : undefined;
+  let candidate: string | undefined;
+  if (env.COOKIE_DOMAIN) {
+    candidate = env.COOKIE_DOMAIN.startsWith(".") ? env.COOKIE_DOMAIN : `.${env.COOKIE_DOMAIN}`;
+  } else if (env.NODE_ENV === "production") {
+    const apiHost = new URL(env.API_URL).hostname;
+    if (webHost === apiHost) return undefined; // same host — host-only cookie is fine
+    const parent = sharedParentDomain(webHost, apiHost);
+    if (parent) candidate = `.${parent}`;
+  }
+  if (!candidate) return undefined;
+  return hostCovers(candidate, webHost) ? candidate : undefined;
 }
 
 /**

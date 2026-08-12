@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildTrustedOrigins,
   deriveCookieDomain,
+  hostCovers,
   SESSION_COOKIE_CACHE_MAX_AGE_SEC,
   SESSION_EXPIRES_IN_SEC,
   SESSION_UPDATE_AGE_SEC,
@@ -67,6 +68,47 @@ describe("auth production config helpers", () => {
         API_URL: "https://layerflow-api.fly.dev",
       }),
     ).toBeUndefined();
+  });
+
+  it("deriveCookieDomain refuses a stale COOKIE_DOMAIN that does not cover the web host", () => {
+    // Stale env from a hosting migration — .onrender.com cannot be the Domain
+    // of a layerflow.dev cookie; browsers would reject every Set-Cookie and
+    // users would be logged out on the next request.
+    expect(
+      deriveCookieDomain({
+        NODE_ENV: "production",
+        COOKIE_DOMAIN: "onrender.com",
+        WEB_URL: "https://layerflow.dev",
+        API_URL: "https://layerflow-api.onrender.com",
+      }),
+    ).toBeUndefined();
+    expect(
+      deriveCookieDomain({
+        NODE_ENV: "production",
+        COOKIE_DOMAIN: "layerflow-api.onrender.com",
+        WEB_URL: "https://layerflow.dev",
+        API_URL: "https://layerflow-api.onrender.com",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("deriveCookieDomain keeps a valid explicit COOKIE_DOMAIN for the web host", () => {
+    expect(
+      deriveCookieDomain({
+        NODE_ENV: "production",
+        COOKIE_DOMAIN: ".layerflow.dev",
+        WEB_URL: "https://www.layerflow.dev",
+        API_URL: "https://api.layerflow.dev",
+      }),
+    ).toBe(".layerflow.dev");
+  });
+
+  it("hostCovers accepts the apex and subdomains only", () => {
+    expect(hostCovers(".layerflow.dev", "layerflow.dev")).toBe(true);
+    expect(hostCovers(".layerflow.dev", "www.layerflow.dev")).toBe(true);
+    expect(hostCovers(".layerflow.dev", "layerflow.com")).toBe(false);
+    expect(hostCovers(".onrender.com", "layerflow.dev")).toBe(false);
+    expect(hostCovers("layerflow.dev", "api.layerflow.dev")).toBe(true);
   });
 
   it("buildTrustedOrigins dedupes and includes web + api origins", () => {
