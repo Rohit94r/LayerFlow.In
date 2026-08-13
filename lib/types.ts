@@ -17,9 +17,10 @@ export type AiTool =
 
 export type PlanId = "free" | "starter" | "pro";
 
-// ── Context Passport ─────────────────────────────────────────
+// ── Rescue Context ───────────────────────────────────────────
 
-export interface PassportFields {
+/** AI-extracted conversation summary carried by a rescue report. */
+export interface RescueContext {
   goal: string;
   currentState: string;
   decisions: string[];
@@ -29,26 +30,6 @@ export interface PassportFields {
   missingInfo: string[];
   outputFormat: string;
   nextAction: string;
-}
-
-export interface PassportMeta {
-  sourceTool: AiTool;
-  sourceModel: string;
-  projectId?: string;
-  tags: string[];
-  estimatedNextCost: number;
-}
-
-export interface ContextPassport {
-  id: string;
-  title: string;
-  fields: PassportFields;
-  meta: PassportMeta;
-  createdAt: string;
-  updatedAt: string;
-  favorite: boolean;
-  usageCount: number;
-  wordCount: number;
 }
 
 // ── Rescue Report ────────────────────────────────────────────
@@ -79,6 +60,8 @@ export interface ContextDiff {
 export interface RescueReport {
   id: string;
   title: string;
+  status: "queued" | "running" | "completed" | "failed";
+  errorMessage?: string;
   sourceTool: AiTool;
   sourceModel: string;
   createdAt: string;
@@ -86,7 +69,7 @@ export interface RescueReport {
   compressedWords: number;
   compressionPercent: number;
   summary: string;
-  passport: PassportFields;
+  context: RescueContext;
   improvedPrompt: string;
   promptScore: number;
   promptScores: PromptScoreAxis[];
@@ -114,6 +97,8 @@ export interface Prompt {
   version: number;
   favorite: boolean;
   usageCount: number;
+  /** Where the prompt came from: manual, imported from chat, or an Improve run. */
+  source: "manual" | "chat" | "improve";
   createdAt: string;
   updatedAt: string;
   sourceTool?: AiTool;
@@ -126,7 +111,6 @@ export interface Project {
   name: string;
   description: string;
   color: string;
-  passportCount: number;
   promptCount: number;
   learningCount: number;
   updatedAt: string;
@@ -136,7 +120,6 @@ export interface Project {
 
 export type TimelineEventType =
   | "rescue"
-  | "passport"
   | "prompt"
   | "learning"
   | "cost"
@@ -185,6 +168,8 @@ export interface ProviderKey {
   provider: string;
   label: string;
   status: "connected" | "needs_attention" | "not_added";
+  /** Last 4 chars of the secret — the only plaintext the API stores. */
+  keyHint?: string;
   addedAt?: string;
   lastUsed?: string;
 }
@@ -225,6 +210,17 @@ export interface CostAnalytics {
   byModel: CostPoint[];
   savingsByMonth: CostPoint[];
   spendByModel: ModelSpend[];
+  /** USD spend per day for the last 7 days, oldest first. */
+  dailySpend?: number[];
+}
+
+export interface SavingsSummary {
+  period: string;
+  actualCost: number;
+  optimizedCost: number;
+  saved: number;
+  tokensSaved: number;
+  source: string;
 }
 
 // ── Dashboard ────────────────────────────────────────────────
