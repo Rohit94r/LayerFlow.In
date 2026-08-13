@@ -2,7 +2,7 @@ import { z } from "zod";
 import { idSchema, timestampSchema } from "./common";
 
 /** Where a memory came from. "manual" = typed in by the user. */
-export const memorySourceTypeSchema = z.enum(["prompt", "session", "run", "manual"]);
+export const memorySourceTypeSchema = z.enum(["prompt", "session", "run", "manual", "chat"]);
 export type MemorySourceType = z.infer<typeof memorySourceTypeSchema>;
 
 export const memorySchema = z.object({

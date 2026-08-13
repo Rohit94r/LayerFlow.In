@@ -5,8 +5,8 @@ import { idSchema, timestampSchema } from "./common";
 export const rescueReportStatusSchema = z.enum(["queued", "running", "completed", "failed"]);
 export type RescueReportStatus = z.infer<typeof rescueReportStatusSchema>;
 
-/** Structured context captured from a rescued conversation. */
-export const rescuePassportSchema = z.object({
+/** Structured AI summary captured from a rescued conversation. */
+export const rescueContextSchema = z.object({
   goal: z.string(),
   currentState: z.string(),
   decisions: z.array(z.string()),
@@ -17,7 +17,7 @@ export const rescuePassportSchema = z.object({
   outputFormat: z.string(),
   nextAction: z.string(),
 });
-export type RescuePassport = z.infer<typeof rescuePassportSchema>;
+export type RescueContext = z.infer<typeof rescueContextSchema>;
 
 export const rescueCostEstimateSchema = z.object({
   modelId: z.string(),
@@ -62,7 +62,7 @@ export const rescueReportSchema = z.object({
   status: rescueReportStatusSchema,
   errorMessage: z.string().nullish(),
   summary: z.string(),
-  passport: rescuePassportSchema,
+  context: rescueContextSchema,
   improvedPrompt: z.string(),
   promptScore: z.number().int().min(0).max(100).nullish(),
   promptScores: z.array(rescueScoreAxisSchema),
@@ -89,6 +89,18 @@ export const createRescueRequestSchema = z.object({
   domainId: idSchema.optional(),
 });
 export type CreateRescueRequest = z.infer<typeof createRescueRequestSchema>;
+
+/** PATCH /api/rescue/:id — workspace bookkeeping (save state, project link). */
+export const updateRescueRequestSchema = z.object({
+  saved: z.boolean().optional(),
+  projectId: idSchema.nullish().optional(),
+});
+export type UpdateRescueRequest = z.infer<typeof updateRescueRequestSchema>;
+
+export const updateRescueResponseSchema = z.object({
+  report: rescueReportSchema,
+});
+export type UpdateRescueResponse = z.infer<typeof updateRescueResponseSchema>;
 
 export const createRescueResponseSchema = z.object({
   report: rescueReportSchema,

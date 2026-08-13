@@ -37,6 +37,8 @@ export type UpdateProjectRequest = z.infer<typeof updateProjectRequestSchema>;
 export const listProjectsQuerySchema = z.object({
   domainId: idSchema.optional(),
   status: projectStatusSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export type ListProjectsQuery = z.infer<typeof listProjectsQuerySchema>;

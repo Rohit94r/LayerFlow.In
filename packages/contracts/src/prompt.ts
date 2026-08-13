@@ -31,6 +31,8 @@ export const promptSchema = z.object({
   title: z.string(),
   description: z.string().nullish(),
   notes: z.string().nullish(),
+  source: z.enum(["manual", "chat", "improve"]),
+  runCount: z.number().int().nonnegative(),
   currentVersionId: idSchema.nullish(),
   tags: z.array(z.string()),
   favorite: z.boolean(),

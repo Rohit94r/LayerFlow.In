@@ -137,6 +137,26 @@ export const switchChatModelRequestSchema = z.object({
 
 export type SwitchChatModelRequest = z.infer<typeof switchChatModelRequestSchema>;
 
+/** PATCH /api/chat/:id/auto-switch */
+export const setChatAutoSwitchRequestSchema = z.object({
+  autoSwitch: z.boolean(),
+});
+
+export type SetChatAutoSwitchRequest = z.infer<typeof setChatAutoSwitchRequestSchema>;
+
+/** PATCH /api/chat/:id — rename a conversation. */
+export const renameChatSessionRequestSchema = z.object({
+  title: z.string().trim().min(1).max(200),
+});
+
+export type RenameChatSessionRequest = z.infer<typeof renameChatSessionRequestSchema>;
+
+export const renameChatSessionResponseSchema = z.object({
+  session: chatSessionSchema,
+});
+
+export type RenameChatSessionResponse = z.infer<typeof renameChatSessionResponseSchema>;
+
 export const switchChatModelResponseSchema = z.object({
   session: chatSessionSchema,
 });

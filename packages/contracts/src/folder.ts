@@ -31,6 +31,8 @@ export type UpdateFolderRequest = z.infer<typeof updateFolderRequestSchema>;
 /** GET /api/folders?projectId= */
 export const listFoldersQuerySchema = z.object({
   projectId: idSchema.optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
 });
 
 export type ListFoldersQuery = z.infer<typeof listFoldersQuerySchema>;

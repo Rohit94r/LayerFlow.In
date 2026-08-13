@@ -164,34 +164,3 @@ export const clonePromptResponseSchema = z.object({
   sourcePromptId: idSchema,
 });
 export type ClonePromptResponse = z.infer<typeof clonePromptResponseSchema>;
-
-// ── Notifications ─────────────────────────────────────────────────────────────
-
-export const notificationSchema = z.object({
-  id: idSchema,
-  type: z.string(),
-  title: z.string(),
-  body: z.string().nullish(),
-  data: z.unknown().nullish(),
-  readAt: timestampSchema.nullish(),
-  createdAt: timestampSchema,
-});
-export type Notification = z.infer<typeof notificationSchema>;
-
-export const listNotificationsResponseSchema = z.object({
-  notifications: z.array(notificationSchema),
-  unreadCount: z.number().int().nonnegative(),
-});
-export type ListNotificationsResponse = z.infer<typeof listNotificationsResponseSchema>;
-
-/** POST /api/notifications/read — mark some (or all) notifications read. */
-export const markNotificationsReadRequestSchema = z.object({
-  ids: z.array(idSchema).max(100).optional(),
-  all: z.boolean().optional(),
-});
-export type MarkNotificationsReadRequest = z.infer<typeof markNotificationsReadRequestSchema>;
-
-export const markNotificationsReadResponseSchema = z.object({
-  updated: z.number().int().nonnegative(),
-});
-export type MarkNotificationsReadResponse = z.infer<typeof markNotificationsReadResponseSchema>;
