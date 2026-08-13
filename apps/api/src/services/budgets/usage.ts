@@ -249,19 +249,19 @@ export async function getSavings(workspaceId: string): Promise<SavingsResponse> 
     };
   }
 
-  // Fallback: ledger sum; illustrative 20% optimization when no run telemetry yet.
+  // Fallback: ledger sum. No run-savings telemetry yet — report the real
+  // spend with a neutral 0 saving instead of inventing an "optimized" figure.
   const [row] = await db
     .select({ total: sql<number>`coalesce(sum(${usageLedger.costMicro}), 0)` })
     .from(usageLedger)
     .where(and(eq(usageLedger.workspaceId, workspaceId), gte(usageLedger.createdAt, start)));
 
   const actual = Number(row?.total ?? 0);
-  const optimized = Math.floor(actual * 0.8);
   return {
     period,
     actualCostMicro: actual,
-    optimizedCostMicro: optimized,
-    savedMicro: Math.max(0, actual - optimized),
+    optimizedCostMicro: actual,
+    savedMicro: 0,
     source: "computed",
   };
 }

@@ -163,9 +163,9 @@ export async function handleWebhook(
       throw new AppError(401, "invalid_signature", "Invalid Dodo webhook signature");
     }
   } else {
-    // Webhooks are strictly verified in production. Without the secret we only
-    // accept events in development so the flow stays testable end-to-end.
-    if (env.NODE_ENV === "production") {
+    // Webhooks are strictly verified everywhere except the local dev loop.
+    // Test environments (vitest) skip verification explicitly via NODE_ENV=test.
+    if (env.NODE_ENV !== "development") {
       throw new AppError(503, "billing_not_configured", "DODO_PAYMENTS_WEBHOOK_KEY is not set");
     }
     logger.warn({ eventId }, "webhook secret not configured — accepting unsigned event in dev");
@@ -174,21 +174,27 @@ export async function handleWebhook(
 
   const type = (event as { type?: string }).type ?? "unknown";
 
-  // Idempotency: Dodo retries until we ACK, so skip already-applied events.
-  const existing = await db.query.billingEvents.findFirst({
-    where: (e, { eq }) => eq(e.eventId, eventId),
-  });
-  if (existing) return { eventId, type, deduplicated: true };
+  // Idempotency: claim the event id first so concurrent Dodo retries can't
+  // both pass the check-then-apply window (atomic via the primary key).
+  const claimed = await db
+    .insert(billingEvents)
+    .values({
+      eventId,
+      type,
+      workspaceId: resolveWorkspaceId(event),
+      payload: JSON.parse(rawBody),
+    })
+    .onConflictDoNothing({ target: billingEvents.eventId })
+    .returning({ eventId: billingEvents.eventId });
+  if (claimed.length === 0) return { eventId, type, deduplicated: true };
 
-  const workspaceId = resolveWorkspaceId(event);
-  await applyWebhookEvent(event); // throws → 500 → Dodo retries
-
-  await db.insert(billingEvents).values({
-    eventId,
-    type,
-    workspaceId: workspaceId ?? null,
-    payload: JSON.parse(rawBody),
-  });
+  try {
+    await applyWebhookEvent(event); // throws → 500 → Dodo retries
+  } catch (err) {
+    // Release the claim so a retry can re-apply the event.
+    await db.delete(billingEvents).where(eq(billingEvents.eventId, eventId)).catch(() => {});
+    throw err;
+  }
 
   return { eventId, type, deduplicated: false };
 }
@@ -216,6 +222,8 @@ async function applyWebhookEvent(event: DodoWebhookEvent): Promise<void> {
       : undefined
   ) as BillingPlanId | undefined;
 
+  const productId = (data.product_id as string | undefined) ?? null;
+
   const customerId = ((data.customer as { customer_id?: unknown } | undefined)?.customer_id ??
     null) as string | null;
   const subscriptionId = (data.subscription_id as string | undefined) ?? null;
@@ -227,6 +235,7 @@ async function applyWebhookEvent(event: DodoWebhookEvent): Promise<void> {
       await upsertSubscription({
         workspaceId,
         plan,
+        productId,
         status: "active",
         dodoCustomerId: customerId,
         dodoSubscriptionId: subscriptionId,
@@ -262,6 +271,7 @@ async function applyWebhookEvent(event: DodoWebhookEvent): Promise<void> {
   await upsertSubscription({
     workspaceId,
     plan,
+    productId,
     status: newStatus,
     dodoCustomerId: customerId,
     dodoSubscriptionId: subscriptionId,
@@ -272,6 +282,7 @@ async function applyWebhookEvent(event: DodoWebhookEvent): Promise<void> {
 interface UpsertParams {
   workspaceId: string;
   plan?: BillingPlanId;
+  productId?: string | null;
   status: string;
   dodoCustomerId: string | null;
   dodoSubscriptionId?: string | null;
@@ -280,7 +291,12 @@ interface UpsertParams {
 
 /** Idempotent upsert of the single subscription row per workspace. */
 async function upsertSubscription(p: UpsertParams): Promise<void> {
-  const plan = p.plan ?? "starter";
+  const existing = await db.query.subscriptions.findFirst({
+    where: (s, { eq }) => eq(s.workspaceId, p.workspaceId),
+  });
+  // Never downgrade an existing plan because an event lacked plan metadata —
+  // preserve the current plan (or derive from the purchased product).
+  const plan = p.plan ?? derivePlanFromProduct(p.productId ?? null) ?? existing?.plan ?? "starter";
   await db
     .insert(subscriptions)
     .values({
@@ -302,6 +318,14 @@ async function upsertSubscription(p: UpsertParams): Promise<void> {
         updatedAt: new Date(),
       },
     });
+}
+
+/** Map a purchased product id back to a plan when event metadata is absent. */
+function derivePlanFromProduct(productId: string | null): BillingPlanId | undefined {
+  if (!productId || !getEnv().DODO_PRODUCT_STARTER || !getEnv().DODO_PRODUCT_PRO) return undefined;
+  if (productId === getEnv().DODO_PRODUCT_STARTER) return "starter";
+  if (productId === getEnv().DODO_PRODUCT_PRO) return "pro";
+  return undefined;
 }
 
 /** Back-fill a workspace id by matching on provider customer / subscription ids. */

@@ -5,6 +5,7 @@ import { accounts, users } from "./schema/auth";
 import { promptTags, prompts, promptVersions } from "./schema/prompts";
 import { promptSessions, sessionMessages } from "./schema/sessions";
 import { activityEvents, projects } from "./schema/workspace";
+import { agents, emptyAgentMetrics } from "./schema/agents";
 import { onboardNewUser } from "../services/onboarding";
 import { seedLearning } from "../services/learning/seed";
 import { logger } from "../config/logger";
@@ -77,6 +78,49 @@ async function seed() {
     .onConflictDoNothing();
 
   const workspaceId = await onboardNewUser({ id: DEV_USER_ID, name: "Alex Chen" });
+
+  // Demo job-agent: a scheduled job search worker pre-hired in the workspace.
+  // Marked is_demo so the UI can label its results as illustrative.
+  const demoJobAgent = await db.query.agents.findFirst({
+    where: (a, { and, eq }) => and(eq(a.workspaceId, workspaceId), eq(a.isDemo, true)),
+  });
+  if (!demoJobAgent) {
+    await db.insert(agents).values({
+      workspaceId,
+      name: "Job Applying Agent",
+      role: "job_apply",
+      templateKey: "job_applying",
+      goal: "Find software engineering internships and prepare applications for approval.",
+      systemPrompt:
+        "Scheduled job search agent: discover matching roles, dedupe against existing applications, score fit from the resume, prepare applications with cover letters, and pause for approval before any submission.",
+      status: "active",
+      tools: ["browse_jobs", "generate_cover_letters", "store_job_history"],
+      schedule: "Weekdays at 09:00, 13:00, and 18:00 in your time zone",
+      scheduleCron: "0 9,13,18 * * 1-5",
+      scheduleTz: "UTC",
+      schedulingEnabled: true,
+      expectedActivity: "Discover jobs, dedupe matches, prepare applications, and wait for approval before submission.",
+      estimatedUsage: "$3-$12 per active search week",
+      onboarding: {
+        goalDiscovery: {
+          role: "Software Engineer",
+          experienceLevel: "Intern",
+          locations: ["Remote"],
+          preferredCompanies: [],
+        },
+      },
+      metrics: {
+        ...emptyAgentMetrics,
+        jobsFound: 12,
+        jobsApplied: 3,
+        interviewsScheduled: 1,
+        pendingApprovals: 1,
+        responsesReceived: 2,
+        successScore: 84,
+      },
+      isDemo: true,
+    });
+  }
 
   // Learning content is global (not workspace-scoped) and always safe to re-seed.
   await seedLearning();
