@@ -54,3 +54,10 @@ images/
 
 # local API uploads
 apps/api/.data/
+
+# local runtime artifacts
+dump.rdb
+terminal/bin/
+
+# scratch / status notes
+COMPLETE

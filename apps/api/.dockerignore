@@ -1,0 +1,24 @@
+# Build context = apps/api (used when the API is built standalone — e.g.
+# `docker build -f Dockerfile apps/api`). The production image in this repo is
+# normally built with the repo ROOT as context (see Dockerfile + root
+# .dockerignore); this file applies whenever apps/api is the context.
+#
+# Dev dependencies are reinstalled inside the image (apps/api/Dockerfile keeps
+# node_modules from the builder stage), so local installs must not leak in.
+
+# dependencies / build output
+node_modules
+dist
+coverage
+**/*.tsbuildinfo
+
+# secrets / env — NEVER copy into an image
+.env
+.env.*
+*.env
+!*.env.example
+
+# local uploads + logs
+.data
+*.log
+**/*.log

@@ -10,8 +10,7 @@ node_modules
 .env.*
 *.env
 !*.env.example
-.vercel.env
-.vercel
+.vercel*
 
 # build output / caches
 .next
@@ -21,6 +20,10 @@ dist
 .turbo
 *.tsbuildinfo
 next-env.d.ts
+coverage
+**/coverage
+tmp
+**/tmp
 
 # frontend (deployed on Vercel, not in the API image)
 app
