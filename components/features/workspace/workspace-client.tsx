@@ -84,7 +84,7 @@ export default function WorkspaceClient({ projects, timeline, learnings, domains
           <EmptyState
             icon={<FolderKanban className="h-5 w-5" />}
             title="No projects yet"
-            description="Create a project to group passports, prompts and learnings."
+            description="Create a project to group rescues, prompts and learnings."
             action={
               <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => setShowNewProject(true)}>
                 New project

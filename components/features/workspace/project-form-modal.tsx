@@ -49,7 +49,7 @@ export function ProjectFormModal({
       open={open}
       onClose={onClose}
       title="New project"
-      description="Projects group the passports, prompts and learnings of one piece of work."
+      description="Projects group the rescues, prompts and learnings of one piece of work."
     >
       <form onSubmit={submit} className="space-y-4">
         <Field label="Name" hint="e.g. Landing page copy">

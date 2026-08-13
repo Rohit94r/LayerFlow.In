@@ -107,8 +107,6 @@ export function ProjectCard({ project }: { project: Project }) {
         </h3>
         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">{project.description}</p>
         <div className="mt-4 flex items-center gap-3 border-t border-border pt-3 text-[11px] text-faint">
-          <span>{project.passportCount} passports</span>
-          <span>·</span>
           <span>{project.promptCount} prompts</span>
           <span className="ml-auto">updated {timeAgo(project.updatedAt)}</span>
         </div>

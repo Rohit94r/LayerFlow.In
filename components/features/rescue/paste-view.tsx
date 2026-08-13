@@ -133,7 +133,7 @@ export function PasteView({
         <div className="card p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-faint">What you get</p>
           <ul className="mt-3 space-y-2 text-[13px] text-muted">
-            <li>· Context Passport — decisions, constraints, next action</li>
+            <li>· Conversation Summary — goal, decisions, constraints, next action</li>
             <li>· Smart Compress — useful context only, with counts</li>
             <li>· Context Diff — what was kept and removed</li>
             <li>· Improved next prompt, scored 0–100</li>

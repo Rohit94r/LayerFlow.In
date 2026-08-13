@@ -24,7 +24,6 @@ import { Badge, Dot } from "@/components/ui/badge";
 import { RadialScore } from "@/components/ui/charts";
 import { ToolChip } from "@/components/ui/tool-logo";
 import { Button } from "@/components/ui/button";
-import { RESCUE_REPORTS } from "@/lib/data/passports";
 import {
   MODEL_BY_ID,
   PROVIDER_LABELS,
@@ -54,19 +53,19 @@ function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) 
   );
 }
 
-function PassportGrid({ report }: { report: RescueReport }) {
+function SummaryGrid({ report }: { report: RescueReport }) {
   const rows = [
-    { label: "Goal", value: report.passport.goal },
-    { label: "Current state", value: report.passport.currentState },
-    { label: "Output format", value: report.passport.outputFormat },
-    { label: "Next action", value: report.passport.nextAction },
+    { label: "Goal", value: report.context.goal },
+    { label: "Current state", value: report.context.currentState },
+    { label: "Output format", value: report.context.outputFormat },
+    { label: "Next action", value: report.context.nextAction },
   ];
   const lists = [
-    { label: "Key decisions", items: report.passport.decisions },
-    { label: "Constraints", items: report.passport.constraints },
-    { label: "What worked", items: report.passport.successes },
-    { label: "What failed", items: report.passport.failures },
-    { label: "Missing info", items: report.passport.missingInfo },
+    { label: "Key decisions", items: report.context.decisions },
+    { label: "Constraints", items: report.context.constraints },
+    { label: "What worked", items: report.context.successes },
+    { label: "What failed", items: report.context.failures },
+    { label: "Missing info", items: report.context.missingInfo },
   ];
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -299,7 +298,7 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
         className="mt-6"
         items={[
           { id: "summary", label: "Overview", icon: <Layers className="h-3.5 w-3.5" /> },
-          { id: "passport", label: "Context Passport" },
+          { id: "context", label: "Conversation Summary" },
           { id: "diff", label: "Compress + Diff" },
           { id: "prompt", label: "Improved Prompt" },
           { id: "cost", label: "Cost Check" },
@@ -398,15 +397,15 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
           </div>
         ) : null}
 
-        {tab === "passport" ? (
+        {tab === "context" ? (
           <Panel>
             <PanelHeader
-              title="Context Passport"
-              description="Editable memory package — all fields are portable to any model"
-              action={<CopyButton label="Copy passport" text={JSON.stringify(report.passport, null, 2)} />}
+              title="Conversation summary"
+              description="AI-extracted state of the rescued chat — portable to any model"
+              action={<CopyButton label="Copy summary" text={JSON.stringify(report.context, null, 2)} />}
             />
             <PanelBody>
-              <PassportGrid report={report} />
+              <SummaryGrid report={report} />
             </PanelBody>
           </Panel>
         ) : null}
@@ -466,13 +465,11 @@ export function RescueReportView({ report, onBack }: { report: RescueReport; onB
       {saved ? (
         <p className="mt-5 text-xs text-faint">
           Saved to workspace ·{" "}
-          <Link href="/passports" className="text-brand hover:underline">
-            view in Context Passport library
+          <Link href="/chat" className="text-brand hover:underline">
+            continue this conversation in Chat
           </Link>
         </p>
       ) : null}
     </div>
   );
 }
-
-export { RESCUE_REPORTS };

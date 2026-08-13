@@ -273,7 +273,7 @@ export default function SignInForm() {
           </h1>
           <p className="mx-auto mt-5 max-w-md text-pretty font-mono text-sm leading-6 text-muted lg:mx-0">
             Write plain English, click Improve, and run working code with
-            multiple agents. Rescue dead chats into Context Passports and
+            multiple agents. Rescue dead chats into AI summaries and
             continue in any model — with lower cost.
           </p>
         </section>
