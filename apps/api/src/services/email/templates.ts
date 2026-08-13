@@ -102,3 +102,34 @@ export function weeklyDigestEmail(args: {
     `${formatDollars(args.costMicro)} spend.`;
   return { subject, html, text };
 }
+
+export function inviteEmail(args: {
+  workspaceName: string;
+  invitedByEmail: string;
+  role: "admin" | "member";
+  inviteUrl: string;
+  expiresAt: string;
+}): { subject: string; html: string; text: string } {
+  const subject = `${args.invitedByEmail} invited you to ${args.workspaceName} on LayerFlow`;
+  const roleLabel = args.role === "admin" ? "an admin" : "a member";
+  const html = layout(
+    `You're invited to ${args.workspaceName}`,
+    `<p style="margin:0 0 16px;font-size:14px;line-height:1.6">
+       ${args.invitedByEmail} invited you to join <strong>${args.workspaceName}</strong> on LayerFlow as ${roleLabel}.
+     </p>
+     <p style="margin:0 0 24px;font-size:14px;line-height:1.6">
+       Click below to accept. The invite expires on ${args.expiresAt}.
+     </p>
+     <a href="${args.inviteUrl}"
+        style="display:inline-block;padding:12px 20px;border-radius:8px;background:#f97316;color:#fff;font-size:14px;font-weight:600;text-decoration:none">
+       Accept invitation
+     </a>
+     <p style="margin:16px 0 0;font-size:12px;color:#6b7280">
+       No account yet? Create one first, then open the link again.
+     </p>`,
+  );
+  const text =
+    `${args.invitedByEmail} invited you to join ${args.workspaceName} on LayerFlow as ${roleLabel}. ` +
+    `Accept here: ${args.inviteUrl}`;
+  return { subject, html, text };
+}

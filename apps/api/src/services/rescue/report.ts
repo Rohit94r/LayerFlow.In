@@ -48,6 +48,22 @@ export async function getRescueReport(
   return row ?? null;
 }
 
+export async function updateRescueReport(
+  workspaceId: string,
+  id: string,
+  input: { saved?: boolean; projectId?: string | null },
+): Promise<RescueReportRow | null> {
+  const [row] = await db
+    .update(rescueReports)
+    .set({
+      ...(input.saved !== undefined ? { saved: input.saved ? 1 : 0 } : {}),
+      ...(input.projectId !== undefined ? { projectId: input.projectId } : {}),
+    })
+    .where(and(eq(rescueReports.id, id), eq(rescueReports.workspaceId, workspaceId)))
+    .returning();
+  return row ?? null;
+}
+
 export async function listRescueReports(
   workspaceId: string,
   limit = 30,
