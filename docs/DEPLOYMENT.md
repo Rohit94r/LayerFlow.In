@@ -5,7 +5,12 @@
 - **`lf` terminal CLI working hai** — `chat/run/sessions/login/logout/sync/models/doctor/rescue/cost/mcp/daemon` sab implemented aur tested (build, vet, `-race` tests green). Backend sync endpoints (`/api/v1/sync/*`), team, notifications, aur agent v2 routes bhi live hain.
 - Ye guide **baaki ka kaam** samjhata hai — full platform live karne ke liye: Postgres, Redis, Hono API + BullMQ worker, migrations, billing, monitoring, backups, **aur `lf` terminal CLI ko publish karna** taaki duniya bhar ka koi bhi install kar sake.
 
-> **Repo abhi private hai.** Ye sab kuch matlab rakhta hai jab tak public release channel nahi banta: GitHub Releases raw URL, Homebrew tap, Scoop, aur `curl | bash` installer publicly **resolve nahi honge** — §14 mein wo steps public karne ke pehle ka checklist hai.
+> **Repo abhi private hai — aur private hi rahega.** Source kabhi public nahi
+> hota. Sirf **prebuilt binaries** public distribution repo
+> (`Rohit94r/layerflow-releases`) mein jaate hain. `curl | bash` installer abhi
+> bhi source repo ke `install.sh` ko point karta hai — isliye abhi public mein
+> resolve nahi hoga jab tak tum release workflow chala kar binaries public repo
+> mein nahi daalte. §14 mein pura flow + setup hai.
 
 > Naye engineer ho? Pehle [docs/architecture.md](architecture.md) aur
 > [docs/tech-stack.md](tech-stack.md) padho, phir ye guide top-to-bottom follow
@@ -72,13 +77,11 @@ mein sab:
 
 | Kaam | Platform | Kyun? |
 |---|---|---|
-| Binary files host karna | **GitHub Releases** | Har OS/arch ka build yahan upload hota hai |
-| Auto-build on tag | **GoReleaser** (GitHub Actions se chalta hai) | `terminal/.goreleaser.yml` already ready |
-| **Homebrew** (macOS/Linux) | **GitHub repo `layerflow/homebrew-tap`** | `brew install layerflow/tap/lf` ke liye |
-| **Scoop** (Windows) | **GitHub repo `layerflow/scoop-bucket`** | Windows pe install |
-| **Winget** (Windows) | **GitHub repo `layerflow/winget-pkgs`** | Windows App installer |
-| **npm** (all) | **npm registry** — package `@layerflow/cli` | `npm install -g @layerflow/cli` |
-| Installer script | **GitHub raw URL** (`scripts/install.sh`) | `curl ... | bash` wala one-liner |
+| Source code | **`Rohit94r/LayerFlow.In` (private)** | Kabhi public nahi hota — product copy hone se bachta hai |
+| Binary files host karna | **GitHub Releases of `Rohit94r/layerflow-releases` (public)** | Har OS/arch ka build yahan upload hota hai, bina auth download hota hai |
+| Auto-build on tag | **GoReleaser** (GitHub Actions se chalta hai) | `terminal/.goreleaser.yml` already ready; tag push → public repo pe release |
+| **Installer script** | **`layerflow-releases/install.sh`** (public raw URL) | `curl ... | bash` wala one-liner |
+| Release token | **Fine-grained PAT `GH_TOKEN`** secret on private repo | Sirf `layerflow-releases` repo ke `contents: write` ka access — source ko nahi |
 | CLI docs/landing | **layerflow.dev** (Vercel) | Download page + version badge |
 
 **Local tools chahiye:** `node 22`, `npm`, `git`, `go 1.26` (CLI build ke liye).
@@ -483,37 +486,45 @@ go test -race ./...  # tests pass
 ```
 
 **Step 2 — GitHub repos ready karo**
-- **Pehla decision:** `Rohit94r/LayerFlow.In` private hai. Public install channels
-  tabhi kaam karenge jab wo repo public ho jaye, **ya** release binaries kisi public
-  repo pe host karo aur `terminal/scripts/install.sh` ka URL update karo. Abhi
-  `install.sh` `github.com/layerflow/lf` ko point karta hai — public banane se pehle
-  us repo ko exist karna chahiye ya URL update karna chahiye.
-- Repo `layerflow/lf` — CLI ka main code (ya `Rohit94r/LayerFlow` ki subfolder,
-  phir `.goreleaser.yml` ke `main: ./cmd/lf` paths ke hisaab se adjust karo).
-- Repo `layerflow/homebrew-tap` — Homebrew formula (GoReleaser auto push karega).
-- Repo `layerflow/scoop-bucket` — Scoop manifest (GoReleaser auto push karega).
-- Repo `layerflow/winget-pkgs` — Winget manifest.
+- **Source repo:** `Rohit94r/LayerFlow.In` (private) — code, Go CLI, `.goreleaser.yml`.
+- **Binary repo:** `Rohit94r/layerflow-releases` (public) — prebuilt `lf` archives + `checksums.txt`. Only this repo is public; the source repo stays private.
+- Goreleaser `release:` config (`.goreleaser.yml`) targets this public repo (`owner: Rohit94r, name: layerflow-releases`). It skips Homebrew/Scoop/Winget targets (those are removed; `make build` locally if needed).
+- `terminal/scripts/install.sh` points at the public repo URL — ready for `curl | bash`.
 
 **Step 3 — GitHub Actions workflow banao** (`.github/workflows/release.yml`):
+- Binaries are published from the private repo to the public binary repo when a tag `v*` is pushed.
+- The workflow uses a fine-grained PAT (`GH_TOKEN`) scoped to **only** the public repo (`contents: write`); it has zero access to the private source repo.
+- This workflow runs on the private repo: `GITHUB_TOKEN` secret needs write access to `Rohit94r/layerflow-releases` only.
 
 ```yaml
 name: release
+
 on:
   push:
     tags: ['v*']
+
 permissions:
-  contents: write
+  contents: read
+
 jobs:
   goreleaser:
+    name: Build · publish to layerflow-releases
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
-      - uses: goreleaser/goreleaser-action@v6
+          go-version-file: terminal/go.mod
+          cache-dependency-path: terminal/go.sum
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
           version: latest
           args: release --clean
@@ -524,11 +535,11 @@ jobs:
 
 **Step 4 — Tag banao aur release karo**
 ```bash
-git tag v0.5.0
-git push origin v0.5.0
+git tag v0.1.0
+git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to `Rohit94r/layerflow-releases`
 ```
-Ye GitHub Actions trigger karega → GoReleaser sab platforms ke binaries build karega
-→ GitHub Releases pe upload → Homebrew tap + Scoop bucket update → release done.
+- GoReleaser builds every OS/arch, uploads `lf_v0.1.0_linux_amd64.tar.gz` + `checksums.txt` as a GitHub Release in the **public** repo.
+- The new `install.sh` auto-downloads the right binary.
 
 **Step 5 — npm package `@layerflow/cli` banao** (npm se install ke liye)
 - `packages/cli/` (ya `terminal/npm/`) mein `package.json` banao jo binary download
@@ -541,37 +552,26 @@ Ye GitHub Actions trigger karega → GoReleaser sab platforms ke binaries build 
   "description": "LayerFlow terminal CLI",
   "bin": { "lf": "./bin/lf.js" },
   "files": ["bin"],
-  "os": ["darwin", "linux", "win32"],
-  "cpu": ["x64", "arm64"],
-  "scripts": {
-    "postinstall": "node ./scripts/install.js"
-  }
-}
-```
-
-- `install.js` — OS/arch detect karo, GitHub Releases se sahi binary download karo,
+  - `install.js` — OS/arch detect karo, GitHub Releases se sahi binary download karo,
   `bin/lf` mein rakho.
 - Publish karo: `npm publish` (pehle `npm login` karo, `@layerflow` org banao).
 
 **Step 6 — Installer script live karo** (`curl | bash` wala)
-- `terminal/scripts/install.sh` already ready hai — GitHub Releases se binary
+- `terminal/scripts/install.sh` already ready hai — GoReleaser se binary
   download karta hai.
 - LayerFlow ke website pe (Vercel) isko serve karo, ya GitHub raw URL use karo:
-  `curl -fsSL https://raw.githubusercontent.com/layerflow/lf/main/terminal/scripts/install.sh | bash`
+  `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
 - **Recommended:** layerflow.dev pe `/install.sh` route banao jo sahi version serve
   kare — URL chhota aur clean:
   `curl -fsSL https://layerflow.dev/install.sh | bash`
 
 **Step 7 — Website pe download page banao**
 - `layerflow.dev/install` — saari OS/arch ke instructions dikhao.
-- Version badge: `https://img.shields.io/github/v/release/layerflow/lf`.
+- Version badge: `https://img.shields.io/github/v/release/Rohit94r/layerflow-releases`.
 
 **Step 8 — Verify sab kuch**
 ```bash
-brew install layerflow/tap/lf && lf --version
-scoop install layerflow && lf --version        # Windows pe
-npm install -g @layerflow/cli && lf --version
-curl -fsSL https://layerflow.dev/install.sh | bash && lf --version
+curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash && lf --version
 ```
 
 ### 14d. CLI Ke Baaki Important Setup
@@ -607,10 +607,7 @@ curl -fsSL https://layerflow.dev/install.sh | bash && lf --version
 
 **CLI launch ke liye extra checklist:**
 - [ ] GitHub tag + GoReleaser release sahi ban gaye (har OS/arch ka build)
-- [ ] Homebrew tap test kiya (`brew install layerflow/tap/lf`)
-- [ ] Scoop bucket test kiya (Windows)
-- [ ] npm package published + install test
-- [ ] `curl https://layerflow.dev/install.sh | bash` test kiya
+- [ ] Installer script test kiya (`curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash` aur `lf --version`)
 - [ ] `/install` page website pe live
 - [ ] `lf --version` sahi version dikhata hai
 - [ ] `lf login` + `lf sync` backend ke against kaam karta hai
@@ -642,7 +639,6 @@ hota hai.
 | SSE/streaming Render pe mar jaata hai | Free plan sleeps — `plan: starter`+ set karo |
 | `PROVIDER_KEYS_KEK` badla aur BYOK keys fail | KEK change se purani provider keys undecryptable — user keys rotate karo ya purana KEK restore karo |
 | Payments webhook 4xx | `DODO_PAYMENTS_WEBHOOK_KEY` mismatch; endpoint `/api/billing/webhook` hona chahiye |
-| Homebrew install fail (`brew install layerflow/tap/lf`) | Tap repo exists kare (`layerflow/homebrew-tap`), release tag sahi ho, formula pushed ho |
 | `curl | bash` installer fail | install.sh raw URL accessible ho, GitHub release version tag match kare |
 | `lf --version` old dikhata hai | Naya tag push karo; `lf upgrade` (ya CLI update) chalao |
 

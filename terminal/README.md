@@ -16,22 +16,16 @@ A local-first AI terminal workspace with streaming, tools, memory, and cloud syn
 
 ## Installation
 
-### Homebrew (macOS/Linux)
+### macOS / Linux — one line
 ```bash
-brew install layerflow/tap/lf
+curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
 ```
 
-### Scoop (Windows)
-```bash
-scoop install layerflow
-```
+Downloads the prebuilt `lf` binary for your OS/arch, verifies its SHA-256
+checksum, and installs it to `~/.local/bin`. The source repo stays private —
+only prebuilt binaries are published (see `Rohit94r/layerflow-releases`).
 
-### Standalone
-```bash
-curl -sSL https://raw.githubusercontent.com/Rohit94r/LayerFlow.In/main/terminal/scripts/install.sh | bash
-```
-
-### Build from source
+### Build from source (requires repo access)
 ```bash
 git clone https://github.com/Rohit94r/LayerFlow.In
 cd LayerFlow.In/terminal

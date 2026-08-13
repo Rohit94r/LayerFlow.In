@@ -40,7 +40,6 @@ archives:
       - goos: windows
         format: zip
     files:
-      - LICENSE*
       - README*
 
 checksum:
@@ -58,30 +57,12 @@ changelog:
       - '^ci:'
       - '^build:'
 
-brews:
-  - repository:
-      owner: layerflow
-      name: homebrew-tap
-    homepage: https://layerflow.ai
-    description: Local-first AI terminal workspace
-    license: MIT
-    install: |
-      bin.install "lf"
-
-scoops:
-  - repository:
-      owner: layerflow
-      name: scoop-bucket
-    homepage: https://layerflow.ai
-    description: Local-first AI terminal workspace
-    license: MIT
-
-winget:
-  - repository:
-      owner: layerflow
-      name: winget-pkgs
-    homepage: https://layerflow.ai
-    description: Local-first AI terminal workspace
+# Releases land in the PUBLIC binary-only repo. The source stays private;
+# the release token (GH_TOKEN) is a fine-grained PAT scoped to that repo.
+release:
+  github:
+    owner: Rohit94r
+    name: layerflow-releases
 
 signs:
   - cmd: shasum

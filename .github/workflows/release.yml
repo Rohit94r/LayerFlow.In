@@ -1,0 +1,39 @@
+name: release
+
+# Tagging the private repo with v* triggers a GoReleaser build of the `lf`
+# CLI. Binaries are uploaded to a GitHub Release in the PUBLIC binary-only
+# repo (Rohit94r/layerflow-releases) so `curl | bash` works without exposing
+# any source. Requires the GH_TOKEN secret: a fine-grained PAT with
+# `contents: write` scoped to ONLY that public repo.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  goreleaser:
+    name: Build · publish to layerflow-releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: terminal/go.mod
+          cache-dependency-path: terminal/go.sum
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: latest
+          args: release --clean
+          workdir: terminal
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
