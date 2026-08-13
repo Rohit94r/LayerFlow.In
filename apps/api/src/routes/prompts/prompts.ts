@@ -45,6 +45,8 @@ function toPromptDto(row: PromptRow, tags: string[], favorite: boolean): Prompt 
     title: row.title,
     description: row.description,
     notes: row.notes,
+    source: row.source,
+    runCount: row.runCount,
     currentVersionId: row.currentVersionId,
     tags,
     favorite,
