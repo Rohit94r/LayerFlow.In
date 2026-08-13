@@ -1,54 +1,15 @@
-import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { startTestDb } from "./helpers/integration-db";
 
 /**
  * Integration tests for memory, keyword search, collections, and clone.
- * Uses Docker Postgres when available, otherwise in-memory PGlite (same
- * pattern as integration.test.ts). Keyword search is mandatory; semantic
- * similarity is best-effort and skipped with a clear message if pgvector
- * queries fail.
+ * Every file gets a fresh in-memory PGlite (real Postgres + pgvector) so
+ * parallel files never share data or race migrations. Keyword search is
+ * mandatory; semantic similarity is best-effort and skipped with a clear
+ * message if pgvector queries fail.
  */
 
-function canConnect(host: string, port: number, timeoutMs = 1_500): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs, () => done(false));
-    socket.once("connect", () => done(true));
-    socket.once("error", () => done(false));
-  });
-}
-
-const dbUrl = new URL(process.env.DATABASE_URL!);
-const pgUp = await canConnect(dbUrl.hostname, Number(dbUrl.port || 5432));
-let stopFallbackDb: (() => Promise<void>) | undefined;
-
-if (!pgUp) {
-  console.warn(
-    "\n[memory-search] Docker Postgres not reachable — using in-memory PGlite over TCP.\n",
-  );
-  const { PGlite } = await import("@electric-sql/pglite");
-  const { vector } = await import("@electric-sql/pglite-pgvector");
-  const { PGLiteSocketServer } = await import("@electric-sql/pglite-socket");
-
-  const pglite = await PGlite.create({ extensions: { vector } });
-  const port = 20000 + Math.floor(Math.random() * 10_000);
-  const server = new PGLiteSocketServer({
-    db: pglite,
-    port,
-    host: "127.0.0.1",
-    maxConnections: 10,
-  });
-  await server.start();
-  process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
-  stopFallbackDb = async () => {
-    await server.stop();
-    await pglite.close();
-  };
-}
+const stopDb = await startTestDb();
 
 describe("memory / search / community integration", () => {
   beforeAll(async () => {
@@ -64,7 +25,7 @@ describe("memory / search / community integration", () => {
     const { redis } = await import("../redis/client");
     await pool.end();
     redis.disconnect();
-    await stopFallbackDb?.();
+    await stopDb.stop();
   });
 
   it("memory CRUD + keyword search", async () => {

@@ -1,46 +1,14 @@
-import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { startTestDb } from "./helpers/integration-db";
 import type { ProviderAdapter } from "../services/ai/providers";
 
 /**
  * Integration tests for runs + intelligence.
- * Same DB bootstrap as integration.test.ts / workspace-crud.test.ts.
+ * Each file gets a fresh in-memory PGlite (real Postgres + pgvector) so
+ * parallel workers never share data or race migrations.
  */
 
-function canConnect(host: string, port: number, timeoutMs = 1_500): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs, () => done(false));
-    socket.once("connect", () => done(true));
-    socket.once("error", () => done(false));
-  });
-}
-
-const dbUrl = new URL(process.env.DATABASE_URL!);
-const pgUp = await canConnect(dbUrl.hostname, Number(dbUrl.port || 5432));
-
-let stopFallbackDb: (() => Promise<void>) | undefined;
-
-if (!pgUp) {
-  const { PGlite } = await import("@electric-sql/pglite");
-  const { vector } = await import("@electric-sql/pglite-pgvector");
-  const { PGLiteSocketServer } = await import("@electric-sql/pglite-socket");
-
-  const pglite = await PGlite.create({ extensions: { vector } });
-  const port = 20000 + Math.floor(Math.random() * 10_000);
-  const server = new PGLiteSocketServer({ db: pglite, port, host: "127.0.0.1", maxConnections: 10 });
-  await server.start();
-
-  process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
-  stopFallbackDb = async () => {
-    await server.stop();
-    await pglite.close();
-  };
-}
+const stopDb = await startTestDb();
 
 const mockAdapter: ProviderAdapter = {
   provider: "openai",
@@ -112,7 +80,7 @@ describe("runs + intelligence APIs", () => {
     const { redis } = await import("../redis/client");
     await pool.end();
     redis.disconnect();
-    await stopFallbackDb?.();
+    await stopDb.stop();
   });
 
   it("POST /api/intelligence/analyze returns heuristic analysis", async () => {

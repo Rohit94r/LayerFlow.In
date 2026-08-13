@@ -1,7 +1,7 @@
-import net from "node:net";
 import { randomUUID } from "node:crypto";
 import { Webhook } from "standardwebhooks";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { startTestDb } from "./helpers/integration-db";
 
 const WEBHOOK_SECRET =
   "whsec_" + Buffer.from("layerflow-test-webhook-secret-key").toString("base64");
@@ -11,47 +11,10 @@ const WEBHOOK_SECRET =
 (process.env as Record<string, string>).DODO_PAYMENTS_WEBHOOK_KEY = WEBHOOK_SECRET;
 (process.env as Record<string, string>).DODO_PAYMENTS_ENVIRONMENT = "test_mode";
 
-function canConnect(host: string, port: number, timeoutMs = 1_500): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs, () => done(false));
-    socket.once("connect", () => done(true));
-    socket.once("error", () => done(false));
-  });
-}
-
-const dbUrl = new URL(process.env.DATABASE_URL!);
-const pgUp = await canConnect(dbUrl.hostname, Number(dbUrl.port || 5432));
-
-let stopFallbackDb: (() => Promise<void>) | undefined;
-
-if (!pgUp) {
-  const { PGlite } = await import("@electric-sql/pglite");
-  const { vector } = await import("@electric-sql/pglite-pgvector");
-  const { PGLiteSocketServer } = await import("@electric-sql/pglite-socket");
-
-  const pglite = await PGlite.create({ extensions: { vector } });
-  const port = 20000 + Math.floor(Math.random() * 10_000);
-  const server = new PGLiteSocketServer({
-    db: pglite,
-    port,
-    host: "127.0.0.1",
-    maxConnections: 10,
-  });
-  await server.start();
-  process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
-  stopFallbackDb = async () => {
-    await server.stop();
-    await pglite.close();
-  };
-}
+const stopDb = await startTestDb();
 
 afterAll(async () => {
-  await stopFallbackDb?.();
+  await stopDb.stop();
 });
 
 describe("billing — Dodo checkout + webhooks", () => {

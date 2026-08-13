@@ -1,13 +1,14 @@
-import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { canConnect, startTestDb } from "./helpers/integration-db";
 
 /**
  * Production-hardening integration tests: security headers, health endpoints,
  * body limits, audio feature gating, platform provider-key fallback, budget
  * alert idempotency, usage rollups, and reconciliation.
  *
- * Same PGlite-fallback pattern as integration.test.ts. IMPORTANT: no static
- * imports of modules that touch db/client or getEnv().
+ * Each file gets a fresh in-memory PGlite so parallel workers never share
+ * data or race migrations. IMPORTANT: no static imports of modules that touch
+ * db/client or getEnv().
  */
 
 // Pin optional-service env BEFORE dotenv/config loads apps/api/.env, so tests
@@ -21,39 +22,7 @@ process.env.GROQ_API_KEY = "gsk_platform_test_key_123456";
 process.env.GEMINI_API_KEY = "test_gemini_platform_key_123456";
 process.env.OPENAI_API_KEY = "";
 
-function canConnect(host: string, port: number, timeoutMs = 1_500): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs, () => done(false));
-    socket.once("connect", () => done(true));
-    socket.once("error", () => done(false));
-  });
-}
-
-const dbUrl = new URL(process.env.DATABASE_URL!);
-const pgUp = await canConnect(dbUrl.hostname, Number(dbUrl.port || 5432));
-
-let stopFallbackDb: (() => Promise<void>) | undefined;
-
-if (!pgUp) {
-  const { PGlite } = await import("@electric-sql/pglite");
-  const { vector } = await import("@electric-sql/pglite-pgvector");
-  const { PGLiteSocketServer } = await import("@electric-sql/pglite-socket");
-
-  const pglite = await PGlite.create({ extensions: { vector } });
-  const port = 20000 + Math.floor(Math.random() * 10_000);
-  const server = new PGLiteSocketServer({ db: pglite, port, host: "127.0.0.1", maxConnections: 10 });
-  await server.start();
-  process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
-  stopFallbackDb = async () => {
-    await server.stop();
-    await pglite.close();
-  };
-}
+const stopDb = await startTestDb();
 
 describe("production hardening", () => {
   beforeAll(async () => {
@@ -67,7 +36,7 @@ describe("production hardening", () => {
     const { redis } = await import("../redis/client");
     await pool.end();
     redis.disconnect();
-    await stopFallbackDb?.();
+    await stopDb.stop();
   });
 
   describe("security middleware", () => {

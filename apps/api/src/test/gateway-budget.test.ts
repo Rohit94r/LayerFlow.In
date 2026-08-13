@@ -1,49 +1,20 @@
 import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { canConnect, startTestDb } from "./helpers/integration-db";
 
 /**
  * Keys / BYOK / budget / gateway integration tests.
- * Uses docker Postgres when up, else in-memory PGlite (same pattern as integration.test.ts).
+ * Each file gets a fresh in-memory PGlite (real Postgres + pgvector) so
+ * parallel workers never share data or race migrations.
  *
  * IMPORTANT: do not statically import modules that touch db/client or getEnv()
  * before the PGlite DATABASE_URL rewrite below.
  */
 
-function canConnect(host: string, port: number, timeoutMs = 1_500): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      socket.destroy();
-      resolve(ok);
-    };
-    socket.setTimeout(timeoutMs, () => done(false));
-    socket.once("connect", () => done(true));
-    socket.once("error", () => done(false));
-  });
-}
+const stopDb = await startTestDb();
 
-const dbUrl = new URL(process.env.DATABASE_URL!);
 const redisUrl = new URL(process.env.REDIS_URL!);
-const pgUp = await canConnect(dbUrl.hostname, Number(dbUrl.port || 5432));
 const redisUp = await canConnect(redisUrl.hostname, Number(redisUrl.port || 6379));
-
-let stopFallbackDb: (() => Promise<void>) | undefined;
-
-if (!pgUp) {
-  const { PGlite } = await import("@electric-sql/pglite");
-  const { vector } = await import("@electric-sql/pglite-pgvector");
-  const { PGLiteSocketServer } = await import("@electric-sql/pglite-socket");
-
-  const pglite = await PGlite.create({ extensions: { vector } });
-  const port = 20000 + Math.floor(Math.random() * 10_000);
-  const server = new PGLiteSocketServer({ db: pglite, port, host: "127.0.0.1", maxConnections: 10 });
-  await server.start();
-  process.env.DATABASE_URL = `postgres://postgres:postgres@127.0.0.1:${port}/postgres`;
-  stopFallbackDb = async () => {
-    await server.stop();
-    await pglite.close();
-  };
-}
 
 describe("keys, BYOK, budget, gateway", () => {
   beforeAll(async () => {
@@ -59,7 +30,7 @@ describe("keys, BYOK, budget, gateway", () => {
     const { redis } = await import("../redis/client");
     await pool.end();
     redis.disconnect();
-    await stopFallbackDb?.();
+    await stopDb.stop();
   });
 
   it("POST/GET/DELETE /api/keys — create, list without secret, revoke", async () => {
