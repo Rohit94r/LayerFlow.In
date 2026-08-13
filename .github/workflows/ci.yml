@@ -1,7 +1,8 @@
 name: CI
 
 # No repository secrets are required. Backend tests run against in-memory
-# Postgres (PGlite) and mocked Redis; the frontend builds from mock data.
+# Postgres (PGlite) and mocked Redis; the frontend builds against real API
+# service modules (no live backend needed at build time).
 on:
   push:
     branches: [main]
@@ -47,8 +48,37 @@ jobs:
       - name: API tests
         run: npm test --workspace @layerflow/api
 
+      - name: Build API bundle (tsup)
+        run: npm run build --workspace @layerflow/api
+
       - name: Build frontend (Next.js)
         run: npm run build
 
       - name: Typecheck — repo root
         run: npx tsc --noEmit -p tsconfig.json
+
+  go-cli:
+    name: Go CLI build · vet · test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: terminal
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: terminal/go.mod
+          cache-dependency-path: terminal/go.sum
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
