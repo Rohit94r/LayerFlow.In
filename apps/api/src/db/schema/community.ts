@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -8,6 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { createdAtOnly, idColumn, timestamps } from "./_helpers";
+import { agents } from "./agents";
 import { users } from "./auth";
 import { prompts } from "./prompts";
 import { workspaces } from "./tenancy";
@@ -140,9 +142,16 @@ export const notifications = pgTable(
   "notifications",
   {
     id: idColumn("ntf"),
+    workspaceId: text("workspace_id").references(() => workspaces.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind")
+      .$type<"agent_run_completed" | "agent_run_failed" | "system">()
+      .notNull()
+      .default("system"),
+    agentId: text("agent_id").references(() => agents.id, { onDelete: "set null" }),
+    read: boolean("read").notNull().default(false),
     type: text("type").notNull(),
     title: text("title").notNull(),
     body: text("body"),
@@ -150,5 +159,8 @@ export const notifications = pgTable(
     readAt: timestamp("read_at", { withTimezone: true }),
     ...createdAtOnly,
   },
-  (t) => [index("notifications_user_id_idx").on(t.userId)],
+  (t) => [
+    index("notifications_user_id_idx").on(t.userId),
+    index("notifications_workspace_user_read_idx").on(t.workspaceId, t.userId, t.read),
+  ],
 );

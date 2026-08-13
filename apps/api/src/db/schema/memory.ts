@@ -13,7 +13,7 @@ export const memories = pgTable(
       .references(() => workspaces.id, { onDelete: "cascade" }),
     userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
     sourceType: text("source_type")
-      .$type<"prompt" | "session" | "run" | "manual">()
+      .$type<"prompt" | "session" | "run" | "manual" | "chat">()
       .notNull(),
     /** ID of the source entity (loose reference across types). */
     sourceId: text("source_id"),

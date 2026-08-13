@@ -25,6 +25,13 @@ export const prompts = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     notes: text("notes"),
+    /** Where the prompt came from: manual, pulled from chat, or an Improve run. */
+    source: text("source")
+      .$type<"manual" | "chat" | "improve">()
+      .notNull()
+      .default("manual"),
+    /** How many times this prompt has been run through the gateway. */
+    runCount: integer("run_count").notNull().default(0),
     // Points at prompt_versions.id. Plain text (no FK) to avoid a circular
     // constraint between prompts and prompt_versions.
     currentVersionId: text("current_version_id"),

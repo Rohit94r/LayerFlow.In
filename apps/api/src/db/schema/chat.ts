@@ -29,8 +29,8 @@ export const aiChatSessions = pgTable(
     defaultModel: text("default_model"),
     autoSwitch: boolean("auto_switch").notNull().default(true),
     status: text("status").$type<"active" | "archived">().notNull().default("active"),
-    /** Portable context passport from a rescue import (JSONB, rarely read). */
-    passport: jsonb("passport").notNull().default({}),
+    /** AI-extracted conversation context from a rescue import (JSONB, rarely read). */
+    context: jsonb("context").notNull().default({}),
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
     ...timestamps,
   },

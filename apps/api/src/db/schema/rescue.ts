@@ -23,7 +23,8 @@ export const rescueReports = pgTable(
     status: text("status").notNull().default("queued"),
     errorMessage: text("error_message"),
     summary: text("summary").notNull().default(""),
-    passport: jsonb("passport").notNull().default({}),
+    /** AI-extracted conversation summary (goal, decisions, constraints, next action — shape in @layerflow/contracts). */
+    context: jsonb("context").notNull().default({}),
     improvedPrompt: text("improved_prompt").notNull().default(""),
     promptScore: integer("prompt_score"),
     promptScores: jsonb("prompt_scores").notNull().default([]),
