@@ -41,6 +41,7 @@ export function createOpenAICompatibleAdapter(opts: {
             ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
           }),
+          ...(req.signal ? { signal: req.signal } : {}),
         });
       } catch (err) {
         throw new AppError(
@@ -107,6 +108,7 @@ export function createOpenAICompatibleAdapter(opts: {
             ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
           }),
+          ...(req.signal ? { signal: req.signal } : {}),
         });
       } catch (err) {
         throw new AppError(

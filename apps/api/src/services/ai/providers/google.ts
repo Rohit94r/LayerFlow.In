@@ -31,13 +31,14 @@ export const googleAdapter: ProviderAdapter = {
     const url = new URL(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(req.model)}:generateContent`,
     );
-    url.searchParams.set("key", req.apiKey);
 
     let res: Response;
     try {
       res = await fetch(url.toString(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        // API key in a header (x-goog-api-key) rather than the URL query
+        // string so it never lands in proxy/CDN access logs.
+        headers: { "Content-Type": "application/json", "x-goog-api-key": req.apiKey },
         body: JSON.stringify({
           ...(systemParts.length > 0
             ? { systemInstruction: { parts: [{ text: systemParts.join("\n\n") }] } }
@@ -52,6 +53,7 @@ export const googleAdapter: ProviderAdapter = {
               }
             : {}),
         }),
+        ...(req.signal ? { signal: req.signal } : {}),
       });
     } catch (err) {
       throw new AppError(

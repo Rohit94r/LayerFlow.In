@@ -93,7 +93,7 @@ describe("openai-compatible streaming", () => {
         { model: "llama-3.3-70b-versatile", messages: [], apiKey: "bad" },
         { onDelta: () => undefined },
       ),
-    ).rejects.toMatchObject({ status: 400, code: "provider_error" });
+    ).rejects.toMatchObject({ status: 401, code: "provider_error" });
   });
 });
 

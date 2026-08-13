@@ -61,6 +61,7 @@ export const anthropicAdapter: ProviderAdapter = {
           ...(system ? { system } : {}),
           messages,
         }),
+        ...(req.signal ? { signal: req.signal } : {}),
       });
     } catch (err) {
       throw new AppError(
@@ -77,8 +78,10 @@ export const anthropicAdapter: ProviderAdapter = {
       const message =
         (body as { error?: { message?: string } }).error?.message ??
         `anthropic returned ${res.status}`;
+      // Preserve the real status code so key-health classification can
+      // distinguish dead (401/403) from expired (402) and degrading (429) keys.
       throw new AppError(
-        res.status === 401 || res.status === 403 ? 400 : 502,
+        res.status >= 500 ? 502 : (res.status as 400 | 401 | 402 | 403 | 404 | 429),
         "provider_error",
         message,
       );
@@ -127,6 +130,7 @@ export const anthropicAdapter: ProviderAdapter = {
           ...(system ? { system } : {}),
           messages,
         }),
+        ...(req.signal ? { signal: req.signal } : {}),
       });
     } catch (err) {
       throw new AppError(
@@ -141,8 +145,9 @@ export const anthropicAdapter: ProviderAdapter = {
       const message =
         (body as { error?: { message?: string } }).error?.message ??
         `anthropic returned ${res.status}`;
+      // Same status preservation as the non-streaming path (see above).
       throw new AppError(
-        res.status === 401 || res.status === 403 ? 400 : 502,
+        res.status >= 500 ? 502 : (res.status as 400 | 401 | 402 | 403 | 404 | 429),
         "provider_error",
         message,
       );

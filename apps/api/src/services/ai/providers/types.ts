@@ -26,6 +26,8 @@ export interface ChatCompletionRequest {
    * previous model's temperature.
    */
   temperature?: number;
+  /** Optional client abort signal — cancels the upstream provider request. */
+  signal?: AbortSignal;
 }
 
 export interface ChatCompletionResult {
