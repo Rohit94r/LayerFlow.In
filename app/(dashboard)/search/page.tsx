@@ -1,30 +1,29 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, BookUser, Library, Folder, Brain, Clock } from "@/components/ui/icons";
+import { Search, Library, BookUser } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Row } from "@/components/shared/row";
-import { ToolChip } from "@/components/ui/tool-logo";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorState } from "@/components/ui/error-state";
+import { Badge } from "@/components/ui/badge";
 import { searchService, type SearchResults } from "@/lib/services/search";
-import type { AiTool } from "@/lib/types";
 import { timeAgo } from "@/lib/data/providers";
 
-const EMPTY: SearchResults = { prompts: [], passports: [], projects: [], learnings: [], events: [], total: 0 };
+const EMPTY: SearchResults = { prompts: [], sessions: [], total: 0 };
 
 const GROUPS = [
-  { key: "projects", label: "Projects", icon: Folder, href: (id: string) => `/workspace/${id}` },
   { key: "prompts", label: "Prompts", icon: Library, href: (id: string) => `/prompts/${id}` },
-  { key: "passports", label: "Passports", icon: BookUser, href: (id: string) => `/passports/${id}` },
-  { key: "learnings", label: "Learnings", icon: Brain },
-  { key: "events", label: "Ledger events", icon: Clock },
+  { key: "sessions", label: "Sessions", icon: BookUser, href: (id: string) => `/chat/${id}` },
 ] as const;
 
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
   const [results, setResults] = useState<SearchResults>(EMPTY);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const busy = debounced.trim() !== query.trim();
@@ -40,19 +39,30 @@ export default function SearchPage() {
 
   useEffect(() => {
     let alive = true;
-    searchService.search(debounced).then((r) => {
-      if (alive) setResults(r);
-    });
+    searchService
+      .search(debounced)
+      .then((r) => {
+        if (alive) {
+          setError(null);
+          setResults(r);
+        }
+      })
+      .catch((err: unknown) => {
+        if (alive) {
+          setResults(EMPTY);
+          setError(err instanceof Error ? err.message : "Search is unavailable right now.");
+        }
+      });
     return () => {
       alive = false;
     };
-  }, [debounced]);
+  }, [debounced, retryKey]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Search"
-        description="One search across projects, prompts, passports, learnings and the work ledger."
+        description="One search across your prompts and sessions."
       />
 
       <div className="relative">
@@ -61,6 +71,7 @@ export default function SearchPage() {
         />
         <input
           ref={inputRef}
+          aria-label="Search your AI work"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="search your AI work…  (e.g. “webhook”, “images”, “stripe”)"
@@ -74,6 +85,12 @@ export default function SearchPage() {
             <div key={i} className="h-14 animate-pulse rounded-xl bg-surface-2/60" />
           ))}
         </div>
+      ) : error ? (
+        <ErrorState
+          title="Search failed"
+          description={error}
+          onRetry={() => setRetryKey((k) => k + 1)}
+        />
       ) : query.trim() && results.total === 0 ? (
         <EmptyState
           icon={<Search className="h-5 w-5" />}
@@ -98,30 +115,24 @@ export default function SearchPage() {
                 />
                 <PanelBody className="p-2.5">
                   {items.map((item) => {
-                    const it = item as {
-                      id: string;
-                      title?: string;
-                      name?: string;
-                      content?: string;
-                      description?: string;
-                      source?: string;
-                      summary?: string;
-                      createdAt?: string;
-                      meta?: { sourceTool: AiTool };
-                    };
-                    const title = it.title ?? it.name ?? it.content?.slice(0, 60) ?? "";
-                    const subtitle = it.description ?? it.source ?? it.summary?.slice(0, 60);
-                    const sub = it.createdAt
-                      ? `${timeAgo(it.createdAt)}${subtitle ? ` · ${subtitle}` : ""}`
-                      : subtitle;
+                    const title = item.title;
+                    const subtitle =
+                      item.type === "prompt"
+                        ? (item.snippet ?? item.description ?? "")
+                        : (item.description ?? "");
+                    const sub = `${timeAgo(item.updatedAt)}${subtitle ? ` · ${subtitle}` : ""}`;
                     return (
                       <Row
-                        key={it.id}
-                        href={"href" in g ? g.href(it.id) : undefined}
+                        key={item.id}
+                        href={g.href(item.id)}
                         title={title}
                         subtitle={sub}
                         trailing={
-                          it.meta ? <ToolChip tool={it.meta.sourceTool} /> : undefined
+                          item.type === "prompt" ? undefined : (
+                            <Badge tone={item.status === "completed" ? "green" : item.status === "paused" ? "amber" : "neutral"}>
+                              {item.status}
+                            </Badge>
+                          )
                         }
                         className="rounded-lg"
                       />

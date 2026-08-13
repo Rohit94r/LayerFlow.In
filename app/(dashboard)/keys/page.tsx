@@ -1,163 +1,237 @@
 "use client";
 
-import { useState } from "react";
-import { KeyRound, Copy, Check, Plus, Trash2, Eye, EyeOff } from "@/components/ui/icons";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { KeyRound, Plus, Trash2, ArrowUpRight, AlertTriangle, Loader2 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { useCopy } from "@/lib/hooks/use-copy";
-import { timeAgo } from "@/lib/data/providers";
+import { ErrorState } from "@/components/ui/error-state";
+import { modelService } from "@/lib/services/models";
+import { PROVIDER_LABELS, timeAgo } from "@/lib/data/providers";
+import type { ProviderKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-type ApiKey = {
-  id: string;
-  name: string;
-  prefix: string;
-  full: string;
-  createdAt: string;
-  lastUsed: string;
-  revoked: boolean;
-};
-
-const INITIAL_KEYS: ApiKey[] = [
-  {
-    id: "key-001",
-    name: "CLI — local dev",
-    prefix: "lf_9f2e…c41a",
-    full: "lf_9f2ec4f0a11b22c33d44e55f66778899aabbccdd00e11223344556677889900aabbc41a",
-    createdAt: "2026-07-18T10:00:00Z",
-    lastUsed: "2026-08-02T08:12:00Z",
-    revoked: false,
-  },
-  {
-    id: "key-002",
-    name: "CI pipeline",
-    prefix: "lf_71b3…92d0",
-    full: "lf_71b34a5f1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f92d0",
-    createdAt: "2026-06-02T10:00:00Z",
-    lastUsed: "2026-07-29T17:40:00Z",
-    revoked: false,
-  },
-  {
-    id: "key-003",
-    name: "Staging bot",
-    prefix: "lf_3c0a…77be",
-    full: "lf_3c0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f77be",
-    createdAt: "2026-05-12T10:00:00Z",
-    lastUsed: "2026-06-30T09:00:00Z",
-    revoked: true,
-  },
-];
+const PROVIDERS = Object.entries(PROVIDER_LABELS);
 
 export default function KeysPage() {
-  const [keys, setKeys] = useState<ApiKey[]>(INITIAL_KEYS);
-  const [name, setName] = useState("");
-  const [revealed, setRevealed] = useState<string | null>(null);
-  const { copied, copy } = useCopy();
+  const [keys, setKeys] = useState<ProviderKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  function createKey() {
-    const label = name.trim() || "New key";
-    const full = `lf_${Array.from({ length: 40 }, () => Math.random().toString(16)[2]).join("")}`;
-    const now = new Date().toISOString();
-    setKeys((ks) => [
-      { id: `key-${Date.now()}`, name: label, prefix: `${full.slice(0, 8)}…${full.slice(-4)}`, full, createdAt: now, lastUsed: now, revoked: false },
-      ...ks,
-    ]);
-    setName("");
+  const [provider, setProvider] = useState(PROVIDERS[0]?.[0] ?? "");
+  const [secret, setSecret] = useState("");
+  const [label, setLabel] = useState("");
+  const secretRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    modelService
+      .listProviderKeys()
+      .then((ks) => {
+        if (!cancelled) setKeys(ks);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load provider keys.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function retry() {
+    setLoading(true);
+    setError(null);
+    modelService
+      .listProviderKeys()
+      .then(setKeys)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not load provider keys."))
+      .finally(() => setLoading(false));
   }
 
-  function revoke(id: string) {
-    setKeys((ks) => ks.map((k) => (k.id === id ? { ...k, revoked: true } : k)));
+  async function createKey() {
+    if (!secret.trim() || busy) return;
+    setBusy(true);
+    setFormError(null);
+    try {
+      const created = await modelService.createProviderKey({
+        provider,
+        secret: secret.trim(),
+        label: label.trim() || undefined,
+      });
+      setKeys((ks) => [created, ...ks]);
+      setSecret("");
+      setLabel("");
+      setProvider(PROVIDERS[0]?.[0] ?? "");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not create the key.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function revoke(id: string) {
+    if (busy) return;
+    setBusy(true);
+    setFormError(null);
+    try {
+      await modelService.revokeProviderKey(id);
+      setKeys((ks) => ks.filter((k) => k.id !== id));
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Could not revoke the key.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="API Keys"
-        description="Keys for the LayerFlow CLI, API and CI pipelines. Keep them secret."
+        description="BYOK keys for the rescue pipeline, Cost Check and Continue Packs. Keep them secret."
         action={
-          <Button size="sm" icon={<Plus className="h-4 w-4" />} disabled={!name.trim()} onClick={createKey}>
-            Create key
+          <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => secretRef.current?.focus()}>
+            Add a key
           </Button>
         }
       />
 
-      <Panel>
-        <PanelHeader
-          title="Developer keys"
-          description="Scoped to your workspace — revoke at any time"
-          action={<Badge tone="mint">{keys.filter((k) => !k.revoked).length} active</Badge>}
+      {loading ? (
+        <div className="space-y-2.5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-16 animate-pulse rounded-xl bg-surface-2/60" />
+          ))}
+        </div>
+      ) : error ? (
+        <ErrorState
+          title="Could not load your keys"
+          description={error}
+          onRetry={retry}
         />
-        <PanelBody className="space-y-2.5">
-          {keys.map((k) => (
-            <div
-              key={k.id}
-              className={cn(
-                "flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface-2/40 p-4",
-                k.revoked && "opacity-50",
-              )}
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
-                <KeyRound className="h-4 w-4" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-ink">{k.name}</p>
-                  <Badge tone={k.revoked ? "red" : "green"}>{k.revoked ? "revoked" : "active"}</Badge>
+      ) : (
+        <Panel>
+          <PanelHeader
+            title="Provider keys"
+            description="Encrypted in your workspace vault — only the last 4 characters are stored as a hint"
+            action={<Badge tone="mint">{keys.length} active</Badge>}
+          />
+          <PanelBody className="space-y-2.5">
+            {keys.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-2 text-muted">
+                  <KeyRound className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-ink">No provider keys yet</p>
+                  <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted">
+                    Add a key for any provider to unlock Chat, Rescue and Improve. DeepSeek is the
+                    cheapest for prompt improvement — add it first to keep Improve runs at a fraction
+                    of a cent.
+                  </p>
                 </div>
-                <p className="mt-0.5 font-mono text-[11px] text-faint">
-                  {revealed === k.id ? k.full : k.prefix}
-                  <span className="text-faint/70"> · created {timeAgo(k.createdAt)}</span>
-                </p>
-                <p className="mt-0.5 text-[11px] text-faint">last used {timeAgo(k.lastUsed)}</p>
+                <Button asChild variant="outline" size="sm" icon={<ArrowUpRight className="h-3.5 w-3.5" />}>
+                  <Link href="/models">Browse providers</Link>
+                </Button>
               </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  aria-label={revealed === k.id ? "Hide key" : "Reveal key"}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-                  onClick={() => setRevealed((r) => (r === k.id ? null : k.id))}
+            ) : (
+              keys.map((k) => (
+                <div
+                  key={k.id}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface-2/40 p-4"
                 >
-                  {revealed === k.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-                <button
-                  type="button"
-                  aria-label="Copy key"
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-                  onClick={() => copy(k.full)}
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                    <KeyRound className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-ink">{k.label}</p>
+                      <Badge tone="green">connected</Badge>
+                    </div>
+                    <p className="mt-0.5 font-mono text-[11px] text-faint">
+                      {PROVIDER_LABELS[k.provider] ?? k.provider} · …{k.keyHint}
+                      {k.addedAt ? <span className="text-faint/70"> · added {timeAgo(k.addedAt)}</span> : null}
+                    </p>
+                    {k.lastUsed ? (
+                      <p className="mt-0.5 text-[11px] text-faint">last used {timeAgo(k.lastUsed)}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button
+                      type="button"
+                      aria-label="Revoke key"
+                      disabled={busy}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-rose-400 disabled:opacity-50"
+                      onClick={() => void revoke(k.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <div className="mt-2 grid gap-3 rounded-xl border border-dashed border-border p-4 sm:grid-cols-[1fr_1fr_1fr_auto]">
+              <Field label="Provider">
+                <select
+                  className="workspace-input"
+                  value={provider}
+                  onChange={(e) => setProvider(e.target.value)}
                 >
-                  {copied ? <Check className="h-4 w-4 text-brand-2" /> : <Copy className="h-4 w-4" />}
-                </button>
-                {!k.revoked ? (
-                  <button
-                    type="button"
-                    aria-label="Revoke key"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface-2 hover:text-rose-400"
-                    onClick={() => revoke(k.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                ) : null}
+                  {PROVIDERS.map(([slug, name]) => (
+                    <option key={slug} value={slug}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Secret" hint="stored encrypted — shown as a 4-char hint only">
+                <Input
+                  ref={secretRef}
+                  type="password"
+                  value={secret}
+                  onChange={(e) => setSecret(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && void createKey()}
+                  placeholder="sk-…"
+                  autoComplete="new-password"
+                />
+              </Field>
+              <Field label="Label (optional)">
+                <Input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && void createKey()}
+                  placeholder="e.g. work account"
+                />
+              </Field>
+              <div className="flex items-end">
+                <Button size="sm" disabled={!secret.trim() || busy} onClick={() => void createKey()}>
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  {busy ? "Saving…" : "Save key"}
+                </Button>
               </div>
             </div>
-          ))}
 
-          <Field label="New key name" hint="e.g. “Vercel preview” — keys are shown once">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createKey()}
-              placeholder="name this key…"
-            />
-          </Field>
-          <p className="text-[11px] leading-relaxed text-faint">
-            Keys are hashed at rest with your workspace KEK and validated against the registry on
-            every CLI call. Simulated — these keys are random demo strings.
-          </p>
-        </PanelBody>
-      </Panel>
+            {formError ? (
+              <p className="flex items-center gap-1.5 text-[11px] text-rose-400">
+                <AlertTriangle className="h-3 w-3" /> {formError}
+              </p>
+            ) : (
+              <p className={cn("text-[11px] leading-relaxed text-faint")}>
+                Secrets are encrypted at rest with your workspace KEK and validated against the
+                registry on every call. The API never returns the full secret — only the last 4
+                characters, as the hint displayed above.
+              </p>
+            )}
+          </PanelBody>
+        </Panel>
+      )}
     </div>
   );
 }
