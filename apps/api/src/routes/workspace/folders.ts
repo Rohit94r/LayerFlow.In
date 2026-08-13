@@ -67,6 +67,8 @@ foldersRouter.get("/", async (c) => {
         query.projectId ? eq(f.projectId, query.projectId) : undefined,
       ),
     orderBy: (f, { asc }) => [asc(f.createdAt)],
+    limit: query.limit,
+    offset: query.offset,
   });
 
   const response: ListFoldersResponse = { folders: rows.map(toFolderDto) };

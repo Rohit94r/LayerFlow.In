@@ -45,6 +45,8 @@ projectsRouter.get("/", async (c) => {
         query.status ? eq(p.status, query.status) : undefined,
       ),
     orderBy: (p, { desc }) => [desc(p.updatedAt)],
+    limit: query.limit,
+    offset: query.offset,
   });
 
   const response: ListProjectsResponse = { projects: rows.map(toProjectDto) };

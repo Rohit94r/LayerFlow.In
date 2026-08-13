@@ -10,6 +10,7 @@ import { buildTrustedOrigins } from "./auth/config";
 import { getEnv } from "./config/env";
 import { db } from "./db/client";
 import { AppError, handleError, handleNotFound } from "./middleware/app-error";
+import { authRateLimit } from "./middleware/auth-rate-limit";
 import { requestId } from "./middleware/request-id";
 import { redis } from "./redis/client";
 import { registerRoutes } from "./routes";
@@ -127,6 +128,11 @@ export function createApp(): Hono<AppEnv> {
   app.use("/v1/*", timeout(120_000));
 
   // Better Auth owns everything under /api/auth/* (Google OAuth callback, session...).
+  // Throttle credential endpoints per-IP; everything else (GET session etc.) is free.
+  app.use("/api/auth/*", async (c, next) => {
+    if (c.req.method === "POST") return authRateLimit(20)(c, next);
+    return next();
+  });
   app.on(["GET", "POST"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
   // Root banner: hitting the Render URL in a browser should make it obvious

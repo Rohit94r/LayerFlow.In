@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   createDomainRequestSchema,
+  paginationQuerySchema,
   updateDomainRequestSchema,
   type Domain,
   type DomainResponse,
@@ -49,10 +50,13 @@ function slugify(name: string): string {
 // GET /api/domains
 domainsRouter.get("/", async (c) => {
   const workspaceId = c.get("workspaceId");
+  const query = paginationQuerySchema.parse(c.req.query());
 
   const rows = await db.query.domains.findMany({
     where: (d, { eq }) => eq(d.workspaceId, workspaceId),
     orderBy: (d, { asc }) => [asc(d.sortOrder), asc(d.createdAt)],
+    limit: query.limit,
+    offset: query.offset,
   });
 
   const response: ListDomainsResponse = { domains: rows.map(toDomainDto) };

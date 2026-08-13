@@ -5,7 +5,6 @@ import { budgetsRouter } from "./budgets/budgets";
 import { savingsRouter, usageRouter } from "./budgets/usage";
 import { collectionsRouter } from "./community/collections";
 import { promptCloneRouter } from "./community/clone";
-import { notificationsRouter } from "./community/notifications";
 import { followsRouter, profilesRouter } from "./community/profiles";
 import { commentsRouter, likesRouter } from "./community/social";
 import { compareRouter } from "./compare/compare";
@@ -17,8 +16,11 @@ import { apiKeysRouter } from "./keys/api-keys";
 import { providerKeysRouter } from "./keys/provider-keys";
 import { learningRouter } from "./learning/learning";
 import { memoryRouter } from "./memory/memories";
+import { notificationsRouter } from "./notifications/notifications";
 import { promptsRouter } from "./prompts/prompts";
 import { rescueRouter } from "./rescue/rescue";
+import { improveRouter } from "./improve/improve";
+import { agentsRouter } from "./agents/agents";
 import { chatRouter } from "./chat/chat";
 import { runsRouter } from "./runs/runs";
 import { searchRouter, similarRouter } from "./search/search";
@@ -30,6 +32,8 @@ import { domainsRouter } from "./workspace/domains";
 import { foldersRouter } from "./workspace/folders";
 import { projectsRouter } from "./workspace/projects";
 import { workspacesRouter } from "./workspace/workspaces";
+import { syncRouter } from "./sync/sync";
+import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
 
 /**
@@ -67,12 +71,17 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/provider-keys", providerKeysRouter);
   app.route("/v1", gatewayRouter);
 
+  // CLI sync protocol (also used by the web /terminal dashboard)
+  app.route("/api/v1/sync", syncRouter);
+
   // Memory / search / learning / community
   app.route("/api/memory", memoryRouter);
   app.route("/api/search", searchRouter);
   app.route("/api/similar", similarRouter);
   app.route("/api/learning", learningRouter);
   app.route("/api/rescue", rescueRouter);
+  app.route("/api/improve", improveRouter);
+  app.route("/api/agents", agentsRouter);
   app.route("/api/chat", chatRouter);
   app.route("/api/collections", collectionsRouter);
   app.route("/api/profiles", profilesRouter);
@@ -80,4 +89,5 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/likes", likesRouter);
   app.route("/api/comments", commentsRouter);
   app.route("/api/notifications", notificationsRouter);
+  app.route("/api/team", teamRouter);
 }
