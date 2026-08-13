@@ -18,9 +18,8 @@ export const PLANS: Plan[] = [
     period: "/month",
     description: "Rescue a few chats and feel the workflow. No card required.",
     features: [
+      "Chat + model auto-switch (2 models)",
       "3 Rescue Reports / month",
-      "3 Context Passports",
-      "Smart Compress + Context Diff",
       "Improve Prompt (5 / month)",
       "Basic Prompt Library",
       "Markdown export",
@@ -37,14 +36,14 @@ export const PLANS: Plan[] = [
     period: "/month",
     description: "For people who switch models weekly and never want to re-explain work.",
     features: [
+      "Unlimited chat + auto model switching",
       "30 Rescue Reports / month",
-      "Unlimited Context Passports",
-      "Smart Compress + Context Diff",
+      "AI Memory + context search",
       "Unlimited Improve Prompt",
-      "Cost Check on every report",
-      "BYOK — bring your own keys",
+      "BYOK — encrypted provider keys",
+      "Terminal sync (lf CLI)",
+      "Hard budget caps + cost analytics",
       "Prompt Library with scores",
-      "Workspace + context search",
       "AI Work Ledger",
     ],
     cta: "Start 14-day trial",
@@ -57,13 +56,13 @@ export const PLANS: Plan[] = [
     name: "Pro",
     price: "$14",
     period: "/month",
-    description: "Heavy AI users who want the full workflow, priority speed, and exports.",
+    description: "Heavy AI users who want agents, team workspaces, and the full workflow.",
     features: [
       "Everything in Starter",
       "Unlimited Rescue Reports",
-      "Advanced Cost Analytics",
-      "Best Model Suggestion + routing",
-      "Large passports (up to 100k words)",
+      "Autonomous Agents + approvals",
+      "Team workspaces (roles + invitations)",
+      "Best Model routing",
       "Priority processing queue",
       "CSV / JSON / Markdown exports",
       "Early access: browser companion",
@@ -129,7 +128,7 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote:
-      "My teammate picked up my entire project from a passport — zero re-explaining.",
+      "My teammate picked up my entire project from one AI summary — zero re-explaining.",
     name: "Hamza usman ghani",
     role: "Freelance developer",
     initials: "HG",
@@ -143,9 +142,9 @@ export const TESTIMONIALS: Testimonial[] = [
 
 export const FAQS: FaqItem[] = [
   {
-    question: "What exactly is a Context Passport?",
+    question: "What exactly is an AI conversation summary?",
     answer:
-      "It's a portable memory package for one AI task. It captures your goal, current state, key decisions, constraints, what worked, what failed, and the next action — so any AI model can continue your work without you re-explaining everything.",
+      "It's the extracted memory of one rescued AI task. LayerFlow distills your chat into goal, current state, key decisions, constraints, what worked, what failed, and the next action — so any AI model can continue your work without you re-explaining everything.",
   },
   {
     question: "Do I have to paste my whole chat history?",
@@ -160,7 +159,7 @@ export const FAQS: FaqItem[] = [
   {
     question: "Is my conversation stored?",
     answer:
-      "Only what you save. Unsaved analysis is discarded when you leave the page. Saved passports are private to your workspace, and a private/no-storage mode is on the roadmap. Raw chat is never sent to third-party analytics.",
+      "Only what you save. Unsaved analysis is discarded when you leave the page. Saved summaries are private to your workspace, and a private/no-storage mode is on the roadmap. Raw chat is never sent to third-party analytics.",
   },
   {
     question: "What does BYOK mean?",
@@ -189,31 +188,31 @@ export const FAQS: FaqItem[] = [
 export const ROADMAP: RoadmapPhase[] = [
   {
     phase: "Phase 1",
-    title: "Rescue Reports",
-    description: "Paste any chat and get a clean, compressed, priced, ready-to-continue report.",
+    title: "Rescue & Chat",
+    description: "Chat across any model with automatic failover, and rescue dead conversations instead of restarting them.",
     status: "live",
-    items: ["Limit Rescue", "Context Passport", "Smart Compress", "Context Diff", "Improve Prompt", "Cost Check", "Best Model Suggestion", "Continue Pack"],
+    items: ["Multi-model Chat", "Limit Rescue", "Auto model switching", "Improve Prompt", "Conversation summaries"],
   },
   {
     phase: "Phase 2",
-    title: "The Workspace",
-    description: "Your AI work becomes an organized, searchable library that compounds.",
-    status: "building",
-    items: ["Projects", "Context Passport library", "Prompt Library", "Context Search", "Learning Memory", "AI Work Ledger", "Cost Analytics", "BYOK vault"],
+    title: "Workspace & Memory",
+    description: "Your AI work becomes an organized, searchable memory that compounds across sessions.",
+    status: "live",
+    items: ["AI Memory", "Context Search", "Prompt Library", "Cost Analytics", "BYOK vault"],
   },
   {
     phase: "Phase 3",
-    title: "Web + Terminal Coding",
-    description: "Plain English → Improve → agents + browser terminal. Anyone can code.",
-    status: "building",
-    items: ["Coding Workspace", "Prompt Improver", "Multi-agent runs", "Browser terminal", "Run sessions", "Rescue Reports", "Cost Check"],
+    title: "Agents, Team & Terminal",
+    description: "Autonomous agents with approvals, team workspaces, budgets, and a CLI that syncs with the web app.",
+    status: "live",
+    items: ["Autonomous Agents", "Approvals + schedules", "Team workspaces", "Terminal sync", "Hard budget caps"],
   },
   {
     phase: "Phase 4",
     title: "Developer layer",
-    description: "Repo-scale context passports that work with Cursor, Claude Code, and friends.",
-    status: "planned",
-    items: ["lf CLI: init, context, cost, suggest", "LAYERFLOW.md", "Repo Context Passports", "Git change story", "Export to any coding agent"],
+    description: "Repo-scale context that works with Cursor, Claude Code, and friends.",
+    status: "building",
+    items: ["lf CLI: run, sync, rescue", "LAYERFLOW.md", "Repo AI Summaries", "Git change story", "Export to any coding agent"],
   },
 ];
 
@@ -235,7 +234,7 @@ export const USE_CASES: UseCase[] = [
   {
     title: "Switch tools freely",
     description: "Move between GPT, Claude and Gemini with zero context loss.",
-    example: "7 passports for the webhook API; each model picks up the same decisions.",
+    example: "7 AI summaries for the webhook API; each model picks up the same decisions.",
     icon: "shuffle",
   },
   {
@@ -247,7 +246,7 @@ export const USE_CASES: UseCase[] = [
   {
     title: "Keep client work alive",
     description: "Never rewrite project context again.",
-    example: "A 9,000-word brand brief fits in a passport that any model can continue.",
+    example: "A 9,000-word brand brief fits in one AI summary that any model can continue.",
     icon: "briefcase",
   },
   {
@@ -308,38 +307,30 @@ export const SUPPORTED_MODELS: {
 }[] = [
   {
     group: "Free",
-    note: "Zero-cost models for everyday runs — summarization, compression, prompts, quick fixes.",
+    note: "Zero-cost models for everyday runs — chat, summarization, compression, prompts, quick fixes.",
     items: [
-      { name: "DeepSeek V3.2", provider: "DeepSeek" },
-      { name: "Gemini 2.5 Flash", provider: "Google" },
-      { name: "GPT-5 Mini", provider: "OpenAI" },
-      { name: "Claude Haiku 4.5", provider: "Anthropic" },
+      { name: "DeepSeek V3", provider: "DeepSeek" },
+      { name: "Gemini Flash", provider: "Google" },
+      { name: "GPT-4o mini", provider: "OpenAI" },
+      { name: "Claude 3.5 Haiku", provider: "Anthropic" },
       { name: "Kimi K2", provider: "Moonshot" },
-      { name: "Llama 4 Maverick", provider: "Groq" },
-      { name: "Llama 4 Scout", provider: "Groq" },
-      { name: "Qwen 2.5", provider: "Alibaba" },
-      { name: "Mistral Small", provider: "Mistral" },
-      { name: "Command R+", provider: "Cohere" },
-      { name: "Grok 2", provider: "xAI" },
-      { name: "Llama 3.3 70B", provider: "OpenRouter" },
+      { name: "Llama 3.3 70B", provider: "Groq" },
+      { name: "Grok 3 Mini", provider: "xAI" },
     ],
   },
   {
     group: "Paid",
     note: "Frontier models for deep reasoning, writing, review and final output — you pay providers directly with BYOK.",
     items: [
-      { name: "Claude Opus 4.5", provider: "Anthropic" },
-      { name: "Claude Sonnet 4.5", provider: "Anthropic" },
-      { name: "GPT-5", provider: "OpenAI" },
+      { name: "Claude Sonnet 4", provider: "Anthropic" },
+      { name: "Claude Opus 4", provider: "Anthropic" },
+      { name: "GPT-4o", provider: "OpenAI" },
+      { name: "GPT-4.1", provider: "OpenAI" },
+      { name: "o3-mini", provider: "OpenAI" },
       { name: "Gemini 2.5 Pro", provider: "Google" },
-      { name: "Grok 3", provider: "xAI" },
-      { name: "Grok 3 Mini", provider: "xAI" },
-      { name: "Mistral Large", provider: "Mistral" },
-      { name: "Qwen Max", provider: "Alibaba" },
-      { name: "GLM-4", provider: "Zhipu" },
-      { name: "Yi-Large", provider: "01.AI" },
       { name: "DeepSeek R1", provider: "DeepSeek" },
-      { name: "Claude 3.7 Sonnet", provider: "Anthropic" },
+      { name: "Grok 3", provider: "xAI" },
+      { name: "Kimi K2 Thinking", provider: "Moonshot" },
     ],
   },
 ];

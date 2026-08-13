@@ -478,7 +478,7 @@ export const corpusSC3: BlogPost[] = [
       { "type": "h2", "id": "layer-3-escalation", "text": "Layer 3: Tier escalation on quality failure" },
       { "type": "p", "text": "The hardest failure to detect is the plausible-but-wrong answer. Quality-gated routing handles it: when the cheap model's output fails validation — bad JSON, missing fields, failed tests — escalate to the next tier. This is the pattern that lets teams run cheap models on most traffic without gambling quality." },
       { "type": "h2", "id": "layer-4-context", "text": "Layer 4: Context preservation" },
-      { "type": "p", "text": "A fallback that loses context is not a fallback. When the request moves to another provider or model, the context must travel: compressed state, decisions, and constraints. Teams that preserve context during failover get a second opinion; teams that do not get a game of telephone. This is where the [context passport](/blog/context-portability-models) pattern earns its keep." },
+      { "type": "p", "text": "A fallback that loses context is not a fallback. When the request moves to another provider or model, the context must travel: compressed state, decisions, and constraints. Teams that preserve context during failover get a second opinion; teams that do not get a game of telephone. This is where the [AI summary](/blog/context-portability-models) pattern earns its keep." },
       { "type": "callout", "text": "Pro tip: log every fallback with the reason. A failover rate above a few percent tells you the primary model is misconfigured, priced wrong, or unreliable — and the log tells you which." },
       { "type": "h2", "id": "common-mistakes", "text": "Common mistakes" },
       { "type": "ul", "items": [

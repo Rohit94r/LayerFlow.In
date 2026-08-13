@@ -115,8 +115,8 @@ export const corpusSC1: BlogPost[] = [
         "Storing layers as separate files with no single source of truth."
       ] },
       { "type": "callout", "text": "Pro tip: build your layered prompts as templates with the context layer left blank. Fill the blank at runtime from git diff, open files, and error logs — do not hand-type it." },
-      { "type": "h2", "id": "from-layers-to-context-passports", "text": "From layers to context passports" },
-      { "type": "p", "text": "The evolution of layered prompting is a context passport: a portable package capturing goal, current state, key decisions, constraints, failures, next action, and output format. Paste it into any model and it continues exactly where the last session stopped. LayerFlow was built around this idea — the layers become durable, and the context travels with the task." },
+      { "type": "h2", "id": "from-layers-to-ai-summaries", "text": "From layers to AI summaries" },
+      { "type": "p", "text": "The evolution of layered prompting is an AI summary: a portable package capturing goal, current state, key decisions, constraints, failures, next action, and output format. Paste it into any model and it continues exactly where the last session stopped. LayerFlow was built around this idea — the layers become durable, and the context travels with the task." },
       { "type": "h2", "id": "next-steps", "text": "Internal next steps" },
       { "type": "p", "text": "Dive deeper with the [practical layered prompt guide](/blog/layered-ai-prompts-practical-guide) and [Context Engineering](/blog/context-engineering-guide). To see how layers turn into portable memory, read [Context Portability Between Models](/blog/context-portability-models)." },
       { "type": "p", "text": "Ready to build layered AI prompts that survive model switches? Sign in to [LayerFlow](/sign-in) or start with a [free plan](/pricing)." },
@@ -523,29 +523,29 @@ export const corpusSC1: BlogPost[] = [
         "Output format: how answers should be structured."
       ] },
       { "type": "p", "text": "Everything else — small talk, intermediate reasoning, repeated explanations — is noise. The art of rescue is discarding it." },
-      { "type": "h2", "id": "the-compression-step", "text": "The compression step: from history to passport" },
-      { "type": "p", "text": "A dead session might hold 15,000 words of history. Pasting that into a fresh model is expensive and counterproductive — models lose attention in noise. Compress it into a context passport: a structured block with goal, current state, key decisions, constraints, failures, next action, and output format. Roughly 1,000 words of signal instead of 15,000 words of history." },
+      { "type": "h2", "id": "the-compression-step", "text": "The compression step: from history to AI summary" },
+      { "type": "p", "text": "A dead session might hold 15,000 words of history. Pasting that into a fresh model is expensive and counterproductive — models lose attention in noise. Compress it into an AI summary: a structured block with goal, current state, key decisions, constraints, failures, next action, and output format. Roughly 1,000 words of signal instead of 15,000 words of history." },
       { "type": "h2", "id": "continuing-in-another-model", "text": "Continuing in another model" },
-      { "type": "p", "text": "Once the passport exists, any model can continue: paste it as the opening message and ask for the next action. Different models have different strengths — if you were coding and hit a wall, continuing the reasoning in a different model often surfaces the error the first one missed. Cross-model continuation is one of the strongest rescue patterns because it converts a rate limit into a second opinion." },
+      { "type": "p", "text": "Once the summary exists, any model can continue: paste it as the opening message and ask for the next action. Different models have different strengths — if you were coding and hit a wall, continuing the reasoning in a different model often surfaces the error the first one missed. Cross-model continuation is one of the strongest rescue patterns because it converts a rate limit into a second opinion." },
       { "type": "h2", "id": "rescue-checklist", "text": "The 60-second rescue checklist" },
       { "type": "ol", "items": [
         "Extract: copy the last plan, the failing code, and the last model response.",
-        "Compress: write the six passport fields (goal, state, decisions, constraints, failures, next action).",
-        "Paste: open the target model and lead with the passport.",
+        "Compress: write the six summary fields (goal, state, decisions, constraints, failures, next action).",
+        "Paste: open the target model and lead with the summary.",
         "Verify: ask the new model to restate the goal before starting, to confirm context survived.",
-        "Save: store the passport where your team can find it — this becomes institutional memory."
+        "Save: store the summary where your team can find it — this becomes institutional memory."
       ] },
       { "type": "callout", "text": "Pro tip: rescue before you need it. Every time a session reaches a natural milestone, write the three-line state: what we decided, where we stopped, what is next. A 30-second habit eliminates most rescue work entirely." },
       { "type": "h2", "id": "why-chat-history-is-not-memory", "text": "Why chat history is not memory" },
-      { "type": "p", "text": "Chat history is a transcript; memory is a durable state. Transcripts die with sessions and rate limits. Memory — a passport, a workspace, a project file — survives models and teams. The teams that treat context as durable state stop paying the re-explanation tax every single day. Developer productivity research puts context switching costs at 15-20% of productive time; chat rescue is the direct fix for the AI version of that tax." },
+      { "type": "p", "text": "Chat history is a transcript; memory is a durable state. Transcripts die with sessions and rate limits. Memory — an AI summary, a workspace, a project file — survives models and teams. The teams that treat context as durable state stop paying the re-explanation tax every single day. Developer productivity research puts context switching costs at 15-20% of productive time; chat rescue is the direct fix for the AI version of that tax." },
       { "type": "h2", "id": "next-steps", "text": "Internal next steps" },
       { "type": "p", "text": "Continue with [AI Context Loss: The Hidden Productivity Tax](/blog/ai-context-loss-problem) and [Context Portability Between Models](/blog/context-portability-models). For the migration path, see [From ChatGPT History to a Workspace](/blog/from-chatgpt-history-to-workspace)." },
       { "type": "p", "text": "Rescue a dead session today: [sign in](/sign-in) to LayerFlow and try the rescue workflow, or see [pricing](/pricing) for the free tier." },
       { "type": "h2", "id": "faq", "text": "FAQ" },
       { "type": "faq", "items": [
-        { "q": "How do I recover a lost ChatGPT conversation?", "a": "Open the session, copy the goal, key decisions, current state, and failures, and compress them into a short passport block. Paste it into any model to continue — the work survives even if the thread does not." },
-        { "q": "Can I continue a session in a different model?", "a": "Yes. A compressed context passport works on any model. Continuing in a different model even helps: a fresh model often catches errors the first one missed." },
-        { "q": "How do I avoid losing AI context?", "a": "Write a three-line state note at every milestone (decided, stopped, next) and store it somewhere durable — a workspace, a project file, or a passport — instead of relying on chat history." }
+        { "q": "How do I recover a lost ChatGPT conversation?", "a": "Open the session, copy the goal, key decisions, current state, and failures, and compress them into a short AI summary block. Paste it into any model to continue — the work survives even if the thread does not." },
+        { "q": "Can I continue a session in a different model?", "a": "Yes. A compressed AI summary works on any model. Continuing in a different model even helps: a fresh model often catches errors the first one missed." },
+        { "q": "How do I avoid losing AI context?", "a": "Write a three-line state note at every milestone (decided, stopped, next) and store it somewhere durable — a workspace, a project file, or an AI summary — instead of relying on chat history." }
       ] }
     ]
   }

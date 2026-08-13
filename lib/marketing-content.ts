@@ -2,27 +2,27 @@ export const site = {
   name: "LayerFlow",
   headline: "Code with AI — in your browser or terminal",
   subtitle:
-    "The AI coding platform with a rescue workflow. Write plain English, click Improve, and run working prompts — or open the terminal and let multiple agents build with you. Rescue dead chats, carry context between tools and models, and control every penny you spend on AI.",
-  tagline: "The AI Coding Platform",
+    "The AI workspace for teams. Chat across any model, rescue dead conversations instead of restarting them, run agents with approvals, sync your terminal sessions, and control every penny you spend — one memory, everywhere.",
+  tagline: "The AI Workspace",
   workspaceHref: "/home",
   signInHref: "/sign-in",
   pricingHref: "/pricing",
 };
 
 export const proofPoints = [
-  "Code with Agents",
-  "Plain-English Improve",
-  "Browser + Terminal",
-  "`lf` CLI Agent",
-  "Context Passport",
-  "Cost Check",
+  "Chat across models",
+  "Rescue dead chats",
+  "Agents with approvals",
+  "Browser + Terminal sync",
+  "AI Memory + Search",
+  "BYOK + budget caps",
 ];
 
 export const journeySteps = [
   "Rescue",
   "Compress",
   "Improve",
-  "Passport",
+  "Summarize",
   "Continue",
 ];
 
@@ -50,7 +50,7 @@ export type FeatureMenuItem = {
     | "compress"
     | "improve"
     | "continue"
-    | "passport"
+    | "summary"
     | "prompts"
     | "search"
     | "memory"
@@ -76,25 +76,25 @@ export const featureMenu: FeatureMenuSection[] = [
     items: [
       {
         title: "Coding Workspace",
-        description: "Web code editor — plain English in, working code out.",
-        href: "/code",
+        description: "Web code workspace — plain English in, working code out.",
+        href: "/workspace",
         icon: "code",
       },
       {
-        title: "Terminal Agent",
-        description: "The same agents and session in your browser or the lf CLI — two faces, one run.",
-        href: "/code?tab=terminal",
+        title: "Improve Prompt",
+        description: "One click in chat — your rough prompt becomes a sharp, low-token prompt.",
+        href: "/chat",
         icon: "terminal",
       },
       {
-        title: "Multi-Agent",
-        description: "Implement, review and test agents working in parallel.",
-        href: "/code?tab=agents",
+        title: "Build Agents",
+        description: "Create your own specialist agents — custom prompts, models, budgets.",
+        href: "/agents",
         icon: "agents",
       },
       {
         title: "Run Sessions",
-        description: "Every run saved as a passport — resume anywhere.",
+        description: "Every run saved with an AI summary — resume anywhere.",
         href: "/workspace",
         icon: "sessions",
       },
@@ -106,25 +106,19 @@ export const featureMenu: FeatureMenuSection[] = [
       {
         title: "Rescue Chat",
         description: "Paste a dead chat — get a clean, working prompt.",
-        href: "/rescue",
+        href: "/chat",
         icon: "rescue",
       },
       {
         title: "Smart Compress",
         description: "Squeeze long conversations into tiny context.",
-        href: "/rescue?mode=compress",
+        href: "/chat",
         icon: "compress",
-      },
-      {
-        title: "Improve Prompt",
-        description: "Turn vague asks into precise, reliable prompts.",
-        href: "/rescue?mode=prompt",
-        icon: "improve",
       },
       {
         title: "Continue Pack",
         description: "Pick up where a session ended — no re-explaining.",
-        href: "/rescue?mode=continue",
+        href: "/chat",
         icon: "continue",
       },
     ],
@@ -133,10 +127,10 @@ export const featureMenu: FeatureMenuSection[] = [
     title: "Context",
     items: [
       {
-        title: "Context Passport",
-        description: "Your reusable context card — tools read it, models use it.",
-        href: "/passports",
-        icon: "passport",
+        title: "AI Conversation Summary",
+        description: "Every rescue keeps an AI summary — goal, decisions, constraints, next action.",
+        href: "/chat",
+        icon: "summary",
       },
       {
         title: "Prompt Library",

@@ -53,7 +53,7 @@ export const corpusSC2: BlogPost[] = [
       ] },
       { "type": "h2", "id": "next-steps", "text": "Internal next steps" },
       { "type": "p", "text": "Go deeper with [AI Context Loss](/blog/ai-context-loss-problem) and [Context Compression Techniques](/blog/context-compression-techniques). For the architecture, read [Layered AI Prompts Explained](/blog/layered-ai-prompts-layers-explained) and [Context Window Optimization](/blog/context-window-optimization)." },
-      { "type": "p", "text": "Put context engineering into practice: [sign in](/sign-in) to LayerFlow and build your first context passport, or review [pricing](/pricing) first." },
+      { "type": "p", "text": "Put context engineering into practice: [sign in](/sign-in) to LayerFlow and build your first AI summary, or review [pricing](/pricing) first." },
       { "type": "h2", "id": "faq", "text": "FAQ" },
       { "type": "faq", "items": [
         { "q": "What is context engineering?", "a": "Context engineering is the discipline of managing what an LLM sees: curating static project context, gathering dynamic state automatically, compressing history to decisions, and preserving it across sessions and models." },
@@ -99,7 +99,7 @@ export const corpusSC2: BlogPost[] = [
       { "type": "ol", "items": [
         "Write it down once: project goals, conventions, and constraints in a durable file or workspace.",
         "Compress sessions: after each working session, save goal, decisions, state, next action.",
-        "Port the passport: the same compressed context works in any model and any tool.",
+        "Port the summary: the same compressed context works in any model and any tool.",
         "Share it: teammates consume the same context instead of recreating it."
       ] },
       { "type": "callout", "text": "Pro tip: context loss is not a memory problem, it is a state problem. Sessions are transcripts; state must live outside them. The day you stop treating chat history as memory is the day the tax ends." },
@@ -123,15 +123,15 @@ export const corpusSC2: BlogPost[] = [
     "description": "Context portability lets you move a conversation from ChatGPT to Claude to Gemini without re-explaining. Here is the pattern that makes it work.",
     "publishedAt": "2026-08-12",
     "category": "Prompt engineering",
-    "tags": ["context portability", "switch AI models", "portable context", "context passport"],
+    "tags": ["context portability", "switch AI models", "portable context", "AI conversation summary"],
     "primaryKeyword": "context portability",
-    "secondaryKeywords": ["switch between AI models", "portable AI context", "context passport", "move conversation to another model"],
+    "secondaryKeywords": ["switch between AI models", "portable AI context", "AI conversation summary", "move conversation to another model"],
     "readingTime": "6 min read",
     "author": "LayerFlow Team",
     "relatedSlugs": ["context-engineering-guide", "multi-model-workflow-design", "ai-chat-rescue-continue-sessions", "how-to-multi-model-comparison"],
     "blocks": [
       { "type": "p", "text": "JetBrains found 67% of developers use multiple AI tools — but almost none of them have a way to move work between models without re-explaining. That is the context portability gap: your work is locked inside whichever chat happened to be open." },
-      { "type": "p", "text": "Context portability is the ability to take a conversation's real state — goal, decisions, constraints, progress — and continue it in another model in seconds. This guide shows the pattern. It is the core of the [LayerFlow workspace](/sign-in); the [docs](/docs) document the passport format." },
+      { "type": "p", "text": "Context portability is the ability to take a conversation's real state — goal, decisions, constraints, progress — and continue it in another model in seconds. This guide shows the pattern. It is the core of the [LayerFlow workspace](/sign-in); the [docs](/docs) document the summary format." },
       { "type": "h2", "id": "what-travels", "text": "What actually needs to travel" },
       { "type": "ul", "items": [
         "Goal: the thing you are building or fixing.",
@@ -142,9 +142,9 @@ export const corpusSC2: BlogPost[] = [
         "Next action: the exact thing to do next."
       ] },
       { "type": "p", "text": "Transcripts do not travel. Raw history pasted into a new model is expensive, noisy, and often counterproductive. What travels is the distilled state — roughly 1,000 words of signal instead of 15,000 words of talk." },
-      { "type": "h2", "id": "the-passport-pattern", "text": "The passport pattern" },
-      { "type": "p", "text": "A context passport is a structured block with those six fields, formatted so any model can consume it as a continuation prompt. The opening line tells the model the rules: continue this work; restate the goal before starting; preserve the constraints; do not revisit settled decisions." },
-      { "type": "p", "text": "Format matters less than completeness — but consistency matters a lot. Teams that standardize on one passport template can automate the whole flow: extract from the old session, compress, hand to the new model." },
+      { "type": "h2", "id": "the-summary-pattern", "text": "The AI summary pattern" },
+      { "type": "p", "text": "An AI summary is a structured block with those six fields, formatted so any model can consume it as a continuation prompt. The opening line tells the model the rules: continue this work; restate the goal before starting; preserve the constraints; do not revisit settled decisions." },
+      { "type": "p", "text": "Format matters less than completeness — but consistency matters a lot. Teams that standardize on one summary template can automate the whole flow: extract from the old session, compress, hand to the new model." },
       { "type": "h2", "id": "when-to-port", "text": "When porting is a superpower" },
       { "type": "ul", "items": [
         "Rate-limited mid-task: switch models instead of waiting or restarting.",
@@ -156,18 +156,18 @@ export const corpusSC2: BlogPost[] = [
       { "type": "ul", "items": [
         "Porting the transcript instead of the state — the new model drowns in noise.",
         "Leaving out failures, so the new model repeats the old mistakes.",
-        "Hand-editing the passport every time instead of using a template.",
+        "Hand-editing the summary every time instead of using a template.",
         "No verification step — a model that misread the goal will confidently do the wrong thing."
       ] },
       { "type": "callout", "text": "Pro tip: always verify the handoff. Ask the new model to restate the goal and the last decision in one line before it starts. Thirty seconds of verification saves thirty minutes of wrong work." },
       { "type": "h2", "id": "next-steps", "text": "Internal next steps" },
       { "type": "p", "text": "See [Context Engineering](/blog/context-engineering-guide) for the underlying discipline and [AI Chat Rescue](/blog/ai-chat-rescue-continue-sessions) for the emergency version. For choosing where to port, read [Designing a Multi-Model Workflow](/blog/multi-model-workflow-design)." },
-      { "type": "p", "text": "Make context portable today: [sign in](/sign-in) to LayerFlow, save a passport for your active project, and try the same task in two models. [Pricing](/pricing) has a free tier." },
+      { "type": "p", "text": "Make context portable today: [sign in](/sign-in) to LayerFlow, save an AI summary for your active project, and try the same task in two models. [Pricing](/pricing) has a free tier." },
       { "type": "h2", "id": "faq", "text": "FAQ" },
       { "type": "faq", "items": [
-        { "q": "How do I switch models without losing context?", "a": "Compress the session into a context passport: goal, decisions, state, constraints, failures, and next action. Paste it as the opening message in the new model and verify it restates the goal before working." },
-        { "q": "What is a context passport?", "a": "It is a structured block of six fields — goal, current state, key decisions, constraints, failures, next action — that captures the real state of an AI session so any model can continue the work." },
-        { "q": "Can I move a ChatGPT conversation to Claude?", "a": "Yes. Copy the conversation, distill it into the passport fields, and paste it into Claude with a continuation instruction. The new model continues the work without needing the full transcript." }
+        { "q": "How do I switch models without losing context?", "a": "Compress the session into an AI summary: goal, decisions, state, constraints, failures, and next action. Paste it as the opening message in the new model and verify it restates the goal before working." },
+        { "q": "What is an AI conversation summary?", "a": "It is the distilled state of an AI session — goal, current state, key decisions, constraints, failures, next action — captured in six fields so any model can continue the work." },
+        { "q": "Can I move a ChatGPT conversation to Claude?", "a": "Yes. Copy the conversation, distill it into the summary fields, and paste it into Claude with a continuation instruction. The new model continues the work without needing the full transcript." }
       ] }
     ]
   },
@@ -441,7 +441,7 @@ export const corpusSC2: BlogPost[] = [
         "Next action: the exact next step for the receiver.",
         "Context note: where the durable project context lives."
       ] },
-      { "type": "p", "text": "The template doubles as a context passport: the same block that hands work to a teammate hands work to a model. Teams that standardize on it stop translating between human handoffs and AI sessions." },
+      { "type": "p", "text": "The template doubles as an AI summary: the same block that hands work to a teammate hands work to a model. Teams that standardize on it stop translating between human handoffs and AI sessions." },
       { "type": "h2", "id": "the-team-rules", "text": "The four team rules" },
       { "type": "ol", "items": [
         "No handoff without a template — a verbal handoff is not a handoff.",
@@ -451,7 +451,7 @@ export const corpusSC2: BlogPost[] = [
       ] },
       { "type": "p", "text": "Rule three is the one that gets teams. If each engineer keeps their own AI context, the team has N versions of project truth. One shared context source turns handoffs from translation into copy." },
       { "type": "h2", "id": "handoffs-across-models", "text": "Handoffs across models" },
-      { "type": "p", "text": "The same template works when the receiver is a model: paste the handoff as the opening message, ask it to restate the task, and let it continue. This is the human-to-agent and agent-to-human version of the same protocol — and it is why the passport format matters more than any single tool." },
+      { "type": "p", "text": "The same template works when the receiver is a model: paste the handoff as the opening message, ask it to restate the task, and let it continue. This is the human-to-agent and agent-to-human version of the same protocol — and it is why the summary format matters more than any single tool." },
       { "type": "callout", "text": "Pro tip: add a blame-free rule — if a handoff was incomplete, the receiver fixes the template, not the sender's memory. The protocol improves fastest when gaps are treated as system bugs, not people bugs." },
       { "type": "h2", "id": "next-steps", "text": "Internal next steps" },
       { "type": "p", "text": "See [How Teams Collaborate on AI Prompts](/blog/teams-collaborate-ai-prompts) and [Sharing Prompt Versions with Your Team](/blog/sharing-prompt-versions-team). For the state side, read [AI Project Memory](/blog/ai-project-memory-guide) and [Context Portability](/blog/context-portability-models)." },
