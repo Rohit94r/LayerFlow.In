@@ -1,22 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   LifeBuoy,
-  BookUser,
-  FileDown,
-  Wand2,
-  DollarSign,
-  CopyCheck,
-  KeyRound,
-  Cpu,
-  FolderKanban,
-  Search,
   Brain,
+  Search,
   History,
+  Bot,
+  Cpu,
+  Library,
+  KeyRound,
+  FolderKanban,
+  Wand2,
+  Play,
+  Scissors,
+  Layers,
+  ClipboardList,
+  BarChart3,
 } from "@/components/ui/icons";
 import type { LucideIcon } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
@@ -27,92 +30,145 @@ type Feature = {
   description: string;
   why: string;
   steps: string[];
+  group: GroupId;
+};
+
+const GROUPS = [
+  { id: "code", label: "Code" },
+  { id: "rescue", label: "Rescue" },
+  { id: "context", label: "Context" },
+  { id: "workspace", label: "Workspace & models" },
+] as const;
+
+type GroupId = (typeof GROUPS)[number]["id"];
+
+const GROUP_LABEL: Record<GroupId, string> = {
+  code: "Code",
+  rescue: "Rescue",
+  context: "Context",
+  workspace: "Workspace & models",
 };
 
 const FEATURES: Feature[] = [
   {
-    icon: LifeBuoy,
-    title: "Limit Rescue",
-    description: "Hit the Claude or ChatGPT limit? Paste the conversation and continue instantly — without rebuilding context.",
-    why: "Dead-end chats become workable sessions in under a minute.",
-    steps: ["Claude limit reached", "Paste into LayerFlow", "Continue in Gemini"],
-  },
-  {
-    icon: BookUser,
-    title: "Context Passport",
-    description: "A portable memory package: goal, current state, decisions, constraints, failures, next action and output format.",
-    why: "Your work survives any model or tool switch.",
-    steps: ["State captured", "Goal + decisions saved", "Restored in any model"],
-  },
-  {
-    icon: FileDown,
-    title: "Smart Compress",
-    description: "15,000 words in, ~1,000 words out. Only the useful context survives — with a clear reduction count.",
-    why: "Pay for signal, not filler.",
-    steps: ["15,000 words in", "Compressed to ~1,000", "Useful context survives"],
+    icon: FolderKanban,
+    title: "Coding Workspace",
+    description: "A dedicated workspace for building with AI — sessions, prompts, runs and history live together, so coding never loses the thread.",
+    why: "One place for the whole build loop — plan, code, test, ship.",
+    steps: ["Workspace opened", "Context attached", "Code with AI"],
+    group: "code",
   },
   {
     icon: Wand2,
     title: "Improve Prompt",
-    description: "Your vague ask becomes a precise prompt — context, constraints, examples and output format — scored from 0 to 100.",
-    why: "Vague ideas become precise instructions.",
-    steps: ["Vague prompt written", "Scored & rewritten", "92/100 with constraints"],
+    description: "Polish any prompt before you spend tokens — rewrite, tighten and score it against your best past prompts.",
+    why: "Better prompts in, better answers out, without burning budget.",
+    steps: ["Prompt pasted", "Rewritten + scored", "Reused everywhere"],
+    group: "code",
   },
   {
-    icon: DollarSign,
-    title: "Cost Check",
-    description: "Real dollar estimates across Claude, GPT, Gemini, DeepSeek, Kimi and Groq — not just token counts.",
-    why: "Know the price before you run.",
-    steps: ["Task typed", "6 models priced", "Cheapest good pick chosen"],
+    icon: Bot,
+    title: "Build Agents",
+    description: "Compose agents from prompts, models and budgets. Approvals gate the important steps and every run is logged.",
+    why: "Your workflows run themselves — you approve what matters.",
+    steps: ["Agent defined", "Approval requested", "Runs logged"],
+    group: "code",
   },
   {
-    icon: CopyCheck,
+    icon: Play,
+    title: "Run Sessions",
+    description: "Start a session, pick a model and watch it run in real time — in the browser or the lf terminal.",
+    why: "Start on the web, finish in the terminal — same session, same context.",
+    steps: ["Session started", "Model chosen", "Streaming output"],
+    group: "code",
+  },
+  {
+    icon: LifeBuoy,
+    title: "Rescue Chat",
+    description: "Hit the Claude or ChatGPT limit? Paste the dead conversation and continue instantly — in any model.",
+    why: "A dead chat becomes a workable session in under a minute.",
+    steps: ["Limit reached", "Paste into LayerFlow", "Continue elsewhere"],
+    group: "rescue",
+  },
+  {
+    icon: Scissors,
+    title: "Smart Compress",
+    description: "Long threads shrink automatically — older turns are summarized so the important context survives.",
+    why: "No more losing the plot in a 200-message thread.",
+    steps: ["Thread too long", "Old turns compressed", "Context preserved"],
+    group: "rescue",
+  },
+  {
+    icon: Layers,
     title: "Continue Pack",
-    description: "A copy-ready continuation package. Paste it into any AI and continue exactly where you stopped.",
-    why: "Pick up exactly where you left off.",
-    steps: ["Session finished", "Pack generated", "Pasted into any AI"],
+    description: "Export the full conversation as a pack — import it into any chat or agent and continue where you left off.",
+    why: "Your work travels with you, not stuck in one app.",
+    steps: ["Pack exported", "Imported anywhere", "Context intact"],
+    group: "rescue",
   },
   {
-    icon: KeyRound,
-    title: "BYOK",
-    description: "Bring your own API keys. Pay your provider's prices, keep full control, and never touch resold credits.",
-    why: "Your keys, your prices, your control.",
-    steps: ["Your key added", "Provider pricing applied", "No resold credits"],
+    icon: ClipboardList,
+    title: "AI Conversation Summary",
+    description: "Every finished conversation gets a distilled summary — automatically, without you asking.",
+    why: "Know what was decided without rereading the whole thread.",
+    steps: ["Chat finished", "Summary generated", "Searchable later"],
+    group: "context",
   },
   {
-    icon: Cpu,
-    title: "Best Model Suggestion",
-    description: "The right model for the task — with the reasoning explained. Cheap first, strong when it matters.",
-    why: "Always the right model for the job.",
-    steps: ["Task analyzed", "Models ranked by cost + quality", "Best option runs"],
-  },
-  {
-    icon: FolderKanban,
-    title: "Workspace",
-    description: "Projects, saved context, prompt library, timeline and history — your AI work, organized and durable.",
-    why: "Every project, prompt and run in one place.",
-    steps: ["Project created", "Prompts + runs tracked", "History preserved"],
+    icon: Library,
+    title: "Prompt Library",
+    description: "Prompts are versioned, scored and shared across the workspace — reuse your best work instead of reinventing it.",
+    why: "Your best prompts compound.",
+    steps: ["Prompt improved", "Scored 0–100", "Reused by the team"],
+    group: "context",
   },
   {
     icon: Search,
     title: "Context Search",
-    description: "Search every saved passport, prompt and decision. Find the answer you already paid for.",
+    description: "Keyword and semantic search across chats, memories, prompts and runs — find the answer you already paid for.",
     why: "Reuse what you already solved.",
-    steps: ["Search typed", "Passports scanned", "Answer surfaced"],
+    steps: ["Search typed", "Everything scanned", "Answer surfaced"],
+    group: "context",
   },
   {
     icon: Brain,
     title: "Learning Memory",
-    description: "Pin what worked so future sessions start from your hard-won lessons, not from scratch.",
-    why: "Never repeat a solved problem.",
-    steps: ["Lesson learned", "Pinned to memory", "Next session starts smarter"],
+    description: "Facts from chats and runs are extracted into durable memory and injected into future sessions automatically.",
+    why: "Your lessons compound instead of living in scrollback.",
+    steps: ["Facts extracted", "Stored as memory", "Injected next time"],
+    group: "context",
   },
   {
     icon: History,
     title: "AI Work Ledger",
-    description: "A git-like timeline of everything done with AI: rescues, prompts, models, decisions and costs.",
+    description: "A git-like timeline of every chat, run and decision — with the models used and what they cost.",
     why: "Full history, full accountability.",
     steps: ["Every action logged", "Models + costs recorded", "Full audit trail"],
+    group: "workspace",
+  },
+  {
+    icon: BarChart3,
+    title: "Cost Analytics",
+    description: "Spend per project, model and team member — with budgets that stop the spend before it overshoots.",
+    why: "Every dollar accounted for — before it's spent.",
+    steps: ["Spend tracked", "Budgets set", "Caps enforced"],
+    group: "workspace",
+  },
+  {
+    icon: Cpu,
+    title: "Models",
+    description: "OpenAI, Anthropic, Google, Groq, DeepSeek, Kimi and xAI — pick the best model for each job, with automatic failover.",
+    why: "Always the right model for the task.",
+    steps: ["Models compared", "Best one chosen", "Failover built in"],
+    group: "workspace",
+  },
+  {
+    icon: KeyRound,
+    title: "BYOK",
+    description: "Bring your own API keys. Pay your provider's prices, keep full control and never touch resold credits. Keys are encrypted at rest.",
+    why: "Your keys, your prices, your control.",
+    steps: ["Your key added", "Provider pricing applied", "No resold credits"],
+    group: "workspace",
   },
 ];
 
@@ -162,9 +218,14 @@ function FeaturePanel({ f, i }: { f: Feature; i: number }) {
             </h3>
           </div>
         </div>
-        <span className="mt-1 shrink-0 rounded-full border border-border bg-surface-2 px-2.5 py-1 font-mono text-[10px] font-bold text-faint">
-          {i + 1} / {N}
-        </span>
+        <div className="mt-1 flex shrink-0 flex-col items-end gap-1.5">
+          <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 font-mono text-[10px] font-bold text-faint">
+            {i + 1} / {N}
+          </span>
+          <span className="rounded-full bg-brand/10 px-2.5 py-1 font-mono text-[10px] font-bold text-brand">
+            {GROUP_LABEL[f.group]}
+          </span>
+        </div>
       </div>
       <p className="mt-4 text-sm leading-relaxed text-muted">{f.description}</p>
       <div className="mt-auto pt-5">
@@ -212,9 +273,9 @@ function FeaturesDesktop() {
                 keep every bit of context alive
               </h2>
               <p className="mt-5 max-w-md text-base leading-relaxed text-muted">
-                LayerFlow helps developers rescue AI conversations, improve
-                prompts, cut costs, and continue across any model — one memory,
-                everywhere.
+                LayerFlow is the AI workspace for teams that build in the browser
+                and the terminal — chat across any model, rescue dead chats,
+                run agents, and keep one memory everywhere.
               </p>
 
               <div
@@ -222,35 +283,44 @@ function FeaturesDesktop() {
                 className="mt-8 max-w-sm space-y-0.5 rounded-2xl border border-border bg-surface/60 p-2.5"
                 aria-label="Browse features"
               >
-                {FEATURES.map((f, i) => (
-                  <button
-                    key={f.title}
-                    onClick={() => setActive(i)}
-                    aria-current={active === i ? "step" : undefined}
-                    className={`group flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition-colors duration-200 ${
-                      active === i ? "bg-brand/10" : "hover:bg-surface-2"
-                    }`}
-                  >
-                    <span
-                      className={`font-mono text-[10px] font-bold transition-colors duration-200 ${
-                        active === i ? "text-brand" : "text-faint"
-                      }`}
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span
-                      className={`h-1 w-1 shrink-0 rounded-full transition-colors duration-200 ${
-                        active === i ? "bg-brand" : "bg-border"
-                      }`}
-                    />
-                    <span
-                      className={`text-[13px] transition-colors duration-200 ${
-                        active === i ? "font-medium text-ink" : "text-muted group-hover:text-ink"
-                      }`}
-                    >
-                      {f.title}
-                    </span>
-                  </button>
+                {GROUPS.map((g) => (
+                  <Fragment key={g.id}>
+                    <div className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-widest text-faint first:pt-1">
+                      {g.label}
+                    </div>
+                    {FEATURES.map((f, i) =>
+                      f.group === g.id ? (
+                        <button
+                          key={f.title}
+                          onClick={() => setActive(i)}
+                          aria-current={active === i ? "step" : undefined}
+                          className={`group flex w-full items-center gap-2.5 rounded-xl px-3 py-1.5 text-left transition-colors duration-200 ${
+                            active === i ? "bg-brand/10" : "hover:bg-surface-2"
+                          }`}
+                        >
+                          <span
+                            className={`font-mono text-[10px] font-bold transition-colors duration-200 ${
+                              active === i ? "text-brand" : "text-faint"
+                            }`}
+                          >
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <span
+                            className={`h-1 w-1 shrink-0 rounded-full transition-colors duration-200 ${
+                              active === i ? "bg-brand" : "bg-border"
+                            }`}
+                          />
+                          <span
+                            className={`text-[13px] transition-colors duration-200 ${
+                              active === i ? "font-medium text-ink" : "text-muted group-hover:text-ink"
+                            }`}
+                          >
+                            {f.title}
+                          </span>
+                        </button>
+                      ) : null,
+                    )}
+                  </Fragment>
                 ))}
               </div>
 
@@ -259,7 +329,7 @@ function FeaturesDesktop() {
               </p>
 
               <div className="mt-7">
-                <Link href="/code">
+                <Link href="/agents">
                   <Button size="lg" icon={<ArrowRight className="h-4 w-4" />}>
                     Try LayerFlow
                   </Button>
@@ -298,44 +368,55 @@ function FeaturesMobile() {
           <span className="text-brand">keep every bit of context alive</span>
         </h2>
         <p className="mt-4 max-w-md text-base leading-relaxed text-muted">
-          LayerFlow helps developers rescue AI conversations, improve prompts,
-          cut costs, and continue across any model — one memory, everywhere.
+          LayerFlow is the AI workspace for teams that build in the browser and
+          the terminal — chat across any model, rescue dead chats, run agents,
+          and keep one memory everywhere.
         </p>
       </div>
 
-      <div className="mx-auto mt-10 max-w-7xl space-y-4 px-5 sm:px-8">
-        {FEATURES.map((f, i) => (
-          <motion.div
-            key={f.title}
-            className="rounded-3xl border border-border bg-surface/70 p-6"
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-surface-2 text-brand">
-                <f.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-faint">
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="text-lg font-semibold tracking-tight text-ink">{f.title}</h3>
-              </div>
+      <div className="mx-auto mt-10 max-w-7xl space-y-6 px-5 sm:px-8">
+        {GROUPS.map((g) => (
+          <div key={g.id} className="space-y-4">
+            <div className="flex items-center gap-2.5 pt-2">
+              <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-faint">
+                {g.label}
+              </h3>
+              <div className="h-px flex-1 bg-border" aria-hidden />
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-muted">{f.description}</p>
-            <div className="mt-5">
-              <FlowVisual steps={f.steps} />
-            </div>
-            <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-brand">Why it matters</p>
-            <p className="mt-1 text-sm font-medium text-ink">{f.why}</p>
-          </motion.div>
+            {FEATURES.filter((f) => f.group === g.id).map((f, j) => (
+              <motion.div
+                key={f.title}
+                className="rounded-3xl border border-border bg-surface/70 p-6"
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-surface-2 text-brand">
+                    <f.icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-faint">
+                      {String(j + 1).padStart(2, "0")} · {g.label}
+                    </p>
+                    <h4 className="text-lg font-semibold tracking-tight text-ink">{f.title}</h4>
+                  </div>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted">{f.description}</p>
+                <div className="mt-5">
+                  <FlowVisual steps={f.steps} />
+                </div>
+                <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-brand">Why it matters</p>
+                <p className="mt-1 text-sm font-medium text-ink">{f.why}</p>
+              </motion.div>
+            ))}
+          </div>
         ))}
       </div>
 
       <div className="mt-10 px-5 text-center sm:px-8">
-        <Link href="/code">
+        <Link href="/agents">
           <Button size="lg" icon={<ArrowRight className="h-4 w-4" />}>
             Try LayerFlow
           </Button>

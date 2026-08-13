@@ -124,7 +124,7 @@ export default function TerminalSection() {
             </div>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-faint">
               <span className="rounded-md border border-border bg-surface-2 px-2 py-1 font-mono text-[10px] text-muted">lf</span>
-              <span>One session across the browser terminal and the CLI — same agents, same workspace.</span>
+              <span>One session across the web app and the CLI — same agents, same workspace.</span>
             </div>
           </Reveal>
 

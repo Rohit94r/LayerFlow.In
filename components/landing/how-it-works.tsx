@@ -15,14 +15,14 @@ const STEPS: { title: string; description: string; hint: string }[] = [
     hint: "score 92/100 · 3 constraints added",
   },
   {
-    title: "Agents run it — web or terminal",
-    description: "Implement, review and test agents work in parallel with their own models. Watch it all live in the browser terminal.",
+    title: "Agents run it — in LayerFlow",
+    description: "Implement, review and test agents work in parallel with their own models. Watch it all live in the dashboard.",
     hint: "implement + review + test · in parallel",
   },
   {
     title: "Continue anywhere",
-    description: "Every run is saved as a Context Passport with a Continue Pack — pick up in any model, never re-explain your work.",
-    hint: "passport saved · continue pack copied",
+    description: "Every finished session keeps an AI summary and a Continue Pack — pick up in any model, never re-explain your work.",
+    hint: "summary saved · continue pack copied",
   },
 ];
 

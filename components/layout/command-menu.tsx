@@ -25,7 +25,7 @@ export function CommandMenu({ open, onClose }: { open: boolean; onClose: () => v
         break;
       }
       case "new-rescue": {
-        router.push("/rescue");
+        router.push("/chat");
         break;
       }
     }

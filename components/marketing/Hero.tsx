@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
+import Link from "next/link";
 import { Copy, Check } from "@/components/ui/icons";
 import { useState, useEffect, useRef } from "react";
 import { site, heroBadges } from "@/lib/marketing-content";
@@ -37,7 +38,7 @@ export default function Hero() {
   }, []);
 
   const copyInstall = async () => {
-    await navigator.clipboard.writeText("npm install -g @layerflow/cli");
+    await navigator.clipboard.writeText("go install github.com/layerflow/terminal@latest");
     setCopiedInstall(true);
     setTimeout(() => setCopiedInstall(false), 1800);
   };
@@ -118,12 +119,12 @@ export default function Hero() {
             >
               Start coding
             </a>
-            <a
-              href="/code"
+            <Link
+              href="/agents"
               className="rounded-xl bg-white/10 px-6 py-4 text-base font-medium text-white ring-1 ring-white/25 transition-colors hover:bg-white/15"
             >
-              Try the terminal
-            </a>
+              Build agents
+            </Link>
             <a
               href={site.pricingHref}
               className="rounded-xl border border-white/30 bg-transparent px-6 py-4 text-base font-medium text-white transition-colors hover:text-gray-300"
@@ -134,7 +135,7 @@ export default function Hero() {
 
           <motion.div variants={item} className="mt-12 flex flex-col items-center gap-3">
             <p className="text-sm font-normal text-white/50">
-              Install the CLI — write plain English, click Improve, and run it in any terminal
+              Install the lf CLI — sync your terminal sessions, costs and context with the web app
             </p>
             <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
               <button
@@ -142,7 +143,7 @@ export default function Hero() {
                 className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
               >
                 <span className="text-emerald-400/80">$</span>
-                <span className="truncate">npm install -g @layerflow/cli</span>
+                <span className="truncate">go install github.com/layerflow/terminal@latest</span>
                 <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
                   {copiedInstall ? (
                     <Check className="h-4 w-4 text-emerald-400" />

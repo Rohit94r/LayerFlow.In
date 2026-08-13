@@ -45,7 +45,7 @@ const featureIcons: Record<FeatureMenuItem["icon"], LucideIcon> = {
   compress: Shrink,
   improve: Wand2,
   continue: Play,
-  passport: BookUser,
+  summary: BookUser,
   prompts: Library,
   search: Search,
   memory: Brain,

@@ -32,19 +32,19 @@ export default function CtaSection() {
             </p>
             <h2 className="mx-auto mt-6 max-w-2xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
               Write plain English.{" "}
-              <span className="text-brand">Ship with AI — web or terminal.</span>
+              <span className="text-brand">Ship with AI — chat or agents.</span>
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg text-muted">
               Improve your prompt, run it with multiple agents, and keep every
-              decision in a Context Passport. Never rebuild context from zero again.
+              decision in an AI summary. Never rebuild context from zero again.
             </p>
             <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link href="/code">
+              <Link href="/agents">
                 <Button size="lg" icon={<ArrowRight className="h-4 w-4" />}>
-                  Start coding — it&apos;s free
+                  Start building — it&apos;s free
                 </Button>
               </Link>
-              <Link href="/rescue?mode=prompt">
+              <Link href="/chat">
                 <Button size="lg" variant="secondary">
                   Improve A Prompt
                 </Button>

@@ -51,9 +51,9 @@ export default function Footer() {
         <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1.1fr]">
           <div>
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
-              {site.tagline}. Code in your browser or terminal — write plain
+              {site.tagline}. Code in your browser or the CLI — write plain
               English, click Improve, and run multi-agent sessions. Rescue dead
-              chats into Context Passports and continue in any model.
+              chats into AI summaries and continue in any model.
             </p>
             <p className="mt-5 text-xs text-faint">
               © {new Date().getFullYear()} LayerFlow. Built for people who never
