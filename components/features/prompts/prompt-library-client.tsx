@@ -13,19 +13,27 @@ import { cn } from "@/lib/utils";
 
 const FILTERS = ["All", "≥90", "80–89", "Favorites"] as const;
 
+const SORTS = ["Most run", "Newest", "A–Z"] as const;
+
 export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
+  const [sort, setSort] = useState<(typeof SORTS)[number]>("Most run");
 
   const filtered = useMemo(() => {
-    return prompts.filter((p) => {
+    const matches = prompts.filter((p) => {
       if (filter === "Favorites" && !p.favorite) return false;
       if (filter === "≥90" && p.score < 90) return false;
       if (filter === "80–89" && (p.score < 80 || p.score >= 90)) return false;
       const haystack = `${p.title} ${p.description} ${p.tags.join(" ")} ${p.content}`.toLowerCase();
       return !query || haystack.includes(query.toLowerCase());
     });
-  }, [prompts, query, filter]);
+    return [...matches].sort((a, b) => {
+      if (sort === "Most run") return b.usageCount - a.usageCount;
+      if (sort === "Newest") return b.updatedAt.localeCompare(a.updatedAt);
+      return a.title.localeCompare(b.title);
+    });
+  }, [prompts, query, filter, sort]);
 
   return (
     <div className="space-y-6">
@@ -33,7 +41,7 @@ export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) 
         title="Prompt Library"
         description="Improved prompts, scored and versioned. Copy any prompt in one click."
         action={
-          <Link href="/rescue?mode=prompt">
+          <Link href="/chat">
             <Button size="sm" icon={<Plus className="h-4 w-4" />}>
               Improve a prompt
             </Button>
@@ -52,7 +60,7 @@ export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) 
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           {FILTERS.map((f) => (
             <button
               key={f}
@@ -64,6 +72,18 @@ export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) 
             </button>
           ))}
         </div>
+        <select
+          aria-label="Sort prompts"
+          value={sort}
+          onChange={(e) => setSort(e.target.value as (typeof SORTS)[number])}
+          className="h-8 rounded-lg border border-border bg-surface px-2 text-[11px] font-medium text-muted focus:border-border-strong focus:outline-none"
+        >
+          {SORTS.map((s) => (
+            <option key={s} value={s}>
+              Sort: {s}
+            </option>
+          ))}
+        </select>
       </div>
 
       {filtered.length === 0 ? (
@@ -72,7 +92,7 @@ export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) 
           title="No prompts found"
           description="Paste a weak prompt and let LayerFlow improve and score it."
           action={
-            <Link href="/rescue?mode=prompt">
+            <Link href="/chat">
               <Button variant="secondary" size="sm">
                 Improve a prompt
               </Button>

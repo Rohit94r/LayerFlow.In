@@ -20,7 +20,12 @@ export function PromptCard({ prompt }: { prompt: Prompt }) {
       </h3>
       <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">{prompt.description}</p>
       <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border pt-3">
-        {prompt.tags.slice(0, 3).map((t) => (
+        {prompt.source !== "manual" ? (
+          <Badge tone={prompt.source === "improve" ? "violet" : "mint"}>
+            {prompt.source === "improve" ? "From improve" : "Imported from chat"}
+          </Badge>
+        ) : null}
+        {prompt.tags.slice(0, 2).map((t) => (
           <Badge key={t} tone="neutral">
             #{t}
           </Badge>

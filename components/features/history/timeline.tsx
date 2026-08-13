@@ -10,7 +10,6 @@ const TYPE_COLORS: Record<string, string> = {
   decision: "bg-rose-400",
   cost: "bg-sky-400",
   model: "bg-pink-400",
-  passport: "bg-slate-400",
 };
 
 /** Vertical timeline of AI work events (the Work Ledger). */

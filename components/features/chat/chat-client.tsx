@@ -2,9 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { ChatEvent, ChatKeyHealth, ChatMessageRecord, ChatSession } from "@layerflow/contracts";
+import type {
+  ChatEvent,
+  ChatKeyHealth,
+  ChatMessageRecord,
+  ChatSession,
+  ImprovePromptResponse,
+} from "@layerflow/contracts";
 import {
   AiChat,
+  ClipboardPaste,
   LifeBuoy,
   Loader2,
   Plus,
@@ -14,12 +21,16 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatMoney, timeAgo } from "@/lib/data/providers";
 import { chatService, streamChatMessage } from "@/lib/services/chat";
-import { passportService } from "@/lib/services/passports";
+import { improveService } from "@/lib/services/improve";
+import { memoryService } from "@/lib/services/memory";
+import { rescueService } from "@/lib/services/rescue";
 import { cn } from "@/lib/utils";
 import { Composer } from "./composer";
+import { ImprovePanel } from "./improve-panel";
 import { MessageBubble, TypingIndicator, type UiMessage } from "./message-bubble";
 import { ModelPicker } from "./model-picker";
 import { PICKER_MODELS } from "./chat-models";
+import { RescueDialog } from "./rescue-dialog";
 
 const SESSION_HEIGHT = "h-[calc(100dvh-7rem)]";
 
@@ -80,10 +91,12 @@ function SessionItem({
 function Hero({
   onRescueImport,
   onNewChat,
+  onOpenRescue,
   busy,
 }: {
   onRescueImport: () => void;
   onNewChat: () => void;
+  onOpenRescue: () => void;
   busy: "rescue" | "new" | null;
 }) {
   return (
@@ -105,13 +118,24 @@ function Hero({
         <Button
           variant="outline"
           size="sm"
+          onClick={onOpenRescue}
+          icon={<LifeBuoy className="h-3.5 w-3.5" />}
+        >
+          Rescue a past chat
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={onRescueImport}
-          icon={busy === "rescue" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LifeBuoy className="h-3.5 w-3.5" />}
+          icon={busy === "rescue" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardPaste className="h-3.5 w-3.5" />}
         >
           Import from my rescue
         </Button>
       </div>
-      <p className="mt-4 text-[11px] text-faint">Start by asking something, or bring a saved chat from Rescue.</p>
+      <p className="mt-4 text-[11px] text-faint">
+        Rescue brings a dead conversation back to life — a report loads it straight into a new thread here.{" "}
+        <span className="text-brand">⌘I</span> improves any prompt before it runs.
+      </p>
     </div>
   );
 }
@@ -129,8 +153,17 @@ export function ChatClient() {
   const [loading, setLoading] = useState(true);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [rescueOpen, setRescueOpen] = useState(false);
   const [busy, setBusy] = useState<"rescue" | "new" | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  const [improveOpen, setImproveOpen] = useState(false);
+  const [improveBusy, setImproveBusy] = useState(false);
+  const [improveError, setImproveError] = useState<string | null>(null);
+  const [improveResult, setImproveResult] = useState<ImprovePromptResponse | null>(null);
+
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [lastReply, setLastReply] = useState<{ userText: string; text: string } | null>(null);
 
   const [stream, setStream] = useState<{
     placeholderId: string;
@@ -177,6 +210,13 @@ export function ChatClient() {
         if (cancelled) return;
         setActive(res.session);
         setMessages(res.messages.map(toUi));
+        const lastUser = [...res.messages].reverse().find((m) => m.role === "user");
+        const lastAssistant = [...res.messages].reverse().find((m) => m.role === "assistant");
+        setLastReply(
+          lastUser && lastAssistant
+            ? { userText: lastUser.content, text: lastAssistant.content }
+            : null,
+        );
       })
       .catch(() => {
         if (!cancelled) router.push("/chat");
@@ -230,10 +270,10 @@ export function ChatClient() {
     if (busy) return;
     setBusy("rescue");
     try {
-      const reports = await passportService.listRescueReports();
+      const reports = await rescueService.listRescueReports();
       if (reports.length === 0) {
-        setToast("No finished rescue report yet — Rescue a chat first, then come back.");
-        router.push("/rescue");
+        setToast("No finished rescue report yet — rescue a chat right here to get one.");
+        setRescueOpen(true);
         return;
       }
       const latest = reports[0];
@@ -294,9 +334,62 @@ export function ChatClient() {
     void refreshSessions();
   }
 
-  async function sendMessage() {
-    if (!sessionId || !active) return;
+  async function runImprove() {
     const text = draft.trim();
+    if (text.length < 10 || improveBusy) return;
+    setImproveBusy(true);
+    setImproveError(null);
+    setImproveOpen(true);
+    setImproveResult(null);
+    try {
+      const res = await improveService.improve({ content: text, sessionId });
+      setImproveResult(res);
+    } catch (err) {
+      const message = /key/i.test(err instanceof Error ? err.message : "")
+        ? "No usable API key yet — add one for any supported provider to use Improve."
+        : err instanceof Error
+          ? err.message
+          : "Could not improve the prompt.";
+      setImproveError(message);
+    } finally {
+      setImproveBusy(false);
+    }
+  }
+
+  function useImprovedPrompt(prompt: string) {
+    setDraft(prompt);
+    setImproveOpen(false);
+    setImproveResult(null);
+  }
+
+  async function saveMemory() {
+    if (!lastReply || saveBusy || streaming) return;
+    setSaveBusy(true);
+    try {
+      await memoryService.create({
+        title: lastReply.userText.slice(0, 48),
+        body: lastReply.text,
+        sourceType: "session",
+        sourceId: sessionId,
+      });
+      setToast("Saved to memory — find it under Learnings.");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "Could not save to memory.");
+    } finally {
+      setSaveBusy(false);
+    }
+  }
+
+  async function runImprovedPrompt(prompt: string) {
+    setDraft(prompt);
+    setImproveOpen(false);
+    setImproveResult(null);
+    if (sessionId && active) await sendMessage(prompt);
+  }
+
+  async function sendMessage(override?: string) {
+    if (!sessionId || !active) return;
+    const text = (override ?? draft).trim();
     if (!text || streaming) return;
 
     const uiUser: UiMessage = {
@@ -353,6 +446,7 @@ export function ChatClient() {
           break;
         case "done": {
           const done = toUi(event.message);
+          setLastReply({ userText: text, text: event.message.content });
           setMessages((prev) => [
             ...prev.filter((m) => m.id !== placeholderId),
             { ...done, switchedFrom: switchedFrom ?? done.switchedFrom },
@@ -460,13 +554,22 @@ export function ChatClient() {
             </div>
           )}
         </div>
-        <div className="border-t border-border p-3">
+        <div className="space-y-1.5 border-t border-border p-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            onClick={() => setRescueOpen(true)}
+            icon={<LifeBuoy className="h-3.5 w-3.5" />}
+          >
+            Rescue a past chat
+          </Button>
           <Button
             variant="outline"
             size="sm"
             className="w-full"
             onClick={importRescue}
-            icon={busy === "rescue" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LifeBuoy className="h-3.5 w-3.5" />}
+            icon={busy === "rescue" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardPaste className="h-3.5 w-3.5" />}
           >
             Import last rescue
           </Button>
@@ -480,7 +583,7 @@ export function ChatClient() {
             <Loader2 className="h-5 w-5 animate-spin text-muted" />
           </div>
         ) : !sessionId || !active ? (
-          <Hero onRescueImport={importRescue} onNewChat={newSession} busy={busy} />
+          <Hero onRescueImport={importRescue} onNewChat={newSession} onOpenRescue={() => setRescueOpen(true)} busy={busy} />
         ) : (
           <>
             {/* Header */}
@@ -549,8 +652,12 @@ export function ChatClient() {
                 onChange={setDraft}
                 onSend={() => sendMessage()}
                 onOpenModel={() => setPickerOpen(true)}
+                onImprove={() => runImprove()}
+                onSaveMemory={() => void saveMemory()}
                 currentModel={currentModel}
                 disabled={streaming}
+                improveBusy={improveBusy}
+                saveBusy={saveBusy}
                 autoSwitch={autoSwitch}
                 onToggleAutoSwitch={(v) => toggleAuto(v)}
               />
@@ -567,6 +674,23 @@ export function ChatClient() {
         onSelect={(m) => chooseModel(m)}
       />
 
+      <ImprovePanel
+        open={improveOpen}
+        original={draft}
+        result={improveResult}
+        busy={improveBusy}
+        error={improveError}
+        onClose={() => {
+          if (!improveBusy) {
+            setImproveOpen(false);
+            setImproveResult(null);
+          }
+        }}
+        onUse={useImprovedPrompt}
+        onRun={runImprovedPrompt}
+        onRetry={() => runImprove()}
+      />
+
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete this chat?">
         <p className="text-sm text-muted">
           This removes the session and its messages from your workspace. This can&apos;t be undone.
@@ -580,6 +704,15 @@ export function ChatClient() {
           </Button>
         </div>
       </Modal>
+
+      <RescueDialog
+        open={rescueOpen}
+        onClose={() => {
+          setRescueOpen(false);
+          void refreshSessions();
+        }}
+        onStarted={refreshSessions}
+      />
 
       {toast ? (
         <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-ink shadow-xl">
