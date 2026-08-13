@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     "prompt improver",
     "plain english to code",
     "AI context",
-    "context passport",
+    "AI conversation summary",
     "limit rescue",
     "chatgpt limit",
     "claude limit",
@@ -42,14 +42,14 @@ export const metadata: Metadata = {
     siteName: "LayerFlow",
     title: "LayerFlow — Code with AI in your browser or terminal",
     description:
-      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with context passports and cost control.",
+      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with conversation summaries and cost control.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "LayerFlow — Code with AI in your browser or terminal",
     description:
-      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with context passports and cost control.",
+      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with conversation summaries and cost control.",
     images: ["/og.png"],
   },
   robots: {

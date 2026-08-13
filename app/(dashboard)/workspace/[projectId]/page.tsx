@@ -1,15 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil, Plus, BookUser, Library, Brain, Terminal } from "@/components/ui/icons";
+import { ArrowLeft, Pencil, Plus, Library, Brain, LifeBuoy } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Stat } from "@/components/shared/stat";
 import { Section } from "@/components/shared/section";
 import { Row } from "@/components/shared/row";
-import { ToolChip } from "@/components/ui/tool-logo";
 import { workspaceService } from "@/lib/services/workspace";
-import { passportService } from "@/lib/services/passports";
-import { toolMeta, timeAgo, formatMoney } from "@/lib/data/providers";
+import { rescueService } from "@/lib/services/rescue";
+import { timeAgo } from "@/lib/data/providers";
 import { cn } from "@/lib/utils";
 
 const EVENT_DOT: Record<string, string> = {
@@ -19,7 +18,6 @@ const EVENT_DOT: Record<string, string> = {
   decision: "bg-rose-400",
   cost: "bg-sky-400",
   model: "bg-pink-400",
-  passport: "bg-slate-400",
 };
 
 export default async function ProjectDetailPage({
@@ -31,21 +29,18 @@ export default async function ProjectDetailPage({
   const project = await workspaceService.getProject(projectId);
   if (!project) notFound();
 
-  const [passports, reports, learnings, events] = await Promise.all([
-    passportService.listPassports(),
-    passportService.listRescueReports(),
+  const [reports, learnings, events] = await Promise.all([
+    rescueService.listRescueReports(),
     workspaceService.listLearnings(),
     workspaceService.listTimeline(),
   ]);
 
-  const projectPassports = passports.filter((p) => p.meta.projectId === projectId);
   const projectReports = reports.filter((r) => r.projectId === projectId);
   const projectLearnings = learnings.filter((l) => l.projectId === projectId);
   const projectEvents = events.filter((e) => e.projectId === projectId);
 
   const stats = [
-    { label: "Passports", value: projectPassports.length, icon: BookUser },
-    { label: "Continue Packs", value: projectReports.length, icon: Terminal },
+    { label: "Rescued conversations", value: projectReports.length, icon: LifeBuoy },
     { label: "Learnings", value: projectLearnings.length, icon: Brain },
     { label: "Ledger events", value: projectEvents.length, icon: Library },
   ];
@@ -84,7 +79,7 @@ export default async function ProjectDetailPage({
           <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />}>
             Edit project
           </Button>
-          <Link href="/rescue">
+          <Link href="/chat">
             <Button size="sm" icon={<Plus className="h-3.5 w-3.5" />}>
               New Continue Pack
             </Button>
@@ -100,48 +95,13 @@ export default async function ProjectDetailPage({
 
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="space-y-5 lg:col-span-2">
-          <Section title="Context Passports" description="Saved context for this project" href="/passports">
-            {projectPassports.length ? (
-              <div className="space-y-0.5">
-                {projectPassports.map((p) => {
-                  const meta = toolMeta(p.meta.sourceTool);
-                  return (
-                    <Row
-                      key={p.id}
-                      href={`/passports/${p.id}`}
-                      leading={
-                        <span
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-xs"
-                          style={{ background: `${meta.color}1f`, color: meta.color }}
-                        >
-                          <BookUser className="h-3.5 w-3.5" />
-                        </span>
-                      }
-                      title={p.title}
-                      subtitle={`${timeAgo(p.updatedAt)} · ~${formatMoney(p.meta.estimatedNextCost)} next run`}
-                      trailing={<ToolChip tool={p.meta.sourceTool} />}
-                    />
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-faint">
-                No passports yet — rescue a chat and assign it to this project.
-              </p>
-            )}
-          </Section>
-
-          <Section
-            title="Saved Continue Packs"
-            description="Rescued chats that belong to this project"
-            href="/rescue"
-          >
+          <Section title="Rescued conversations" description="AI summaries of chats rescued for this project">
             {projectReports.length ? (
               <div className="space-y-0.5">
                 {projectReports.map((r) => (
                   <Row
                     key={r.id}
-                    href="/rescue"
+                    href="/chat"
                     leading={
                       <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-xs font-bold text-brand">
                         {r.promptScore}
@@ -149,13 +109,15 @@ export default async function ProjectDetailPage({
                     }
                     title={r.title}
                     subtitle={`${r.compressionPercent}% compression · ${r.summary.slice(0, 72)}…`}
-                    trailing={<Badge tone="mint">saved</Badge>}
+                    trailing={
+                      r.saved ? <Badge tone="mint">saved</Badge> : <span className="text-[10px] text-faint">in chat</span>
+                    }
                   />
                 ))}
               </div>
             ) : (
               <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-faint">
-                No Continue Packs saved for this project yet.
+                No rescued conversations yet — rescue a chat in Chat.
               </p>
             )}
           </Section>

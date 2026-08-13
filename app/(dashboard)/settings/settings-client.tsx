@@ -192,7 +192,7 @@ export default function SettingsClient() {
           <PanelHeader title="Danger zone" description="Irreversible actions" action={<KeyRound className="h-4 w-4 text-faint" />} />
           <PanelBody>
             <p className="text-sm text-muted">
-              Signing out or clearing local data never touches your saved passports — they live in
+              Signing out or clearing local data never touches your saved rescues — they live in
               your workspace. This build runs on mock data; nothing is actually deleted.
             </p>
             <div className="mt-4 flex gap-2">

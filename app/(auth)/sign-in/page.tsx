@@ -19,8 +19,13 @@ type PageProps = {
 
 export default async function SignInPage({ searchParams }: PageProps) {
   const { next } = await searchParams;
+  // Strict internal-path validation: reject protocol-relative (//evil.com),
+  // backslash, control chars and anything outside alphanumerics + / - _ . ~
+  const rawNext = typeof next === "string" ? next : "";
   const nextPath =
-    typeof next === "string" && next.startsWith("/") ? next : "/home";
+    /^\/[a-zA-Z0-9\-._~/]*$/.test(rawNext) && !rawNext.startsWith("//") && !rawNext.includes("\\\\")
+      ? rawNext
+      : "/home";
 
   // Already signed in? Skip the form and go straight to the workspace.
   const h = await headers();
