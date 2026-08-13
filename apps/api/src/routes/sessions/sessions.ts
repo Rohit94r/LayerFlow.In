@@ -76,6 +76,8 @@ sessionsRouter.get("/", async (c) => {
         query.status ? eq(s.status, query.status) : undefined,
       ),
     orderBy: (s, { desc }) => [desc(s.updatedAt)],
+    limit: query.limit,
+    offset: query.offset,
   });
 
   const response: ListSessionsResponse = { sessions: rows.map(toSessionDto) };

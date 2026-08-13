@@ -4,17 +4,21 @@ import {
   listChatSessionsQuerySchema,
   sendChatMessageRequestSchema,
   switchChatModelRequestSchema,
+  setChatAutoSwitchRequestSchema,
+  renameChatSessionRequestSchema,
   type ArchiveChatSessionResponse,
   type ChatEvent,
   type ChatKeysHealthResponse,
   type CreateChatSessionResponse,
   type GetChatSessionResponse,
   type ListChatSessionsResponse,
+  type RenameChatSessionResponse,
   type SwitchChatModelResponse,
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
+import { rateLimit } from "../../middleware/rate-limit";
 import { chatKeyHealthSnapshot } from "../../services/chat/health";
 import { runChatMessage, type ChatRunEvent } from "../../services/chat/router";
 import {
@@ -23,6 +27,7 @@ import {
   getChatSession,
   importRescueToChatSession,
   listChatSessions,
+  renameChatSession,
   sessionExtrasFor,
   setChatSessionAutoSwitch,
   setChatSessionModel,
@@ -32,6 +37,9 @@ import type { AppEnv } from "../../types";
 
 export const chatRouter = new Hono<AppEnv>();
 chatRouter.use(requireAuth);
+
+// Spend-generating endpoint: 30 streaming messages/min per user.
+chatRouter.use("/:id/messages", rateLimit({ requestsPerMinute: 30, keyFn: (c) => String(c.get("userId")) }));
 
 // POST /api/chat — new session, optionally imported from a rescue report
 chatRouter.post("/", async (c) => {
@@ -104,14 +112,22 @@ chatRouter.post("/:id/switch", async (c) => {
 // PATCH /api/chat/:id/auto-switch
 chatRouter.patch("/:id/auto-switch", async (c) => {
   const workspaceId = c.get("workspaceId");
-  const parsed = (await c.req.json().catch(() => ({}))) as { autoSwitch?: boolean };
-  if (typeof parsed.autoSwitch !== "boolean") {
-    throw new AppError(400, "validation_error", "autoSwitch must be a boolean");
-  }
-  const row = await setChatSessionAutoSwitch(workspaceId, c.req.param("id"), parsed.autoSwitch);
+  const { autoSwitch } = setChatAutoSwitchRequestSchema.parse(await c.req.json());
+  const row = await setChatSessionAutoSwitch(workspaceId, c.req.param("id"), autoSwitch);
   if (!row) throw new AppError(404, "not_found", "Chat session not found");
   const extras = await sessionExtrasFor(workspaceId, row.id);
   const response: SwitchChatModelResponse = { session: toSessionDto(row, extras) };
+  return c.json(response);
+});
+
+// PATCH /api/chat/:id — rename the conversation title
+chatRouter.patch("/:id", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const { title } = renameChatSessionRequestSchema.parse(await c.req.json());
+  const row = await renameChatSession(workspaceId, c.req.param("id"), title);
+  if (!row) throw new AppError(404, "not_found", "Chat session not found");
+  const extras = await sessionExtrasFor(workspaceId, row.id);
+  const response: RenameChatSessionResponse = { session: toSessionDto(row, extras) };
   return c.json(response);
 });
 
@@ -148,6 +164,7 @@ chatRouter.post("/:id/messages", async (c) => {
   }
 
   const encoder = new TextEncoder();
+  const signal = c.req.raw.signal;
   const sse = new ReadableStream({
     async start(controller) {
       let closed = false;
@@ -169,28 +186,57 @@ chatRouter.post("/:id/messages", async (c) => {
         }
       };
 
-      await runChatMessage({
-        workspaceId,
-        sessionId,
-        content: body.content,
-        userModel: body.model,
-        autoSwitch: body.autoSwitch ?? session.autoSwitch,
-        onEvent: (e: ChatRunEvent) => {
-          const event = toSseEvent(e);
-          if (event) emit(event);
-        },
-      }).catch((err) => {
-        const code = err instanceof AppError ? err.code : "internal_error";
-        const message = err instanceof Error ? err.message : "Chat failed";
-        emit({ type: "error", code, message });
-      });
+      // Keep-alive heartbeat so proxies never kill the connection while the
+      // context window is being built (the first byte may take seconds).
+      const heartbeat = setInterval(() => {
+        if (signal.aborted) {
+          clearInterval(heartbeat);
+          safeClose();
+          return;
+        }
+        try {
+          controller.enqueue(encoder.encode(": keepalive\n\n"));
+        } catch {
+          clearInterval(heartbeat);
+          closed = true;
+        }
+      }, 15_000);
+
+      const onAbort = () => {
+        clearInterval(heartbeat);
+        safeClose();
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
 
       try {
-        controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
-      } catch {
-        /* client gone */
+        await runChatMessage({
+          workspaceId,
+          sessionId,
+          content: body.content,
+          userModel: body.model,
+          autoSwitch: body.autoSwitch ?? session.autoSwitch,
+          signal,
+          userId: c.get("userId"),
+          onEvent: (e: ChatRunEvent) => {
+            const event = toSseEvent(e);
+            if (event) emit(event);
+          },
+        }).catch((err) => {
+          const code = err instanceof AppError ? err.code : "internal_error";
+          const message = err instanceof Error ? err.message : "Chat failed";
+          emit({ type: "error", code, message });
+        });
+
+        try {
+          controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+        } catch {
+          /* client gone */
+        }
+      } finally {
+        clearInterval(heartbeat);
+        signal.removeEventListener("abort", onAbort);
+        safeClose();
       }
-      safeClose();
     },
   });
 

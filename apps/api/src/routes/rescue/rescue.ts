@@ -2,18 +2,22 @@ import { Hono } from "hono";
 import {
   createRescueRequestSchema,
   listRescueReportsQuerySchema,
+  updateRescueRequestSchema,
   type RescueReport,
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { promptSessions } from "../../db/schema/sessions";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
-import { createRescueReport, getRescueReport, listRescueReports } from "../../services/rescue/report";
+import { rateLimit } from "../../middleware/rate-limit";
+import { createRescueReport, getRescueReport, listRescueReports, updateRescueReport } from "../../services/rescue/report";
 import type { AppEnv } from "../../types";
 
 export const rescueRouter = new Hono<AppEnv>();
 
 rescueRouter.use(requireAuth);
+// Rescue runs a paid LLM extraction — cap creation, not reads.
+rescueRouter.use("/", rateLimit({ requestsPerMinute: 10, keyFn: (c) => String(c.get("userId")) }));
 
 function toReportDto(row: {
   id: string;
@@ -25,7 +29,7 @@ function toReportDto(row: {
   status: string;
   errorMessage: string | null;
   summary: string;
-  passport: unknown;
+  context: unknown;
   improvedPrompt: string;
   promptScore: number | null;
   promptScores: unknown;
@@ -41,7 +45,7 @@ function toReportDto(row: {
   createdAt: Date;
   updatedAt: Date;
 }): RescueReport {
-  const passport = (row.passport ?? {}) as Partial<RescueReport["passport"]>;
+  const context = (row.context ?? {}) as Partial<RescueReport["context"]>;
   const diff = (row.diff ?? {}) as Partial<RescueReport["diff"]>;
   return {
     id: row.id,
@@ -55,16 +59,16 @@ function toReportDto(row: {
     summary: row.summary,
     // failed/queued reports have an empty JSONB cell — always emit the full
     // contract shape so the web client can render it.
-    passport: {
-      goal: passport.goal ?? "",
-      currentState: passport.currentState ?? "",
-      decisions: passport.decisions ?? [],
-      constraints: passport.constraints ?? [],
-      failures: passport.failures ?? [],
-      successes: passport.successes ?? [],
-      missingInfo: passport.missingInfo ?? [],
-      outputFormat: passport.outputFormat ?? "",
-      nextAction: passport.nextAction ?? "",
+    context: {
+      goal: context.goal ?? "",
+      currentState: context.currentState ?? "",
+      decisions: context.decisions ?? [],
+      constraints: context.constraints ?? [],
+      failures: context.failures ?? [],
+      successes: context.successes ?? [],
+      missingInfo: context.missingInfo ?? [],
+      outputFormat: context.outputFormat ?? "",
+      nextAction: context.nextAction ?? "",
     },
     improvedPrompt: row.improvedPrompt,
     promptScore: row.promptScore ?? null,
@@ -137,5 +141,15 @@ rescueRouter.get("/:id", async (c) => {
   const report = await getRescueReport(workspaceId, c.req.param("id"));
   if (!report) throw new AppError(404, "not_found", "Rescue report not found");
   const response = { report: toReportDto(report) } satisfies import("@layerflow/contracts").GetRescueReportResponse;
+  return c.json(response);
+});
+
+// PATCH /api/rescue/:id — mark saved / re-link a project (persisted, not local UI state)
+rescueRouter.patch("/:id", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const body = updateRescueRequestSchema.parse(await c.req.json());
+  const report = await updateRescueReport(workspaceId, c.req.param("id"), body);
+  if (!report) throw new AppError(404, "not_found", "Rescue report not found");
+  const response = { report: toReportDto(report) } satisfies import("@layerflow/contracts").UpdateRescueResponse;
   return c.json(response);
 });

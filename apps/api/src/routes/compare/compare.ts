@@ -12,12 +12,15 @@ import { compareJobs, compareResults, runs } from "../../db/schema/runs";
 import { enqueue } from "../../jobs/queues";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
+import { rateLimit } from "../../middleware/rate-limit";
 import { toRunDetailDto } from "../../services/runs/dto";
 import type { AppEnv } from "../../types";
 
 export const compareRouter = new Hono<AppEnv>();
 
 compareRouter.use(requireAuth);
+// Compare spawns N provider runs — keep the blast radius bounded.
+compareRouter.use("/", rateLimit({ requestsPerMinute: 20, keyFn: (c) => String(c.get("userId")) }));
 
 // POST /api/compare
 compareRouter.post("/", async (c) => {
