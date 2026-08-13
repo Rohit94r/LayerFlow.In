@@ -25,8 +25,6 @@ CREATE TABLE "rescue_reports" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "runs" ADD COLUMN "savings" jsonb;--> statement-breakpoint
-ALTER TABLE "workspace_settings" ADD COLUMN "token_saver" boolean DEFAULT false NOT NULL;--> statement-breakpoint
 ALTER TABLE "rescue_reports" ADD CONSTRAINT "rescue_reports_workspace_id_workspaces_id_fk" FOREIGN KEY ("workspace_id") REFERENCES "public"."workspaces"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rescue_reports" ADD CONSTRAINT "rescue_reports_session_id_prompt_sessions_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."prompt_sessions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rescue_reports" ADD CONSTRAINT "rescue_reports_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
