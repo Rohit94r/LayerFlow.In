@@ -101,7 +101,7 @@ npm run db:seed --workspace @layerflow/api
 
 Optional. Creates a sample user (`alex@layerflow.dev`), workspace, and demo
 prompts for offline UI demos. **Never run this against Neon production** —
-real users get a workspace on first Google sign-in. See `docs/database.md`.
+real users get a workspace on first Google sign-in. See `docs/DEPLOYMENT.md` §5.
 
 ### 7. Start the API (and worker)
 
@@ -233,6 +233,25 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | `POST/DELETE /api/follows/:userId` | Follow / unfollow |
 | `POST/DELETE /api/likes`, `GET/POST /api/comments`, `DELETE /api/comments/:id` | Social |
 | `GET /api/notifications`, `POST /api/notifications/read` | Notifications |
+
+### Team & terminal sync
+
+| Method & path | What it does |
+|---|---|
+| `GET /api/team` | Workspace members + invitations (with inviter email) |
+| `POST /api/team/invitations` | Admin+ — invite by email (token `lfinv_`, 7-day TTL, email sent) |
+| `DELETE /api/team/invitations/:id` | Admin+ — revoke an invitation |
+| `POST /api/team/invitations/accept` | Authenticated user joins the workspace with the invite token |
+| `PATCH /api/team/members/:id` | Admin+ — change role (owner is immutable) |
+| `DELETE /api/team/members/:id` | Admin+ — remove a member (owner cannot be removed) |
+| `POST /api/v1/sync/handshake` | CLI — register device, return watermark + backlog |
+| `POST /api/v1/sync/push` | CLI — accept operations (idempotent on `op_id`), return `accepted/rejected` |
+| `POST /api/v1/sync/pull` | CLI — operations newer than the client watermark |
+| `GET /api/v1/sync/operations`, `DELETE /api/v1/sync/operations/:opId` | Dashboard — recent synced ops |
+| `GET /api/v1/sync/devices` | Dashboard — registered CLI devices |
+
+Auth for `/api/v1/sync/*`: `Authorization: Bearer lf_live_*` (CLI API key) or a
+session cookie. See `src/routes/sync/sync.ts`, `src/middleware/auth-sync.ts`.
 
 ## Use the gateway: create a key and call it
 

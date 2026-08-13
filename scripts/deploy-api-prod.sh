@@ -25,7 +25,7 @@ fi
 
 ENV_FILE="${ENV_FILE:-$ROOT/.vercel.env}"
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "Missing $ENV_FILE — copy secrets from docs/production-env.md"
+  echo "Missing $ENV_FILE — copy secrets from docs/DEPLOYMENT.md"
   exit 1
 fi
 
