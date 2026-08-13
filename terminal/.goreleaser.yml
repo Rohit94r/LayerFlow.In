@@ -1,0 +1,91 @@
+version: 2
+
+project_name: lf
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: lf
+    main: ./cmd/lf
+    binary: lf
+    env:
+      - CGO_ENABLED=1
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    overrides:
+      - goos: windows
+        goarch: arm64
+        skip: true
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - LICENSE*
+      - README*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^build:'
+
+brews:
+  - repository:
+      owner: layerflow
+      name: homebrew-tap
+    homepage: https://layerflow.ai
+    description: Local-first AI terminal workspace
+    license: MIT
+    install: |
+      bin.install "lf"
+
+scoops:
+  - repository:
+      owner: layerflow
+      name: scoop-bucket
+    homepage: https://layerflow.ai
+    description: Local-first AI terminal workspace
+    license: MIT
+
+winget:
+  - repository:
+      owner: layerflow
+      name: winget-pkgs
+    homepage: https://layerflow.ai
+    description: Local-first AI terminal workspace
+
+signs:
+  - cmd: shasum
+    artifacts: checksum
+    args:
+      - "-a256"
+      - "--checksum"
