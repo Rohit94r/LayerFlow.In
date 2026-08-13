@@ -63,7 +63,7 @@ export interface CreateChatSessionInput {
   rescueReportId?: string;
   defaultModel?: string;
   autoSwitch?: boolean;
-  passport?: Record<string, unknown>;
+  context?: Record<string, unknown>;
 }
 
 export async function createChatSession(input: CreateChatSessionInput): Promise<AiChatSessionRow> {
@@ -77,7 +77,7 @@ export async function createChatSession(input: CreateChatSessionInput): Promise<
       rescueReportId: input.rescueReportId ?? null,
       defaultModel: input.defaultModel ?? null,
       autoSwitch: input.autoSwitch ?? true,
-      passport: input.passport ?? {},
+      context: input.context ?? {},
     })
     .returning();
   return row;
@@ -277,6 +277,19 @@ export async function setChatSessionAutoSwitch(
   return row ?? null;
 }
 
+export async function renameChatSession(
+  workspaceId: string,
+  sessionId: string,
+  title: string,
+): Promise<AiChatSessionRow | null> {
+  const [row] = await db
+    .update(aiChatSessions)
+    .set({ title })
+    .where(and(eq(aiChatSessions.id, sessionId), eq(aiChatSessions.workspaceId, workspaceId)))
+    .returning();
+  return row ?? null;
+}
+
 export async function archiveChatSession(
   workspaceId: string,
   sessionId: string,
@@ -326,7 +339,7 @@ export async function importRescueToChatSession(input: {
     source: "rescue",
     rescueReportId: report.id,
     defaultModel,
-    passport: report.passport as Record<string, unknown>,
+    context: report.context as Record<string, unknown>,
   });
 
   const seeded: AiChatMessageRow[] = [];
@@ -336,8 +349,8 @@ export async function importRescueToChatSession(input: {
       report.sourceModel && report.sourceModel !== "unknown" ? ` (${report.sourceModel})` : ""
     }. ` +
     `Context that matters, so the thread survives: goal — ${String(
-      (report.passport as { goal?: string }).goal ?? "unknown",
-    )}; next action — ${String((report.passport as { nextAction?: string }).nextAction ?? "—")}. ` +
+      (report.context as { goal?: string }).goal ?? "unknown",
+    )}; next action — ${String((report.context as { nextAction?: string }).nextAction ?? "—")}. ` +
     `Continue from here without asking me to repeat anything above.`;
   seeded.push(
     await insertChatMessage({ sessionId: session.id, role: "system", content: contextNote }),

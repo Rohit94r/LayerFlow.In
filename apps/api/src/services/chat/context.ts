@@ -4,7 +4,7 @@ import { getModel, resolveProvider, type Provider } from "@layerflow/model-regis
 import type { ChatMessage } from "../ai/providers";
 import { platformApiKey, resolveAdapter } from "../ai/providers";
 import { db } from "../../db/client";
-import { aiChatMessages, type AiChatMessageRow } from "../../db/schema/chat";
+import { aiChatMessages, aiChatSessions, type AiChatMessageRow } from "../../db/schema/chat";
 import { providerKeys } from "../../db/schema/gateway";
 import { decryptSecret } from "../crypto";
 import { estimateTokens } from "../intelligence/analyze";
@@ -141,7 +141,7 @@ async function setContextCache(key: string, value: string, ttlSeconds: number): 
 // ── Summarized older history ──────────────────────────────────────────────
 
 /** First usable (healthy, non-revoked) key for a provider — BYOK then platform. */
-async function resolveFirstChatKey(
+export async function resolveFirstChatKey(
   workspaceId: string,
   provider: Provider,
 ): Promise<string | null> {
@@ -299,10 +299,44 @@ export interface BuildMessagesDeps {
   retrieveMemory?: (input: { workspaceId: string; query: string }) => Promise<string | null>;
 }
 
+/** The AI-summary fields injected into chat context (kept in sync with rescue). */
+const RESCUE_CONTEXT_FIELDS: Array<[string, string]> = [
+  ["goal", "Goal"],
+  ["currentState", "Current state"],
+  ["decisions", "Decisions"],
+  ["constraints", "Constraints"],
+  ["failures", "Failures"],
+  ["successes", "Successes"],
+  ["missingInfo", "Missing info"],
+  ["outputFormat", "Output format"],
+  ["nextAction", "Next action"],
+];
+
+/**
+ * AI-generated conversation summary from a rescue import — injected verbatim
+ * as a system message so the model can answer with full project context.
+ */
+export function formatConversationContext(context: Record<string, unknown>): string | null {
+  if (!context || typeof context !== "object") return null;
+  const lines: string[] = [];
+  for (const [key, label] of RESCUE_CONTEXT_FIELDS) {
+    const value = context[key];
+    if (value == null) continue;
+    const text = Array.isArray(value)
+      ? value.map((v) => `- ${String(v)}`).join("\n")
+      : String(value).trim();
+    if (!text) continue;
+    lines.push(`${label}: ${text}`);
+  }
+  if (lines.length === 0) return null;
+  return `Project context (conversation summary):\n${lines.join("\n")}`;
+}
+
 /**
  * Rebuild a clean provider request from stored messages:
  *   [provider system prompt] → [summarized older history] →
- *   [retrieved memory] → [rescue/system context] → [last 8 messages].
+ *   [retrieved memory] → [session context] → [rescue/system context] →
+ *   [last 8 messages].
  * Token-budgeted (4k cheap / 8k premium), provider metadata stripped.
  */
 export async function buildMessages(
@@ -316,6 +350,10 @@ export async function buildMessages(
   const rows = await db.query.aiChatMessages.findMany({
     where: eq(aiChatMessages.sessionId, sessionId),
     orderBy: [asc(aiChatMessages.createdAt)],
+  });
+
+  const session = await db.query.aiChatSessions.findFirst({
+    where: and(eq(aiChatSessions.id, sessionId), eq(aiChatSessions.workspaceId, workspaceId)),
   });
 
   const normalized = normalizeStoredMessages(rows);
@@ -335,10 +373,18 @@ export async function buildMessages(
       ? await retrieveMemory({ workspaceId, query: lastUser.content })
       : null;
 
+  // Full portable context (not just the seeded goal/next-action note).
+  const context = session?.context && Object.keys(session.context).length > 0
+    ? formatConversationContext(session.context as Record<string, unknown>)
+    : null;
+
   const budget = tokenBudgetForModel(model);
   const base: ChatMessage[] = [];
   if (summary) base.push({ role: "system", content: summary });
   if (memory) base.push({ role: "system", content: memory });
+  // Passport BEFORE the recent turns so the last message stays closest to the
+  // question; must survive trimming, so it lands right after memory too.
+  if (context) base.push({ role: "system", content: context });
   base.push(...recent);
 
   const trimmed = trimContext(base, budget);

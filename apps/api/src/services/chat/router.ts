@@ -5,6 +5,7 @@ import { db } from "../../db/client";
 import { aiChatMessages, aiChatSessions } from "../../db/schema/chat";
 import { providerKeys } from "../../db/schema/gateway";
 import { AppError } from "../../middleware/app-error";
+import { logger } from "../../config/logger";
 import { decryptSecret } from "../crypto";
 import {
   platformApiKey,
@@ -40,12 +41,20 @@ import {
  * never surprises the user with a flagship bill.
  */
 export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
+  // Cheap / fast tier first so "auto" never surprises the user with a flagship bill.
   { model: "gpt-4o-mini", provider: "openai" },
   { model: "gemini-flash-latest", provider: "google" },
   { model: "llama-3.3-70b-versatile", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
   { model: "kimi-k2", provider: "kimi" },
+  // Flagship / balanced tier — every model offered by the picker must be
+  // reachable in the chain or picking it fails with a misleading error.
+  { model: "claude-3-5-haiku", provider: "anthropic" },
+  { model: "gpt-4o", provider: "openai" },
+  { model: "gemini-2.5-pro", provider: "google" },
+  { model: "claude-sonnet-4", provider: "anthropic" },
+  { model: "grok-3", provider: "xai" },
 ];
 
 const MAX_CHAT_OUTPUT_TOKENS = 2048;
@@ -154,9 +163,10 @@ async function runSingleCall(input: {
   messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
   adapter: ProviderAdapter;
   payload: KeyPayload;
+  signal?: AbortSignal;
   onDelta: (text: string) => void | Promise<void>;
 }): Promise<ChatCompletionResult> {
-  const { workspaceId, provider, model, messages, adapter, payload, onDelta } = input;
+  const { workspaceId, provider, model, messages, adapter, payload, signal, onDelta } = input;
   const identity = {
     workspaceId,
     provider,
@@ -179,6 +189,7 @@ async function runSingleCall(input: {
     apiKey,
     maxTokens: MAX_CHAT_OUTPUT_TOKENS,
     temperature: defaultTemperature(provider),
+    signal: input.signal,
   };
 
   try {
@@ -217,6 +228,8 @@ export async function runChatMessage(input: {
   content: string;
   userModel?: string;
   autoSwitch?: boolean;
+  signal?: AbortSignal;
+  userId?: string | null;
   onEvent: (event: ChatRunEvent) => void | Promise<void>;
 }): Promise<void> {
   const { workspaceId, sessionId, content } = input;
@@ -328,9 +341,14 @@ export async function runChatMessage(input: {
           messages: builtMessages!,
           adapter: resolveAdapter(choice.provider),
           payload,
+          signal: input.signal,
           onDelta: (text) => input.onEvent({ type: "delta", text }),
         });
 
+        // ── Provider call succeeded. Bookkeeping below is intentionally
+        // best-effort and OUTSIDE the failover catch: if settle/persist
+        // hiccups we must not re-run the model (double spend + duplicate
+        // ledger rows). Failures are logged and the reservation released. ──
         const costMicro =
           computeCostMicro(choice.model, result.inputTokens, result.outputTokens) ?? 0;
 
@@ -343,37 +361,70 @@ export async function runChatMessage(input: {
               }
             : undefined;
 
-        const row = await updateChatMessage(assistantMessage.id, {
-          content: normalizeMarkdown(result.content),
-          model: choice.model,
-          provider: choice.provider,
-          keyHint: payload.keyHint,
-          keyId: payload.keyId,
-          tokensIn: result.inputTokens,
-          tokensOut: result.outputTokens,
-          costMicro,
-          latencyMs: result.latencyMs,
-          switchedFrom: switchedFrom ?? null,
-        });
+        let row;
+        try {
+          row = await updateChatMessage(assistantMessage.id, {
+            content: normalizeMarkdown(result.content),
+            model: choice.model,
+            provider: choice.provider,
+            keyHint: payload.keyHint,
+            keyId: payload.keyId,
+            tokensIn: result.inputTokens,
+            tokensOut: result.outputTokens,
+            costMicro,
+            latencyMs: result.latencyMs,
+            switchedFrom: switchedFrom ?? null,
+          });
+        } catch (err) {
+          logger.error({ err, messageId: assistantMessage.id }, "failed to persist chat reply");
+        }
+        if (!row) {
+          row = await db.query.aiChatMessages.findFirst({
+            where: eq(aiChatMessages.id, assistantMessage.id),
+          });
+          if (!row) {
+            logger.error({ messageId: assistantMessage.id }, "chat reply row missing after persist");
+          }
+        }
 
-        await budgetSettle({
-          workspaceId,
-          reservationId: reservation.reservationId,
-          actualCostMicro: costMicro,
-          runId: assistantMessage.id,
-          provider: choice.provider,
-          model: choice.model,
-          source: "chat",
-          inputTokens: result.inputTokens,
-          outputTokens: result.outputTokens,
-        });
+        try {
+          await budgetSettle({
+            workspaceId,
+            reservationId: reservation.reservationId,
+            actualCostMicro: costMicro,
+            runId: assistantMessage.id,
+            provider: choice.provider,
+            model: choice.model,
+            source: "chat",
+            inputTokens: result.inputTokens,
+            outputTokens: result.outputTokens,
+          });
+        } catch (err) {
+          logger.error(
+            { err, messageId: assistantMessage.id },
+            "budget settle failed after successful reply — releasing reservation",
+          );
+          try {
+            await budgetRelease({
+              workspaceId,
+              reservationId: reservation.reservationId,
+              runId: assistantMessage.id,
+            });
+          } catch {
+            // reservation TTL will expire it
+          }
+        }
 
         if (switchedFrom) {
-          await insertChatMessage({
-            sessionId,
-            role: "system",
-            content: `Heads-up: ${getModel(chosenModel)?.displayName ?? chosenModel} was unavailable (${switchedFrom.reason}). I switched this conversation to ${getModel(choice.model)?.displayName ?? choice.model} — nothing is lost. You can change it anytime.`,
-          });
+          try {
+            await insertChatMessage({
+              sessionId,
+              role: "system",
+              content: `Heads-up: ${getModel(chosenModel)?.displayName ?? chosenModel} was unavailable (${switchedFrom.reason}). I switched this conversation to ${getModel(choice.model)?.displayName ?? choice.model} — nothing is lost. You can change it anytime.`,
+            });
+          } catch {
+            // non-critical notice
+          }
           await input.onEvent({
             type: "switched",
             fromModel: chosenModel,
@@ -382,8 +433,30 @@ export async function runChatMessage(input: {
           });
         }
 
-        await touchChatSession(sessionId, {});
-        await input.onEvent({ type: "done", reply: toMessageDto(row) });
+        try {
+          await touchChatSession(sessionId, {});
+        } catch {
+          // non-critical
+        }
+        // Fire-and-forget background memory extraction (never blocks the reply).
+        try {
+          const { enqueue } = await import("../../jobs/queues");
+          // Coerce blank userId to null: an empty string would violate the
+          // memories.user_id FK instead of using the allowed NULL.
+          const memoryUserId = input.userId?.trim() ? input.userId : null;
+          await enqueue<{ workspaceId: string; sessionId: string; userId: string | null; exchange: { user: string; assistant: string } }>(
+            "memory-extract",
+            {
+              workspaceId,
+              sessionId,
+              userId: memoryUserId,
+              exchange: { user: content.slice(0, 4000), assistant: result.content.slice(0, 4000) },
+            },
+          );
+        } catch {
+          // extraction is best-effort
+        }
+        if (row) await input.onEvent({ type: "done", reply: toMessageDto(row) });
         return;
       } catch (err) {
         lastError = {
