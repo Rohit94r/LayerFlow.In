@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import { createBullConnection } from "../redis/client";
+import type { AgentRow } from "../db/schema/agents";
 
 /**
  * BullMQ job plumbing. All jobs go through one "default" queue and are
@@ -15,10 +16,14 @@ export type JobName =
   | "example"
   | "compare"
   | "embeddings"
+  | "memory-extract"
   | "usage-rollup"
   | "budget-alerts"
   | "weekly-digest"
-  | "rescue";
+  | "rescue"
+  | "agent"
+  | "agent-maintenance"
+  | "agent-scheduled";
 
 let queue: Queue | undefined;
 
@@ -63,6 +68,48 @@ export async function registerScheduledJobs(): Promise<void> {
     name: "weekly-digest",
     data: {},
   });
+  await q.upsertJobScheduler("agent-maintenance-hourly", { pattern: "25 * * * *" }, {
+    name: "agent-maintenance",
+    data: {},
+  });
+}
+
+/**
+ * Keep the BullMQ per-agent scheduler in sync with the agent's stored
+ * scheduleCron / scheduleTz / schedulingEnabled columns.
+ *
+ * - enabled + valid cron → upsert a JobScheduler that enqueues `agent-scheduled`
+ * - disabled / no cron   → remove the scheduler so the agent stops firing
+ *
+ * The scheduler ID is deterministic (`agent:<agentId>`) so multiple workers
+ * calling upsertJobScheduler is idempotent (BullMQ guarantees).
+ */
+export async function syncAgentSchedule(
+  agent: AgentRow,
+  enabledOverride?: boolean,
+): Promise<void> {
+  const q = getQueue();
+  const schedulerId = `agent:${agent.id}`;
+  const enabled = enabledOverride ?? agent.schedulingEnabled;
+
+  if (enabled && agent.scheduleCron) {
+    await q.upsertJobScheduler(
+      schedulerId,
+      {
+        pattern: agent.scheduleCron,
+        tz: agent.scheduleTz ?? undefined,
+      },
+      {
+        name: "agent-scheduled",
+        data: {
+          agentId: agent.id,
+          workspaceId: agent.workspaceId,
+        },
+      },
+    );
+  } else {
+    await q.removeJobScheduler(schedulerId).catch(() => undefined);
+  }
 }
 
 /** Graceful shutdown helper. */
