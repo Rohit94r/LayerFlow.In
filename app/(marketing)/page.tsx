@@ -17,14 +17,15 @@ import CtaSection from "@/components/landing/cta";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "LayerFlow — AI Coding Platform & Prompt Workspace",
+    absolute: "LayerFlow — The AI Workspace That Never Forgets",
   },
   description:
-    "Code with AI in your browser or terminal, rescue dead AI chats, organize prompts, and control LLM costs with BYOK. Prompt library, model comparison, and hard budget limits in one AI workspace.",
+    "Code with AI in your browser or terminal, rescue dead AI chats instead of restarting them, organize prompts, and control LLM costs with BYOK keys. Prompt library, model comparison, and hard budget limits in one AI workspace.",
   keywords: [
     "AI workspace",
     "prompt organization",
     "LLM cost control",
+    "rescue AI chat",
     "organize AI prompts",
     "BYOK",
     "model routing",
@@ -35,9 +36,9 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "LayerFlow — AI Coding Platform & Prompt Workspace",
+    title: "LayerFlow — The AI Workspace That Never Forgets",
     description:
-      "Code with AI, rescue dead AI chats, organize prompts, and control LLM costs with BYOK keys and hard budgets.",
+      "Code with AI, rescue dead chats instead of restarting them, organize prompts, and control LLM costs with BYOK keys and hard budgets.",
   },
 };
 

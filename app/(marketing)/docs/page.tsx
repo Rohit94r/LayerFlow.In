@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import {
-  TerminalSquare,
   Sparkles,
   Bot,
   Globe,
@@ -9,6 +8,7 @@ import {
   FileCode2,
   CopyCheck,
   Cpu,
+  Wand2,
   ArrowRight,
 } from "@/components/ui/icons";
 import { Reveal } from "@/components/ui/reveal";
@@ -89,7 +89,7 @@ export default function DocsPage() {
       <section id="install" className="mt-16 scroll-mt-28">
         <Reveal>
           <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
-            <TerminalSquare className="h-5 w-5 text-brand" />
+            <Sparkles className="h-5 w-5 text-brand" />
             Install the terminal CLI
           </h2>
           <p className="mt-3 max-w-2xl text-muted">
@@ -100,9 +100,9 @@ export default function DocsPage() {
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           <Reveal>
             <div className="rounded-xl border border-border bg-surface-2/40 p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-faint">npm</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-faint">Go install</p>
               <div className="mt-2">
-                <CodeBlock code="npm install -g @layerflow/cli" />
+                <CodeBlock code="go install github.com/layerflow/terminal@latest" />
               </div>
             </div>
           </Reveal>
@@ -168,8 +168,8 @@ export default function DocsPage() {
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
             { icon: FileCode2, title: "Coding Workspace", text: "Plain English in, working code out. Improve, then run with agents." },
-            { icon: TerminalSquare, title: "Browser Terminal", text: "The same terminal as the CLI, live in your browser. No local setup." },
-            { icon: Bot, title: "Multi-Agent", text: "Implement, review and test agents run in parallel — each with its own model." },
+            { icon: Wand2, title: "Improve in Chat", text: "One click in any chat: your rough prompt becomes a sharp, low-token prompt — scored 0–100." },
+            { icon: Bot, title: "Build Agents", text: "Create your own specialist agents with custom prompts and models, then run them from the web." },
             { icon: CopyCheck, title: "Rescue Chat", text: "Paste a dead AI chat and get a clean prompt, compressed context and Continue Pack." },
             { icon: KeyRound, title: "BYOK", text: "Bring your own API keys. Pay providers directly — never resold credits." },
             { icon: Cpu, title: "Cost Check", text: "Dollar estimates before every run, plus the cheapest good-enough model." },
@@ -185,7 +185,7 @@ export default function DocsPage() {
         </div>
         <Reveal>
           <Link
-            href="/code"
+            href="/agents"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition-transform hover:scale-[1.02]"
           >
             Open the web workspace <ArrowRight className="h-4 w-4" />
@@ -210,7 +210,7 @@ export default function DocsPage() {
           {[
             { step: "1", title: "Prompt Improver", text: "Plain English in. Clarity, context, constraints and output format added — scored 0–100 before it runs." },
             { step: "2", title: "Agents", text: "Implement, review and test agents run with tool calls: read/edit files, run commands, check diffs." },
-            { step: "3", title: "Context & sessions", text: "Every run saves a Context Passport, a prompt and a Continue Pack. Resume from any surface." },
+            { step: "3", title: "Context & sessions", text: "Every run saves an AI summary, a prompt and a Continue Pack. Resume from any surface." },
           ].map((s, i) => (
             <Reveal key={s.step} delay={i * 0.06}>
               <div className="relative h-full rounded-2xl border border-border bg-surface-2/40 p-6">
