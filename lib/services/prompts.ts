@@ -33,7 +33,8 @@ function mapPromptDto(prompt: PromptDto, content = ""): Prompt {
     model: "gpt-4o",
     version: 1,
     favorite: prompt.favorite,
-    usageCount: 0,
+    usageCount: prompt.runCount,
+    source: prompt.source,
     createdAt: prompt.createdAt,
     updatedAt: prompt.updatedAt,
   };

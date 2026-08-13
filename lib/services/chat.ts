@@ -14,7 +14,7 @@ import {
   type ListChatSessionsResponse,
   type SwitchChatModelResponse,
 } from "@layerflow/contracts";
-import { apiFetch, ApiClientError } from "@/lib/api/client";
+import { apiFetch, ApiClientError, getServerCookieHeader } from "@/lib/api/client";
 import { getApiBaseUrl } from "@/lib/api/config";
 
 /**
@@ -28,6 +28,16 @@ export const chatService = {
       { query: { q: opts.q, limit: opts.limit, offset: opts.offset } },
       listChatSessionsResponseSchema,
     ),
+
+  /** Server-component variant — forwards the session cookie (same-origin API). */
+  listServer: async (opts: { limit?: number } = {}): Promise<ListChatSessionsResponse> => {
+    const headers = await getServerCookieHeader();
+    return apiFetch<ListChatSessionsResponse>(
+      "/api/chat",
+      { query: { limit: opts.limit }, ...(headers.Cookie ? { headers } : {}) },
+      listChatSessionsResponseSchema,
+    );
+  },
 
   create: async (body: CreateChatSessionRequest) =>
     apiFetch<CreateChatSessionResponse>(

@@ -1,20 +1,19 @@
 // ─────────────────────────────────────────────────────────────
 // Global search service — backed by GET /api/search
-// (apps/api/src/routes/search.ts), which looks through prompts
-// and sessions. Memorable fields the API doesn't cover yet
-// (passports, learnings, timeline) fall back to empty.
+// (apps/api/src/routes/search/search.ts), which keyword-searches
+// prompts and prompt sessions. Only fields the API actually
+// returns are surfaced; nothing is invented on the client.
 // ─────────────────────────────────────────────────────────────
 
-import { searchResponseSchema, type SearchResult } from "@layerflow/contracts";
+import {
+  searchResponseSchema,
+  type SearchResult,
+} from "@layerflow/contracts";
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
-import type { ContextPassport, Learning, Project, Prompt, TimelineEvent } from "@/lib/types";
 
 export interface SearchResults {
-  prompts: Prompt[];
-  passports: ContextPassport[];
-  projects: Project[];
-  learnings: Learning[];
-  events: TimelineEvent[];
+  prompts: SearchResult[];
+  sessions: SearchResult[];
   total: number;
 }
 
@@ -26,7 +25,7 @@ export const searchService: SearchService = {
   async search(query) {
     const q = query.trim();
     if (!q) {
-      return { prompts: [], passports: [], projects: [], learnings: [], events: [], total: 0 };
+      return { prompts: [], sessions: [], total: 0 };
     }
 
     const headers = await getServerCookieHeader();
@@ -36,56 +35,17 @@ export const searchService: SearchService = {
       searchResponseSchema,
     );
 
-    const prompts: Prompt[] = [];
-    const passports: ContextPassport[] = [];
+    const prompts: SearchResult[] = [];
+    const sessions: SearchResult[] = [];
     for (const hit of res.results) {
-      if (hit.type === "prompt") {
-        prompts.push({
-          id: hit.id,
-          title: hit.title,
-          description: hit.description ?? "",
-          content: hit.snippet ?? "",
-          score: 50,
-          tags: [],
-          model: "gpt-4o",
-          version: 1,
-          favorite: false,
-          usageCount: 0,
-          createdAt: hit.updatedAt,
-          updatedAt: hit.updatedAt,
-        });
-      } else if (hit.type === "session") {
-        passports.push({
-          id: hit.id,
-          title: hit.title,
-          fields: {
-            goal: hit.title,
-            currentState: hit.description ?? "",
-            decisions: [],
-            constraints: [],
-            failures: [],
-            successes: [],
-            missingInfo: [],
-            outputFormat: "",
-            nextAction: "",
-          },
-          meta: { sourceTool: "generic", sourceModel: "unknown", tags: [], estimatedNextCost: 0 },
-          createdAt: hit.updatedAt,
-          updatedAt: hit.updatedAt,
-          favorite: false,
-          usageCount: 0,
-          wordCount: 0,
-        });
-      }
+      if (hit.type === "prompt") prompts.push(hit);
+      else sessions.push(hit);
     }
 
     return {
       prompts,
-      passports,
-      projects: [],
-      learnings: [],
-      events: [],
-      total: prompts.length + passports.length,
+      sessions,
+      total: prompts.length + sessions.length,
     };
   },
 };

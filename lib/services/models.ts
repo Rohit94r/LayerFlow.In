@@ -31,6 +31,7 @@ function mapProviderKey(key: {
   id: string;
   provider: string;
   label?: string | null;
+  keyHint: string;
   createdAt: string;
   updatedAt: string;
 }): ProviderKey {
@@ -38,6 +39,7 @@ function mapProviderKey(key: {
     id: key.id,
     provider: key.provider,
     label: key.label ?? key.provider,
+    keyHint: key.keyHint,
     status: "connected",
     addedAt: key.createdAt,
     lastUsed: key.updatedAt,

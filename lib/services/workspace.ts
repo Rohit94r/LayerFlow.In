@@ -16,8 +16,13 @@ import {
   listProjectsResponseSchema,
   projectResponseSchema,
   savingsResponseSchema,
+  updateBudgetRequestSchema,
+  updateBudgetResponseSchema,
   updateProjectRequestSchema,
+  usageAlertsResponseSchema,
   usageSummaryResponseSchema,
+  type CurrentBudgetResponse,
+  type UsageAlert,
   type UsageSummaryBucket,
 } from "@layerflow/contracts";
 import type { z } from "zod";
@@ -31,6 +36,7 @@ import type {
   Learning,
   ModelSpend,
   Project,
+  SavingsSummary,
   TimelineEvent,
   TimelineEventType,
 } from "@/lib/types";
@@ -48,6 +54,10 @@ export interface WorkspaceService {
   listLearnings(): Promise<Learning[]>;
   getDashboardStats(): Promise<DashboardStats>;
   getCostAnalytics(): Promise<CostAnalytics>;
+  getSavingsSummary(): Promise<SavingsSummary | null>;
+  listUsageAlerts(): Promise<UsageAlert[]>;
+  getCurrentBudget(): Promise<CurrentBudgetResponse | null>;
+  updateBudget(input: { monthlyLimitMicro: number }): Promise<CurrentBudgetResponse>;
 }
 
 /** Fetches with the session cookie forwarded when running in RSC. */
@@ -71,7 +81,6 @@ function mapProject(project: {
     name: project.name,
     description: project.description ?? "",
     color,
-    passportCount: 0,
     promptCount: 0,
     learningCount: 0,
     stage: project.status === "archived" ? "done" : "active",
@@ -101,8 +110,8 @@ function mapTimelineEvent(event: {
     "project.created": "decision",
     "project.updated": "decision",
     "compare.completed": "decision",
-    "session.created": "passport",
-    "session.updated": "passport",
+    "session.created": "rescue",
+    "session.updated": "rescue",
     "budget.alert": "cost",
     "budget.updated": "cost",
     "cache.hit": "cost",
@@ -278,6 +287,11 @@ export const workspaceService: WorkspaceService = {
     const totalCost = sumCost(byDay.buckets);
     const totalRequests = sumRequests(byDay.buckets);
 
+    const days = [...byDay.buckets]
+      .sort((a, b) => (a.day ?? "").localeCompare(b.day ?? ""))
+      .slice(-7)
+      .map((d) => microToUsd(d.costMicro));
+
     return {
       monthlySpend: totalCost,
       monthlySavings: microToUsd(savings.savedMicro),
@@ -287,6 +301,7 @@ export const workspaceService: WorkspaceService = {
         .filter((b) => b.model)
         .map((b) => ({ label: b.model!, value: microToUsd(b.costMicro) })),
       savingsByMonth: [],
+      dailySpend: days,
       spendByModel: (byModel.buckets ?? [])
         .filter((b) => b.model)
         .map((b) => ({
@@ -299,5 +314,47 @@ export const workspaceService: WorkspaceService = {
           tokensOut: b.outputTokens,
         })),
     };
+  },
+
+  async listUsageAlerts() {
+    const res = await authedFetch("/api/usage/alerts", usageAlertsResponseSchema);
+    return res.alerts;
+  },
+
+  async getSavingsSummary() {
+    try {
+      const res = await authedFetch("/api/savings", savingsResponseSchema);
+      return {
+        period: res.period,
+        actualCost: microToUsd(res.actualCostMicro),
+        optimizedCost: microToUsd(res.optimizedCostMicro),
+        saved: microToUsd(res.savedMicro),
+        tokensSaved: res.tokensSaved ?? 0,
+        source: res.source,
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  async getCurrentBudget() {
+    try {
+      return await authedFetch("/api/budgets/current", currentBudgetResponseSchema);
+    } catch {
+      return null;
+    }
+  },
+
+  async updateBudget(input) {
+    const headers = await getServerCookieHeader();
+    return apiFetch(
+      "/api/budgets/current",
+      {
+        method: "PUT",
+        body: updateBudgetRequestSchema.parse(input),
+        ...(headers.Cookie ? { headers } : {}),
+      },
+      updateBudgetResponseSchema,
+    );
   },
 };
