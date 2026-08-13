@@ -439,12 +439,14 @@ export async function runChatMessage(input: {
           // non-critical
         }
         // Fire-and-forget background memory extraction (never blocks the reply).
+        // Deliberately not awaited: BullMQ's queue.add() waits for a ready
+        // connection, which can hang the reply indefinitely when Redis is down.
         try {
           const { enqueue } = await import("../../jobs/queues");
           // Coerce blank userId to null: an empty string would violate the
           // memories.user_id FK instead of using the allowed NULL.
           const memoryUserId = input.userId?.trim() ? input.userId : null;
-          await enqueue<{ workspaceId: string; sessionId: string; userId: string | null; exchange: { user: string; assistant: string } }>(
+          void enqueue<{ workspaceId: string; sessionId: string; userId: string | null; exchange: { user: string; assistant: string } }>(
             "memory-extract",
             {
               workspaceId,
@@ -452,7 +454,7 @@ export async function runChatMessage(input: {
               userId: memoryUserId,
               exchange: { user: content.slice(0, 4000), assistant: result.content.slice(0, 4000) },
             },
-          );
+          ).catch(() => undefined);
         } catch {
           // extraction is best-effort
         }

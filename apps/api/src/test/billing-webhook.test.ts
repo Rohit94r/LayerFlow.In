@@ -10,6 +10,10 @@ const WEBHOOK_SECRET =
 // cached env singleton picks the webhook secret up.
 (process.env as Record<string, string>).DODO_PAYMENTS_WEBHOOK_KEY = WEBHOOK_SECRET;
 (process.env as Record<string, string>).DODO_PAYMENTS_ENVIRONMENT = "test_mode";
+// getDodoClient() throws 503 until the API key is set — webhook verification
+// needs it too (client is built before unwrap), so a fake key avoids
+// "billing_not_configured" in CI where Dodo is never configured.
+(process.env as Record<string, string>).DODO_PAYMENTS_API_KEY = "dodo_test_sk_ci";
 
 const stopDb = await startTestDb();
 
