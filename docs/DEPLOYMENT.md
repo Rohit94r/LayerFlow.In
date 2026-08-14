@@ -3,7 +3,7 @@
 **Status:**
 - Frontend already live hai Vercel pe (`https://layerflow.dev`, custom domain connected).
 - **`lf` terminal CLI working hai** — `chat/run/sessions/login/logout/sync/models/doctor/rescue/cost/mcp/daemon` sab implemented aur tested (build, vet, `-race` tests green). Backend sync endpoints (`/api/v1/sync/*`), team, notifications, aur agent v2 routes bhi live hain.
-- **`lf` v0.2.0 released** — binaries, `install.sh`, aur Homebrew formula sab live public repo (`Rohit94r/layerflow-releases` + `Rohit94r/homebrew-tap`) pe hain. `brew install Rohit94r/tap/lf` aur `curl | bash` dono abhi public mein resolve karte hain. (v0.1.0 was the first release; v0.2.0 adds the full-screen TUI.)
+- **`lf` v0.2.2 released** — binaries, `install.sh`, aur Homebrew formula sab live public repo (`Rohit94r/layerflow-releases` + `Rohit94r/homebrew-tap`) pe hain. `brew install Rohit94r/tap/lf` aur `curl | bash` dono abhi public mein resolve karte hain. (v0.1.0 was the first release; v0.2.0 adds the full-screen TUI; v0.2.1 shipped the universal installer; v0.2.2 adds auto model selection so chat works out of the box.)
 - Ye guide **baaki ka kaam** samjhata hai — full platform live karne ke liye: Postgres, Redis, Hono API + BullMQ worker, migrations, billing, monitoring, backups, aur future `lf` releases publish karne ka flow.
 
 > **Repo abhi private hai — aur private hi rahega.** Source kabhi public nahi
@@ -564,7 +564,7 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 **Step 7 — Website pe download page banao**
 - `layerflow.dev/install` — saari OS/arch ke instructions dikhao. ✅ Docs page
   (`/docs#install`) already install commands dikhata hai.
-- Version badge: `https://img.shields.io/github/v/release/Rohit94r/layerflow-releases` → `v0.2.0` (live).
+- Version badge: `https://img.shields.io/github/v/release/Rohit94r/layerflow-releases` → `v0.2.2` (live).
 
 **Step 8 — Verify sab kuch**
 ```bash

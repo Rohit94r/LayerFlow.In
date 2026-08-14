@@ -111,7 +111,16 @@ func (m *modelsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.app, nil
 		}
 		if len(msg.models) > 0 {
-			m.models = msg.models
+			// Only offer models the workspace can actually use.
+			var avail []cloud.Model
+			for _, mdl := range msg.models {
+				if mdl.Available {
+					avail = append(avail, mdl)
+				}
+			}
+			if len(avail) > 0 {
+				m.models = avail
+			}
 		}
 		// Keep selection on the current model if present.
 		for i, mdl := range m.models {

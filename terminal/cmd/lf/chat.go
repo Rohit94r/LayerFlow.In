@@ -53,6 +53,12 @@ func runTask(task string, maxSteps int, model, provider string) error {
 	client := cloud.NewClient(cloud.ResolveBaseURL(cfg), key)
 	m := resolveChatModel(cfg, model)
 
+	ctx := context.Background()
+	if picked := cloud.PickAvailableModel(ctx, client, m); picked != m {
+		fmt.Fprintf(os.Stderr, "  (model %q unavailable here — using %q)\n", m, picked)
+		m = picked
+	}
+
 	db, err := storage.Open(&storage.Options{})
 	if err != nil {
 		return fmt.Errorf("open storage: %w", err)
@@ -60,7 +66,6 @@ func runTask(task string, maxSteps int, model, provider string) error {
 	defer storage.Close()
 
 	store := session.NewSQLStore(db)
-	ctx := context.Background()
 	dir, err := os.Getwd()
 	if err != nil {
 		return err
@@ -125,6 +130,14 @@ func runChat(opts chatOptions) error {
 	client := cloud.NewClient(cloud.ResolveBaseURL(cfg), key)
 	model := resolveChatModel(cfg, opts.model)
 
+	// Make sure the configured model is usable on this workspace; otherwise
+	// auto-pick the first available gateway model so chat works out of the box.
+	ctx := context.Background()
+	if picked := cloud.PickAvailableModel(ctx, client, model); picked != model {
+		fmt.Fprintf(os.Stderr, "  (model %q unavailable here — using %q)\n", model, picked)
+		model = picked
+	}
+
 	db, err := storage.Open(&storage.Options{})
 	if err != nil {
 		return fmt.Errorf("open storage: %w", err)
@@ -132,7 +145,6 @@ func runChat(opts chatOptions) error {
 	defer storage.Close()
 
 	store := session.NewSQLStore(db)
-	ctx := context.Background()
 	dir, err := os.Getwd()
 	if err != nil {
 		return err

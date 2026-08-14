@@ -29,6 +29,36 @@ const (
 // ErrInvalidKey is returned when the API key is rejected (HTTP 401).
 var ErrInvalidKey = errors.New("invalid LayerFlow API key")
 
+// PickAvailableModel returns the preferred model when the workspace can use
+// it, otherwise the first available model advertised by the gateway. It falls
+// back to the preferred model when models cannot be listed (offline, or no API
+// key configured) so chat still attempts the configured default.
+func PickAvailableModel(ctx context.Context, c *Client, preferred string) string {
+	if strings.TrimSpace(preferred) == "" {
+		preferred = DefaultModel
+	}
+	models, err := c.ListModels(ctx)
+	if err != nil {
+		return preferred
+	}
+	var first string
+	for _, m := range models {
+		if !m.Available {
+			continue
+		}
+		if first == "" {
+			first = m.ID
+		}
+		if m.ID == preferred {
+			return preferred
+		}
+	}
+	if first != "" {
+		return first
+	}
+	return preferred
+}
+
 // Message is a single chat message in gateway format.
 type Message struct {
 	Role    string `json:"role"`

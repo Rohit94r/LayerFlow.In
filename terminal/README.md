@@ -82,6 +82,12 @@ for the command palette, `Ctrl+K` for sessions, `Ctrl+L` to switch models,
 `Ctrl+T` for activity, and `?` for help. `Esc` goes back, `Ctrl+C` cancels a
 stream and quits.
 
+On first launch the TUI asks the gateway which models your workspace can use.
+If the configured default (`deepseek-chat`) isn't available — e.g. no DeepSeek
+key set under **Settings → Provider keys** — it auto-selects the first
+available model (you'll see a `Model → …` toast), so chat works immediately.
+`Ctrl+L` lists only usable models.
+
 ## Keys
 
 There are two kinds of LayerFlow API keys, managed in the dashboard under

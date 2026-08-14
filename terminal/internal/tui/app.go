@@ -155,6 +155,7 @@ func (a *App) Init() tea.Cmd {
 	return tea.Batch(
 		a.tickCmd(),
 		a.loadGitStatus(),
+		a.loadModels(),
 	)
 }
 
@@ -221,6 +222,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case loginResultMsg:
 		return a.handleLoginResult(msg)
+	case modelsLoadedMsg:
+		return a.handleModelsLoaded(msg)
 	case errorMsg:
 		a.pushToast(fmt.Sprintf("Error: %v", msg.err), toastError)
 		a.loading = false
@@ -374,6 +377,52 @@ func (a *App) handleLoginResult(msg loginResultMsg) (tea.Model, tea.Cmd) {
 	}
 	a.st.Authenticated = true
 	a.pushToast("Authenticated. Welcome back!", toastSuccess)
+	return a, nil
+}
+
+// handleModelsLoaded auto-selects an available model when the configured
+// default isn't usable on this workspace, so chat works out of the box
+// (e.g. no provider key configured for the default model).
+func (a *App) handleModelsLoaded(msg modelsLoadedMsg) (tea.Model, tea.Cmd) {
+	if msg.err != nil {
+		if msg.err != cloud.ErrInvalidKey {
+			a.pushToast("models: "+msg.err.Error(), toastError)
+		}
+		return a, nil
+	}
+	if len(msg.models) == 0 {
+		return a, nil
+	}
+
+	var available []string
+	for _, m := range msg.models {
+		if m.Available {
+			available = append(available, m.ID)
+		}
+	}
+	if len(available) == 0 {
+		a.pushToast("No model is available on this workspace yet — add provider keys under Settings.", toastError)
+		return a, nil
+	}
+
+	for _, id := range available {
+		if id == a.st.Model {
+			return a, nil // configured model already usable
+		}
+	}
+
+	// Auto-switch to the first available model so the user can chat immediately.
+	next := available[0]
+	a.st.Model = next
+	a.st.Cfg.Model = next
+	a.st.CmdCtx.Model = next
+	a.st.Provider = ""
+	a.st.Router.SetOverride("model", next)
+	if a.session != nil {
+		a.session.Model = next
+		_ = a.st.Sessions.Update(context.Background(), a.session)
+	}
+	a.pushToast(fmt.Sprintf("Model → %s (auto-selected)", next), toastSuccess)
 	return a, nil
 }
 
