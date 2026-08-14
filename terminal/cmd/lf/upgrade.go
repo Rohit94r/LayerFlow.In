@@ -11,7 +11,7 @@ import (
 
 const (
 	upgradeRepo    = "Rohit94r/layerflow-releases"
-	installURL     = "https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh"
+	installURL     = "https://layerflow.dev/install"
 	upgradeTimeout = 15 * time.Second
 )
 

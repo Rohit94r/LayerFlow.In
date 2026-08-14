@@ -238,7 +238,7 @@ function PlatformKeysPanel() {
             <p className="mt-2 text-[11px] text-faint">
               Then authenticate the CLI:{" "}
               <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">
-                curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
+                curl -fsSL https://layerflow.dev/install | bash
               </code>
               {" · "}
               <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">lf login</code>

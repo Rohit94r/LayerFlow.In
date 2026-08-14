@@ -34,6 +34,12 @@ const nextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  // Serve terminal/scripts/install.sh at https://layerflow.dev/install.
+  // Force-include it in the serverless bundle so the route never 404s on Vercel.
+  outputFileTracingIncludes: {
+    "/install": ["./terminal/scripts/install.sh"],
+    "/install.sh": ["./terminal/scripts/install.sh"],
+  },
 };
 
 export default nextConfig;

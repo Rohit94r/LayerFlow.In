@@ -1642,7 +1642,7 @@ lf
 Example:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
+curl -fsSL https://layerflow.dev/install | bash
 ```
 
 Then:

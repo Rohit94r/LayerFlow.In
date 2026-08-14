@@ -259,8 +259,8 @@ Providers: OpenAI, Anthropic, Google, DeepSeek, Kimi (Moonshot), Groq, OpenRoute
 
 | Method | Command |
 | --- | --- |
-| curl installer (macOS/Linux) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
-| Windows (WSL) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| curl installer (macOS/Linux) | `curl -fsSL https://layerflow.dev/install \| bash` |
+| Windows (WSL) | `curl -fsSL https://layerflow.dev/install \| bash` |
 | Direct binary | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` |
 | Verify | `lf version` → `lf 0.2.0` |
 

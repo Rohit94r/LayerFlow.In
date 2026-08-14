@@ -970,7 +970,7 @@ Targets: macOS (arm64/amd64), Linux (amd64/arm64), Windows (amd64). Release pipe
 `goreleaser`, triggered by a `v*` tag. Binaries are published to the public repo
 `Rohit94r/layerflow-releases`; the source repo stays private.
 
-- **curl installer** — `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
+- **curl installer** — `curl -fsSL https://layerflow.dev/install | bash`
   (installs `lf` into `$HOME/.local/bin`, verifies the tarball against the
   published `checksums.txt`, and symlinks `layerflow` → `lf`).
 - **Homebrew** — `brew install Rohit94r/tap/lf` (formula auto-pushed by

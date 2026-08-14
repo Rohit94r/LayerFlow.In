@@ -35,7 +35,7 @@ export const COMMANDS: CommandItem[] = [
   {
     id: "copy-install",
     label: "Copy install command",
-    hint: "curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash",
+    hint: "curl -fsSL https://layerflow.dev/install | bash",
     keywords: ["cli", "install"],
     action: "copy-install",
   },

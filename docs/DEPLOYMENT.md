@@ -450,8 +450,8 @@ user ek command se install kar sake. CLI **Go language** mein hai, code
 
 | Platform | Command |
 |---|---|
-| **macOS/Linux** (primary) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
-| **Windows** | WSL mein same installer, ya release se `.zip` download |
+| **macOS/Linux/Windows** (primary) | `curl -fsSL https://layerflow.dev/install \| bash` |
+| **Windows** | same installer (Git Bash/WSL), ya release se `.zip` download |
 | **Direct binary** | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` download |
 | **Build from source** | private repo access hona chahiye: `cd terminal && go build ./...` |
 
@@ -556,11 +556,10 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 
 **Step 6 — Installer script live karo** (`curl | bash` wala)
 - `terminal/scripts/install.sh` already ready hai — GoReleaser se binary
-  download karta hai. ✅ **Done (v0.1.0, v0.2.0)** — public repo mein `install.sh` live hai:
-  `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
-- **Future (optional):** layerflow.dev pe `/install.sh` route banao jo sahi version serve
-  kare — URL chhota aur clean:
-  `curl -fsSL https://layerflow.dev/install.sh | bash`
+  download karta hai (macOS/Linux/Windows Git Bash, SHA-256 verify, PATH auto-add). ✅ **Done**
+- Short URL live: `curl -fsSL https://layerflow.dev/install | bash`
+  (Next.js route `/install` serves the script straight from `terminal/scripts/install.sh` — single source of truth.)
+- GitHub fallback bhi live: `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
 
 **Step 7 — Website pe download page banao**
 - `layerflow.dev/install` — saari OS/arch ke instructions dikhao. ✅ Docs page
@@ -569,7 +568,7 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 
 **Step 8 — Verify sab kuch**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash && lf version
+curl -fsSL https://layerflow.dev/install | bash && lf version
 ```
 
 ### 14d. CLI Ke Baaki Important Setup
@@ -605,7 +604,7 @@ curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/in
 
 **CLI launch ke liye extra checklist:**
 - [ ] GitHub tag + GoReleaser release sahi ban gaye (har OS/arch ka build)
-- [ ] Installer script test kiya (`curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash` aur `lf version`)
+- [ ] Installer script test kiya (`curl -fsSL https://layerflow.dev/install | bash` aur `lf version`)
 - [ ] `/install` page website pe live
 - [ ] `lf version` sahi version dikhata hai
 - [ ] `lf login` + `lf sync` backend ke against kaam karta hai

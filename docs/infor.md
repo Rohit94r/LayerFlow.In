@@ -162,7 +162,7 @@ lf (Node/Bun binary, ~40KB core)
 
 | Method | Command |
 |---|---|
-| curl installer (macOS/Linux/WSL) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| curl installer (macOS/Linux/WSL) | `curl -fsSL https://layerflow.dev/install \| bash` |
 | Direct binary | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` |
 
 No API key or account needed to try it. BYOK keys live in the OS keychain and

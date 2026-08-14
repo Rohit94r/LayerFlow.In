@@ -23,7 +23,7 @@ brew install Rohit94r/tap/lf
 
 ### macOS / Linux — one line
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
+curl -fsSL https://layerflow.dev/install | bash
 ```
 
 Both install the prebuilt `lf` binary for your OS/arch (checksum-verified).

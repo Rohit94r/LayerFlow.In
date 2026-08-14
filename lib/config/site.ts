@@ -8,7 +8,7 @@ export const appConfig = {
   name: "LayerFlow",
   homeHref: "/home",
   signInHref: "/sign-in",
-  installCommand: "curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash",
+  installCommand: "curl -fsSL https://layerflow.dev/install | bash",
   cliDocsHref: "/docs",
   supportEmail: "support@layerflow.dev",
   defaultWorkspace: "Personal",
