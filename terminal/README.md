@@ -50,16 +50,21 @@ go test ./...
 Status: the module builds, vets, and tests cleanly with Go 1.26 (`go build
 ./...`, `go vet ./...`, `go test -race ./...` all pass). All commands are wired:
 `chat`, `run`, `sessions`, `login`, `logout`, `sync`, `models`, `doctor`,
-`rescue`, `cost`, `mcp`, `daemon`, `upgrade`.
+`rescue`, `cost`, `mcp list`, `daemon`, `upgrade`. Edges still to come:
+`mcp add/remove/health`, `sessions --open`, and a true `lf upgrade`
+self-update (it currently checks GitHub and prints the installer).
 
 ## Quick Start
 
 ```bash
+# Launch the full-screen TUI (home → chat, palette, sessions, models)
+lf
+
 # Login — paste a LayerFlow platform key (lf_live_...)
 # from the dashboard: API Keys → Platform keys
 lf login
 
-# Start chatting
+# Start chatting (interactive streaming session)
 lf chat
 
 # Or run a task
@@ -68,9 +73,14 @@ lf run "Fix the auth bug in src/auth.ts"
 # Sync with cloud
 lf sync
 
-# Open the same session in browser
-lf sessions --open
+# List persisted sessions for the current project
+lf sessions
 ```
+
+Inside the TUI: press `Enter` on the home screen to start chatting, `Ctrl+P`
+for the command palette, `Ctrl+K` for sessions, `Ctrl+L` to switch models,
+`Ctrl+T` for activity, and `?` for help. `Esc` goes back, `Ctrl+C` cancels a
+stream and quits.
 
 ## Keys
 
@@ -124,14 +134,18 @@ There are two kinds of LayerFlow API keys, managed in the dashboard under
 
 | Key | Action |
 |-----|--------|
-| `Enter` | Send / confirm |
-| `Tab` / `Shift+Tab` | Cycle focus |
-| `↑`/`↓` | Scroll history |
-| `Ctrl+C` | Cancel → exit |
-| `Ctrl+L` | Clear screen |
-| `Ctrl+K` | Command palette |
-| `y`/`n` | Approve / reject |
-| `a` | Always allow |
+| `Enter` | Send / submit (home → chat) |
+| `Shift+Enter` / `Ctrl+J` | Newline in input |
+| `Esc` | Back / close overlay |
+| `Ctrl+P` | Command palette |
+| `Ctrl+R` | Search files |
+| `Ctrl+K` | Sessions |
+| `Ctrl+L` | Switch model |
+| `Ctrl+T` | Activity |
+| `Ctrl+N` | New session |
+| `?` | Help |
+| `↑` / `↓` | Navigate / recall input history |
+| `Ctrl+C` | Cancel stream → close overlay → quit |
 
 ## Configuration
 

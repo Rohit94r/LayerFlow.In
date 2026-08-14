@@ -24,28 +24,28 @@ export const metadata: Metadata = {
 
 const CLI_COMMANDS = [
   {
+    command: `lf`,
+    what: "Launch the full-screen terminal UI — home, streaming chat, sessions, model switcher and command palette.",
+  },
+  {
     command: `lf run "build a landing page"`,
-    what: "Improve your plain-English ask, then run it with agents — prompt, cost and model picked automatically.",
+    what: "Run a single task with live step streaming and tool approvals — prompt, cost and model handled for you.",
   },
   {
-    command: `lf run "fix the checkout bug" --context repo`,
-    what: "Auto-reads repo context (LAYERFLOW.md + git) and cuts it down to only what the agents need.",
+    command: `lf chat "explain the auth flow"`,
+    what: "Start a streaming chat session with the LayerFlow gateway. Continue the same session in the web app.",
   },
   {
-    command: `lf rescue "chatgpt-thread.txt"`,
-    what: "Turn a messy dead chat into a clean prompt, compressed context, and a Continue Pack.",
+    command: `lf sessions`,
+    what: "List persisted sessions for the current project and reopen any past one with `--id`.",
   },
   {
-    command: `lf cost --repo`,
-    what: "Estimate what a task costs across models before you run it — and get the cheapest good-enough pick.",
+    command: `lf sync`,
+    what: "Push/pull your sessions, context and cost ledger between the terminal and the cloud.",
   },
   {
-    command: `lf agents --implement gpt-4.1 --review claude-sonnet-4 --test gemini-flash`,
-    what: "Run implement, review and test agents in parallel, each with its own model and budget.",
-  },
-  {
-    command: `lf session --open landing-page`,
-    what: "Reopen any past session — same context, same decisions, same files. Continue in the web or terminal.",
+    command: `lf cost --project`,
+    what: "Show token and dollar usage from the local store — keep an eye on what each project is spending.",
   },
 ];
 
@@ -124,7 +124,7 @@ export default function DocsPage() {
                 <CodeBlock code="lf version" />
               </div>
               <p className="mt-3 text-xs text-faint">
-                → <span className="font-mono text-emerald-400">lf 0.4.1</span>
+                → <span className="font-mono text-emerald-400">lf 0.1.0</span> — the first public release
               </p>
             </div>
           </Reveal>

@@ -49,11 +49,15 @@ team/RBAC); they have unit + integration tests (Vitest, in-memory Postgres +
 mocked Redis), migrations are checked in, and there is a Docker image plus a
 Render blueprint for the API and its worker. The web dashboard is fully wired
 to the API — `lib/services/*` talk to real endpoints and no page renders from a
-mock service layer. **In development:** the `lf` CLI is mostly constructor
-wiring — several commands (`chat`, `run`, `sync`, `rescue`, `upgrade`) are
-explicit stubs; the sync client and its in-memory journal are not yet durable
-(see the [Go CLI](#go-cli-lf) section); and rescue/improve/agents/chat routes
-exist but are early — treat them as experimental.
+mock service layer. **The `lf` CLI** ships a full-screen Bubble Tea TUI (home,
+streaming chat, palette, sessions, model switcher, activity, help) and wired
+commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
+`doctor`, `rescue`, `cost`, `mcp list`, `daemon`, `upgrade`, `version`. A few
+edges are still stubs (`mcp add/remove/health`, `sessions --open`), and
+`lf upgrade` checks GitHub and prints the installer rather than self-updating.
+The sync client and its in-memory journal are not yet durable (see the
+[Go CLI](#go-cli-lf) section); and rescue/improve/agents/chat routes exist but
+are early — treat them as experimental.
 
 Not built: SDK, IDE/browser extensions, marketplace, enterprise features.
 
@@ -265,7 +269,8 @@ endpoint map is in `apps/api/README.md`.
 
 ## Go CLI (`terminal/`)
 
-A local-first AI terminal workspace. Build from source (`terminal/README.md`):
+A local-first AI terminal workspace with a full-screen Bubble Tea TUI. Install
+a prebuilt binary (`terminal/README.md`) or build from source:
 
 ```bash
 cd terminal
@@ -273,23 +278,30 @@ go mod tidy        # refresh go.sum if dependencies change
 go build ./...     # or: make build → bin/lf
 ```
 
+Running `lf` with no arguments launches the TUI — home screen, streaming chat
+(`Ctrl+P` palette, `Ctrl+R` search, `Ctrl+K` sessions, `Ctrl+L` models,
+`Ctrl+T` activity, `?` help), then `Ctrl+C` quits.
+
 Commands (from `lf/cmd/lf/root.go`):
 
 | Command | Status |
 | --- | --- |
-| `lf login` / `lf logout` | Device-code OAuth login; revoke + purge tokens — wired |
-| `lf sessions [--id ID] [--delete] [--open]` | List/delete persisted sessions (SQLite) — wired |
+| `lf` | Full-screen TUI — wired |
+| `lf login` / `lf logout` | Platform-key login (`lf_live_…`); revoke + purge — wired |
+| `lf chat [query]` | Streaming chat session (interactive + `--non-interactive`) — wired |
+| `lf run <task>` | Single-shot task agent with tool approvals — wired |
+| `lf sessions [--id ID] [--delete]` | List/delete persisted sessions (SQLite) — wired (`--open` is a stub) |
+| `lf sync [--dry-run]` | Force push/pull with the cloud sync API — wired |
+| `lf models [--json]` | List gateway models — wired |
 | `lf doctor [--audit]` | Diagnostics: config, storage, keychain, audit chain — wired |
+| `lf rescue` | Export a portable snapshot of sessions/messages for recovery — wired |
 | `lf cost [--session ID] [--project]` | Token + cost usage from the local store — wired |
-| `lf mcp list` | List MCP servers from config — wired |
+| `lf mcp list` | List MCP servers from config — wired (`add/remove/health` are stubs) |
 | `lf daemon start` / `stop` / `status` | Background daemon lifecycle — wired |
+| `lf upgrade` | Check GitHub for a newer release and print the installer — wired (no self-update) |
 | `lf version` | Show build version — wired |
-| `lf chat [query]`, `lf run <task>`, `lf sync`, `lf rescue`, `lf upgrade`, `lf mcp add/remove/health` | **Stubs** — print “not wired in this build yet” |
 
-Note: the constructor wiring (auth, sessions, memory, search, permission, MCP)
-is in place, but several commands are explicit stubs and there is no real
-provider/memory/search execution yet. Keyboard shortcuts, slash commands, and
-config layout: `terminal/README.md`.
+Keyboard shortcuts, slash commands, and config layout: `terminal/README.md`.
 
 ## Testing
 

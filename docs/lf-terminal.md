@@ -967,15 +967,19 @@ The CLI is fully usable without internet; sync is opportunistic.
 ## 20. Packaging & distribution
 
 Targets: macOS (arm64/amd64), Linux (amd64/arm64), Windows (amd64). Release pipeline:
-`goreleaser`.
+`goreleaser`, triggered by a `v*` tag. Binaries are published to the public repo
+`Rohit94r/layerflow-releases`; the source repo stays private.
 
 - **curl installer** — `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
-  (public binary repo `Rohit94r/layerflow-releases`; source repo stays private).
-- **Standalone binaries** — goreleaser tarballs + `checksums.txt`; `lf upgrade` checks a
-  signed `latest.json` (version, SHA, URL) and self-updates atomically.
-- **Signing:** macOS notarization (Developer ID + hardened runtime), Windows Authenticode
-  (SignTool), Linux `.deb`/`.rpm` via nFPM. All installer shas published in
-  `latest.json` and verified before apply.
+  (installs `lf` into `$HOME/.local/bin`, verifies the tarball against the
+  published `checksums.txt`, and symlinks `layerflow` → `lf`).
+- **Homebrew** — `brew install Rohit94r/tap/lf` (formula auto-pushed by
+  goreleaser to `Rohit94r/homebrew-tap`).
+- **Standalone binaries** — goreleaser tarballs (`lf_<version>_<os>_<arch>.tar.gz`)
+  + `checksums.txt` per release.
+- **`lf upgrade`** — queries the GitHub releases API for the latest `v*` tag and
+  prints the reinstall command. A true self-update (download + atomic swap) is
+  planned; it is not shipped in this release.
 
 ---
 
@@ -1066,7 +1070,7 @@ A release is beta-ready when all of these hold:
 7. MCP `list/add/remove/health` works with a stdio server; LSP diagnostics gate edits.
 8. Offline: chat/memory/search/sync-queue all work with zero network; reconnect drains.
 9. `lf doctor` + `--audit` pass; secret redaction verified; no plaintext tokens on disk.
-10. Packaging installs clean via `brew install Rohit94r/tap/lf` and `curl | bash`; `lf upgrade` self-updates.
+10. Packaging installs clean via `brew install Rohit94r/tap/lf` and `curl | bash`; `lf upgrade` reports the latest release and prints the reinstall command.
 11. Performance/coverage baselines pass CI; telemetry is opt-in and content-free.
 12. Security + accessibility reviews signed off (checklist §24).
 

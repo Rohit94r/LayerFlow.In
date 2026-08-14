@@ -3,14 +3,15 @@
 **Status:**
 - Frontend already live hai Vercel pe (`https://layerflow.dev`, custom domain connected).
 - **`lf` terminal CLI working hai** — `chat/run/sessions/login/logout/sync/models/doctor/rescue/cost/mcp/daemon` sab implemented aur tested (build, vet, `-race` tests green). Backend sync endpoints (`/api/v1/sync/*`), team, notifications, aur agent v2 routes bhi live hain.
-- Ye guide **baaki ka kaam** samjhata hai — full platform live karne ke liye: Postgres, Redis, Hono API + BullMQ worker, migrations, billing, monitoring, backups, **aur `lf` terminal CLI ko publish karna** taaki duniya bhar ka koi bhi install kar sake.
+- **`lf` v0.1.0 released** — binaries, `install.sh`, aur Homebrew formula sab live public repo (`Rohit94r/layerflow-releases` + `Rohit94r/homebrew-tap`) pe hain. `brew install Rohit94r/tap/lf` aur `curl | bash` dono abhi public mein resolve karte hain.
+- Ye guide **baaki ka kaam** samjhata hai — full platform live karne ke liye: Postgres, Redis, Hono API + BullMQ worker, migrations, billing, monitoring, backups, aur future `lf` releases publish karne ka flow.
 
 > **Repo abhi private hai — aur private hi rahega.** Source kabhi public nahi
 > hota. Sirf **prebuilt binaries** public distribution repo
-> (`Rohit94r/layerflow-releases`) mein jaate hain. `curl | bash` installer abhi
-> bhi source repo ke `install.sh` ko point karta hai — isliye abhi public mein
-> resolve nahi hoga jab tak tum release workflow chala kar binaries public repo
-> mein nahi daalte. §14 mein pura flow + setup hai.
+> (`Rohit94r/layerflow-releases`) mein jaate hain. Naya `lf` release release
+> karna hai to bas ek `v*` tag push karo — `.github/workflows/release.yml`
+> goreleaser ke through binaries, `install.sh` copy, aur Homebrew formula
+> auto-publish karta hai (§14 mein pura flow + setup hai).
 
 > Naye engineer ho? Pehle [docs/architecture.md](architecture.md) aur
 > [docs/tech-stack.md](tech-stack.md) padho, phir ye guide top-to-bottom follow
@@ -555,16 +556,16 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 
 **Step 6 — Installer script live karo** (`curl | bash` wala)
 - `terminal/scripts/install.sh` already ready hai — GoReleaser se binary
-  download karta hai.
-- LayerFlow ke website pe (Vercel) isko serve karo, ya GitHub raw URL use karo:
+  download karta hai. ✅ **Done (v0.1.0)** — public repo mein `install.sh` live hai:
   `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
-- **Recommended:** layerflow.dev pe `/install.sh` route banao jo sahi version serve
+- **Future (optional):** layerflow.dev pe `/install.sh` route banao jo sahi version serve
   kare — URL chhota aur clean:
   `curl -fsSL https://layerflow.dev/install.sh | bash`
 
 **Step 7 — Website pe download page banao**
-- `layerflow.dev/install` — saari OS/arch ke instructions dikhao.
-- Version badge: `https://img.shields.io/github/v/release/Rohit94r/layerflow-releases`.
+- `layerflow.dev/install` — saari OS/arch ke instructions dikhao. ✅ Docs page
+  (`/docs#install`) already install commands dikhata hai.
+- Version badge: `https://img.shields.io/github/v/release/Rohit94r/layerflow-releases` → `v0.1.0` (live).
 
 **Step 8 — Verify sab kuch**
 ```bash
