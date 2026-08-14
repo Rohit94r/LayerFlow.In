@@ -14,9 +14,9 @@ import (
 	"sync"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -58,7 +58,7 @@ func Open(opts *Options) (*sql.DB, error) {
 
 	dsn := dbPath
 	if opts != nil && opts.ReadOnly {
-		dsn = dbPath + "?mode=ro"
+		dsn = "file:" + dbPath + "?mode=ro"
 	}
 
 	// TODO: integrate SQLCipher key via DSN parameter when encryption is ready.
@@ -66,7 +66,9 @@ func Open(opts *Options) (*sql.DB, error) {
 		slog.Warn("SQLCipher encryption not yet enabled — storing key placeholder")
 	}
 
-	db, err := sql.Open("sqlite3", dsn)
+	// modernc.org/sqlite is a pure-Go driver (no cgo), so the release binaries
+	// can be cross-compiled statically for macOS/Linux/Windows.
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
@@ -137,17 +139,17 @@ func runMigrations(db *sql.DB) error {
 		return fmt.Errorf("create migration source: %w", err)
 	}
 
-	driver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
-		return fmt.Errorf("create sqlite3 driver: %w", err)
+		return fmt.Errorf("create sqlite driver: %w", err)
 	}
 
-	m, err := migrate.NewWithInstance("iofs", src, "sqlite3", driver)
+	m, err := migrate.NewWithInstance("iofs", src, "sqlite", driver)
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
 
-	// Note: we deliberately do NOT call m.Close() here. The migrate sqlite3
+	// Note: we deliberately do NOT call m.Close() here. The migrate sqlite
 	// database driver's Close() closes the underlying *sql.DB connection pool
 	// that we own, which would invalidate the database handle returned by
 	// storage.Open.

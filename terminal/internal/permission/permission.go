@@ -7,6 +7,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	_ "modernc.org/sqlite"
 )
 
 // Scope determines the duration for which a permission decision is valid.
@@ -126,7 +128,7 @@ func NewSQLiteEngine(dbPath string, logger *slog.Logger) (Engine, error) {
 		logger = slog.Default()
 	}
 
-	db, err := sql.Open("sqlite3", dbPath+"?_journal_mode=WAL&_busy_timeout=5000")
+	db, err := sql.Open("sqlite", "file:"+dbPath+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, fmt.Errorf("permission: open database: %w", err)
 	}
