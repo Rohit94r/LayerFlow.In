@@ -566,7 +566,7 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 
 **Step 8 — Verify sab kuch**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash && lf --version
+curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash && lf version
 ```
 
 ### 14d. CLI Ke Baaki Important Setup
@@ -602,9 +602,9 @@ curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/in
 
 **CLI launch ke liye extra checklist:**
 - [ ] GitHub tag + GoReleaser release sahi ban gaye (har OS/arch ka build)
-- [ ] Installer script test kiya (`curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash` aur `lf --version`)
+- [ ] Installer script test kiya (`curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash` aur `lf version`)
 - [ ] `/install` page website pe live
-- [ ] `lf --version` sahi version dikhata hai
+- [ ] `lf version` sahi version dikhata hai
 - [ ] `lf login` + `lf sync` backend ke against kaam karta hai
 
 ---
@@ -635,7 +635,7 @@ hota hai.
 | `PROVIDER_KEYS_KEK` badla aur BYOK keys fail | KEK change se purani provider keys undecryptable — user keys rotate karo ya purana KEK restore karo |
 | Payments webhook 4xx | `DODO_PAYMENTS_WEBHOOK_KEY` mismatch; endpoint `/api/billing/webhook` hona chahiye |
 | `curl | bash` installer fail | install.sh raw URL accessible ho, GitHub release version tag match kare |
-| `lf --version` old dikhata hai | Naya tag push karo; `lf upgrade` (ya CLI update) chalao |
+| `lf version` old dikhata hai | Naya tag push karo; `lf upgrade` (ya CLI update) chalao |
 
 ---
 

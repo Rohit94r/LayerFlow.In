@@ -121,7 +121,7 @@ export default function DocsPage() {
             <div className="rounded-xl border border-dashed border-border bg-surface-2/40 p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-faint">verify</p>
               <div className="mt-2">
-                <CodeBlock code="lf --version" />
+                <CodeBlock code="lf version" />
               </div>
               <p className="mt-3 text-xs text-faint">
                 → <span className="font-mono text-emerald-400">lf 0.4.1</span>
