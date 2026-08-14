@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	bkey "github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
@@ -28,15 +28,54 @@ func init() {
 	)
 }
 
-func newChatInput() textinput.Model {
-	ti := textinput.New()
-	ti.Placeholder = "Message LayerFlow…"
-	ti.Prompt = ""
-	ti.CharLimit = 4000
-	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(ColorDim)
-	ti.Cursor.Style = lipgloss.NewStyle().Foreground(ColorAccent)
-	ti.Focus()
-	return ti
+// maxComposerHeight caps how tall the chat composer (and home input) can grow
+// before they start scrolling internally.
+const maxComposerHeight = 5
+
+// composerRows estimates how many terminal rows a value needs at the given
+// wrap width, capping at max. Empty lines still occupy a row.
+func composerRows(value string, width, max int) int {
+	if width < 1 {
+		width = 1
+	}
+	if max < 1 {
+		max = 1
+	}
+	rows := 0
+	for _, line := range strings.Split(value, "\n") {
+		w := lipgloss.Width(line)
+		if w < 1 {
+			w = 1
+		}
+		rows += (w + width - 1) / width
+		if rows > max {
+			return max
+		}
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	return rows
+}
+
+func newChatInput() textarea.Model {
+	ta := textarea.New()
+	ta.Placeholder = "Message LayerFlow…"
+	ta.Prompt = ""
+	ta.CharLimit = 4000
+	ta.MaxHeight = maxComposerHeight
+	ta.ShowLineNumbers = false
+	ta.SetWidth(60)
+	ta.SetHeight(1)
+	ta.FocusedStyle.Placeholder = lipgloss.NewStyle().Foreground(ColorDim)
+	ta.BlurredStyle.Placeholder = lipgloss.NewStyle().Foreground(ColorDim)
+	ta.FocusedStyle.Base = lipgloss.NewStyle().Foreground(ColorText)
+	ta.FocusedStyle.CursorLine = lipgloss.NewStyle().Foreground(ColorText)
+	ta.FocusedStyle.Prompt = lipgloss.NewStyle().Foreground(ColorMuted)
+	ta.FocusedStyle.EndOfBuffer = lipgloss.NewStyle().Foreground(ColorDim)
+	ta.Cursor.Style = lipgloss.NewStyle().Foreground(ColorAccent)
+	ta.Focus()
+	return ta
 }
 
 // ─── Chat screen ────────────────────────────────────────────────────────────
@@ -52,8 +91,9 @@ func (a *App) renderChat() string {
 	}
 
 	header := a.renderChatHeader(colW)
-	conversation := a.renderConversation(colW, a.height-7)
 	composer := a.renderChatInput(colW)
+	composerH := lipgloss.Height(composer)
+	conversation := a.renderConversation(colW, a.height-3-composerH)
 
 	// Pad the left/right so text hugs a centered column like ChatGPT.
 	pad := (a.width - colW) / 2
@@ -177,7 +217,7 @@ func renderMessage(m session.Message, w int) string {
 	case "user":
 		return lipgloss.JoinVertical(lipgloss.Left,
 			styleRoleUser.Render("You"),
-			lipgloss.NewStyle().Width(w - 8).Render(m.Content),
+			lipgloss.NewStyle().Width(w-8).Render(m.Content),
 		)
 	case "assistant":
 		return lipgloss.JoinVertical(lipgloss.Left,
@@ -203,26 +243,30 @@ func renderMarkdown(content string) string {
 	return strings.TrimRight(out, "\n")
 }
 
-// renderChatInput draws the composer at the bottom of the chat screen.
+// renderChatInput draws the composer at the bottom of the chat screen: a
+// "You " prefix and the input on clean lines with a hairline underline. There
+// is no border box, so no stray corners or pipes can leak into the text.
 func (a *App) renderChatInput(w int) string {
 	ti := a.chatInput
-	ti.Width = w - 6
-	if ti.Width < 20 {
-		ti.Width = 20
+	avail := w - 4
+	if avail < 20 {
+		avail = 20
 	}
+	ti.SetWidth(avail)
 
 	prefix := lipgloss.NewStyle().Foreground(ColorMuted).Bold(true).Render("You ")
 	view := prefix + ti.View()
 
-	if a.loading {
-		return styleInput.Render(view + "  " + styleDim.Render("…"))
-	}
-
-	box := styleInput.Render(view)
+	under := lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", w))
 	if a.chatFocused {
-		box = styleInputFocused.Render(view)
+		under = lipgloss.NewStyle().Foreground(ColorAccent).Render(strings.Repeat("─", w))
 	}
-	return box
+	block := lipgloss.JoinVertical(lipgloss.Left, view, under)
+
+	if a.loading {
+		block = lipgloss.JoinVertical(lipgloss.Left, block, styleDim.Render("Working…"))
+	}
+	return block
 }
 
 // ─── Chat input handling ────────────────────────────────────────────────────
@@ -230,6 +274,7 @@ func (a *App) renderChatInput(w int) string {
 // updateChat handles keys and messages on the chat screen.
 func (a *App) updateChat(msg tea.Msg) (tea.Model, tea.Cmd) {
 	a.chatFocused = true
+	a.chatInput.SetWidth(chatComposerWidth(a.width))
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return a.handleChatKey(msg)
@@ -237,11 +282,27 @@ func (a *App) updateChat(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
+func chatComposerWidth(width int) int {
+	colW := width - 8
+	if colW < 60 {
+		colW = width - 2
+	}
+	if colW < 40 {
+		colW = 40
+	}
+	avail := colW - 4
+	if avail < 20 {
+		avail = 20
+	}
+	return avail
+}
+
 func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Navigate home with esc (when not streaming) or ctrl+h.
 	if bkey.Matches(key, a.keymap.Home) && !a.streaming {
 		a.screen = screenHome
 		a.chatInput.SetValue("")
+		a.chatInput.SetHeight(1)
 		return a, nil
 	}
 	if bkey.Matches(key, a.keymap.NewSession) && !a.streaming {
@@ -265,17 +326,33 @@ func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case bkey.Matches(key, a.keymap.Submit):
 		return a.submitInput()
+	case bkey.Matches(key, a.keymap.Newline):
+		a.chatInput.InsertString("\n")
+		a.refreshChatHeight()
+		return a, nil
 	case key.String() == "up":
-		a.moveCursorHistory(1)
-		return a, nil
+		if a.chatInput.Value() == "" {
+			a.moveCursorHistory(1)
+			return a, nil
+		}
 	case key.String() == "down":
-		a.moveCursorHistory(-1)
-		return a, nil
+		if a.chatInput.Value() == "" {
+			a.moveCursorHistory(-1)
+			return a, nil
+		}
 	}
 
 	var cmd tea.Cmd
 	a.chatInput, cmd = a.chatInput.Update(key)
+	a.refreshChatHeight()
 	return a, cmd
+}
+
+// refreshChatHeight keeps the composer's height in sync with its content so the
+// underline always sits directly under the last typed line and the conversation
+// never has to overlap it.
+func (a *App) refreshChatHeight() {
+	a.chatInput.SetHeight(composerRows(a.chatInput.Value(), chatComposerWidth(a.width), maxComposerHeight))
 }
 
 // history tracks previous inputs for arrow-key recall.
@@ -294,6 +371,7 @@ func (a *App) moveCursorHistory(delta int) {
 		historyIndex = len(inputHistory) - 1
 	}
 	a.chatInput.SetValue(inputHistory[historyIndex])
+	a.refreshChatHeight()
 }
 
 // submitInput sends the current input (slash command or chat message).
@@ -303,6 +381,7 @@ func (a *App) submitInput() (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 	a.chatInput.SetValue("")
+	a.chatInput.SetHeight(1)
 	historyIndex = -1
 
 	if strings.HasPrefix(text, "/") {
@@ -338,6 +417,8 @@ func (a *App) startSession() (tea.Model, tea.Cmd) {
 	a.screen = screenChat
 	a.messages = nil
 	a.streamingText.Reset()
+	a.chatInput.SetValue("")
+	a.chatInput.SetHeight(1)
 	return a, nil
 }
 

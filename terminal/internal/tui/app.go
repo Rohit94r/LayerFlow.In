@@ -7,9 +7,9 @@ import (
 	"time"
 
 	bkey "github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/bubbles/textinput"
 
 	"github.com/layerflow/terminal/internal/auth"
 	"github.com/layerflow/terminal/internal/cloud"
@@ -126,7 +126,7 @@ type App struct {
 	// Inputs
 	home        homeInput
 	homeFocused bool
-	chatInput   textinput.Model
+	chatInput   textarea.Model
 	chatFocused bool
 	pendingSend string
 

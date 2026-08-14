@@ -312,6 +312,8 @@ func (s *sessionsModel) openSession(sess session.Session) tea.Cmd {
 	s.app.screen = screenChat
 	s.app.messages = nil
 	s.app.streamingText.Reset()
+	s.app.chatInput.SetValue("")
+	s.app.chatInput.SetHeight(1)
 	s.app.closeOverlay()
 	return func() tea.Msg {
 		msgs, err := s.app.st.Sessions.GetMessages(context.Background(), sess.ID, 200)
