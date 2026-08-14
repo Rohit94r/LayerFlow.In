@@ -7,80 +7,103 @@ import (
 )
 
 // ─── Brand hero ─────────────────────────────────────────────────────────────
-// The visual hero of the home screen: "LayerFlow.dev" rendered as a huge
-// orange pixel/block wordmark, centered horizontally and placed in the upper
-// half of the terminal. No borders, no boxes — just big bold type.
+// The visual hero of the home screen: "LayerFlow.dev" rendered as a large
+// orange block wordmark (classic banner-letters style), centered horizontally
+// and placed in the upper half of the terminal. No borders, no boxes — solid,
+// contiguous, instantly readable type that scales with the terminal width.
 
 const (
 	taglineText = "AI workspace for developers"
 )
 
-// pixelGlyphs is a 5×5 block font. '#' is a lit pixel, '.' is empty. The set
-// covers every character in "LayerFlow.dev".
-var pixelGlyphs = map[rune][5]string{
-	'L': {"#....", "#....", "#....", "#....", "#####"},
-	'a': {".....", ".####", "#...#", "#...#", ".####"},
-	'y': {"#...#", "#...#", "#####", "..#..", "..#.."},
-	'e': {".....", "#####", "#....", "####.", "#####"},
-	'r': {".....", "###..", "#...#", "#....", "#...."},
-	'F': {"#####", "#....", "####.", "#....", "#...."},
-	'l': {"..#..", "..#..", "..#..", "..#..", "..###"},
-	'o': {".....", ".###.", "#...#", "#...#", ".###."},
-	'w': {"#...#", "#...#", "#.#.#", "#####", "#####"},
-	'd': {"....#", "....#", ".####", "#...#", ".###."},
-	'v': {"#...#", "#...#", "#...#", ".#.#.", "..#.."},
-	'.': {".....", ".....", ".....", ".....", "..#.."},
+// blockGlyphs is a 7-row banner alphabet (banner3 style) covering every
+// character in "LayerFlow.dev". '#' is a lit pixel, ' ' is empty.
+var blockGlyphs = map[rune][7]string{
+	'L': {"##", "##", "##", "##", "##", "##", "########"},
+	'a': {"   ###", "  ## ##", " ##   ##", "##     ##", "#########", "##     ##", "##     ##"},
+	'y': {"##    ##", " ##  ##", "  ####", "   ##", "   ##", "   ##", "   ##"},
+	'e': {"########", "##", "##", "######", "##", "##", "########"},
+	'r': {"########", "##     ##", "##     ##", "########", "##   ##", "##    ##", "##     ##"},
+	'F': {"########", "##", "##", "######", "##", "##", "##"},
+	'l': {"##", "##", "##", "##", "##", "##", "########"},
+	'o': {" #######", "##     ##", "##     ##", "##     ##", "##     ##", "##     ##", " #######"},
+	'w': {"##      ##", "##  ##  ##", "##  ##  ##", "##  ##  ##", "##  ##  ##", "##  ##  ##", " ###  ###"},
+	'.': {"", "", "", "", "", "###", "###"},
+	'd': {"########", "##     ##", "##     ##", "##     ##", "##     ##", "##     ##", "########"},
+	'v': {"##     ##", "##     ##", "##     ##", "##     ##", " ##   ##", "  ## ##", "   ###"},
 }
 
-func glyphFor(r rune) [5]string {
-	if g, ok := pixelGlyphs[r]; ok {
-		return g
+func blockRow(g [7]string, band int) string {
+	row := g[band]
+	var sb strings.Builder
+	for i := 0; i < len(row); i++ {
+		if row[i] == '#' {
+			sb.WriteString("█")
+		} else {
+			sb.WriteString(" ")
+		}
 	}
-	return [5]string{"#####", "#####", "#####", "#####", "#####"}
+	return sb.String()
 }
 
-// renderBrand draws "LayerFlow.dev" as a giant orange pixel wordmark that spans
-// roughly 70–90% of the terminal width. The block is centered horizontally and
-// never wrapped in a border.
-func renderBrand(width int) string {
-	const text = "LayerFlow.dev"
-
-	// Horizontal scale: at 1× the wordmark is 77 columns wide. Wide terminals
-	// jump to 2× (letters doubled, 1-column gap) so the hero keeps dominating.
-	hs := 1
-	if width >= 158 {
-		hs = 2
-	}
-	// Vertical scale doubles the height for a chunky premium look; very narrow
-	// terminals fall back to a single vertical pass so the logo fits.
-	vs := 2
-	if width < 84 {
-		vs = 1
-	}
-
-	var lines []string
-	for row := 0; row < 5; row++ {
+// renderBlockRows lays out the given text as banner blocks with `gap` columns
+// between glyphs, returning one styled string per terminal row.
+func renderBlockRows(text string, gap int) []string {
+	var rows []string
+	for band := 0; band < 7; band++ {
 		var sb strings.Builder
 		for _, ch := range text {
-			g := glyphFor(ch)
-			for c := 0; c < 5; c++ {
-				for x := 0; x < hs; x++ {
-					if g[row][c] == '#' {
-						sb.WriteString("█")
-					} else {
-						sb.WriteString(" ")
-					}
-				}
-			}
-			sb.WriteString(" ") // inter-glyph gap
+			sb.WriteString(blockRow(blockGlyphs[ch], band))
+			sb.WriteString(strings.Repeat(" ", gap))
 		}
-		line := strings.TrimRight(sb.String(), " ")
-		for v := 0; v < vs; v++ {
-			lines = append(lines, lipgloss.NewStyle().Foreground(ColorAccent).Render(line))
-		}
+		rows = append(rows, strings.TrimRight(sb.String(), " "))
 	}
+	return rows
+}
 
-	return lipgloss.NewStyle().Align(lipgloss.Center).Width(width).Render(strings.Join(lines, "\n"))
+func colorizeRows(rows []string) []string {
+	styled := make([]string, len(rows))
+	for i, r := range rows {
+		styled[i] = lipgloss.NewStyle().Foreground(ColorAccent).Render(r)
+	}
+	return styled
+}
+
+// renderBrand draws "LayerFlow.dev" as a large orange banner wordmark that
+// spans most of the terminal width. Very wide terminals get extra letter
+// spacing so the hero keeps dominating; narrow terminals fall back to a
+// smaller "LayerFlow" banner (with a ".dev" suffix) and finally to a clean
+// bold wordmark. The block is centered horizontally, never boxed.
+func renderBrand(width int) string {
+	// "LayerFlow.dev" sums to 108 glyph columns; gap fills the rest.
+	switch {
+	case width >= 120:
+		gap := 1
+		if width > 165 {
+			gap = (width*82/100 - 108) / 12
+			if gap < 1 {
+				gap = 1
+			}
+			if gap > 10 {
+				gap = 10
+			}
+		}
+		rows := colorizeRows(renderBlockRows("LayerFlow.dev", gap))
+		return lipgloss.NewStyle().Align(lipgloss.Center).Width(width).Render(strings.Join(rows, "\n"))
+
+	case width >= 95:
+		rows := colorizeRows(renderBlockRows("LayerFlow", 1))
+		dev := lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(".dev")
+		block := lipgloss.JoinHorizontal(lipgloss.Center, strings.Join(rows, "\n"), "  ", dev)
+		return lipgloss.NewStyle().Align(lipgloss.Center).Width(width).Render(block)
+
+	default:
+		word := lipgloss.JoinHorizontal(lipgloss.Left,
+			lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render("LayerFlow"),
+			lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(".dev"),
+		)
+		return lipgloss.NewStyle().Align(lipgloss.Center).Width(width).Render(word)
+	}
 }
 
 var taglineStyle = lipgloss.NewStyle().Foreground(ColorMuted)
