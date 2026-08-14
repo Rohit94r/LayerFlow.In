@@ -11,7 +11,7 @@ builds:
     main: ./cmd/lf
     binary: lf
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     flags:
       - -trimpath
     ldflags:
@@ -26,19 +26,18 @@ builds:
     goarch:
       - amd64
       - arm64
-    overrides:
+    ignore:
       - goos: windows
         goarch: arm64
-        skip: true
 
 archives:
   - id: default
-    format: tar.gz
+    formats: [tar.gz]
     name_template: >-
       {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     files:
       - README*
 
@@ -64,9 +63,22 @@ release:
     owner: Rohit94r
     name: layerflow-releases
 
-signs:
-  - cmd: shasum
-    artifacts: checksum
-    args:
-      - "-a256"
-      - "--checksum"
+# Homebrew formula is pushed to the PUBLIC formula-only tap repo. Install:
+#   brew install Rohit94r/tap/lf
+brews:
+  - name: lf
+    homepage: https://github.com/Rohit94r/layerflow-releases
+    description: "LayerFlow Terminal (lf) — local-first AI terminal workspace with streaming, tools, memory, and cloud sync."
+    license: MIT
+    repository:
+      owner: Rohit94r
+      name: homebrew-tap
+    directory: Formula
+    url_template: "https://github.com/Rohit94r/layerflow-releases/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_author:
+      name: LayerFlow Release Bot
+      email: bot@layerflow.dev
+    install: |
+      bin.install "lf"
+    test: |
+      assert_match(/LayerFlow/, shell_output("#{bin}/lf version"))
