@@ -85,8 +85,9 @@ export async function TerminalActivity({ runs }: { runs: Run[] | null }) {
           <div className="px-5 py-8">
             <p className="text-sm font-medium text-ink">Your terminal sessions will live here</p>
             <p className="mt-1 max-w-md font-mono text-xs leading-relaxed text-faint">
-              Run <span className="rounded bg-surface-2 px-1.5 py-0.5 text-brand">curl -fsSL https://layerflow.dev/install | bash</span> to
-              sync sessions, branches, git state and token usage — landing with the V2 terminal release.
+              Run <span className="rounded bg-surface-2 px-1.5 py-0.5 text-brand">curl -fsSL https://layerflow.dev/install | bash</span>
+              (Windows: <span className="rounded bg-surface-2 px-1.5 py-0.5 text-brand">irm https://layerflow.dev/install.ps1 | iex</span>)
+              to sync sessions, branches, git state and token usage — landing with the V2 terminal release.
             </p>
             <p className="mt-3 text-[11px] text-faint">Showing live agent runs meanwhile.</p>
           </div>

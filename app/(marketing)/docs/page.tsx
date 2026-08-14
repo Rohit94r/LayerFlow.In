@@ -108,12 +108,12 @@ export default function DocsPage() {
           </Reveal>
           <Reveal delay={0.05}>
             <div className="rounded-xl border border-border bg-surface-2/40 p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-faint">Windows (Git Bash / WSL)</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-faint">Windows (PowerShell)</p>
               <div className="mt-2">
-                <CodeBlock code="curl -fsSL https://layerflow.dev/install | bash" />
+                <CodeBlock code='powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"' />
               </div>
               <p className="mt-3 text-xs text-faint">
-                Works in Git Bash or WSL (Ubuntu). Or grab the <span className="font-mono">.zip</span> from the latest release.
+                Runs in PowerShell or Windows Terminal. Works in Git Bash / WSL too — just use the macOS/Linux command.
               </p>
             </div>
           </Reveal>

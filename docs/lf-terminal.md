@@ -973,6 +973,9 @@ Targets: macOS (arm64/amd64), Linux (amd64/arm64), Windows (amd64). Release pipe
 - **curl installer** — `curl -fsSL https://layerflow.dev/install | bash`
   (installs `lf` into `$HOME/.local/bin`, verifies the tarball against the
   published `checksums.txt`, and symlinks `layerflow` → `lf`).
+- **PowerShell installer (Windows)** — `powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"`
+  (downloads `lf.exe`, verifies the SHA-256 checksum, installs to
+  `$HOME\.local\bin`, adds it to the user PATH, and copies `layerflow.exe`).
 - **Homebrew** — `brew install Rohit94r/tap/lf` (formula auto-pushed by
   goreleaser to `Rohit94r/homebrew-tap`).
 - **Standalone binaries** — goreleaser tarballs (`lf_<version>_<os>_<arch>.tar.gz`)

@@ -240,6 +240,10 @@ function PlatformKeysPanel() {
               <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">
                 curl -fsSL https://layerflow.dev/install | bash
               </code>
+              {" · Windows: "}
+              <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">
+                irm https://layerflow.dev/install.ps1 | iex
+              </code>
               {" · "}
               <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">lf login</code>
             </p>

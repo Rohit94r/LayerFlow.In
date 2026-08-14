@@ -1645,6 +1645,12 @@ Example:
 curl -fsSL https://layerflow.dev/install | bash
 ```
 
+Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"
+```
+
 Then:
 
 ```bash

@@ -26,8 +26,13 @@ brew install Rohit94r/tap/lf
 curl -fsSL https://layerflow.dev/install | bash
 ```
 
-Both install the prebuilt `lf` binary for your OS/arch (checksum-verified).
-The installer also adds a `layerflow` symlink, so `lf` and `layerflow` both
+### Windows — PowerShell one line
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"
+```
+
+All install the prebuilt `lf` binary for your OS/arch (checksum-verified).
+The installers also add a `layerflow` alias, so `lf` and `layerflow` both
 work. The source repo stays private — only prebuilt binaries are published
 (see `Rohit94r/layerflow-releases`).
 

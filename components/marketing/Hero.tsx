@@ -20,7 +20,26 @@ const item = {
 
 export default function Hero() {
   const [copiedInstall, setCopiedInstall] = useState(false);
+  const [os, setOs] = useState<"mac" | "windows" | "other">("mac");
   const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const ua = navigator.userAgent;
+    if (/Windows/i.test(ua)) setOs("windows");
+    else if (/Mac/i.test(ua)) setOs("mac");
+    else setOs("other");
+  }, []);
+
+  const installCommand =
+    os === "windows"
+      ? 'powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"'
+      : "curl -fsSL https://layerflow.dev/install | bash";
+
+  const copyInstall = async () => {
+    await navigator.clipboard.writeText(installCommand);
+    setCopiedInstall(true);
+    setTimeout(() => setCopiedInstall(false), 1800);
+  };
 
   const { scrollY } = useScroll();
   const bgParallax = useTransform(scrollY, [0, 800], [0, 120]);
@@ -36,14 +55,6 @@ export default function Hero() {
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
-
-  const copyInstall = async () => {
-    await navigator.clipboard.writeText(
-      "curl -fsSL https://layerflow.dev/install | bash",
-    );
-    setCopiedInstall(true);
-    setTimeout(() => setCopiedInstall(false), 1800);
-  };
 
   return (
     <section
@@ -144,8 +155,10 @@ export default function Hero() {
                 onClick={copyInstall}
                 className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
               >
-                <span className="text-emerald-400/80">$</span>
-                <span className="truncate">curl -fsSL https://layerflow.dev/install | bash</span>
+                <span className="text-emerald-400/80">
+                  {os === "windows" ? "PS" : "$"}
+                </span>
+                <span className="truncate">{installCommand}</span>
                 <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
                   {copiedInstall ? (
                     <Check className="h-4 w-4 text-emerald-400" />

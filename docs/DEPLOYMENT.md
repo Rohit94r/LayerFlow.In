@@ -450,8 +450,8 @@ user ek command se install kar sake. CLI **Go language** mein hai, code
 
 | Platform | Command |
 |---|---|
-| **macOS/Linux/Windows** (primary) | `curl -fsSL https://layerflow.dev/install \| bash` |
-| **Windows** | same installer (Git Bash/WSL), ya release se `.zip` download |
+| **macOS/Linux** (primary) | `curl -fsSL https://layerflow.dev/install \| bash` |
+| **Windows** (PowerShell) | `powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 \| iex"` |
 | **Direct binary** | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` download |
 | **Build from source** | private repo access hona chahiye: `cd terminal && go build ./...` |
 
@@ -559,6 +559,8 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
   download karta hai (macOS/Linux/Windows Git Bash, SHA-256 verify, PATH auto-add). ✅ **Done**
 - Short URL live: `curl -fsSL https://layerflow.dev/install | bash`
   (Next.js route `/install` serves the script straight from `terminal/scripts/install.sh` — single source of truth.)
+- Windows PowerShell installer bhi live: `powershell -ExecutionPolicy Bypass -c "irm https://layerflow.dev/install.ps1 | iex"`
+  (Next.js route `/install.ps1` serves `terminal/scripts/install.ps1`.)
 - GitHub fallback bhi live: `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
 
 **Step 7 — Website pe download page banao**

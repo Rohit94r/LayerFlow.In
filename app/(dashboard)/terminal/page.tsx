@@ -94,7 +94,10 @@ export default async function TerminalPage() {
                 />
                 <div className="mt-5 rounded-xl border border-border bg-surface-2/50 p-4">
                   <p className="font-mono text-xs text-ink">
-                    <span className="text-faint">$</span> curl -fsSL https://layerflow.dev/install | bash
+                    <span className="text-faint">macOS / Linux $</span> curl -fsSL https://layerflow.dev/install | bash
+                  </p>
+                  <p className="mt-1.5 font-mono text-xs text-ink">
+                    <span className="text-faint">Windows PS&gt;</span> irm https://layerflow.dev/install.ps1 | iex
                   </p>
                   <p className="mt-2 font-mono text-[11px] text-faint">$ lf sync</p>
                 </div>
