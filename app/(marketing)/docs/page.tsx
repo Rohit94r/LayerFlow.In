@@ -124,7 +124,7 @@ export default function DocsPage() {
                 <CodeBlock code="lf version" />
               </div>
               <p className="mt-3 text-xs text-faint">
-                → <span className="font-mono text-emerald-400">lf 0.1.0</span> — the first public release
+                → <span className="font-mono text-emerald-400">lf 0.2.0</span> — the latest release
               </p>
             </div>
           </Reveal>

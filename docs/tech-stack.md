@@ -262,7 +262,7 @@ Providers: OpenAI, Anthropic, Google, DeepSeek, Kimi (Moonshot), Groq, OpenRoute
 | curl installer (macOS/Linux) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
 | Windows (WSL) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
 | Direct binary | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` |
-| Verify | `lf version` → `lf 0.1.0` |
+| Verify | `lf version` → `lf 0.2.0` |
 
 Koi API key aur koi account ki zaroorat nahi try karne ke liye. Keys (BYOK) OS keychain / `~/.layerflow/config.json` (encrypted) mein store hoti hai aur sign-in pe web vault ke saath sync hoti hai.
 
