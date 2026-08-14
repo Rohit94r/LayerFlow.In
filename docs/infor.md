@@ -162,9 +162,8 @@ lf (Node/Bun binary, ~40KB core)
 
 | Method | Command |
 |---|---|
-| npm (recommended) | `npm install -g @layerflow/cli` |
-| curl installer | `curl -fsSL https://layerflow.dev/install.sh \| bash` |
-| Homebrew (macOS) | `brew install layerflow/tap/lf` |
+| curl installer (macOS/Linux/WSL) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| Direct binary | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` |
 
 No API key or account needed to try it. BYOK keys live in the OS keychain and
 sync with the web vault on sign-in.

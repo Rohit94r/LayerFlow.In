@@ -259,9 +259,9 @@ Providers: OpenAI, Anthropic, Google, DeepSeek, Kimi (Moonshot), Groq, OpenRoute
 
 | Method | Command |
 | --- | --- |
-| npm (recommended) | `npm install -g @layerflow/cli` |
-| curl installer | `curl -fsSL https://layerflow.dev/install.sh \| bash` |
-| Homebrew (macOS) | `brew install layerflow/tap/lf` |
+| curl installer (macOS/Linux) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| Windows (WSL) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| Direct binary | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` |
 | Verify | `lf --version` → `lf 0.4.1` |
 
 Koi API key aur koi account ki zaroorat nahi try karne ke liye. Keys (BYOK) OS keychain / `~/.layerflow/config.json` (encrypted) mein store hoti hai aur sign-in pe web vault ke saath sync hoti hai.

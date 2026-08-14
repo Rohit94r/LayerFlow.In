@@ -969,10 +969,9 @@ The CLI is fully usable without internet; sync is opportunistic.
 Targets: macOS (arm64/amd64), Linux (amd64/arm64), Windows (amd64). Release pipeline:
 `goreleaser`.
 
-- **Homebrew** — `formulae/layerflow/lf.rb` (tap `layerflow/tap`), Cask optional GUI none.
-- **Scoop** — `scoop install layerflow` (bucket manifest).
-- **winget** — publisher manifest `LayerFlow.lf` pointing to MSI/zip with signed exe.
-- **Standalone binaries** — `brew`-built tarballs + SHA256SUMS; `lf upgrade` checks a
+- **curl installer** — `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash`
+  (public binary repo `Rohit94r/layerflow-releases`; source repo stays private).
+- **Standalone binaries** — goreleaser tarballs + `checksums.txt`; `lf upgrade` checks a
   signed `latest.json` (version, SHA, URL) and self-updates atomically.
 - **Signing:** macOS notarization (Developer ID + hardened runtime), Windows Authenticode
   (SignTool), Linux `.deb`/`.rpm` via nFPM. All installer shas published in
@@ -1043,7 +1042,7 @@ Bench: `internal/*/*_bench_test.go`; CI asserts regressions against stored basel
   model §18 reviewed before beta.
 - [ ] **Accessibility review** — full keyboard operation, high-contrast light theme,
   focus order on approval cards, screen-reader labels on key widgets.
-- [ ] **Packaging sign-off** — Homebrew/Scoop/winget install + `lf upgrade` on all 3 OSs.
+- [ ] **Packaging sign-off** — `curl | bash` installer + `lf upgrade` on all 3 OSs.
 - [ ] **Offline+sync soak** — 48 h loop: offline edits → reconnect → queue drains, zero
   conflicts unrecoverable.
 - [ ] **Telemetry opt-in** verified; no content exfil.

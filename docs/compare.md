@@ -1641,7 +1641,7 @@ lf
 Example:
 
 ```bash
-brew install layerflow/tap/lf
+curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
 ```
 
 Then:

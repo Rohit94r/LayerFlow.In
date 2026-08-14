@@ -100,29 +100,24 @@ export default function DocsPage() {
         <div className="mt-6 grid gap-5 md:grid-cols-2">
           <Reveal>
             <div className="rounded-xl border border-border bg-surface-2/40 p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-faint">Go install</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-faint">macOS / Linux</p>
               <div className="mt-2">
-                <CodeBlock code="go install github.com/layerflow/terminal@latest" />
+                <CodeBlock code="curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash" />
               </div>
             </div>
           </Reveal>
           <Reveal delay={0.05}>
             <div className="rounded-xl border border-border bg-surface-2/40 p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-faint">or via curl</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-faint">Windows (WSL)</p>
               <div className="mt-2">
-                <CodeBlock code="curl -fsSL https://layerflow.dev/install.sh | bash" />
+                <CodeBlock code="curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash" />
               </div>
+              <p className="mt-3 text-xs text-faint">
+                Works inside WSL (Ubuntu). Or grab the <span className="font-mono">.zip</span> from the latest release.
+              </p>
             </div>
           </Reveal>
           <Reveal delay={0.1}>
-            <div className="rounded-xl border border-border bg-surface-2/40 p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-faint">or Homebrew (macOS)</p>
-              <div className="mt-2">
-                <CodeBlock code="brew install layerflow/tap/lf" />
-              </div>
-            </div>
-          </Reveal>
-          <Reveal delay={0.15}>
             <div className="rounded-xl border border-dashed border-border bg-surface-2/40 p-5">
               <p className="text-xs font-bold uppercase tracking-widest text-faint">verify</p>
               <div className="mt-2">

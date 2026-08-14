@@ -38,7 +38,9 @@ export default function Hero() {
   }, []);
 
   const copyInstall = async () => {
-    await navigator.clipboard.writeText("go install github.com/layerflow/terminal@latest");
+    await navigator.clipboard.writeText(
+      "curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash",
+    );
     setCopiedInstall(true);
     setTimeout(() => setCopiedInstall(false), 1800);
   };
@@ -143,7 +145,7 @@ export default function Hero() {
                 className="pill-on-media group flex max-w-full items-center gap-3 rounded-xl px-4 py-2.5 font-mono text-[14px] font-normal text-white/90"
               >
                 <span className="text-emerald-400/80">$</span>
-                <span className="truncate">go install github.com/layerflow/terminal@latest</span>
+                <span className="truncate">curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash</span>
                 <span className="ml-1 text-white/50 transition-colors group-hover:text-white">
                   {copiedInstall ? (
                     <Check className="h-4 w-4 text-emerald-400" />

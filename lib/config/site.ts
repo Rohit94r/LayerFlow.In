@@ -8,7 +8,7 @@ export const appConfig = {
   name: "LayerFlow",
   homeHref: "/home",
   signInHref: "/sign-in",
-  installCommand: "go install github.com/layerflow/terminal@latest",
+  installCommand: "curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash",
   cliDocsHref: "/docs",
   supportEmail: "support@layerflow.dev",
   defaultWorkspace: "Personal",

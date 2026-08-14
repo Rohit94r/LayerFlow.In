@@ -449,13 +449,10 @@ user ek command se install kar sake. CLI **Go language** mein hai, code
 
 | Platform | Command |
 |---|---|
-| **Homebrew** (macOS/Linux) | `brew install layerflow/tap/lf` |
-| **Scoop** (Windows) | `scoop install layerflow` |
-| **Winget** (Windows) | `winget install layerflow` |
-| **npm** (all) | `npm install -g @layerflow/cli` |
-| **Curl installer** (macOS/Linux) | `curl -fsSL https://layerflow.dev/install.sh \| bash` |
-| **Direct binary** | GitHub Releases se `.tar.gz`/`.zip` download |
-| **Build from source** | `git clone` + `make build` (ya `cd terminal && go build ./...`) |
+| **macOS/Linux** (primary) | `curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh \| bash` |
+| **Windows** | WSL mein same installer, ya release se `.zip` download |
+| **Direct binary** | `https://github.com/Rohit94r/layerflow-releases/releases/latest` se `.tar.gz`/`.zip` download |
+| **Build from source** | private repo access hona chahiye: `cd terminal && go build ./...` |
 
 **CLI ke current commands** (`lf --help` se bhi dekho):
 `chat`, `run`, `sessions`, `login`, `logout`, `sync`, `models`, `doctor`,
@@ -470,9 +467,7 @@ hai:
 - **Arch:** amd64 + arm64 (windows arm64 skip)
 - Windows ke liye `.zip`, baaki ke liye `.tar.gz`
 - `checksums.txt` + changelog automatically
-- **Homebrew tap** update karta hai (`layerflow/homebrew-tap`)
-- **Scoop bucket** update karta hai (`layerflow/scoop-bucket`)
-- **Winget pkgs** ke liye manifest
+- **Release** public repo `Rohit94r/layerflow-releases` pe upload hota hai (source private rahta hai)
 
 ### 14c. Step-by-Step: CLI Publish Karne Ka Complete Process
 
@@ -548,7 +543,7 @@ git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to
 ```json
 {
   "name": "@layerflow/cli",
-  "version": "0.5.0",
+  "version": "0.1.0",
   "description": "LayerFlow terminal CLI",
   "bin": { "lf": "./bin/lf.js" },
   "files": ["bin"],

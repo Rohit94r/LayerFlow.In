@@ -94,7 +94,7 @@ export default async function TerminalPage() {
                 />
                 <div className="mt-5 rounded-xl border border-border bg-surface-2/50 p-4">
                   <p className="font-mono text-xs text-ink">
-                    <span className="text-faint">$</span> go install github.com/layerflow/terminal@latest
+                    <span className="text-faint">$</span> curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
                   </p>
                   <p className="mt-2 font-mono text-[11px] text-faint">$ lf sync</p>
                 </div>
