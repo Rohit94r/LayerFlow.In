@@ -37,7 +37,7 @@ type CmdContext struct {
 	Project   string
 	Model     string
 	Provider  string
-	Providers providers.Registry
+	Providers *providers.Registry
 	Sessions  session.Store
 	Messages  session.MessageStore
 	Memory    memory.Store

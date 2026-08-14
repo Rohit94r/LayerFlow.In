@@ -17,6 +17,7 @@ import (
 	"github.com/layerflow/terminal/internal/daemon"
 	"github.com/layerflow/terminal/internal/session"
 	"github.com/layerflow/terminal/internal/storage"
+	"github.com/layerflow/terminal/internal/tui"
 )
 
 var (
@@ -37,6 +38,9 @@ var rootCmd = &cobra.Command{
 	Use:   "lf",
 	Short: "LayerFlow Terminal — local-first AI workspace",
 	Long:  `LayerFlow Terminal (lf) is a local-first AI terminal workspace with streaming, tools, memory, and cloud sync.`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return tui.Run(buildVersion)
+	},
 }
 
 // Execute runs the root command.
