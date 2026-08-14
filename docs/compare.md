@@ -1618,10 +1618,11 @@ Do not expose unlimited expensive models to anonymous users.
 Publish:
 
 ```text
-Homebrew
-macOS
-Linux
-Windows
+Homebrew (brew install Rohit94r/tap/lf)
+curl | bash (macOS/Linux)
+macOS (darwin amd64/arm64)
+Linux (amd64/arm64)
+Windows (zip; WSL recommended)
 ```
 
 Later:

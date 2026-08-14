@@ -446,7 +446,7 @@ Har cache write user deletion requests honor karta hai (explicit invalidation).
 - **Backend?** Hono API + Drizzle ORM + PostgreSQL, Render pe host.
 - **Database?** PostgreSQL 16 (main) + Redis (cache/jobs) + pgvector (AI embeddings).
 - **AI?** OpenAI, Anthropic, Google, DeepSeek, Groq, OpenRouter — BYOK-first.
-- **CLI?** `lf` — npm/curl/homebrew se install, web ke saath session-parity.
+- **CLI?** `lf` — `brew install Rohit94r/tap/lf` ya `curl | bash` se install, web ke saath session-parity.
 - **Agent runtime?** Typed state machine pehle, baad mein LangGraph.js multi-agent.
 - **Payments?** Stripe, free/$5/$14 plans, unlimited AI credits kabhi nahi.
 - **Monitoring?** Sentry + pino + OpenTelemetry + PostHog.

@@ -483,7 +483,7 @@ go test -race ./...  # tests pass
 **Step 2 — GitHub repos ready karo**
 - **Source repo:** `Rohit94r/LayerFlow.In` (private) — code, Go CLI, `.goreleaser.yml`.
 - **Binary repo:** `Rohit94r/layerflow-releases` (public) — prebuilt `lf` archives + `checksums.txt`. Only this repo is public; the source repo stays private.
-- Goreleaser `release:` config (`.goreleaser.yml`) targets this public repo (`owner: Rohit94r, name: layerflow-releases`). It skips Homebrew/Scoop/Winget targets (those are removed; `make build` locally if needed).
+- Goreleaser `release:` config (`.goreleaser.yml`) targets this public repo (`owner: Rohit94r, name: layerflow-releases`). A `brews:` section auto-pushes the Homebrew formula to `Rohit94r/homebrew-tap` → `brew install Rohit94r/tap/lf`.
 - `terminal/scripts/install.sh` points at the public repo URL — ready for `curl | bash`.
 
 **Step 3 — GitHub Actions workflow banao** (`.github/workflows/release.yml`):
@@ -533,10 +533,12 @@ jobs:
 git tag v0.1.0
 git push origin v0.1.0   # private repo — GoReleaser triggers → publishes to `Rohit94r/layerflow-releases`
 ```
-- GoReleaser builds every OS/arch, uploads `lf_v0.1.0_linux_amd64.tar.gz` + `checksums.txt` as a GitHub Release in the **public** repo.
-- The new `install.sh` auto-downloads the right binary.
+- GoReleaser builds every OS/arch (darwin amd64/arm64, linux amd64/arm64, windows amd64) and uploads `lf_0.1.0_*.tar.gz` / `.zip` + `checksums.txt` as a GitHub Release in the **public** repo. Note: GoReleaser strips the leading `v` from tags, so `v0.1.0` → archive `lf_0.1.0_darwin_arm64.tar.gz` (install.sh already strips `v` too).
+- The Homebrew formula is auto-pushed to `Rohit94r/homebrew-tap` → `brew install Rohit94r/tap/lf` works out of the box.
+- The `install.sh` auto-downloads the right binary (with a `layerflow` alias).
 
-**Step 5 — npm package `@layerflow/cli` banao** (npm se install ke liye)
+**Step 5 — (Optional) npm package `@layerflow/cli`** (future — sirf jab `@layerflow` org banao)
+- **Important:** `go install github.com/layerflow/terminal@latest` **publicly kabhi kaam nahi karega** — source repo private hai (by design), isliye module proxy pe resolve nahi hota. Public users ke liye supported paths sirf 2 hain: `brew install Rohit94r/tap/lf` ya `curl | bash`. `go install` sirf team members ke liye hai (private access ke saath).
 - `packages/cli/` (ya `terminal/npm/`) mein `package.json` banao jo binary download
   + install kare:
 

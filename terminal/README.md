@@ -16,14 +16,20 @@ A local-first AI terminal workspace with streaming, tools, memory, and cloud syn
 
 ## Installation
 
+### macOS / Linux — Homebrew (Recommended on macOS)
+```bash
+brew install Rohit94r/tap/lf
+```
+
 ### macOS / Linux — one line
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Rohit94r/layerflow-releases/main/install.sh | bash
 ```
 
-Downloads the prebuilt `lf` binary for your OS/arch, verifies its SHA-256
-checksum, and installs it to `~/.local/bin`. The source repo stays private —
-only prebuilt binaries are published (see `Rohit94r/layerflow-releases`).
+Both install the prebuilt `lf` binary for your OS/arch (checksum-verified).
+The installer also adds a `layerflow` symlink, so `lf` and `layerflow` both
+work. The source repo stays private — only prebuilt binaries are published
+(see `Rohit94r/layerflow-releases`).
 
 ### Build from source (requires repo access)
 ```bash

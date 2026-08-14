@@ -1066,7 +1066,7 @@ A release is beta-ready when all of these hold:
 7. MCP `list/add/remove/health` works with a stdio server; LSP diagnostics gate edits.
 8. Offline: chat/memory/search/sync-queue all work with zero network; reconnect drains.
 9. `lf doctor` + `--audit` pass; secret redaction verified; no plaintext tokens on disk.
-10. Packaging installs clean on Homebrew, Scoop, winget; `lf upgrade` self-updates.
+10. Packaging installs clean via `brew install Rohit94r/tap/lf` and `curl | bash`; `lf upgrade` self-updates.
 11. Performance/coverage baselines pass CI; telemetry is opt-in and content-free.
 12. Security + accessibility reviews signed off (checklist §24).
 
