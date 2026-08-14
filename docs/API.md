@@ -110,8 +110,8 @@ payload, 200 ops/batch. CLI auth: `X-LF-Device` + signed token (see
 
 | Method | Path | Notes |
 |---|---|---|
-| /api/provider-keys | CRUD | BYOK provider keys; **encrypted at rest** with AES-256-GCM. |
-| /api/keys | CRUD | LayerFlow gateway API keys (`lf_live_…`, hashed at rest). |
+| /api/provider-keys | CRUD | Private own keys (BYOK); **encrypted at rest** with AES-256-GCM. |
+| /api/keys | CRUD | Platform keys (`lf_live_…`, LayerFlow-hosted; hashed at rest). |
 | /api/intelligence | | Managed model switching. |
 | /api/routing-rules, /api/workspace/settings | | Route rules + workspace model settings. |
 

@@ -106,7 +106,7 @@ Hugeicons (shimmed). Mock data in `lib/data` behind an async service layer
 | `/costs` | Cost Analytics |
 | `/models` | Models + BYOK |
 | `/billing` | Plans + billing history |
-| `/keys` | API keys |
+| `/keys` | API Keys — platform + private own (BYOK) |
 | `/settings` | Settings |
 
 ### State

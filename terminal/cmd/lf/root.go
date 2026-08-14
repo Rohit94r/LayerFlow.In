@@ -145,8 +145,8 @@ func newSessionsCmd() *cobra.Command {
 func newLoginCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "login",
-		Short: "Device-code OAuth login",
-		Long:  `Authenticate via device-code flow. Token stored in OS keyring.`,
+		Short: "Authenticate with a LayerFlow platform key",
+		Long:  `Paste your LayerFlow platform key (lf_live_...). Stored in the OS keyring.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return performLogin()
 		},

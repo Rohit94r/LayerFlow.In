@@ -29,7 +29,7 @@ export const COMMANDS: CommandItem[] = [
   { id: "search", label: "Search", hint: "S", keywords: ["find", "context"], href: "/search" },
   { id: "costs", label: "Cost Analytics", hint: "D", keywords: ["spend", "budget", "usage"], href: "/costs" },
   { id: "billing", label: "Billing", hint: "B", keywords: ["plan", "invoice", "pay"], href: "/billing" },
-  { id: "keys", label: "API Keys", hint: "K", keywords: ["gateway", "secret"], href: "/keys" },
+  { id: "keys", label: "API Keys", hint: "K", keywords: ["gateway", "platform", "byok", "secret"], href: "/keys" },
   { id: "settings", label: "Settings", hint: ",", keywords: ["profile", "preferences"], href: "/settings" },
   { id: "toggle-theme", label: "Toggle theme", hint: "Switch dark / light", action: "toggle-theme" },
   {

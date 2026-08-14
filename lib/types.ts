@@ -174,6 +174,17 @@ export interface ProviderKey {
   lastUsed?: string;
 }
 
+/** LayerFlow platform key (lf_live_...) — used by the CLI/gateway, like opencode's hosted key. */
+export interface PlatformKey {
+  id: string;
+  name: string;
+  /** Display prefix, e.g. "lf_live_ab12..." — never the full secret. */
+  prefix: string;
+  projectId?: string;
+  createdAt: string;
+  lastUsed?: string;
+}
+
 export interface ModelSuggestion {
   modelId: string;
   reason: string;

@@ -113,9 +113,9 @@ export function ModelPicker({
       <div className="mt-4 flex items-start gap-2 rounded-xl border border-border bg-surface-2/40 p-3 text-[11px] leading-relaxed text-muted">
         <Cpu className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
         <p>
-          <strong className="font-semibold text-ink">Need a key?</strong> Add OpenAI, Claude, Gemini,
-          DeepSeek, Groq, Grok or Kimi keys under <em>Models → BYOK Vault</em>. LayerFlow also uses
-          platform keys when available.
+          <strong className="font-semibold text-ink">Need a key?</strong> Add your own provider keys
+          (OpenAI, Claude, Gemini, DeepSeek, Groq, Grok, Kimi) under <em>API Keys → Private own keys</em>,
+          or just use LayerFlow&apos;s platform keys — no provider account needed.
         </p>
       </div>
       <div className="mt-2 flex items-center gap-2 text-[10.5px] text-faint">

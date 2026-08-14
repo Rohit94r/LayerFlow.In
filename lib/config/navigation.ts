@@ -65,7 +65,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/workspace", label: "Projects", description: "Projects and AI work ledger", icon: FolderKanban },
       { href: "/team", label: "Team", description: "Members, roles and invitations", icon: Users },
-      { href: "/keys", label: "Keys", description: "API keys for the gateway", icon: KeyRound },
+      { href: "/keys", label: "Keys", description: "Platform keys + your own BYOK keys", icon: KeyRound },
       { href: "/billing", label: "Billing", description: "Plan and invoices", icon: CreditCard },
       { href: "/settings", label: "Settings", description: "Workspace and profile", icon: Settings },
     ],

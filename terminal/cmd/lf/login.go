@@ -16,9 +16,15 @@ import (
 	"github.com/layerflow/terminal/internal/config"
 )
 
-// performLogin authenticates the CLI with a LayerFlow workspace API key
+// performLogin authenticates the CLI with a LayerFlow platform key
 // (lf_live_...), validating it against the cloud before storing it in the
 // OS keyring. The key comes from LF_API_KEY or an interactive prompt.
+//
+// There are two kinds of LayerFlow keys:
+//   - Platform keys (lf_live_...) — LayerFlow-hosted, billed through your
+//     plan. This is what the CLI uses.
+//   - Private own keys (BYOK) — your own provider accounts, managed in the
+//     dashboard (API Keys → Private own keys).
 func performLogin() error {
 	key := strings.TrimSpace(os.Getenv("LF_API_KEY"))
 	if key == "" {
@@ -28,7 +34,7 @@ func performLogin() error {
 		}
 	}
 	if key == "" {
-		fmt.Print("Paste your LayerFlow API key (lf_live_...): ")
+		fmt.Print("Paste your LayerFlow platform key (lf_live_...): ")
 		scanner := bufio.NewScanner(os.Stdin)
 		if !scanner.Scan() {
 			return errors.New("no API key entered")
@@ -36,7 +42,7 @@ func performLogin() error {
 		key = strings.TrimSpace(scanner.Text())
 	}
 	if !strings.HasPrefix(key, "lf_live_") {
-		return errors.New("that does not look like a LayerFlow API key (expected lf_live_…)")
+		return errors.New("that does not look like a LayerFlow platform key (expected lf_live_…). Create one in the dashboard: API Keys → Platform keys")
 	}
 
 	cfg, err := config.Load("")
@@ -52,7 +58,7 @@ func performLogin() error {
 	fmt.Printf("Checking key against %s…\n", baseURL)
 	if err := client.Validate(ctx); err != nil {
 		if errors.Is(err, cloud.ErrInvalidKey) {
-			return errors.New("that API key was rejected. Generate a workspace key in the dashboard: Settings → API Keys.")
+			return errors.New("that platform key was rejected. Generate one in the dashboard: API Keys → Platform keys.")
 		}
 		return fmt.Errorf("could not reach LayerFlow: %w", err)
 	}
@@ -64,11 +70,12 @@ func performLogin() error {
 		if ferr := storeAPIKeyInConfig(cfg, key); ferr != nil {
 			return fmt.Errorf("store API key (keyring and config both failed): %v; keyring error: %w", ferr, err)
 		}
-		fmt.Println("Authenticated. API key stored in config file (OS keyring unavailable).")
+		fmt.Println("Authenticated. Platform key stored in config file (OS keyring unavailable).")
 		fmt.Println("Get started: lf chat \"hello\" · lf sync · lf run \"build a landing page\"")
 		return nil
 	}
-	fmt.Println("Authenticated. API key stored securely in your OS keyring.")
+	fmt.Println("Authenticated. Platform key stored securely in your OS keyring.")
+	fmt.Println("Tip: add your own provider accounts under API Keys → Private own keys in the dashboard, or just use LayerFlow's platform keys.")
 	fmt.Println("Get started: lf chat \"hello\" · lf sync · lf run \"build a landing page\"")
 	return nil
 }

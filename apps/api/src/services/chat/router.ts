@@ -258,12 +258,12 @@ export async function runChatMessage(input: {
       content: "",
       errorCode: "no_provider",
       errorMessage:
-        "No AI provider key is configured. Add one under Models → BYOK Vault, then send again.",
+        "No AI provider key is configured. Add your own under API Keys → Private own keys, then send again.",
     });
     await input.onEvent({
       type: "error",
       code: "no_provider",
-      message: "No AI provider key is configured. Add one under Models → BYOK Vault.",
+      message: "No AI provider key is configured. Add one under API Keys → Private own keys.",
     });
     void failed;
     return;

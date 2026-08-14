@@ -200,8 +200,8 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | `GET /api/usage/summary` | Spend grouped by day/provider/model/source |
 | `GET /api/usage/alerts` | Threshold alerts (50/80/100%) |
 | `GET /api/savings` | Cache-hit and cheaper-model savings suggestions |
-| `POST/GET /api/keys`, `DELETE /api/keys/:id` | LayerFlow gateway API keys (secret shown once) |
-| `POST/GET /api/provider-keys`, `DELETE /api/provider-keys/:id` | BYOK provider keys (AES-256-GCM encrypted) |
+| `POST/GET /api/keys`, `DELETE /api/keys/:id` | Platform keys (`lf_live_…`) — LayerFlow-hosted, used by CLI/gateway (secret shown once) |
+| `POST/GET /api/provider-keys`, `DELETE /api/provider-keys/:id` | Private own keys (BYOK) — provider accounts (AES-256-GCM encrypted) |
 
 ### Gateway — OpenAI-compatible (`src/gateway/router.ts`)
 
@@ -264,7 +264,8 @@ curl -X POST http://localhost:8787/api/provider-keys \
   -d '{"provider":"openai","secret":"sk-...your-openai-key..."}'
 ```
 
-2. Create a LayerFlow API key. **The secret is returned only once** — save it:
+2. Create a LayerFlow **platform key** (`lf_live_…`). **The secret is returned
+   only once** — save it:
 
 ```bash
 curl -X POST http://localhost:8787/api/keys \

@@ -49,7 +49,8 @@ Status: the module builds, vets, and tests cleanly with Go 1.26 (`go build
 ## Quick Start
 
 ```bash
-# Login
+# Login — paste a LayerFlow platform key (lf_live_...)
+# from the dashboard: API Keys → Platform keys
 lf login
 
 # Start chatting
@@ -65,6 +66,19 @@ lf sync
 lf sessions --open
 ```
 
+## Keys
+
+There are two kinds of LayerFlow API keys, managed in the dashboard under
+**API Keys**:
+
+- **Platform keys (`lf_live_…`)** — LayerFlow-hosted, billed through your plan,
+  like opencode's own key. This is what the CLI authenticates with (`lf login`).
+  No provider account needed; LayerFlow routes your requests to the best
+  available model.
+- **Private own keys (BYOK)** — your own provider accounts (OpenAI, Anthropic,
+  Gemini…), encrypted at rest in your workspace vault. LayerFlow prefers these
+  when they are configured, so you use your own quota and billing.
+
 ## Commands
 
 | Command | Description |
@@ -73,7 +87,7 @@ lf sessions --open
 | `lf chat [query]` | Start or continue a session |
 | `lf run "<task>"` | Non-interactive task agent |
 | `lf sessions` | List/restore/branch/delete sessions |
-| `lf login` | Device-code OAuth login |
+| `lf login` | Login with a LayerFlow platform key |
 | `lf logout` | Revoke + purge tokens |
 | `lf sync` | Force push/pull sync |
 | `lf doctor` | Diagnostics |
