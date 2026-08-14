@@ -11,7 +11,26 @@ import (
 	"github.com/layerflow/terminal/internal/search"
 )
 
-// searchModel is the Ctrl+R file search overlay.
+// searchGroupTitle maps a search source to a UI group label.
+func searchGroupTitle(s search.Source) string {
+	switch s {
+	case search.Session:
+		return "Chats"
+	case search.Memory:
+		return "Memories"
+	case search.Content, search.Filename:
+		return "Files"
+	case search.Project:
+		return "Project"
+	case search.Git:
+		return "Git history"
+	case search.Embedding:
+		return "Semantic"
+	}
+	return "Results"
+}
+
+// searchModel is the global search overlay with grouped results.
 type searchModel struct {
 	app       *App
 	query     string
@@ -37,49 +56,95 @@ func (s *searchModel) run() tea.Cmd {
 	}
 }
 
-// View renders the search overlay.
+// View renders the search overlay, results grouped by source.
 func (s *searchModel) View() string {
-	searchLine := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorAccent).
-		Padding(0, 1).
-		Render("🔍 " + s.query + "▌")
+	searchLine := lipgloss.JoinHorizontal(lipgloss.Left,
+		styleDim.Render("🔍"),
+		" ",
+		lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(s.query+"▍"),
+	)
 
 	var body []string
 	body = append(body, searchLine)
+	body = append(body, lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", s.rowWidth()+4)))
 
 	if s.searching {
 		body = append(body, "", styleDim.Render("  searching…"))
 	} else if s.searched {
 		if len(s.hits) == 0 {
-			body = append(body, "", styleMuted.Render("  No results for "+s.query))
+			body = append(body, "", styleMuted.Render("  No results for “"+s.query+"”."))
 		} else {
-			body = append(body, "")
-			for i, h := range s.hits {
-				label := fmt.Sprintf("  %-9s %s:%d  %s",
-					styleChip.Render(h.Source.String()),
-					h.Path,
-					h.Line,
-					styleDim.Render(shorten(strings.TrimSpace(h.Snippet), 40)),
-				)
-				if i == s.selected {
-					body = append(body, styleListSel.Render(label))
-				} else {
-					body = append(body, label)
+			groups := s.grouped()
+			for _, g := range groups {
+				body = append(body, "", styleDim.Render(strings.ToUpper(g.title)))
+				for _, h := range g.hits {
+					body = append(body, s.renderHit(h))
 				}
 			}
 		}
 	} else {
-		body = append(body, "", styleMuted.Render("  Type a query and press Enter to search project files."))
+		body = append(body, "", styleMuted.Render("  Search chats, memories, files, agents and history. Type then press Enter."))
 	}
+	body = append(body, "", styleFooter.Render("  enter search · ↑↓ navigate · esc close"))
 
-	content := lipgloss.JoinVertical(lipgloss.Left, body...)
-	box := styleCardAccent.Render(content)
+	inner := lipgloss.JoinVertical(lipgloss.Left, body...)
+	box := styleModal.Render(inner)
 
 	top := (s.app.height - lipgloss.Height(box)) / 2
 	if top < 0 {
 		top = 0
 	}
 	return lipgloss.NewStyle().MarginTop(top).Render(box)
+}
+
+// group holds hits sharing a source.
+type group struct {
+	title string
+	hits  []search.Hit
+}
+
+// grouped splits hits into ordered groups by source.
+func (s *searchModel) grouped() []group {
+	var out []group
+	index := map[search.Source]int{}
+	for _, h := range s.hits {
+		t := searchGroupTitle(h.Source)
+		i, ok := index[h.Source]
+		if !ok {
+			i = len(out)
+			index[h.Source] = i
+			out = append(out, group{title: t})
+		}
+		out[i].hits = append(out[i].hits, h)
+	}
+	return out
+}
+
+func (s *searchModel) rowWidth() int {
+	w := 40
+	for _, h := range s.hits {
+		n := len(h.Path) + 8 + len(shorten(strings.TrimSpace(h.Snippet), 40))
+		if n > w {
+			w = n
+		}
+	}
+	if w > s.app.width-10 {
+		w = s.app.width - 10
+	}
+	return w
+}
+
+func (s *searchModel) renderHit(h search.Hit) string {
+	line := fmt.Sprintf("  %-7s %s:%d  %s",
+		styleChip.Render(h.Source.String()),
+		h.Path,
+		h.Line,
+		styleDim.Render(shorten(strings.TrimSpace(h.Snippet), 40)),
+	)
+	if s.hits[s.selected].Path == h.Path && s.hits[s.selected].Line == h.Line {
+		return styleListSel.Render(line)
+	}
+	return line
 }
 
 // Update handles keys for the search overlay.

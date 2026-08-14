@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	bkey "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
@@ -27,11 +28,49 @@ func init() {
 	)
 }
 
-// renderChat renders the chat screen.
-func (a *App) renderChat() string {
-	var sections []string
+func newChatInput() textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = "Message LayerFlow…"
+	ti.Prompt = ""
+	ti.CharLimit = 4000
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(ColorDim)
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(ColorAccent)
+	ti.Focus()
+	return ti
+}
 
-	// Header
+// ─── Chat screen ────────────────────────────────────────────────────────────
+
+// renderChat renders the chat screen: slim header, conversation, composer.
+func (a *App) renderChat() string {
+	colW := a.width - 8
+	if colW < 60 {
+		colW = a.width - 2
+	}
+	if colW < 40 {
+		colW = 40
+	}
+
+	header := a.renderChatHeader(colW)
+	conversation := a.renderConversation(colW, a.height-7)
+	composer := a.renderChatInput(colW)
+
+	// Pad the left/right so text hugs a centered column like ChatGPT.
+	pad := (a.width - colW) / 2
+	if pad < 1 {
+		pad = 1
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.NewStyle().Padding(0, pad).Render(header),
+		conversation,
+		lipgloss.NewStyle().Padding(0, pad).Render(composer),
+	)
+}
+
+// renderChatHeader is a slim one-line header: model badge, session title,
+// and quiet navigation hints.
+func (a *App) renderChatHeader(w int) string {
 	title := "New session"
 	if a.session != nil {
 		if a.session.Title != "" {
@@ -40,97 +79,113 @@ func (a *App) renderChat() string {
 			title = a.session.ID
 		}
 	}
-	header := lipgloss.JoinHorizontal(lipgloss.Left,
-		styleChipActive.Render("lf"),
-		" ",
-		styleTitle.Render(title),
-		"  ",
-		styleChip.Render("esc home"),
-		" ",
-		styleChip.Render("? help"),
-	)
-	sections = append(sections, header)
 
-	// Conversation
-	sections = append(sections, a.renderConversation())
-
-	// Streaming indicator
-	if a.streaming {
-		sections = append(sections, styleDim.Render("  ● streaming… (ctrl+c to stop)"))
+	model := a.st.Model
+	if model == "" {
+		model = "default"
 	}
 
-	// Input
-	sections = append(sections, a.renderChatInput())
+	left := lipgloss.JoinHorizontal(lipgloss.Left,
+		styleChipModel.Render(model),
+		"  ",
+		lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render(shorten(title, 48)),
+	)
 
-	return lipgloss.JoinVertical(lipgloss.Left, sections...)
+	right := lipgloss.JoinHorizontal(lipgloss.Left,
+		styleDim.Render("esc home"),
+		" ",
+		styleDim.Render("ctrl+p cmds"),
+	)
+
+	spacer := w - lipgloss.Width(left) - lipgloss.Width(right) - 4
+	if spacer < 1 {
+		spacer = 1
+	}
+	line := lipgloss.JoinHorizontal(lipgloss.Left,
+		left,
+		lipgloss.NewStyle().Width(spacer).Render(""),
+		right,
+	)
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		line,
+		lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", w)),
+	)
 }
 
-// renderConversation renders the message history with markdown.
-func (a *App) renderConversation() string {
-	content := a.buildConversationContent()
-
-	if content == "" {
-		return styleCard.Render(styleMuted.Render("  Start a conversation. Type below and press Enter."))
-	}
-
-	// Wrap in the viewport height available.
-	maxH := a.height - 8
+// renderConversation renders message history + streaming, ChatGPT style:
+// a role label and plain content — no heavy borders around messages.
+func (a *App) renderConversation(w, maxH int) string {
 	if maxH < 5 {
 		maxH = 5
 	}
 
 	var sb strings.Builder
 	for _, m := range a.messages {
-		sb.WriteString(renderMessage(m))
+		sb.WriteString(renderMessage(m, w))
 		sb.WriteString("\n")
 	}
+
+	// Streaming block with blinking cursor.
 	if a.streamingText.Len() > 0 {
 		partial := a.streamingText.String()
 		if partial != "" {
-			rendered := renderMarkdown(partial)
-			lines := strings.Split(rendered, "\n")
-			if len(lines) > 0 {
-				last := lines[len(lines)-1]
-				lines[len(lines)-1] = last + "▌"
+			role := styleRoleAssistant.Render("LayerFlow")
+			cursor := ""
+			if a.cursorOn {
+				cursor = "▍"
 			}
-			rendered = strings.Join(lines, "\n")
-			sb.WriteString(lipgloss.NewStyle().Foreground(ColorAccent).Render("  lf ") + rendered + "\n")
+			body := renderMarkdown(partial)
+			body = strings.TrimRight(body, "\n")
+			sb.WriteString(lipgloss.JoinVertical(lipgloss.Left, role, body+cursor))
+			sb.WriteString("\n")
 		}
 	}
 
-	out := sb.String()
-	// Truncate to visible height conservatively; scroll is simple (show tail).
-	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
+	raw := strings.TrimRight(sb.String(), "\n")
+	if raw == "" {
+		return a.renderChatWelcome(w, maxH)
+	}
+
+	// Tail-based auto-scroll: show the last maxH lines.
+	lines := strings.Split(raw, "\n")
 	if len(lines) > maxH {
 		lines = lines[len(lines)-maxH:]
 	}
-	return lipgloss.NewStyle().Render(strings.Join(lines, "\n"))
+
+	content := lipgloss.NewStyle().
+		Width(w).
+		Padding(0, 4).
+		Render(strings.Join(lines, "\n"))
+	return content
 }
 
-func (a *App) buildConversationContent() string {
-	var sb strings.Builder
-	for _, m := range a.messages {
-		switch m.Role {
-		case "user":
-			sb.WriteString("user: " + m.Content + "\n")
-		case "assistant":
-			sb.WriteString(m.Content + "\n")
-		}
-	}
-	return sb.String()
+// renderChatWelcome is shown before any message: a quiet suggestion row.
+func (a *App) renderChatWelcome(w, maxH int) string {
+	hint := lipgloss.JoinHorizontal(lipgloss.Center,
+		styleDim.Render("Ask about your code, docs, or your day"),
+		"   ",
+		styleChip.Render("enter send"),
+	)
+	row := lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(hint)
+	return lipgloss.NewStyle().Height(maxH).Width(w).Render(row)
 }
 
 // renderMessage renders a single persisted message.
-func renderMessage(m session.Message) string {
+func renderMessage(m session.Message, w int) string {
 	switch m.Role {
 	case "user":
-		return lipgloss.NewStyle().Foreground(ColorWhite).Bold(true).Render("  you ") +
-			"\n" + renderMarkdown(m.Content)
+		return lipgloss.JoinVertical(lipgloss.Left,
+			styleRoleUser.Render("You"),
+			lipgloss.NewStyle().Width(w - 8).Render(m.Content),
+		)
 	case "assistant":
-		return lipgloss.NewStyle().Foreground(ColorAccent).Render("  lf ") +
-			"\n" + renderMarkdown(m.Content)
+		return lipgloss.JoinVertical(lipgloss.Left,
+			styleRoleAssistant.Render("LayerFlow"),
+			renderMarkdown(m.Content),
+		)
 	case "system":
-		return styleMuted.Italic(true).Render("  " + m.Content)
+		return styleRoleSystem.Render("  " + m.Content)
 	default:
 		return renderMarkdown(m.Content)
 	}
@@ -148,19 +203,33 @@ func renderMarkdown(content string) string {
 	return strings.TrimRight(out, "\n")
 }
 
-// renderChatInput renders the input box.
-func (a *App) renderChatInput() string {
-	prompt := lipgloss.NewStyle().Foreground(ColorPrompt).Bold(true).Render("❯ ")
-	if a.loading {
-		return styleInput.Render(prompt + styleDim.Render("…"))
+// renderChatInput draws the composer at the bottom of the chat screen.
+func (a *App) renderChatInput(w int) string {
+	ti := a.chatInput
+	ti.Width = w - 6
+	if ti.Width < 20 {
+		ti.Width = 20
 	}
-	return styleInput.Render(prompt + a.input + cursorBlock)
+
+	prefix := lipgloss.NewStyle().Foreground(ColorMuted).Bold(true).Render("You ")
+	view := prefix + ti.View()
+
+	if a.loading {
+		return styleInput.Render(view + "  " + styleDim.Render("…"))
+	}
+
+	box := styleInput.Render(view)
+	if a.chatFocused {
+		box = styleInputFocused.Render(view)
+	}
+	return box
 }
 
-const cursorBlock = "█"
+// ─── Chat input handling ────────────────────────────────────────────────────
 
 // updateChat handles keys and messages on the chat screen.
 func (a *App) updateChat(msg tea.Msg) (tea.Model, tea.Cmd) {
+	a.chatFocused = true
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		return a.handleChatKey(msg)
@@ -172,11 +241,17 @@ func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Navigate home with esc (when not streaming) or ctrl+h.
 	if bkey.Matches(key, a.keymap.Home) && !a.streaming {
 		a.screen = screenHome
-		a.input = ""
+		a.chatInput.SetValue("")
 		return a, nil
 	}
 	if bkey.Matches(key, a.keymap.NewSession) && !a.streaming {
 		return a.startSession()
+	}
+
+	// Slash popup opens without leaving the chat screen.
+	if key.String() == "/" {
+		a.openSlashPopup()
+		return a, nil
 	}
 
 	// While streaming, only allow cancel.
@@ -190,28 +265,17 @@ func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch {
 	case bkey.Matches(key, a.keymap.Submit):
 		return a.submitInput()
-	case bkey.Matches(key, a.keymap.Newline):
-		a.input += "\n"
-		return a, nil
-	case key.String() == "backspace":
-		if len(a.input) > 0 {
-			a.input = a.input[:len(a.input)-1]
-		}
-		return a, nil
 	case key.String() == "up":
 		a.moveCursorHistory(1)
 		return a, nil
 	case key.String() == "down":
 		a.moveCursorHistory(-1)
 		return a, nil
-	default:
-		if len(key.String()) == 1 {
-			a.input += key.String()
-			return a, nil
-		}
 	}
 
-	return a, nil
+	var cmd tea.Cmd
+	a.chatInput, cmd = a.chatInput.Update(key)
+	return a, cmd
 }
 
 // history tracks previous inputs for arrow-key recall.
@@ -229,16 +293,16 @@ func (a *App) moveCursorHistory(delta int) {
 	if historyIndex >= len(inputHistory) {
 		historyIndex = len(inputHistory) - 1
 	}
-	a.input = inputHistory[historyIndex]
+	a.chatInput.SetValue(inputHistory[historyIndex])
 }
 
 // submitInput sends the current input (slash command or chat message).
 func (a *App) submitInput() (tea.Model, tea.Cmd) {
-	text := strings.TrimSpace(a.input)
+	text := strings.TrimSpace(a.chatInput.Value())
 	if text == "" {
 		return a, nil
 	}
-	a.input = ""
+	a.chatInput.SetValue("")
 	historyIndex = -1
 
 	if strings.HasPrefix(text, "/") {

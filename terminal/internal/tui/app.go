@@ -9,6 +9,7 @@ import (
 	bkey "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/textinput"
 
 	"github.com/layerflow/terminal/internal/auth"
 	"github.com/layerflow/terminal/internal/cloud"
@@ -30,7 +31,7 @@ type overlay int
 
 const (
 	overlayNone overlay = iota
-	overlayPalette
+	overlaySlash
 	overlaySearch
 	overlaySessions
 	overlayModels
@@ -77,6 +78,7 @@ type modelsLoadedMsg struct {
 
 type sessionsLoadedMsg struct {
 	sessions []session.Session
+	rows     []sessionRow
 	err      error
 }
 
@@ -93,6 +95,10 @@ type searchResultsMsg struct {
 type loginResultMsg struct {
 	err error
 }
+
+// pendingSendMsg fires right after the chat screen mounts, sending the text
+// that was typed on the home screen.
+type pendingSendMsg struct{}
 
 // ─── App ─────────────────────────────────────────────────────────────────────
 
@@ -115,16 +121,20 @@ type App struct {
 	streaming     bool
 	cancelled     bool
 	loading       bool
-	input         string
+	cursorOn      bool
+
+	// Inputs
+	home        homeInput
+	homeFocused bool
+	chatInput   textinput.Model
+	chatFocused bool
+	pendingSend string
 
 	// Toast state
 	toasts []toast
 
-	// Home input
-	homeInput string
-
 	// Overlay instances
-	palette  *paletteModel
+	slash    *slashPopup
 	search   *searchModel
 	sessions *sessionsModel
 	models   *modelsModel
@@ -143,10 +153,13 @@ type App struct {
 // NewApp creates the root app model.
 func NewApp(st *State) *App {
 	return &App{
-		st:      st,
-		keymap:  DefaultKeyMap(),
-		screen:  screenHome,
-		overlay: overlayNone,
+		st:          st,
+		keymap:      DefaultKeyMap(),
+		screen:      screenHome,
+		overlay:     overlayNone,
+		home:        newHomeInput(),
+		homeFocused: true,
+		chatInput:   newChatInput(),
 	}
 }
 
@@ -173,10 +186,11 @@ func (a *App) View() string {
 		body = a.renderChat()
 	}
 
-	// Overlays draw on top of the current screen.
+	// Overlays draw on top of the current screen. The activity drawer sits
+	// beside the underlying screen instead of replacing it.
 	switch a.overlay {
-	case overlayPalette:
-		body = a.palette.View()
+	case overlaySlash:
+		body = a.slash.View()
 	case overlaySearch:
 		body = a.search.View()
 	case overlaySessions:
@@ -184,7 +198,11 @@ func (a *App) View() string {
 	case overlayModels:
 		body = a.models.View()
 	case overlayActivity:
-		body = a.activity.View()
+		drawer := a.activity.View()
+		main := lipgloss.NewStyle().
+			Width(a.width - drawerWidth - 6).
+			Render(body)
+		body = lipgloss.JoinHorizontal(lipgloss.Left, main, drawer)
 	case overlayHelp:
 		body = a.help.View()
 	case overlayLogin:
@@ -203,7 +221,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case tickMsg:
+		a.cursorOn = !a.cursorOn
 		return a, a.tickCmd()
+
+	case pendingSendMsg:
+		return a.handlePendingSend()
 
 	case toastMsg:
 		a.pushToast(msg.text, msg.kind)
@@ -257,7 +279,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (a *App) handleGlobalKey(key tea.KeyMsg) (bool, tea.Cmd) {
 	switch {
 	case bkey.Matches(key, a.keymap.Palette):
-		a.openPalette()
+		a.openSlashPopup()
 		return true, nil
 	case bkey.Matches(key, a.keymap.Search):
 		a.openSearch()
@@ -308,7 +330,7 @@ func (a *App) cancel() {
 // ─── Toasts ──────────────────────────────────────────────────────────────────
 
 func (a *App) tickCmd() tea.Cmd {
-	return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg { return tickMsg{} })
+	return tea.Tick(220*time.Millisecond, func(time.Time) tea.Msg { return tickMsg{} })
 }
 
 func (a *App) pushToast(text string, kind toastKind) {
@@ -426,16 +448,47 @@ func (a *App) handleModelsLoaded(msg modelsLoadedMsg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
+// handlePendingSend sends the message typed on the home screen once chat is up.
+func (a *App) handlePendingSend() (tea.Model, tea.Cmd) {
+	if a.pendingSend == "" {
+		return a, nil
+	}
+	text := a.pendingSend
+	a.pendingSend = ""
+	return a.sendMessage(text)
+}
+
 // closeOverlay closes the current overlay.
 func (a *App) closeOverlay() {
 	a.overlay = overlayNone
-	a.palette = nil
+	a.slash = nil
 	a.search = nil
 	a.sessions = nil
 	a.models = nil
 	a.activity = nil
 	a.help = nil
 	a.login = nil
+}
+
+// updateOverlay routes messages to the active overlay.
+func (a *App) updateOverlay(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch a.overlay {
+	case overlaySlash:
+		return a.slash.Update(msg)
+	case overlaySearch:
+		return a.search.Update(msg)
+	case overlaySessions:
+		return a.sessions.Update(msg)
+	case overlayModels:
+		return a.models.Update(msg)
+	case overlayActivity:
+		return a.activity.Update(msg)
+	case overlayHelp:
+		return a.help.Update(msg)
+	case overlayLogin:
+		return a.login.Update(msg)
+	}
+	return a, nil
 }
 
 // performTuiLogin validates a platform key and stores it in the keyring.

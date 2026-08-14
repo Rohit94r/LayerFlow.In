@@ -3,151 +3,155 @@ package tui
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	bkey "github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// renderHome renders the home screen: wordmark, tagline, workspace, model chip,
-// sync status, agent pills, and a prompt to start.
+// homeInput is the single chat entry field on the home screen.
+type homeInput struct {
+	textinput.Model
+}
+
+func newHomeInput() homeInput {
+	ti := textinput.New()
+	ti.Placeholder = "Ask anything about your code, startup, docs"
+	ti.Prompt = ""
+	ti.CharLimit = 2000
+	ti.PlaceholderStyle = lipgloss.NewStyle().Foreground(ColorDim)
+	ti.PromptStyle = lipgloss.NewStyle().Foreground(ColorMuted)
+	ti.Cursor.Style = lipgloss.NewStyle().Foreground(ColorAccent)
+	ti.Focus()
+	return homeInput{ti}
+}
+
+// renderHome renders the premium home screen: brand hero, a single chat input,
+// and a whisper of helper text. No cards, no command list, no diagnostics.
 func (a *App) renderHome() string {
-	contentW := widthOr(a.width, 80)
-	if contentW > 90 {
-		contentW = 90
+	// Clamp the content column for wide terminals so the hero doesn't stretch
+	// awkwardly.
+	colW := a.width
+	if colW > 120 {
+		colW = 120
+	}
+	if colW < 40 {
+		colW = 40
 	}
 
-	// Wordmark + tagline block
 	var block []string
-	block = append(block, lipgloss.NewStyle().Margin(1, 0, 0, 0).Render(
-		styleWordmark.Render("LayerFlow"),
-	))
-	block = append(block, styleTagline.Render("Local-first AI workspace in your terminal"))
-	block = append(block, "")
 
-	// Workspace card
-	workspace := styleCard.Render(lipgloss.JoinVertical(lipgloss.Left,
-		styleDim.Render("WORKSPACE"),
-		a.renderWorkspaceLine(),
-		"",
-		styleDim.Render("MODEL / PROVIDER"),
-		a.renderModelChipLine(),
-		"",
-		styleDim.Render("SYNC"),
-		a.renderSyncLine(),
-	))
+	// Brand hero.
+	block = append(block, renderBrand(colW))
 
-	block = append(block, workspace)
+	// Breathing room.
+	block = append(block, "", "")
 
-	// Pills
-	block = append(block, "")
-	block = append(block, a.renderPills())
+	// The one big input.
+	block = append(block, a.renderHomeInputBox(colW))
 
-	// Prompt line
-	block = append(block, "")
-	block = append(block, styleInputFocused.Render(
-		lipgloss.JoinHorizontal(lipgloss.Left,
-			lipgloss.NewStyle().Foreground(ColorPrompt).Bold(true).Render("❯ "),
-			styleMuted.Render("Press "),
-			styleChipActive.Render("Enter"),
-			styleMuted.Render(" to chat   "),
-			styleChip.Render("ctrl+p palette"),
-			" ",
-			styleChip.Render("ctrl+k sessions"),
-			" ",
-			styleChip.Render("? help"),
-		),
-	))
+	// Minimal helper text.
+	block = append(block, "", renderHomeHints(colW))
 
-	// Center the block vertically-ish
+	// Center vertically.
 	content := lipgloss.JoinVertical(lipgloss.Left, block...)
-	content = lipgloss.NewStyle().Width(contentW).Align(lipgloss.Left).Render(content)
+	content = lipgloss.NewStyle().Width(colW).Align(lipgloss.Center).Render(content)
 
 	top := (a.height - lipgloss.Height(content)) / 2
 	if top < 0 {
 		top = 0
 	}
-	left := (a.width - lipgloss.Width(content)) / 2
-	if left < 0 {
-		left = 0
-	}
-	return lipgloss.NewStyle().Padding(0, left).MarginTop(top).Render(content)
+	return lipgloss.NewStyle().Padding(0, (a.width-colW)/2).MarginTop(top).Render(content)
 }
 
-func (a *App) renderWorkspaceLine() string {
-	return lipgloss.JoinHorizontal(lipgloss.Left,
-		styleTitle.Render(a.st.Project),
-	)
+// renderHomeInputBox draws the chat entry field with an accent border.
+func (a *App) renderHomeInputBox(w int) string {
+	ti := a.home
+	ti.Width = w - 8
+	if ti.Width < 20 {
+		ti.Width = 20
+	}
+
+	// Prompt prefix "You ▸" for the ChatGPT feel.
+	prefix := lipgloss.NewStyle().Foreground(ColorMuted).Bold(true).Render("You ")
+	view := prefix + ti.View()
+
+	box := styleInput.Render(view)
+	if a.homeFocused {
+		box = styleInputFocused.Render(view)
+	}
+	return box
 }
 
-func (a *App) renderModelChipLine() string {
-	model := a.st.Model
-	if model == "" {
-		model = "default"
-	}
-	provider := a.st.Provider
-	if provider == "" {
-		provider = "auto"
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Left,
-		styleChip.Render(provider),
-		" ",
-		styleChip.Render(model),
-	)
-}
-
-func (a *App) renderSyncLine() string {
-	var parts []string
-	if a.st.Branch != "" {
-		parts = append(parts, styleChip.Render("git: "+a.st.Branch))
-	} else {
-		parts = append(parts, styleChip.Render("no git repo"))
-	}
-	if a.st.Authenticated {
-		parts = append(parts, styleChip.Render("● cloud"))
-	} else {
-		parts = append(parts, styleChipActive.Render("sign in required"))
-	}
-	return lipgloss.JoinHorizontal(lipgloss.Left, parts...)
-}
-
-// renderPills shows the available agents/actions as selectable chips.
-func (a *App) renderPills() string {
-	pills := []struct {
-		label string
-		key   string
-	}{
-		{"Chat", "enter"},
-		{"Search files", "ctrl+r"},
-		{"Models", "ctrl+l"},
-		{"Activity", "ctrl+t"},
-		{"New session", "ctrl+n"},
-	}
-	var chips []string
-	for _, p := range pills {
-		chips = append(chips, lipgloss.JoinHorizontal(lipgloss.Left,
-			styleChip.Render(p.label),
+// renderHomeHints shows the three helper hints under the input.
+func renderHomeHints(w int) string {
+	hint := func(text string, hotkey string) string {
+		return lipgloss.JoinHorizontal(lipgloss.Left,
+			styleMuted.Render(text),
 			" ",
-			styleDim.Render(p.key),
-		))
+			styleChipActive.Render(hotkey),
+		)
 	}
-	return lipgloss.NewStyle().Width(widthOr(a.width, 80)).Render(strings.Join(chips, "   "))
+	row := lipgloss.JoinHorizontal(lipgloss.Center,
+		hint("Press", "Enter"),
+		"   ",
+		hint("Type", "/"),
+		"   ",
+		hint("Press", "Ctrl+C"),
+	)
+	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)
 }
 
-// updateHome handles input on the home screen. Enter starts a chat session.
+// updateHome handles input on the premium home screen.
 func (a *App) updateHome(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch key := msg.(type) {
+	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		key := msg.String()
+
+		// A slash starts the command palette without leaving the home screen.
+		if key == "/" {
+			a.home.SetValue("/")
+			a.openSlashPopup()
+			return a, nil
+		}
+
 		switch {
-		case bkey.Matches(key, a.keymap.Submit):
-			// Login flow first if unauthenticated.
-			if !a.st.Authenticated {
-				a.openLogin()
-				return a, nil
-			}
-			return a.startSession()
-		case key.String() == "ctrl+n":
+		case bkey.Matches(msg, a.keymap.Submit):
+			return a.homeSubmit()
+		case bkey.Matches(msg, a.keymap.NewSession):
+			a.home.SetValue("")
 			return a.startSession()
 		}
+
+		var cmd tea.Cmd
+		a.home.Model, cmd = a.home.Update(msg)
+		return a, cmd
 	}
 	return a, nil
+}
+
+// homeSubmit sends the typed text as the first message, or just enters the
+// chat screen when empty.
+func (a *App) homeSubmit() (tea.Model, tea.Cmd) {
+	text := strings.TrimSpace(a.home.Value())
+	a.home.SetValue("")
+
+	// Login first if unauthenticated.
+	if !a.st.Authenticated {
+		a.openLogin()
+		return a, nil
+	}
+
+	if text != "" && strings.HasPrefix(text, "/") {
+		a.pendingSend = ""
+		return a.runSlashCommand(text)
+	}
+
+	cm, cmd := a.startSession()
+	if text != "" {
+		// Queue the first message to send right after the chat screen mounts.
+		a.pendingSend = text
+		return a, func() tea.Msg { return pendingSendMsg{} }
+	}
+	return cm, cmd
 }
