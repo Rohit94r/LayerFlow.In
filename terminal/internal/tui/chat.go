@@ -11,22 +11,12 @@ import (
 	bkey "github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textarea"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/cmds"
 	"github.com/layerflow/terminal/internal/session"
 )
-
-var mdRenderer *glamour.TermRenderer
-
-func init() {
-	mdRenderer, _ = glamour.NewTermRenderer(
-		glamour.WithStandardStyle("dark"),
-		glamour.WithWordWrap(100),
-	)
-}
 
 // maxComposerHeight caps how tall the chat composer (and home input) can grow
 // before they start scrolling internally.
@@ -195,7 +185,7 @@ func (a *App) renderConversation(w, maxH int) string {
 		if a.cursorOn && streamLen%2 == 0 {
 			cursor = "▍"
 		}
-		body := renderMarkdown(partial)
+		body := renderMarkdownW(partial, w-8)
 		body = strings.TrimRight(body, "\n")
 		sb.WriteString(lipgloss.JoinVertical(lipgloss.Left, role, body+cursor))
 		sb.WriteString("\n")
@@ -241,25 +231,32 @@ func renderMessage(m session.Message, w int) string {
 	case "assistant":
 		return lipgloss.JoinVertical(lipgloss.Left,
 			styleRoleAssistant.Render("LayerFlow"),
-			renderMarkdown(m.Content),
+			renderMarkdownW(m.Content, w-8),
 		)
 	case "system":
 		return styleRoleSystem.Render("  " + m.Content)
 	default:
-		return renderMarkdown(m.Content)
+		return renderMarkdownW(m.Content, w-8)
 	}
 }
 
-// renderMarkdown renders markdown text with glamour.
+// renderMarkdown renders markdown text with the LayerFlow theme and rich
+// output support (charts, trees, enhanced tables). Uses a default width
+// for cases where the conversation width isn't available.
 func renderMarkdown(content string) string {
 	if strings.TrimSpace(content) == "" {
 		return ""
 	}
-	out, err := mdRenderer.Render(content)
-	if err != nil || strings.TrimSpace(out) == "" {
-		return content
+	return renderMarkdownRich(content, 100)
+}
+
+// renderMarkdownW renders markdown with a specific width — used by the
+// conversation view so word-wrap matches the actual column width.
+func renderMarkdownW(content string, width int) string {
+	if strings.TrimSpace(content) == "" {
+		return ""
 	}
-	return strings.TrimRight(out, "\n")
+	return renderMarkdownRich(content, width)
 }
 
 // renderChatInput draws the composer at the bottom of the chat screen: a
