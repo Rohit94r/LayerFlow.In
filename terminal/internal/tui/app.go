@@ -187,7 +187,7 @@ func (a *App) Init() tea.Cmd {
 // View implements tea.Model.
 func (a *App) View() string {
 	if a.width == 0 || a.height == 0 {
-		return "Initializing…"
+		return "Initializing..."
 	}
 
 	var body string
@@ -221,7 +221,8 @@ func (a *App) View() string {
 		body = a.login.View()
 	}
 
-	return lipgloss.JoinVertical(lipgloss.Left, body, a.renderToasts())
+	// Apply the dark background to the full screen.
+	return styleApp.Width(a.width).Height(a.height).Render(body)
 }
 
 // Update implements tea.Model.

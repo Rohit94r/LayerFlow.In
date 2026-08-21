@@ -70,7 +70,8 @@ func newChatInput() textarea.Model {
 
 // ─── Chat screen ────────────────────────────────────────────────────────────
 
-// renderChat renders the chat screen: slim header, conversation, composer.
+// renderChat renders the chat screen: header bar, conversation, bordered
+// input, and status bar at the bottom.
 func (a *App) renderChat() string {
 	colW := a.width - 8
 	if colW < 60 {
@@ -81,11 +82,13 @@ func (a *App) renderChat() string {
 	}
 
 	header := a.renderChatHeader(colW)
-	composer := a.renderChatInput(colW)
+	composer := a.renderChatInputBox(colW)
 	composerH := lipgloss.Height(composer)
-	conversation := a.renderConversation(colW, a.height-3-composerH)
+	status := a.renderStatusBar()
+	statusH := lipgloss.Height(status)
+	conversation := a.renderConversation(colW, a.height-statusH-composerH-2)
 
-	// Pad the left/right so text hugs a centered column like ChatGPT.
+	// Pad the left/right so text hugs a centered column.
 	pad := (a.width - colW) / 2
 	if pad < 1 {
 		pad = 1
@@ -95,11 +98,12 @@ func (a *App) renderChat() string {
 		lipgloss.NewStyle().Padding(0, pad).Render(header),
 		conversation,
 		lipgloss.NewStyle().Padding(0, pad).Render(composer),
+		status,
 	)
 }
 
-// renderChatHeader is a slim one-line header: model badge, session title,
-// and quiet navigation hints.
+// renderChatHeader is a header bar: LayerFlow logo, model badge, session
+// title, and navigation hints — with a bottom border separator.
 func (a *App) renderChatHeader(w int) string {
 	title := "New session"
 	if a.session != nil {
@@ -125,7 +129,7 @@ func (a *App) renderChatHeader(w int) string {
 
 	right := lipgloss.JoinHorizontal(lipgloss.Left,
 		styleDim.Render("esc home"),
-		" ",
+		"  ",
 		styleDim.Render("ctrl+i improve"),
 	)
 
@@ -139,10 +143,17 @@ func (a *App) renderChatHeader(w int) string {
 		right,
 	)
 
-	return lipgloss.JoinVertical(lipgloss.Left,
-		line,
-		lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", w)),
-	)
+	// Header bar with a bottom border line.
+	headerBar := lipgloss.NewStyle().
+		Background(ColorPanel).
+		Width(w).
+		BorderBottom(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(ColorBorder).
+		Padding(0, 1).
+		Render(line)
+
+	return headerBar
 }
 
 // renderConversation renders message history + streaming, ChatGPT style:
@@ -262,27 +273,29 @@ func renderMarkdownW(content string, width int) string {
 // renderChatInput draws the composer at the bottom of the chat screen: a
 // "You " prefix and the input on clean lines with a hairline underline. There
 // is no border box, so no stray corners or pipes can leak into the text.
-func (a *App) renderChatInput(w int) string {
+func (a *App) renderChatInputBox(w int) string {
 	ti := a.chatInput
-	avail := w - 4
+	avail := w - 6
 	if avail < 20 {
 		avail = 20
 	}
 	ti.SetWidth(avail)
 
-	prefix := lipgloss.NewStyle().Foreground(ColorMuted).Bold(true).Render("You ")
-	view := prefix + ti.View()
+	view := ti.View()
 
-	under := lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", w))
+	style := inputBoxStyle
 	if a.chatFocused {
-		under = lipgloss.NewStyle().Foreground(ColorAccent).Render(strings.Repeat("─", w))
+		style = inputBoxFocusedStyle
 	}
-	block := lipgloss.JoinVertical(lipgloss.Left, view, under)
+
+	box := style.Width(w).Render(view)
 
 	if a.loading {
-		block = lipgloss.JoinVertical(lipgloss.Left, block, styleDim.Render("Working…"))
+		box = lipgloss.JoinVertical(lipgloss.Left, box,
+			styleDim.Render("  Working..."),
+		)
 	}
-	return block
+	return box
 }
 
 // ─── Chat input handling ────────────────────────────────────────────────────
@@ -306,7 +319,7 @@ func chatComposerWidth(width int) int {
 	if colW < 40 {
 		colW = 40
 	}
-	avail := colW - 4
+	avail := colW - 6
 	if avail < 20 {
 		avail = 20
 	}

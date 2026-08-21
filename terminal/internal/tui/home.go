@@ -16,7 +16,7 @@ type homeInput struct {
 
 func newHomeInput() homeInput {
 	ta := textarea.New()
-	ta.Placeholder = "Ask anything about your code, startup, docs"
+	ta.Placeholder = "Ask anything about your code, startup, docs..."
 	ta.Prompt = ""
 	ta.CharLimit = 2000
 	ta.MaxHeight = 4
@@ -34,63 +34,89 @@ func newHomeInput() homeInput {
 	return homeInput{ta}
 }
 
-// renderHome renders the premium home screen: a giant pixel wordmark hero in
-// the upper half, a single clean chat input, and a whisper of helper text.
-// No boxes, no cards, no command list, no diagnostics.
+// inputBoxStyle wraps the home input in a rounded border.
+var inputBoxStyle = lipgloss.NewStyle().
+	Border(roundBorder).
+	BorderForeground(ColorBorder).
+	Padding(0, 1)
+
+var inputBoxFocusedStyle = lipgloss.NewStyle().
+			Border(roundBorder).
+			BorderForeground(ColorAccent).
+			Padding(0, 1)
+
+// statusBarStyle is the bottom status bar.
+var statusBarStyle = lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Background(ColorPanel).
+			Padding(0, 1)
+
+// renderHome renders the home screen: bordered logo, bordered input, hints,
+// and a status bar at the bottom.
 func (a *App) renderHome() string {
-	// The hero spans (nearly) the full terminal width so it dominates; the
-	// input column below is capped for readability.
 	logo := renderBrand(a.width)
 
 	colW := a.width
-	if colW > 130 {
-		colW = 130
+	if colW > 100 {
+		colW = 100
 	}
 	if colW < 40 {
 		colW = 40
 	}
 
-	sub := []string{
-		lipgloss.NewStyle().Align(lipgloss.Center).Width(colW).Render(taglineStyle.Render(taglineText)),
-		"",
-		"",
-		a.renderHomeInput(colW),
-		"",
-		renderHomeHints(colW),
-	}
-	subBlock := lipgloss.NewStyle().Width(colW).Align(lipgloss.Center).Render(lipgloss.JoinVertical(lipgloss.Left, sub...))
+	// Bordered input box
+	inputBox := a.renderHomeInputBox(colW)
 
-	content := lipgloss.JoinVertical(lipgloss.Left, logo, "", subBlock)
+	// Hints row
+	hints := renderHomeHints(colW)
 
-	// Anchor the hero to the upper half of the terminal with generous space
-	// above; the input and hints fall below the logo's midline.
-	top := (a.height*3)/10 - lipgloss.Height(content)/2
+	// Status bar at the bottom
+	status := a.renderStatusBar()
+
+	mainContent := lipgloss.JoinVertical(lipgloss.Center,
+		logo,
+		"",
+		inputBox,
+		"",
+		hints,
+	)
+
+	// Center the main content vertically, leaving room for the status bar.
+	availableH := a.height - lipgloss.Height(status) - 2
+	contentH := lipgloss.Height(mainContent)
+	top := (availableH - contentH) / 3
 	if top < 1 {
 		top = 1
 	}
-	return lipgloss.NewStyle().MarginTop(top).Render(content)
+
+	centered := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(a.width).
+		MarginTop(top).
+		Render(mainContent)
+
+	return lipgloss.JoinVertical(lipgloss.Left, centered, status)
 }
 
-// renderHomeInput draws the single chat entry line: a "You " prefix and the
-// input on a clean line with a hairline underline. No border box, so no stray
-// corners or pipes can leak into the text area.
-func (a *App) renderHomeInput(w int) string {
+// renderHomeInputBox draws the input inside a rounded border box.
+func (a *App) renderHomeInputBox(w int) string {
 	ti := a.home
-	avail := w - len("You ") - 2
+	avail := w - 4
 	if avail < 20 {
 		avail = 20
 	}
 	ti.SetWidth(avail)
+
 	view := ti.View()
 
-	under := lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", w))
+	style := inputBoxStyle
 	if a.homeFocused {
-		under = lipgloss.NewStyle().Foreground(ColorAccent).Render(strings.Repeat("─", w))
+		style = inputBoxFocusedStyle
 	}
-	return lipgloss.JoinVertical(lipgloss.Left, view, under)
+	return style.Width(w).Render(view)
 }
 
-// renderHomeHints shows the three helper hints under the input.
+// renderHomeHints shows the helper hints under the input.
 func renderHomeHints(w int) string {
 	hint := func(text string, hotkey string) string {
 		return lipgloss.JoinHorizontal(lipgloss.Left,
@@ -101,15 +127,60 @@ func renderHomeHints(w int) string {
 	}
 	row := lipgloss.JoinHorizontal(lipgloss.Center,
 		hint("Press", "Enter"),
-		"   ",
-		hint("Type", "/"),
-		"   ",
-		hint("Press", "Ctrl+C quit"),
+		"  ",
+		hint("Type", "/ for commands"),
+		"  ",
+		hint("Press", "Ctrl+C to quit"),
 	)
 	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)
 }
 
-// updateHome handles input on the premium home screen.
+// renderStatusBar draws a bottom status bar with model, session, and auth info.
+func (a *App) renderStatusBar() string {
+	model := a.st.Model
+	if model == "" {
+		model = "default"
+	}
+
+	// Auth status
+	authBadge := styleDim.Render("○ not logged in")
+	if a.st.Authenticated {
+		authBadge = lipgloss.NewStyle().Foreground(ColorSuccess).Render("● connected")
+	}
+
+	// Model badge
+	modelBadge := styleChipModel.Render(model)
+
+	// Version
+	version := "v" + a.st.Version
+	if version == "v" || version == "vdev" {
+		version = "dev"
+	}
+	versionBadge := styleDim.Render(version)
+
+	// Build the bar
+	left := lipgloss.JoinHorizontal(lipgloss.Left,
+		" ", modelBadge, "  ", authBadge,
+	)
+	right := lipgloss.JoinHorizontal(lipgloss.Left,
+		versionBadge, " ",
+	)
+
+	spacer := a.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
+	if spacer < 0 {
+		spacer = 0
+	}
+
+	bar := lipgloss.JoinHorizontal(lipgloss.Left,
+		left,
+		lipgloss.NewStyle().Width(spacer).Render(""),
+		right,
+	)
+
+	return statusBarStyle.Width(a.width).Render(bar)
+}
+
+// updateHome handles input on the home screen.
 func (a *App) updateHome(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -144,21 +215,20 @@ func (a *App) updateHome(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return a, nil
 }
 
-// refreshHomeHeight keeps the home input's height in sync with its content so
-// the underline always sits directly under the last typed line.
+// refreshHomeHeight keeps the home input's height in sync with its content.
 func (a *App) refreshHomeHeight() {
 	a.home.Model.SetHeight(composerRows(a.home.Value(), homeComposerWidth(a.width), 4))
 }
 
 func homeComposerWidth(width int) int {
 	colW := width
-	if colW > 130 {
-		colW = 130
+	if colW > 100 {
+		colW = 100
 	}
 	if colW < 40 {
 		colW = 40
 	}
-	avail := colW - len("You ") - 2
+	avail := colW - 4
 	if avail < 20 {
 		avail = 20
 	}
@@ -187,7 +257,7 @@ func (a *App) homeSubmit() (tea.Model, tea.Cmd) {
 	if text != "" {
 		// Queue the first message to send right after the chat screen mounts.
 		a.pendingSend = text
-		return a, func() tea.Msg { return pendingSendMsg{} }
+		return cm, func() tea.Msg { return pendingSendMsg{} }
 	}
 	return cm, cmd
 }
