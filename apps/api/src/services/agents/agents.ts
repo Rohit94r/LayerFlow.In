@@ -192,32 +192,6 @@ export const AGENT_MARKETPLACE_TEMPLATES: AgentTemplate[] = [
     ],
   },
   {
-    key: "content_repurposing",
-    name: "Content Repurposing Agent",
-    description: "Turns long-form ideas into posts, threads, newsletters, and scheduled drafts.",
-    category: "Content",
-    estimatedCost: "$1-$5 per content batch",
-    expectedOutcome: "A reviewable content queue with channel-specific variants.",
-    defaultSchedule: "On demand",
-    permissions: [
-      { key: "generate_cover_letters", label: "Generate drafts", category: "Writing", mode: "allow_always" },
-      { key: "send_follow_up_emails", label: "Publish/send content", category: "High risk", mode: "deny" },
-    ],
-  },
-  {
-    key: "meeting_followup",
-    name: "Meeting Follow-up Agent",
-    description: "Summarizes meetings, extracts commitments, drafts follow-ups, and tracks owners.",
-    category: "Operations",
-    estimatedCost: "$1-$4 per meeting",
-    expectedOutcome: "A clean action ledger with drafts and reminders.",
-    defaultSchedule: "After each uploaded meeting note",
-    permissions: [
-      { key: "store_job_history", label: "Store meeting memory", category: "Memory", mode: "allow_always" },
-      { key: "send_follow_up_emails", label: "Send follow-ups", category: "High risk", mode: "deny" },
-    ],
-  },
-  {
     key: "teacher_assistant",
     name: "Teacher Assistant Agent",
     description: "Helps teachers grade assignments, track student progress, and prepare lesson plans.",

@@ -36,6 +36,11 @@ export const agentTemplateKeySchema = z.enum([
   "startup_research",
   "content_repurposing",
   "meeting_followup",
+  "teacher_assistant",
+  "student_study",
+  "freelancer_pipeline",
+  "research_paper",
+  "sales_outreach",
 ]);
 export type AgentTemplateKey = z.infer<typeof agentTemplateKeySchema>;
 

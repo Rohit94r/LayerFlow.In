@@ -99,6 +99,7 @@ export const CreditCard = createIcon(H.CreditCardIcon);
 export const Pencil = createIcon(H.PencilIcon);
 export const Archive = createIcon(H.Archive01Icon);
 export const Refresh = createIcon(H.GlobalRefreshIcon);
+export const RefreshCw = createIcon(H.GlobalRefreshIcon);
 export const MoreHorizontal = createIcon(H.MoreHorizontalIcon);
 export const More = createIcon(H.MoreIcon);
 export const FileCode2 = createIcon(H.FileCodeIcon);

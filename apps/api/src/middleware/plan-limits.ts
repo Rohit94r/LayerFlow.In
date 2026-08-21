@@ -23,7 +23,7 @@ const PLAN_PROVIDER_ACCESS: Record<string, Set<string>> = {
   team: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter"]),
 };
 
-export function getPlanForWorkspace(workspaceId: string): Promise<ReturnType<typeof getCurrentSubscription>> {
+export function getPlanForWorkspace(workspaceId: string): ReturnType<typeof getCurrentSubscription> {
   return getCurrentSubscription(workspaceId);
 }
 

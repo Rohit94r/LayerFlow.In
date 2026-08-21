@@ -29,7 +29,7 @@ function pickStyle(seed: string): AvatarStyle {
 
 function generateDataUri(seed: string, style?: AvatarStyle): string {
   const s = style ?? pickStyle(seed);
-  const avatar = createAvatar(styles[s], { seed, size: 128 });
+  const avatar = createAvatar(styles[s] as never, { seed, size: 128 });
   return avatar.toDataUri();
 }
 
