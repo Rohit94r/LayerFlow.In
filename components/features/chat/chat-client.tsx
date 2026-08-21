@@ -260,7 +260,12 @@ export function ChatClient() {
       streamAbortRef.current?.abort();
       router.push(`/chat/${created.session.id}`);
     } catch (err) {
-      setToast(err instanceof Error ? err.message : "Could not create the chat.");
+      const msg = err instanceof Error ? err.message : "";
+      const friendly =
+        /fetch|network|ECONNREFUSED|Failed to fetch/i.test(msg)
+          ? "Cannot reach the API server. Make sure the backend is running (npm run dev)."
+          : msg || "Could not create the chat. Please try again.";
+      setToast(friendly);
     } finally {
       setBusy(null);
     }
@@ -507,6 +512,11 @@ export function ChatClient() {
         return;
       }
       const hasContent = contentRef.current.length > 0;
+      const msg = err instanceof Error ? err.message : "";
+      const friendlyMsg =
+        /fetch|network|ECONNREFUSED|Failed to fetch/i.test(msg)
+          ? "Cannot reach the API server. Make sure the backend is running."
+          : msg || "Could not reach the chat server.";
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== placeholderId),
         ...(hasContent ? [] : [
@@ -514,7 +524,7 @@ export function ChatClient() {
             id: placeholderId,
             role: "assistant" as const,
             content: contentRef.current,
-            error: err instanceof Error ? err.message : "Could not reach the chat server.",
+            error: friendlyMsg,
             createdAt: Date.now(),
             switchedFrom: switchedFrom ?? undefined,
           },

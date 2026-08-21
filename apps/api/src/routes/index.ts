@@ -35,6 +35,7 @@ import { workspacesRouter } from "./workspace/workspaces";
 import { syncRouter } from "./sync/sync";
 import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
+import { deviceAuthRouter } from "./auth/device";
 
 /**
  * Route registration. Add new feature routers here:
@@ -73,6 +74,9 @@ export function registerRoutes(app: Hono<AppEnv>): void {
 
   // CLI sync protocol (also used by the web /terminal dashboard)
   app.route("/api/v1/sync", syncRouter);
+
+  // CLI device authorization flow (lf login)
+  app.route("/api/v1/auth", deviceAuthRouter);
 
   // Memory / search / learning / community
   app.route("/api/memory", memoryRouter);

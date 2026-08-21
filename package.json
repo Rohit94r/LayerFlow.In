@@ -22,6 +22,11 @@
     "deploy:api": "bash scripts/deploy-api-prod.sh"
   },
   "dependencies": {
+    "@dicebear/avataaars": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
+    "@dicebear/fun-emoji": "^9.4.2",
+    "@dicebear/lorelei": "^9.4.2",
+    "@dicebear/notionists": "^9.4.2",
     "@hugeicons/core-free-icons": "^4.2.3",
     "@hugeicons/react": "^1.1.9",
     "@layerflow/contracts": "*",

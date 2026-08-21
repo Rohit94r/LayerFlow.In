@@ -126,6 +126,8 @@ func (a *App) renderChatHeader(w int) string {
 	}
 
 	left := lipgloss.JoinHorizontal(lipgloss.Left,
+		styleWordmark.Render("LayerFlow"),
+		"  ",
 		styleChipModel.Render(model),
 		"  ",
 		lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render(shorten(title, 48)),
@@ -134,7 +136,7 @@ func (a *App) renderChatHeader(w int) string {
 	right := lipgloss.JoinHorizontal(lipgloss.Left,
 		styleDim.Render("esc home"),
 		" ",
-		styleDim.Render("ctrl+p cmds"),
+		styleDim.Render("ctrl+i improve"),
 	)
 
 	spacer := w - lipgloss.Width(left) - lipgloss.Width(right) - 4
@@ -155,6 +157,8 @@ func (a *App) renderChatHeader(w int) string {
 
 // renderConversation renders message history + streaming, ChatGPT style:
 // a role label and plain content — no heavy borders around messages.
+// Uses a render cache so persisted messages are only glamour-rendered once;
+// only the streaming buffer is re-rendered when new text arrives.
 func (a *App) renderConversation(w, maxH int) string {
 	if maxH < 5 {
 		maxH = 5
@@ -162,24 +166,39 @@ func (a *App) renderConversation(w, maxH int) string {
 
 	var sb strings.Builder
 	for _, m := range a.messages {
-		sb.WriteString(renderMessage(m, w))
+		if m.ID != "" {
+			if cached, ok := a.renderedCache[m.ID]; ok {
+				sb.WriteString(cached)
+				sb.WriteString("\n")
+				continue
+			}
+		}
+		rendered := renderMessage(m, w)
+		if m.ID != "" {
+			a.renderedCache[m.ID] = rendered
+		}
+		sb.WriteString(rendered)
 		sb.WriteString("\n")
 	}
 
-	// Streaming block with blinking cursor.
-	if a.streamingText.Len() > 0 {
+	// Streaming block with blinking cursor — only re-render if new text arrived.
+	streamLen := a.streamingText.Len()
+	if streamLen > 0 && streamLen != a.lastStreamRenderLen {
+		a.lastStreamRenderLen = streamLen
+	}
+	if streamLen > 0 {
 		partial := a.streamingText.String()
-		if partial != "" {
-			role := styleRoleAssistant.Render("LayerFlow")
-			cursor := ""
-			if a.cursorOn {
-				cursor = "▍"
-			}
-			body := renderMarkdown(partial)
-			body = strings.TrimRight(body, "\n")
-			sb.WriteString(lipgloss.JoinVertical(lipgloss.Left, role, body+cursor))
-			sb.WriteString("\n")
+		role := styleRoleAssistant.Render("LayerFlow")
+		cursor := ""
+		// Blink the cursor every other tick (220ms × 2 = 440ms cycle) for
+		// a smoother feel — not aggressive flashing.
+		if a.cursorOn && streamLen%2 == 0 {
+			cursor = "▍"
 		}
+		body := renderMarkdown(partial)
+		body = strings.TrimRight(body, "\n")
+		sb.WriteString(lipgloss.JoinVertical(lipgloss.Left, role, body+cursor))
+		sb.WriteString("\n")
 	}
 
 	raw := strings.TrimRight(sb.String(), "\n")
@@ -315,6 +334,11 @@ func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
+	// Improve prompt (Ctrl+I).
+	if bkey.Matches(key, a.keymap.Improve) {
+		return a.handleImprove()
+	}
+
 	// While streaming, only allow cancel.
 	if a.streaming {
 		if key.String() == "ctrl+c" {
@@ -417,6 +441,8 @@ func (a *App) startSession() (tea.Model, tea.Cmd) {
 	a.screen = screenChat
 	a.messages = nil
 	a.streamingText.Reset()
+	a.renderedCache = make(map[string]string)
+	a.lastStreamRenderLen = 0
 	a.chatInput.SetValue("")
 	a.chatInput.SetHeight(1)
 	return a, nil
@@ -507,6 +533,7 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 	a.streaming = false
 	a.loading = false
 	a.cancelFn = nil
+	a.lastStreamRenderLen = 0
 
 	if msg.err != nil {
 		a.pushToast(msg.err.Error(), toastError)
@@ -606,3 +633,56 @@ func shorten(s string, n int) string {
 func timeNow() time.Time { return time.Now() }
 
 const timeSecond = time.Second
+
+// ─── Improve prompt ──────────────────────────────────────────────────────────
+
+// handleImprove sends the current composer text to the improve API and
+// replaces it with the improved version. Triggered by /improve or Ctrl+I.
+func (a *App) handleImprove() (tea.Model, tea.Cmd) {
+	text := strings.TrimSpace(a.chatInput.Value())
+	if text == "" {
+		a.pushToast("Type a prompt first, then improve", toastInfo)
+		return a, nil
+	}
+	if !a.st.Authenticated {
+		a.openLogin()
+		return a, nil
+	}
+
+	a.loading = true
+	a.pushToast("Improving prompt…", toastInfo)
+
+	return a, func() tea.Msg {
+		result, err := a.st.Client.ImprovePrompt(context.Background(), text, a.st.Model)
+		return improveResultMsg{result: result, err: err}
+	}
+}
+
+// handleImproveResult replaces the composer text with the improved prompt.
+func (a *App) handleImproveResult(msg improveResultMsg) (tea.Model, tea.Cmd) {
+	a.loading = false
+
+	if msg.err != nil {
+		errStr := msg.err.Error()
+		if len(errStr) > 60 {
+			errStr = errStr[:60] + "…"
+		}
+		a.pushToast("Improve failed: " + errStr, toastError)
+		return a, nil
+	}
+
+	if msg.result == nil || msg.result.ImprovedContent == "" {
+		a.pushToast("Improve returned empty result", toastError)
+		return a, nil
+	}
+
+	a.chatInput.SetValue(msg.result.ImprovedContent)
+	a.refreshChatHeight()
+
+	scoreMsg := fmt.Sprintf("Improved ✓ Score: %d/100", msg.result.Score)
+	if msg.result.OriginalScore > 0 {
+		scoreMsg = fmt.Sprintf("Improved ✓ %d → %d/100", msg.result.OriginalScore, msg.result.Score)
+	}
+	a.pushToast(scoreMsg, toastSuccess)
+	return a, nil
+}

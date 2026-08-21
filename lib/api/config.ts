@@ -26,24 +26,26 @@ export function isProductionWebHost(hostname?: string): boolean {
 }
 
 /**
- * Better Auth base URL — local uses the Hono API; production web uses same-origin
- * (layerflow.dev/api/auth) until api.layerflow.dev is deployed.
+ * Better Auth base URL — same-origin everywhere (local + production).
+ * Both the Hono workspace API and Better Auth are mounted under /api/*
+ * on the Next.js host, so the browser uses the same origin for auth
+ * and workspace calls.  The standalone :8787 API is only used by the
+ * worker, CLI, and tests — never by the browser auth client.
  */
 export function getAuthBaseUrl(): string {
   if (typeof window !== "undefined") {
-    if (isLocalWebHost(window.location.hostname)) {
-      return "http://localhost:8787";
-    }
-    if (isProductionWebHost(window.location.hostname)) {
-      return window.location.origin;
-    }
+    // Same-origin: works for localhost:3000 (dev) and layerflow.dev (prod).
+    return window.location.origin;
   }
 
-  const fromEnv = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  // Server-side (RSC / route handler) — match the Next.js host.
+  if (process.env.VERCEL === "1") {
+    const web = process.env.WEB_URL?.trim()?.replace(/\/$/, "");
+    if (web) return web;
+  }
 
   if (process.env.NODE_ENV !== "production") {
-    return "http://localhost:8787";
+    return "http://localhost:3000";
   }
 
   return process.env.WEB_URL?.replace(/\/$/, "") || "https://layerflow.dev";

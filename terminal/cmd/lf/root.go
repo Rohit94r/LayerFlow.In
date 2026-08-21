@@ -13,6 +13,7 @@ import (
 
 	"github.com/layerflow/terminal/internal/audit"
 	"github.com/layerflow/terminal/internal/auth"
+	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/config"
 	"github.com/layerflow/terminal/internal/daemon"
 	"github.com/layerflow/terminal/internal/session"
@@ -552,12 +553,77 @@ func showCost(sessionID string, project bool) error {
 		}
 	}
 
+	// Local session costs
 	fmt.Println("Cost Breakdown")
 	fmt.Println("──────────────")
-	fmt.Printf("  Input tokens:   %d\n", inTok)
-	fmt.Printf("  Output tokens:  %d\n", outTok)
+	fmt.Printf("  Input tokens:   %s\n", formatTokens(inTok))
+	fmt.Printf("  Output tokens:  %s\n", formatTokens(outTok))
 	fmt.Printf("  Estimated cost: $%.4f\n", float64(costMicro)/1_000_000)
+
+	// Fetch workspace budget + plan from the API
+	cfg, cfgErr := config.Load("")
+	if cfgErr == nil {
+		key, keyErr := cloud.ResolveAPIKey(cfg)
+		if keyErr == nil {
+			client := cloud.NewClient(cloud.ResolveBaseURL(cfg), key)
+			usage, err := client.GetUsage(ctx)
+			if err == nil && usage != nil {
+				fmt.Println()
+				fmt.Println("Workspace Budget")
+				fmt.Println("────────────────")
+				limitUSD := float64(usage.Budget.MonthlyLimitMicro) / 1_000_000
+				spentUSD := float64(usage.Budget.SpentMicro) / 1_000_000
+				remainingUSD := float64(usage.Budget.RemainingMicro) / 1_000_000
+				fmt.Printf("  Monthly limit:  $%.2f\n", limitUSD)
+				fmt.Printf("  Spent this mo: $%.2f  (%.1f%%)\n", spentUSD, usage.Budget.PercentUsed)
+				fmt.Printf("  Remaining:     $%.2f\n", remainingUSD)
+
+				// Visual progress bar
+				pct := usage.Budget.PercentUsed
+				if pct > 100 {
+					pct = 100
+				}
+				barWidth := 30
+				filled := int(pct / 100 * float64(barWidth))
+				if filled > barWidth {
+					filled = barWidth
+				}
+				bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+				statusBar := bar
+				if usage.Budget.Blocked {
+					statusBar += "  BLOCKED"
+				}
+				fmt.Printf("  [%s]\n", statusBar)
+
+				fmt.Println()
+				fmt.Println("Plan")
+				fmt.Println("────")
+				planLabel := usage.Plan.Plan
+				if planLabel == "" {
+					planLabel = "free"
+				}
+				if !usage.Plan.Active && planLabel != "free" {
+					planLabel += " (inactive)"
+				}
+				fmt.Printf("  Current plan:   %s\n", planLabel)
+				if usage.Plan.CurrentPeriodEnd != nil {
+					fmt.Printf("  Renews:         %s\n", *usage.Plan.CurrentPeriodEnd)
+				}
+			}
+		}
+	}
+
 	return nil
+}
+
+func formatTokens(n int) string {
+	if n >= 1_000_000 {
+		return fmt.Sprintf("%.1fM", float64(n)/1_000_000)
+	}
+	if n >= 1_000 {
+		return fmt.Sprintf("%.1fK", float64(n)/1_000)
+	}
+	return fmt.Sprintf("%d", n)
 }
 
 func listMCPServers() error {

@@ -28,8 +28,16 @@ export default async function SignInPage({ searchParams }: PageProps) {
       : "/home";
 
   // Already signed in? Skip the form and go straight to the workspace.
-  const h = await headers();
-  const session = await getServerSession(h);
+  // Wrap in try/catch so a DB connection failure doesn't crash the page.
+  let session = null;
+  try {
+    const h = await headers();
+    session = await getServerSession(h);
+  } catch {
+    // Database unavailable — render the sign-in form anyway so the page
+    // doesn't show "Internal Server Error".  The form's own API calls
+    // will surface a user-facing error if the backend is truly down.
+  }
   if (session) {
     redirect(nextPath);
   }

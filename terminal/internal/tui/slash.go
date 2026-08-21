@@ -59,6 +59,10 @@ func (p *slashPopup) buildItems() []slashItem {
 			app.openSearch()
 			return app, nil
 		}},
+		{name: "/improve", description: "Improve the current prompt", action: func() (tea.Model, tea.Cmd) {
+			p.close()
+			return app.handleImprove()
+		}},
 		{name: "/activity", description: "Git, sync & token usage", action: func() (tea.Model, tea.Cmd) {
 			p.close()
 			app.openActivity()

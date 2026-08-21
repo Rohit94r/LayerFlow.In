@@ -48,6 +48,12 @@ export function loadAuth(): Promise<Auth> {
 
 /** Current session for the incoming request, or null when signed out. */
 export async function getServerSession(headers: Headers) {
-  const auth = await loadAuth();
-  return auth.api.getSession({ headers });
+  try {
+    const auth = await loadAuth();
+    return await auth.api.getSession({ headers });
+  } catch {
+    // Database unavailable, auth misconfigured, or session expired — treat
+    // as "not signed in" so pages can render a login form instead of crashing.
+    return null;
+  }
 }

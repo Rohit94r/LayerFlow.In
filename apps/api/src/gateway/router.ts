@@ -6,6 +6,7 @@ import {
 } from "@layerflow/contracts";
 import { MODELS } from "@layerflow/model-registry";
 import { Hono } from "hono";
+import { z } from "zod";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../cache/exact";
 import { releaseBudget, reserveBudget, settleBudget } from "../services/budgets/enforce";
 import { db } from "../db/client";
@@ -19,6 +20,9 @@ import {
 } from "../services/ai/providers";
 import { listConfiguredProviders } from "../services/keys/provider-keys";
 import { buildRunSavings, prepareRunCall } from "../services/savings/prepare";
+import { improvePrompt } from "../services/improve/improve";
+import { buildCurrentBudgetResponse } from "../services/budgets/current";
+import { getCurrentSubscription } from "../services/billing/dodo";
 import type { AppEnv } from "../types";
 import type { ChatMessage } from "../services/ai/providers/types";
 
@@ -376,4 +380,51 @@ gatewayRouter.post("/chat/completions", async (c) => {
     });
     throw err;
   }
+});
+
+// POST /v1/improve — improve a prompt (API-key authenticated for CLI access)
+const improveRequestSchema = z.object({
+  content: z.string().min(1).max(10000),
+  targetModel: z.string().optional(),
+});
+
+gatewayRouter.post("/improve", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const userId = c.get("apiKeyId") ?? "gateway";
+  const body = improveRequestSchema.parse(await c.req.json());
+
+  const result = await improvePrompt({
+    workspaceId,
+    userId,
+    content: body.content,
+    targetModel: body.targetModel,
+  });
+
+  return c.json(result);
+});
+
+// GET /v1/usage — workspace budget + plan info (API-key authenticated for CLI)
+gatewayRouter.get("/usage", async (c) => {
+  const workspaceId = c.get("workspaceId");
+
+  const [budget, subscription] = await Promise.all([
+    buildCurrentBudgetResponse(workspaceId),
+    getCurrentSubscription(workspaceId),
+  ]);
+
+  return c.json({
+    budget: {
+      monthlyLimitMicro: budget.budget.monthlyLimitMicro,
+      spentMicro: budget.budget.spentMicro,
+      remainingMicro: budget.remainingMicro,
+      percentUsed: budget.percentUsed,
+      blocked: budget.blocked,
+      hardBlock: budget.budget.hardBlock,
+    },
+    plan: {
+      plan: subscription.plan,
+      active: subscription.active,
+      currentPeriodEnd: subscription.currentPeriodEnd,
+    },
+  });
 });

@@ -364,3 +364,91 @@ func ResolveAPIKey(cfg *config.Config) (string, error) {
 	}
 	return "", errors.New("no API key configured — run `lf login` or set LF_API_KEY")
 }
+
+// ImproveResponse is the result of a prompt improvement call.
+type ImproveResponse struct {
+	ImprovedContent string `json:"improvedContent"`
+	Score           int    `json:"score"`
+	OriginalScore   int    `json:"originalScore"`
+	TokensSaved     int    `json:"tokensSaved"`
+	Explanation     string `json:"explanation"`
+}
+
+// ImprovePrompt sends a prompt to the API for improvement.
+func (c *Client) ImprovePrompt(ctx context.Context, content, targetModel string) (*ImproveResponse, error) {
+	body := map[string]any{"content": content}
+	if targetModel != "" {
+		body["targetModel"] = targetModel
+	}
+
+	req, err := c.post(ctx, "/v1/improve", body)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("improve request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, ErrInvalidKey
+	}
+	if resp.StatusCode >= 400 {
+		raw, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("improve failed (%d): %s", resp.StatusCode, strings.TrimSpace(string(raw)))
+	}
+
+	var out ImproveResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, fmt.Errorf("decode improve response: %w", err)
+	}
+	return &out, nil
+}
+
+// UsageResponse is the workspace budget + plan info from GET /v1/usage.
+type UsageResponse struct {
+	Budget struct {
+		MonthlyLimitMicro int64   `json:"monthlyLimitMicro"`
+		SpentMicro        int64   `json:"spentMicro"`
+		RemainingMicro    int64   `json:"remainingMicro"`
+		PercentUsed       float64 `json:"percentUsed"`
+		Blocked           bool    `json:"blocked"`
+		HardBlock         bool    `json:"hardBlock"`
+	} `json:"budget"`
+	Plan struct {
+		Plan             string  `json:"plan"`
+		Active           bool    `json:"active"`
+		CurrentPeriodEnd *string `json:"currentPeriodEnd"`
+	} `json:"plan"`
+}
+
+// GetUsage fetches workspace budget and plan info from the API.
+func (c *Client) GetUsage(ctx context.Context) (*UsageResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/v1/usage", nil)
+	if err != nil {
+		return nil, err
+	}
+	c.auth(req)
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get usage: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized {
+		return nil, ErrInvalidKey
+	}
+	if resp.StatusCode >= 400 {
+		raw, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("get usage failed (%d): %s", resp.StatusCode, strings.TrimSpace(string(raw)))
+	}
+
+	var out UsageResponse
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return nil, fmt.Errorf("decode usage response: %w", err)
+	}
+	return &out, nil
+}

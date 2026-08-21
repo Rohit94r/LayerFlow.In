@@ -27,10 +27,10 @@ const (
 const seconds = time.Second
 
 // DeviceAuthURL is the base URL for the device authorization endpoint.
-var DeviceAuthURL = "https://auth.layerflow.dev/device"
+var DeviceAuthURL = "https://layerflow.dev/api/v1/auth/device"
 
 // TokenURL is the base URL for the token endpoint.
-var TokenURL = "https://auth.layerflow.dev/token"
+var TokenURL = "https://layerflow.dev/api/v1/auth/token"
 
 // ClientID is the public OAuth client ID.
 var ClientID = "layerflow-lf-cli"

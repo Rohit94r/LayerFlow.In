@@ -35,6 +35,11 @@ const TEMPLATE_ICONS: Record<string, typeof Bot> = {
   startup_research: Sparkles,
   content_repurposing: FileCode2,
   meeting_followup: Clock,
+  teacher_assistant: GraduationCap,
+  student_study: GraduationCap,
+  freelancer_pipeline: Briefcase,
+  research_paper: Brain,
+  sales_outreach: Users,
 };
 
 const RUN_STATUS: Record<string, { label: string; className: string }> = {
@@ -129,7 +134,7 @@ export default function AgentsPage() {
               />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="px-1 text-[11px] font-medium text-muted">
-                  Try: “I want a Job Applying Agent.”
+                  Try: "I want a Freelancer Pipeline Agent" or "Student Study Agent"
                 </span>
                 <Button
                   onClick={() => router.push(encodeNewAgentUrl("job_applying", goal))}
@@ -171,7 +176,7 @@ export default function AgentsPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold tracking-tight text-ink">Agent marketplace</h2>
-            <p className="text-xs text-muted">Reusable workers with permissions, cost expectations, and outcomes built in.</p>
+            <p className="text-xs text-muted">Reusable workers with permissions, cost expectations, and outcomes built in. Anyone can build their own agent — teachers, students, freelancers, and more.</p>
           </div>
           <Link href="/agents/new">
             <Button variant="outline" size="sm" icon={<Plus className="h-3.5 w-3.5" />}>
@@ -185,7 +190,7 @@ export default function AgentsPage() {
             <Loader2 className="h-5 w-5 animate-spin text-faint" />
           </div>
         ) : (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {templates.map((template) => {
               const Icon = TEMPLATE_ICONS[template.key] ?? Bot;
               return (
@@ -232,7 +237,7 @@ export default function AgentsPage() {
           <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
             <Bot className="mx-auto h-7 w-7 text-faint" />
             <h3 className="mt-3 text-sm font-semibold text-ink">No agents hired yet</h3>
-            <p className="mt-1 text-xs text-muted">Start with the Job Applying Agent to see the V2 workflow end to end.</p>
+            <p className="mt-1 text-xs text-muted">Start with any template — Job Applying, Student Study, Freelancer Pipeline, Teacher Assistant, and more.</p>
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

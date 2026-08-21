@@ -1,4 +1,5 @@
 import type { Plan, Testimonial, FaqItem, RoadmapPhase, UseCase } from "@/lib/types";
+import { doodleForName } from "@/lib/doodles";
 
 export const site = {
   name: "LayerFlow",
@@ -83,7 +84,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Full-stack developer",
     initials: "AR",
     color: "#f59e0b",
-    photo: "/images/doodles/groovy.svg",
+    photo: doodleForName("Alfonso Roa Redondo"),
     highlights: ["rebuilt everything in seconds"],
   },
   {
@@ -93,7 +94,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Frontend engineer",
     initials: "HA",
     color: "#44edbc",
-    photo: "/images/doodles/selfie.svg",
+    photo: doodleForName("Hadil Affes"),
     highlights: ["without losing any project context"],
   },
   {
@@ -103,7 +104,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Indie hacker",
     initials: "AF",
     color: "#8b7cf8",
-    photo: "/images/doodles/reading-side.svg",
+    photo: doodleForName("Alvin Rindra Fazrie"),
     highlights: ["recommended the cheapest model"],
   },
   {
@@ -113,7 +114,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "AI tinkerer",
     initials: "IS",
     color: "#f472b6",
-    photo: "/images/doodles/meditating.svg",
+    photo: doodleForName("Imen Selmi"),
     highlights: ["stopped storing prompts everywhere"],
   },
   {
@@ -123,7 +124,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Founder",
     initials: "AK",
     color: "#38bdf8",
-    photo: "/images/doodles/sitting-reading.svg",
+    photo: doodleForName("Aman Kumar"),
     highlights: ["keeps the thread intact"],
   },
   {
@@ -133,7 +134,7 @@ export const TESTIMONIALS: Testimonial[] = [
     role: "Freelance developer",
     initials: "HG",
     color: "#a3e635",
-    photo: "/images/doodles/coffee.svg",
+    photo: doodleForName("Hamza usman ghani"),
     highlights: ["zero re-explaining"],
   },
 ];

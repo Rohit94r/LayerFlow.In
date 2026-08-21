@@ -64,6 +64,11 @@ type streamDoneMsg struct {
 	err  error
 }
 
+type improveResultMsg struct {
+	result *cloud.ImproveResponse
+	err    error
+}
+
 type toastMsg struct {
 	text string
 	kind toastKind
@@ -148,18 +153,25 @@ type App struct {
 	// Streaming result scratch (read by the pump after channel closes)
 	streamResp *cloud.ChatResponse
 	streamErr  error
+
+	// Render cache: message ID → pre-rendered string. Avoids re-running
+	// glamour markdown on every View() tick (220ms) for all historical
+	// messages. Only the streaming buffer is re-rendered on new text.
+	renderedCache     map[string]string
+	lastStreamRenderLen int
 }
 
 // NewApp creates the root app model.
 func NewApp(st *State) *App {
 	return &App{
-		st:          st,
-		keymap:      DefaultKeyMap(),
-		screen:      screenHome,
-		overlay:     overlayNone,
-		home:        newHomeInput(),
-		homeFocused: true,
-		chatInput:   newChatInput(),
+		st:              st,
+		keymap:          DefaultKeyMap(),
+		screen:          screenHome,
+		overlay:         overlayNone,
+		home:            newHomeInput(),
+		homeFocused:     true,
+		chatInput:       newChatInput(),
+		renderedCache:   make(map[string]string),
 	}
 }
 
@@ -238,6 +250,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case streamDoneMsg:
 		return a.handleStreamDone(msg)
 
+	case improveResultMsg:
+		return a.handleImproveResult(msg)
+
 	case gitStatusMsg:
 		a.st.Branch = msg.status.Branch
 		return a, nil
@@ -247,7 +262,11 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case modelsLoadedMsg:
 		return a.handleModelsLoaded(msg)
 	case errorMsg:
-		a.pushToast(fmt.Sprintf("Error: %v", msg.err), toastError)
+		errStr := msg.err.Error()
+		if len(errStr) > 60 {
+			errStr = errStr[:60] + "…"
+		}
+		a.pushToast("Error: "+errStr, toastError)
 		a.loading = false
 		return a, nil
 	}

@@ -52,14 +52,28 @@ to the API — `lib/services/*` talk to real endpoints and no page renders from 
 mock service layer. **The `lf` CLI** ships a full-screen Bubble Tea TUI (home,
 streaming chat, palette, sessions, model switcher, activity, help) and wired
 commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
-`doctor`, `rescue`, `cost`, `mcp list`, `daemon`, `upgrade`, `version`. A few
-edges are still stubs (`mcp add/remove/health`, `sessions --open`), and
-`lf upgrade` checks GitHub and prints the installer rather than self-updating.
-The sync client and its in-memory journal are not yet durable (see the
-[Go CLI](#go-cli-lf) section); and rescue/improve/agents/chat routes exist but
-are early — treat them as experimental.
+`doctor`, `rescue`, `cost`, `mcp list`, `daemon`, `upgrade`, `version`.
 
-Not built: SDK, IDE/browser extensions, marketplace, enterprise features.
+**Recent updates (v0.2.7):**
+- Terminal TUI: clean text wordmark (replaced pixel-block ASCII art)
+- Terminal TUI: render cache fixes streaming performance (no re-rendering all messages every tick)
+- Terminal TUI: `/improve` slash command + `Ctrl+I` keybinding for prompt improvement
+- Terminal TUI: model switcher shows ✓/○ availability badges, fetches from API (no hardcoded catalog)
+- Terminal TUI: error toasts truncated, smoother cursor blink, "LayerFlow" branding in chat header
+- Gateway: `POST /v1/improve` endpoint (API-key auth for CLI prompt improvement)
+- Gateway: `GET /v1/usage` endpoint (budget cap + plan info for `lf cost`)
+- `lf cost`: now shows workspace budget, progress bar, and plan status from the API
+- API: device auth endpoints (`/api/v1/auth/device`) for `lf login` browser flow
+- API: plan-limit enforcement middleware (managed mode gated by subscription tier)
+- Dashboard: costs page empty state when no spend yet
+
+**Remaining work (deployment only):**
+- Deploy API + worker to a long-running host (VPS/Render/Fly) — the worker
+  cannot run on Vercel serverless, so rescue/compare/agents/embeddings jobs
+  enqueue but don't process in current production
+- Point `api.layerflow.dev` DNS at the deployed host
+- Create Dodo Payments products and set product IDs in env
+- Configure DeepSeek (and later OpenAI/Anthropic) platform keys in env
 
 ## Architecture
 
@@ -77,6 +91,7 @@ Not built: SDK, IDE/browser extensions, marketplace, enterprise features.
 │  workspace · prompts · sessions · files · runs (SSE) · compare ·        │
 │  rescue · improve · agents · chat · budgets · usage · keys · search ·   │
 │  memory · learning · community · billing    (src/routes/index.ts)       │
+│  /api/v1/auth/device — CLI device OAuth    /v1/improve · /v1/usage       │
 └──────┬─────────────────────────────┬──────────────────────┬────────────┘
        │                             │                      │
        ▼                             ▼                      ▼

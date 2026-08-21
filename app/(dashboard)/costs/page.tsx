@@ -211,6 +211,27 @@ export default function CostClient() {
   const budgetLimit = budget ? microToUsd(budget.budget.monthlyLimitMicro) : 0;
   const spentInBudget = budget ? microToUsd(budget.budget.spentMicro) : 0;
 
+  if (totalRuns === 0 && totalSpend === 0) {
+    return (
+      <div className="space-y-5">
+        <PageHeader
+          title="Cost Analytics"
+          description="Every dollar you spend with AI — and every dollar LayerFlow saves you."
+        />
+        <EmptyState
+          icon={<Wallet className="h-5 w-5" />}
+          title="No spend yet"
+          description="Start chatting with any AI model and your cost breakdown will appear here — per model, per provider, with savings tracking."
+          action={
+            <Link href="/chat">
+              <Button>Start chatting</Button>
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader

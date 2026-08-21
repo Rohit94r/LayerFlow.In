@@ -104,7 +104,7 @@ func renderHomeHints(w int) string {
 		"   ",
 		hint("Type", "/"),
 		"   ",
-		hint("Press", "Ctrl+C"),
+		hint("Press", "Ctrl+C quit"),
 	)
 	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)
 }
