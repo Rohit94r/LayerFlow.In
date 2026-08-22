@@ -66,31 +66,21 @@ func contentWidth(w int) int {
 }
 
 // renderHome renders the chat-first home screen: the LayerFlow.dev wordmark
-// with tagline, a sign-in notice, the input box, key hints, and a compact
-// status line at the bottom.
+// with tagline, a compact context block (workspace/model/git/status), the
+// input box, key hints, and a status line at the bottom.
 func (a *App) renderHome() string {
 	brand := renderBrand(a.width)
 	colW := contentWidth(a.width)
 
-	// First-run notice: sign-in guidance when unauthenticated, a quiet
-	// "Ready." once signed in.
-	notice := styleDim.Render("Ready.")
-	if !a.st.Authenticated {
-		notice = lipgloss.JoinVertical(lipgloss.Center,
-			styleMuted.Render("You're not signed in."),
-			styleDim.Render("Press Enter to sign in · type /help for commands"),
-		)
-	}
-	noticeBlock := lipgloss.NewStyle().Width(colW).Align(lipgloss.Center).Render(notice)
-
+	contextBlock := a.renderHomeContext(colW)
 	inputBox := a.renderHomeInputBox(colW)
-	hints := renderHomeHints(colW)
+	hints := renderHomeHints(colW, a.st.Authenticated)
 	status := a.renderStatusBar()
 
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		brand,
 		"",
-		noticeBlock,
+		contextBlock,
 		"",
 		inputBox,
 		"",
@@ -113,6 +103,81 @@ func (a *App) renderHome() string {
 		Render(mainContent)
 
 	return lipgloss.JoinVertical(lipgloss.Left, centered, status)
+}
+
+// renderHomeContext draws a compact, subtle context block under the brand:
+//
+//	Workspace   ~/Documents/LayerFlow
+//	Model       llama-3.3-70b · auto
+//	Git         main ✓
+//	Status      ● Connected
+//
+// Rows drop off on narrow terminals so the input always has room.
+func (a *App) renderHomeContext(w int) string {
+	const labelW = 11
+
+	row := func(label, value string) string {
+		return lipgloss.JoinHorizontal(lipgloss.Left,
+			styleDim.Render(label),
+			lipgloss.NewStyle().Width(labelW-len(label)).Render(""),
+			styleMuted.Render(value),
+		)
+	}
+
+	workspace := a.st.Workspace
+	if workspace == "" {
+		workspace = a.st.Project
+	}
+
+	model := a.st.Model
+	if model == "" {
+		model = "default"
+	}
+	modelLine := shorten(model, 40) + " · auto"
+
+	// Git row: only meaningful inside a repo; outside is shown subtly.
+	gitLine := "not a repository"
+	if a.st.GitRepo {
+		b := a.st.Branch
+		if b == "" {
+			b = "(detached)"
+		}
+		gitLine = b + " ✓"
+	}
+
+	// Connection row.
+	statusLine := lipgloss.JoinHorizontal(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(ColorSuccess).Render("●"),
+		" ",
+		styleMuted.Render("Connected"),
+	)
+	if !a.st.Authenticated {
+		statusLine = lipgloss.JoinHorizontal(lipgloss.Left,
+			lipgloss.NewStyle().Foreground(ColorDim).Render("○"),
+			" ",
+			styleMuted.Render("Not signed in"),
+		)
+	}
+
+	var rows []string
+	rows = append(rows, row("Workspace", workspace))
+	rows = append(rows, row("Model", modelLine))
+	if w >= 60 {
+		rows = append(rows, row("Git", gitLine))
+	}
+	if w >= 52 {
+		rows = append(rows, row("Status", statusLine))
+	}
+
+	// Sign-in guidance for first-run users, below the context block.
+	if !a.st.Authenticated {
+		rows = append(rows, "")
+		rows = append(rows, styleDim.Render("Press Enter to sign in · type /help for commands"))
+	}
+
+	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(
+		lipgloss.JoinVertical(lipgloss.Left, rows...),
+	)
 }
 
 // renderHomeInputBox draws the input inside a rounded border box. The box's
@@ -138,8 +203,8 @@ func (a *App) renderHomeInputBox(w int) string {
 }
 
 // renderHomeHints shows the key hints under the input. Secondary hints hide
-// on narrow terminals.
-func renderHomeHints(w int) string {
+// on narrow terminals. The first hint adapts to auth state.
+func renderHomeHints(w int, authenticated bool) string {
 	hint := func(hotkey, text string) string {
 		return lipgloss.JoinHorizontal(lipgloss.Left,
 			styleMuted.Bold(true).Render(hotkey),
@@ -147,12 +212,19 @@ func renderHomeHints(w int) string {
 			styleDim.Render(text),
 		)
 	}
+	first := hint("Enter", "to send")
+	if !authenticated {
+		first = hint("Enter", "to sign in")
+	}
 	parts := []string{
-		hint("Enter", "to send"),
+		first,
 		hint("/", "commands"),
 	}
 	if w >= 64 {
-		parts = append(parts, hint("Ctrl+C", "quit"))
+		parts = append(parts, hint("Ctrl+P", "palette"))
+	}
+	if w >= 86 {
+		parts = append(parts, hint("Ctrl+K", "sessions"))
 	}
 	row := strings.Join(parts, "    ")
 	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)

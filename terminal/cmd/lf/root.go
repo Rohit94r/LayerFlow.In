@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -366,6 +367,7 @@ func newUpgradeCmd() *cobra.Command {
 var (
 	passStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
 	failStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+	warnStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true)
 	nameStyle = lipgloss.NewStyle().Bold(true)
 )
 
@@ -438,13 +440,20 @@ func listSessions(open bool, id string, delete bool) error {
 }
 
 func runDoctor(checkAudit bool) error {
-	fmt.Println("LayerFlow Diagnostics")
+	fmt.Println("LayerFlow Doctor")
 	fmt.Println("─────────────────────")
 
+	type level int
+	const (
+		lvlPass level = iota
+		lvlWarn
+		lvlFail
+	)
 	type report struct {
 		name   string
 		detail string
 		err    error
+		lvl    level
 	}
 	var reports []report
 
@@ -454,50 +463,69 @@ func runDoctor(checkAudit bool) error {
 		cfgPath = filepath.Join(home, ".config", "layerflow", "config.yaml")
 	}
 	if _, err := os.Stat(cfgPath); err != nil {
-		reports = append(reports, report{"config", cfgPath + " (missing)", err})
+		reports = append(reports, report{"config", cfgPath + " (missing)", err, lvlWarn})
 	} else if _, err := config.Load(""); err != nil {
-		reports = append(reports, report{"config", cfgPath, err})
+		reports = append(reports, report{"config", cfgPath, err, lvlFail})
 	} else {
-		reports = append(reports, report{"config", cfgPath, nil})
+		reports = append(reports, report{"config", cfgPath, nil, lvlPass})
 	}
 
 	// SQLite storage opens and migrations are applied.
 	db, openErr := storage.Open(&storage.Options{})
 	if openErr != nil {
-		reports = append(reports, report{"storage", "open failed", openErr})
+		reports = append(reports, report{"storage", "open failed", openErr, lvlFail})
 	} else {
 		defer storage.Close()
 		if _, err := db.Exec("SELECT 1"); err != nil {
-			reports = append(reports, report{"storage", "schema not queryable", err})
+			reports = append(reports, report{"storage", "schema not queryable", err, lvlFail})
 		} else {
-			reports = append(reports, report{"storage", "open + migrations OK", nil})
+			reports = append(reports, report{"storage", "open + migrations OK", nil, lvlPass})
 		}
 	}
 
 	// Keychain has a stored refresh token.
 	if auth.New().IsAuthenticated() {
-		reports = append(reports, report{"keychain", "refresh token present", nil})
+		reports = append(reports, report{"authentication", "refresh token present", nil, lvlPass})
 	} else {
-		reports = append(reports, report{"keychain", "no refresh token", errors.New("run `lf login`")})
+		reports = append(reports, report{"authentication", "not signed in", errors.New("run `lf login`"), lvlWarn})
+	}
+
+	// Git integration: git binary present + whether cwd is inside a repo.
+	// Being outside a git repository is a warning, never a failure.
+	if _, err := exec.LookPath("git"); err != nil {
+		reports = append(reports, report{"git", "git not installed", err, lvlWarn})
+	} else if cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree"); cmd.Run() != nil {
+		reports = append(reports, report{"git", "available — cwd is not a repository", nil, lvlWarn})
+	} else {
+		reports = append(reports, report{"git", "available — repository detected", nil, lvlPass})
+	}
+
+	// Workspace project detection (informational).
+	if dir, err := os.Getwd(); err == nil {
+		if _, kind := detectProjectType(dir); kind != "" {
+			reports = append(reports, report{"workspace", kind + " project detected", nil, lvlPass})
+		} else {
+			reports = append(reports, report{"workspace", "no recognized project manifest", nil, lvlWarn})
+		}
 	}
 
 	// Audit chain integrity.
 	if checkAudit {
 		if openErr != nil {
-			reports = append(reports, report{"audit", "skipped (storage failed)", openErr})
+			reports = append(reports, report{"audit", "skipped (storage failed)", openErr, lvlFail})
 		} else {
 			auditLog, err := audit.New(db)
 			if err != nil {
-				reports = append(reports, report{"audit", "init", err})
+				reports = append(reports, report{"audit", "init", err, lvlFail})
 			} else {
 				vr, err := auditLog.VerifyChain()
 				if err != nil {
-					reports = append(reports, report{"audit", "verify", err})
+					reports = append(reports, report{"audit", "verify", err, lvlFail})
 				} else if !vr.Valid {
 					reports = append(reports, report{"audit",
-						fmt.Sprintf("chain broken at row %d", vr.BrokenAt), errors.New("hash mismatch")})
+						fmt.Sprintf("chain broken at row %d", vr.BrokenAt), errors.New("hash mismatch"), lvlFail})
 				} else {
-					reports = append(reports, report{"audit", fmt.Sprintf("%d rows verified", vr.Rows), nil})
+					reports = append(reports, report{"audit", fmt.Sprintf("%d rows verified", vr.Rows), nil, lvlPass})
 				}
 			}
 		}
@@ -505,15 +533,43 @@ func runDoctor(checkAudit bool) error {
 
 	passed := 0
 	for _, r := range reports {
-		if r.err != nil {
-			fmt.Printf("%s  %-10s %s\n", failStyle.Render("FAIL"), nameStyle.Render(r.name), r.detail)
-		} else {
-			fmt.Printf("%s  %-10s %s\n", passStyle.Render("PASS"), nameStyle.Render(r.name), r.detail)
+		switch r.lvl {
+		case lvlFail:
+			fmt.Printf("%s  %-14s %s\n", failStyle.Render("FAIL"), nameStyle.Render(r.name), r.detail)
+		case lvlWarn:
+			fmt.Printf("%s  %-14s %s\n", warnStyle.Render("WARN"), nameStyle.Render(r.name), r.detail)
+		default:
+			fmt.Printf("%s  %-14s %s\n", passStyle.Render("PASS"), nameStyle.Render(r.name), r.detail)
 			passed++
 		}
 	}
 	fmt.Printf("\n%d/%d checks passed\n", passed, len(reports))
 	return nil
+}
+
+// detectProjectType scans dir for a recognized project manifest and returns
+// (name, type). Mirrors the TUI's detection so `lf doctor` stays consistent.
+func detectProjectType(dir string) (string, string) {
+	name := filepath.Base(dir)
+	manifests := []struct {
+		file string
+		kind string
+	}{
+		{"go.mod", "Go"},
+		{"package.json", "Node"},
+		{"pyproject.toml", "Python"},
+		{"requirements.txt", "Python"},
+		{"Cargo.toml", "Rust"},
+		{"pom.xml", "Java"},
+		{"build.gradle", "Java"},
+		{"build.gradle.kts", "Java"},
+	}
+	for _, m := range manifests {
+		if _, err := os.Stat(filepath.Join(dir, m.file)); err == nil {
+			return name, m.kind
+		}
+	}
+	return name, ""
 }
 
 func showCost(sessionID string, project bool) error {

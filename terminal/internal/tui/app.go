@@ -89,6 +89,7 @@ type sessionsLoadedMsg struct {
 
 type gitStatusMsg struct {
 	status git.Status
+	repo   bool // true when the cwd is inside a git repository
 }
 
 type searchResultsMsg struct {
@@ -266,6 +267,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a.handleImproveResult(msg)
 
 	case gitStatusMsg:
+		a.st.GitRepo = msg.repo
 		a.st.Branch = msg.status.Branch
 		return a, nil
 
@@ -395,11 +397,14 @@ func (a *App) renderToasts() string {
 
 func (a *App) loadGitStatus() tea.Cmd {
 	return func() tea.Msg {
+		// Being outside a git repository is normal (e.g. ~/Documents) and
+		// must never surface as a red error. We only report a status when we
+		// are actually inside a repo; otherwise we quietly mark it as such.
 		st, err := a.st.Git.Status(context.Background())
 		if err != nil {
-			return errorMsg{err: err}
+			return gitStatusMsg{repo: false}
 		}
-		return gitStatusMsg{status: st}
+		return gitStatusMsg{status: st, repo: true}
 	}
 }
 

@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/cmds"
@@ -30,6 +32,9 @@ type State struct {
 	Router        *providers.HeuristicRouter
 	Project       string
 	Branch        string
+	GitRepo       bool
+	Workspace     string
+	ProjectType   string
 	Git           *git.Repo
 	Version       string
 	Model         string
@@ -67,9 +72,16 @@ func NewState(version string) (*State, error) {
 
 	repo := git.New(dir)
 	branch := ""
+	gitRepo := false
 	if st, err := repo.Status(context.Background()); err == nil {
 		branch = st.Branch
+		gitRepo = true
 	}
+
+	// Workspace + project-type detection (package.json, go.mod, …). Being
+	// outside a recognized project is not an error — we just show the folder.
+	workspace := homePath(dir)
+	_, projectType := detectProject(dir)
 
 	router := providers.NewHeuristicRouter()
 	model := cfg.Model
@@ -120,6 +132,9 @@ func NewState(version string) (*State, error) {
 		Router:        router,
 		Project:       dir,
 		Branch:        branch,
+		GitRepo:       gitRepo,
+		Workspace:     workspace,
+		ProjectType:   projectType,
 		Git:           repo,
 		Version:       version,
 		Model:         model,
@@ -132,4 +147,38 @@ func NewState(version string) (*State, error) {
 // Close releases global resources (the storage singleton).
 func (s *State) Close() error {
 	return storage.Close()
+}
+
+// homePath collapses the user's home directory prefix into "~" for display.
+func homePath(p string) string {
+	if home, err := os.UserHomeDir(); err == nil && strings.HasPrefix(p, home) {
+		return "~" + strings.TrimPrefix(p, home)
+	}
+	return p
+}
+
+// detectProject scans the directory for a recognized project manifest and
+// returns (name, type). name is the folder basename; type is "Go", "Node",
+// "Python", "Rust", "Java", or "" when nothing is recognized.
+func detectProject(dir string) (string, string) {
+	name := filepath.Base(dir)
+	manifests := []struct {
+		file string
+		kind string
+	}{
+		{"go.mod", "Go"},
+		{"package.json", "Node"},
+		{"pyproject.toml", "Python"},
+		{"requirements.txt", "Python"},
+		{"Cargo.toml", "Rust"},
+		{"pom.xml", "Java"},
+		{"build.gradle", "Java"},
+		{"build.gradle.kts", "Java"},
+	}
+	for _, m := range manifests {
+		if _, err := os.Stat(filepath.Join(dir, m.file)); err == nil {
+			return name, m.kind
+		}
+	}
+	return name, ""
 }

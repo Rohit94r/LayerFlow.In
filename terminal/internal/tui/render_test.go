@@ -104,13 +104,13 @@ func TestViewInitializing(t *testing.T) {
 func TestHomeFirstRunNotices(t *testing.T) {
 	a := testApp()
 	a.width, a.height = 100, 30
-	if out := a.renderHome(); !strings.Contains(out, "Ready.") {
-		t.Fatal("authenticated home should show Ready.")
+	if out := a.renderHome(); !strings.Contains(out, "Connected") {
+		t.Fatal("authenticated home should show Connected status")
 	}
 
 	a2 := testApp()
 	a2.st.Authenticated = false
-	if out := a2.renderHome(); !strings.Contains(out, "You're not signed in.") {
+	if out := a2.renderHome(); !strings.Contains(out, "Not signed in") || !strings.Contains(out, "Press Enter to sign in") {
 		t.Fatal("unauthenticated home should show sign-in notice")
 	}
 }
@@ -127,5 +127,34 @@ func TestStatusBarCompact(t *testing.T) {
 				t.Errorf("status w=%d: line width %d exceeds terminal width", w, lw)
 			}
 		}
+	}
+}
+
+// TestHomeContextBlock checks the workspace/model/git/status rows render and
+// that a non-git directory shows a subtle "not a repository" instead of an
+// error.
+func TestHomeContextBlock(t *testing.T) {
+	a := testApp()
+	a.width, a.height = 100, 28
+	a.st.GitRepo = false
+	a.st.Workspace = "~/Documents"
+	out := a.renderHome()
+	if !strings.Contains(out, "Workspace") || !strings.Contains(out, "Model") {
+		t.Fatal("home context should show Workspace and Model rows")
+	}
+	if !strings.Contains(out, "not a repository") {
+		t.Fatal("non-git directory should show 'not a repository', not an error")
+	}
+	if strings.Contains(out, "fatal:") || strings.Contains(out, "exit status") {
+		t.Fatal("home must not surface raw git errors")
+	}
+
+	// Inside a repo: shows branch ✓.
+	b := testApp()
+	b.width, b.height = 100, 28
+	b.st.GitRepo = true
+	b.st.Branch = "main"
+	if out := b.renderHome(); !strings.Contains(out, "main ✓") {
+		t.Fatalf("git repo should show branch ✓, got: %s", out)
 	}
 }

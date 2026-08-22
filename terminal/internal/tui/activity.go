@@ -17,6 +17,7 @@ type activityModel struct {
 	app      *App
 	git      git.Status
 	gotGit   bool
+	notRepo  bool
 	pending  int
 	syncedAt string
 	loading  bool
@@ -92,6 +93,8 @@ func (act *activityModel) View() string {
 		} else {
 			body = append(body, act.drawerRow("status", "clean working tree"))
 		}
+	} else if act.notRepo {
+		body = append(body, act.drawerRow("status", "not a git repository"))
 	} else {
 		body = append(body, styleMuted.Render("  loading…"))
 	}
@@ -178,7 +181,8 @@ func (act *activityModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case gitStatusMsg:
 		act.git = msg.status
-		act.gotGit = true
+		act.gotGit = msg.repo
+		act.notRepo = !msg.repo
 		act.loading = false
 		return act.app, nil
 	case activitySyncMsg:
