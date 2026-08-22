@@ -12,7 +12,7 @@ import (
 func testApp() *App {
 	a := NewApp(&State{
 		Model:         "llama-3.3-70b-versatile",
-		Version:       "0.2.7",
+		Version:       "0.2.9",
 		Authenticated: true,
 	})
 	a.width = 80
@@ -156,5 +156,62 @@ func TestHomeContextBlock(t *testing.T) {
 	b.st.Branch = "main"
 	if out := b.renderHome(); !strings.Contains(out, "main ✓") {
 		t.Fatalf("git repo should show branch ✓, got: %s", out)
+	}
+}
+
+// TestHomeTipArea checks the rotating tip row renders on the home screen and
+// stays within the terminal width.
+func TestHomeTipArea(t *testing.T) {
+	for _, w := range []int{40, 60, 80, 120} {
+		a := testApp()
+		a.width, a.height = w, 24
+		out := a.renderHome()
+		if !strings.Contains(out, "Tip") {
+			t.Fatalf("home should contain a Tip row at w=%d", w)
+		}
+		for _, line := range strings.Split(out, "\n") {
+			if lw := lipgloss.Width(line); lw > w {
+				t.Errorf("tip w=%d: line width %d exceeds terminal width", w, lw)
+			}
+		}
+	}
+}
+
+// TestWelcomeScreen checks the first-run celebration renders without
+// overflow and contains the key branding + congratulations copy.
+func TestWelcomeScreen(t *testing.T) {
+	for _, w := range []int{40, 60, 80, 120} {
+		for _, h := range []int{10, 20, 30} {
+			a := testApp()
+			a.width, a.height = w, h
+			a.welcome = &welcomeScreen{app: a}
+			out := a.View()
+			if !strings.Contains(out, "LayerFlow") {
+				t.Fatalf("welcome should contain LayerFlow at w=%d h=%d", w, h)
+			}
+			if !strings.Contains(out, "Congratulations") {
+				t.Fatalf("welcome should contain Congratulations at w=%d h=%d", w, h)
+			}
+			if !strings.Contains(out, "successfully installed") {
+				t.Fatalf("welcome should contain 'successfully installed' at w=%d h=%d", w, h)
+			}
+			for _, line := range strings.Split(out, "\n") {
+				if lw := lipgloss.Width(line); lw > w {
+					t.Errorf("welcome w=%d h=%d: line width %d exceeds terminal width", w, h, lw)
+				}
+			}
+		}
+	}
+}
+
+// TestWelcomeNoOverflow asserts the welcome screen never panics at tiny sizes.
+func TestWelcomeNoOverflow(t *testing.T) {
+	for _, w := range []int{0, 1, 5, 10, 20} {
+		for _, h := range []int{0, 1, 5} {
+			a := testApp()
+			a.width, a.height = w, h
+			a.welcome = &welcomeScreen{app: a}
+			_ = a.View()
+		}
 	}
 }

@@ -110,15 +110,17 @@ type modelsModel struct {
 	loaded   bool
 }
 
-// openModels shows the model switcher.
-func (a *App) openModels() {
+// openModels shows the model switcher. Returns a command that fetches the
+// live model list from the gateway so the overlay always shows fresh data
+// instead of just the seeded single-row placeholder.
+func (a *App) openModels() tea.Cmd {
 	m := &modelsModel{app: a, loading: true}
 	a.models = m
 	a.overlay = overlayModels
 
 	// Seed with the current model so there's always something selectable.
 	m.models = []cloud.Model{{ID: a.st.Model, Available: true}}
-	m.load()
+	return m.load()
 }
 
 func (m *modelsModel) load() tea.Cmd {

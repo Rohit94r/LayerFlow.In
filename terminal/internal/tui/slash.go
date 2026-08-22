@@ -46,8 +46,7 @@ func (p *slashPopup) buildItems() []slashItem {
 		}},
 		{name: "/models", description: "Switch model", action: func() (tea.Model, tea.Cmd) {
 			p.close()
-			app.openModels()
-			return app, nil
+			return app, app.openModels()
 		}},
 		{name: "/sessions", description: "Recent chats", action: func() (tea.Model, tea.Cmd) {
 			p.close()
@@ -66,7 +65,7 @@ func (p *slashPopup) buildItems() []slashItem {
 		{name: "/activity", description: "Git, sync & token usage", action: func() (tea.Model, tea.Cmd) {
 			p.close()
 			app.openActivity()
-			return app, nil
+			return app, app.activity.refresh()
 		}},
 		{name: "/help", description: "Help & shortcuts", action: func() (tea.Model, tea.Cmd) {
 			p.close()

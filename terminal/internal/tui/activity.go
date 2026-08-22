@@ -28,30 +28,42 @@ func (a *App) openActivity() {
 	act := &activityModel{app: a, loading: true}
 	a.activity = act
 	a.overlay = overlayActivity
-	act.refresh()
 }
 
-func (act *activityModel) refresh() {
+// refresh re-fetches git and sync state, returning a batched command so the
+// Bubble Tea runtime actually dispatches the async results back into Update.
+func (act *activityModel) refresh() tea.Cmd {
 	act.loading = true
-	act.refreshGit()
-	act.refreshSync()
+	return tea.Batch(act.refreshGit(), act.refreshSync())
 }
 
+// activityGitMsg carries the git status result for the activity drawer. It
+// is distinct from gitStatusMsg so the drawer never clobbers the main App's
+// git state (which is shared with the home screen).
+type activityGitMsg struct {
+	status  git.Status
+	repo    bool
+	notRepo bool
+}
+
+// refreshGit fetches git status. Being outside a repository is normal and
+// must surface as "not a git repository", never as a red error.
 func (act *activityModel) refreshGit() tea.Cmd {
 	return func() tea.Msg {
 		st, err := act.app.st.Git.Status(context.Background())
 		if err != nil {
-			return errorMsg{err: err}
+			return activityGitMsg{notRepo: true}
 		}
-		return gitStatusMsg{status: st}
+		return activityGitMsg{status: st, repo: true}
 	}
 }
 
+// refreshSync fetches the cloud sync watermark and device id.
 func (act *activityModel) refreshSync() tea.Cmd {
 	return func() tea.Msg {
 		wm, err := sync.GetWatermark(context.Background(), act.app.st.DB)
 		if err != nil {
-			return errorMsg{err: err}
+			return activitySyncMsg{err: err}
 		}
 		dev, _ := sync.GetDeviceID(context.Background(), act.app.st.DB)
 		return activitySyncMsg{watermark: wm, device: dev}
@@ -62,6 +74,7 @@ func (act *activityModel) refreshSync() tea.Cmd {
 type activitySyncMsg struct {
 	watermark int64
 	device    string
+	err       error
 }
 
 // drawerWidth is the fixed width of the activity panel.
@@ -176,9 +189,14 @@ func (act *activityModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			act.app.closeOverlay()
 			return act.app, nil
 		case "r":
-			act.refresh()
-			return act.app, nil
+			return act.app, act.refresh()
 		}
+	case activityGitMsg:
+		act.git = msg.status
+		act.gotGit = msg.repo
+		act.notRepo = msg.notRepo
+		act.loading = false
+		return act.app, nil
 	case gitStatusMsg:
 		act.git = msg.status
 		act.gotGit = msg.repo
@@ -186,10 +204,12 @@ func (act *activityModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		act.loading = false
 		return act.app, nil
 	case activitySyncMsg:
-		if msg.watermark > 0 {
-			act.syncedAt = fmt.Sprintf("%d", msg.watermark)
-		} else {
-			act.syncedAt = "never"
+		if msg.err == nil {
+			if msg.watermark > 0 {
+				act.syncedAt = fmt.Sprintf("%d", msg.watermark)
+			} else {
+				act.syncedAt = "never"
+			}
 		}
 		act.loading = false
 		return act.app, nil

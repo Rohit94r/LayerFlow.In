@@ -67,7 +67,7 @@ func contentWidth(w int) int {
 
 // renderHome renders the chat-first home screen: the LayerFlow.dev wordmark
 // with tagline, a compact context block (workspace/model/git/status), the
-// input box, key hints, and a status line at the bottom.
+// input box, key hints, a rotating tip, and a status line at the bottom.
 func (a *App) renderHome() string {
 	brand := renderBrand(a.width)
 	colW := contentWidth(a.width)
@@ -75,6 +75,7 @@ func (a *App) renderHome() string {
 	contextBlock := a.renderHomeContext(colW)
 	inputBox := a.renderHomeInputBox(colW)
 	hints := renderHomeHints(colW, a.st.Authenticated)
+	tip := renderTip(colW, a.st.Authenticated)
 	status := a.renderStatusBar()
 
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
@@ -85,6 +86,8 @@ func (a *App) renderHome() string {
 		inputBox,
 		"",
 		hints,
+		"",
+		tip,
 	)
 
 	// Keep the content around the upper third so the input sits near the
