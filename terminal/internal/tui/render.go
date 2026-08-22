@@ -16,8 +16,8 @@ import (
 // enhanced table rendering.
 
 var (
-	rendererMu     sync.Mutex
-	rendererWidth  int
+	rendererMu      sync.Mutex
+	rendererWidth   int
 	mdRendererLight *glamour.TermRenderer
 )
 
@@ -103,8 +103,8 @@ func layerflowStyle() ansi.StyleConfig {
 			Ticked:         "[✓] ",
 			Unticked:       "[ ] ",
 		},
-		Link:     ansi.StylePrimitive{Color: stringPtr("#F97316"), Underline: boolPtr(true)},
-		LinkText: ansi.StylePrimitive{Color: stringPtr("#FB923C"), Bold: boolPtr(true)},
+		Link:      ansi.StylePrimitive{Color: stringPtr("#F97316"), Underline: boolPtr(true)},
+		LinkText:  ansi.StylePrimitive{Color: stringPtr("#FB923C"), Bold: boolPtr(true)},
 		Image:     ansi.StylePrimitive{Color: stringPtr("#F97316"), Underline: boolPtr(true)},
 		ImageText: ansi.StylePrimitive{Color: stringPtr("#FB923C")},
 		Code: ansi.StyleBlock{
@@ -130,11 +130,11 @@ func layerflowStyle() ansi.StyleConfig {
 		DefinitionList: ansi.StyleBlock{},
 		DefinitionTerm: ansi.StylePrimitive{
 			Color: stringPtr("#FB923C"),
-			Bold: boolPtr(true),
+			Bold:  boolPtr(true),
 		},
 		DefinitionDescription: ansi.StylePrimitive{Color: stringPtr("#A3A3A3")},
-		HTMLBlock: ansi.StyleBlock{},
-		HTMLSpan:  ansi.StyleBlock{},
+		HTMLBlock:             ansi.StyleBlock{},
+		HTMLSpan:              ansi.StyleBlock{},
 	}
 	return s
 }

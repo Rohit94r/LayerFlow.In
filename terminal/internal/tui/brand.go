@@ -4,24 +4,39 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ─── Brand hero ─────────────────────────────────────────────────────────────
-// A polished, bordered logo block for the home screen. "LayerFlow" in large
-// orange bold text inside a rounded border box with a tagline below.
+// ─── Brand wordmark ─────────────────────────────────────────────────────────
+// A clean, terminal-native wordmark: "LayerFlow" in bold orange with ".dev"
+// in a secondary tone, plus the tagline underneath. Two lines tall, centered,
+// responsive — no ASCII art, no border box.
 
-const (
-	taglineText = "The AI Coding Platform That Never Forgets"
-)
+// taglineText is the secondary branding line under the wordmark.
+const taglineText = "AI workspace for developers"
 
-// logoBoxStyle wraps the wordmark in a rounded border with orange accent.
-var logoBoxStyle = lipgloss.NewStyle().
-	Border(roundBorder).
-	BorderForeground(ColorAccentDim).
-	Padding(1, 4).
-	MarginBottom(1)
+// taglineStyle renders the secondary branding line under the wordmark.
+var taglineStyle = lipgloss.NewStyle().Foreground(ColorMuted)
 
-// renderBrand draws a polished logo: "LayerFlow" in a bordered box with the
-// tagline below it. Centered, with orange accents.
+// renderBrand draws the centered LayerFlow.dev wordmark and tagline. It is
+// intentionally compact (1–2 lines) so the chat input stays the visual focus
+// of the home screen.
 func renderBrand(width int) string {
+	content := lipgloss.JoinVertical(lipgloss.Center,
+		renderWordmarkInline(),
+		taglineStyle.Render(taglineText),
+	)
+
+	w := width
+	if w < 10 {
+		w = 10
+	}
+	return lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		Width(w).
+		Render(content)
+}
+
+// renderWordmarkInline renders the one-line LayerFlow.dev wordmark for
+// headers and status areas: "LayerFlow" bold orange + ".dev" secondary.
+func renderWordmarkInline() string {
 	name := lipgloss.NewStyle().
 		Foreground(ColorAccent).
 		Bold(true).
@@ -32,19 +47,5 @@ func renderBrand(width int) string {
 		Bold(true).
 		Render(".dev")
 
-	word := lipgloss.JoinHorizontal(lipgloss.Left, name, dotdev)
-
-	// Wrap in a bordered box for a proper app feel.
-	boxed := logoBoxStyle.Render(word)
-
-	tagline := taglineStyle.Render(taglineText)
-
-	content := lipgloss.JoinVertical(lipgloss.Center, boxed, tagline)
-
-	return lipgloss.NewStyle().
-		Align(lipgloss.Center).
-		Width(width).
-		Render(content)
+	return lipgloss.JoinHorizontal(lipgloss.Left, name, dotdev)
 }
-
-var taglineStyle = lipgloss.NewStyle().Foreground(ColorMuted)

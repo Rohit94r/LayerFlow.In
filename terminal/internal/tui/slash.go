@@ -281,6 +281,14 @@ func (p *slashPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return items[p.selected].action()
 			}
 			return p.app, nil
+		case key.String() == "tab":
+			// Autocomplete the filter to the selected command's name.
+			items := p.filtered()
+			if len(items) > 0 && p.selected >= 0 && p.selected < len(items) {
+				p.filter = strings.TrimPrefix(items[p.selected].name, "/")
+				p.selected = 0
+			}
+			return p.app, nil
 		case key.String() == "backspace":
 			if len(p.filter) > 0 {
 				p.filter = p.filter[:len(p.filter)-1]

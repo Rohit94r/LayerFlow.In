@@ -157,21 +157,21 @@ type App struct {
 	// Render cache: message ID → pre-rendered string. Avoids re-running
 	// glamour markdown on every View() tick (220ms) for all historical
 	// messages. Only the streaming buffer is re-rendered on new text.
-	renderedCache     map[string]string
+	renderedCache       map[string]string
 	lastStreamRenderLen int
 }
 
 // NewApp creates the root app model.
 func NewApp(st *State) *App {
 	return &App{
-		st:              st,
-		keymap:          DefaultKeyMap(),
-		screen:          screenHome,
-		overlay:         overlayNone,
-		home:            newHomeInput(),
-		homeFocused:     true,
-		chatInput:       newChatInput(),
-		renderedCache:   make(map[string]string),
+		st:            st,
+		keymap:        DefaultKeyMap(),
+		screen:        screenHome,
+		overlay:       overlayNone,
+		home:          newHomeInput(),
+		homeFocused:   true,
+		chatInput:     newChatInput(),
+		renderedCache: make(map[string]string),
 	}
 }
 
@@ -211,14 +211,25 @@ func (a *App) View() string {
 		body = a.models.View()
 	case overlayActivity:
 		drawer := a.activity.View()
+		mainW := a.width - drawerWidth - 6
+		if mainW < 10 {
+			mainW = 10
+		}
 		main := lipgloss.NewStyle().
-			Width(a.width - drawerWidth - 6).
+			Width(mainW).
 			Render(body)
 		body = lipgloss.JoinHorizontal(lipgloss.Left, main, drawer)
 	case overlayHelp:
 		body = a.help.View()
 	case overlayLogin:
 		body = a.login.View()
+	}
+
+	// Safety net: never emit more lines than the terminal is tall. This
+	// prevents flicker and layout jumps on very small terminals.
+	if a.height > 0 && lipgloss.Height(body) > a.height {
+		lines := strings.Split(body, "\n")
+		body = strings.Join(lines[:a.height], "\n")
 	}
 
 	// Apply the dark background to the full screen.

@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"strings"
 
 	bkey "github.com/charmbracelet/bubbles/key"
@@ -16,7 +17,7 @@ type homeInput struct {
 
 func newHomeInput() homeInput {
 	ta := textarea.New()
-	ta.Placeholder = "Ask anything about your code, startup, docs..."
+	ta.Placeholder = "Ask anything about your code, startup, docs"
 	ta.Prompt = ""
 	ta.CharLimit = 2000
 	ta.MaxHeight = 4
@@ -34,54 +35,70 @@ func newHomeInput() homeInput {
 	return homeInput{ta}
 }
 
-// inputBoxStyle wraps the home input in a rounded border.
+// inputBoxStyle wraps the chat input in a rounded border.
 var inputBoxStyle = lipgloss.NewStyle().
 	Border(roundBorder).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
 var inputBoxFocusedStyle = lipgloss.NewStyle().
-			Border(roundBorder).
-			BorderForeground(ColorAccent).
-			Padding(0, 1)
+	Border(roundBorder).
+	BorderForeground(ColorAccent).
+	Padding(0, 1)
 
-// statusBarStyle is the bottom status bar.
+// statusBarStyle is the compact bottom status line.
 var statusBarStyle = lipgloss.NewStyle().
-			Foreground(ColorMuted).
-			Background(ColorPanel).
-			Padding(0, 1)
+	Foreground(ColorMuted).
+	Background(ColorPanel).
+	Padding(0, 1)
 
-// renderHome renders the home screen: bordered logo, bordered input, hints,
-// and a status bar at the bottom.
+// contentWidth clamps the main content column to a comfortable reading
+// width: at most 100 columns and never wider than the terminal.
+func contentWidth(w int) int {
+	cw := w - 2
+	if cw > 100 {
+		cw = 100
+	}
+	if cw < 20 {
+		cw = 20
+	}
+	return cw
+}
+
+// renderHome renders the chat-first home screen: the LayerFlow.dev wordmark
+// with tagline, a sign-in notice, the input box, key hints, and a compact
+// status line at the bottom.
 func (a *App) renderHome() string {
-	logo := renderBrand(a.width)
+	brand := renderBrand(a.width)
+	colW := contentWidth(a.width)
 
-	colW := a.width
-	if colW > 100 {
-		colW = 100
+	// First-run notice: sign-in guidance when unauthenticated, a quiet
+	// "Ready." once signed in.
+	notice := styleDim.Render("Ready.")
+	if !a.st.Authenticated {
+		notice = lipgloss.JoinVertical(lipgloss.Center,
+			styleMuted.Render("You're not signed in."),
+			styleDim.Render("Press Enter to sign in · type /help for commands"),
+		)
 	}
-	if colW < 40 {
-		colW = 40
-	}
+	noticeBlock := lipgloss.NewStyle().Width(colW).Align(lipgloss.Center).Render(notice)
 
-	// Bordered input box
 	inputBox := a.renderHomeInputBox(colW)
-
-	// Hints row
 	hints := renderHomeHints(colW)
-
-	// Status bar at the bottom
 	status := a.renderStatusBar()
 
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
-		logo,
+		brand,
+		"",
+		noticeBlock,
 		"",
 		inputBox,
 		"",
 		hints,
 	)
 
-	// Center the main content vertically, leaving room for the status bar.
+	// Keep the content around the upper third so the input sits near the
+	// natural eye line, above the status bar.
 	availableH := a.height - lipgloss.Height(status) - 2
 	contentH := lipgloss.Height(mainContent)
 	top := (availableH - contentH) / 3
@@ -98,77 +115,105 @@ func (a *App) renderHome() string {
 	return lipgloss.JoinVertical(lipgloss.Left, centered, status)
 }
 
-// renderHomeInputBox draws the input inside a rounded border box.
+// renderHomeInputBox draws the input inside a rounded border box. The box's
+// total width — borders and padding included — is exactly w, so it never
+// overflows the terminal.
 func (a *App) renderHomeInputBox(w int) string {
-	ti := a.home
-	avail := w - 4
-	if avail < 20 {
-		avail = 20
+	inner := w - 4 // border (2) + padding (2)
+	if inner < 10 {
+		inner = 10
 	}
-	ti.SetWidth(avail)
-
-	view := ti.View()
+	a.home.SetWidth(inner)
 
 	style := inputBoxStyle
 	if a.homeFocused {
 		style = inputBoxFocusedStyle
 	}
-	return style.Width(w).Render(view)
+	return style.Width(inner).Render(a.home.View())
 }
 
-// renderHomeHints shows the helper hints under the input.
+// renderHomeHints shows the key hints under the input. Secondary hints hide
+// on narrow terminals.
 func renderHomeHints(w int) string {
-	hint := func(text string, hotkey string) string {
+	hint := func(hotkey, text string) string {
 		return lipgloss.JoinHorizontal(lipgloss.Left,
-			styleMuted.Render(text),
+			styleMuted.Bold(true).Render(hotkey),
 			" ",
-			styleChipActive.Render(hotkey),
+			styleDim.Render(text),
 		)
 	}
-	row := lipgloss.JoinHorizontal(lipgloss.Center,
-		hint("Press", "Enter"),
-		"  ",
-		hint("Type", "/ for commands"),
-		"  ",
-		hint("Press", "Ctrl+C to quit"),
-	)
+	parts := []string{
+		hint("Enter", "to send"),
+		hint("/", "commands"),
+	}
+	if w >= 64 {
+		parts = append(parts, hint("Ctrl+C", "quit"))
+	}
+	row := strings.Join(parts, "    ")
 	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)
 }
 
-// renderStatusBar draws a bottom status bar with model, session, and auth info.
+// renderStatusBar draws one compact status line: auth dot, model · provider
+// on the left; session, usage, and version on the right (hidden on narrow
+// terminals).
 func (a *App) renderStatusBar() string {
 	model := a.st.Model
 	if model == "" {
 		model = "default"
 	}
 
-	// Auth status
-	authBadge := styleDim.Render("○ not logged in")
+	authDot := lipgloss.NewStyle().Foreground(ColorDim).Render("○")
 	if a.st.Authenticated {
-		authBadge = lipgloss.NewStyle().Foreground(ColorSuccess).Render("● connected")
+		authDot = lipgloss.NewStyle().Foreground(ColorSuccess).Render("●")
 	}
 
-	// Model badge
-	modelBadge := styleChipModel.Render(model)
-
-	// Version
-	version := "v" + a.st.Version
-	if version == "v" || version == "vdev" {
-		version = "dev"
-	}
-	versionBadge := styleDim.Render(version)
-
-	// Build the bar
 	left := lipgloss.JoinHorizontal(lipgloss.Left,
-		" ", modelBadge, "  ", authBadge,
-	)
-	right := lipgloss.JoinHorizontal(lipgloss.Left,
-		versionBadge, " ",
+		" ", authDot, " ",
+		styleDim.Render("Model "),
+		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(shorten(model, 44)),
+		styleDim.Render(" · "),
+		styleMuted.Render(providerFor(model)),
 	)
 
-	spacer := a.width - lipgloss.Width(left) - lipgloss.Width(right) - 2
+	session := "new"
+	usage := "$0.00"
+	if a.session != nil {
+		if t := a.session.Title; t != "" && t != "New session" {
+			session = shorten(t, 16)
+		}
+		usage = fmt.Sprintf("$%.2f", float64(a.session.CostMicro)/1_000_000)
+	}
+
+	var rightParts []string
+	if a.width >= 70 {
+		rightParts = append(rightParts,
+			styleDim.Render("Session "),
+			styleMuted.Render(session),
+			styleDim.Render(" · "),
+			styleMuted.Render(usage),
+		)
+	}
+	if a.width >= 90 {
+		version := "v" + a.st.Version
+		if version == "v" || version == "vdev" {
+			version = "dev"
+		}
+		rightParts = append(rightParts, styleDim.Render(" · "), styleDim.Render(version))
+	}
+	right := lipgloss.JoinHorizontal(lipgloss.Left, rightParts...)
+
+	barW := a.width - 2 // statusBarStyle adds 1 padding on each side
+	if barW < 1 {
+		barW = 1
+	}
+	spacer := barW - lipgloss.Width(left) - lipgloss.Width(right)
 	if spacer < 0 {
-		spacer = 0
+		// Not enough room: drop the secondary side entirely.
+		right = ""
+		spacer = barW - lipgloss.Width(left)
+		if spacer < 0 {
+			spacer = 0
+		}
 	}
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Left,
@@ -177,7 +222,7 @@ func (a *App) renderStatusBar() string {
 		right,
 	)
 
-	return statusBarStyle.Width(a.width).Render(bar)
+	return statusBarStyle.Width(barW).Render(bar)
 }
 
 // updateHome handles input on the home screen.
@@ -221,32 +266,25 @@ func (a *App) refreshHomeHeight() {
 }
 
 func homeComposerWidth(width int) int {
-	colW := width
-	if colW > 100 {
-		colW = 100
-	}
-	if colW < 40 {
-		colW = 40
-	}
-	avail := colW - 4
-	if avail < 20 {
-		avail = 20
+	avail := contentWidth(width) - 4
+	if avail < 10 {
+		avail = 10
 	}
 	return avail
 }
 
 // homeSubmit sends the typed text as the first message, or just enters the
-// chat screen when empty.
+// chat screen when empty. Unauthenticated users are sent through login with
+// their text preserved in the input.
 func (a *App) homeSubmit() (tea.Model, tea.Cmd) {
-	text := strings.TrimSpace(a.home.Value())
-	a.home.SetValue("")
-	a.home.Model.SetHeight(1)
-
-	// Login first if unauthenticated.
 	if !a.st.Authenticated {
 		a.openLogin()
 		return a, nil
 	}
+
+	text := strings.TrimSpace(a.home.Value())
+	a.home.SetValue("")
+	a.home.Model.SetHeight(1)
 
 	if text != "" && strings.HasPrefix(text, "/") {
 		a.pendingSend = ""

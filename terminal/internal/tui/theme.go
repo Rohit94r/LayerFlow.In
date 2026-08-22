@@ -8,11 +8,12 @@ import (
 
 // ─── Brand palette ──────────────────────────────────────────────────────────
 // LayerFlow.dev — premium dark theme.
-//   Background: near-black      #0B0B0B
-//   Primary:    white           #F5F5F5
-//   Secondary:  gray            #A3A3A3
-//   Accent:     orange          #F97316
-//   Border:     zinc-800        #262626
+//
+//	Background: near-black      #0B0B0B
+//	Primary:    white           #F5F5F5
+//	Secondary:  gray            #A3A3A3
+//	Accent:     orange          #F97316
+//	Border:     zinc-800        #262626
 var (
 	ColorBG        = lipgloss.Color("#0B0B0B")
 	ColorPanel     = lipgloss.Color("#161616")
@@ -49,10 +50,10 @@ var (
 			Padding(1, 2)
 
 	styleCardAccent = lipgloss.NewStyle().
-				Background(ColorPanel).
-				Border(roundBorder).
-				BorderForeground(ColorBorderHi).
-				Padding(1, 2)
+			Background(ColorPanel).
+			Border(roundBorder).
+			BorderForeground(ColorBorderHi).
+			Padding(1, 2)
 
 	styleModal = lipgloss.NewStyle().
 			Background(ColorPanel2).
@@ -93,10 +94,10 @@ var (
 			Padding(0, 1)
 
 	styleChipActive = lipgloss.NewStyle().
-				Foreground(ColorText).
-				Background(ColorAccent).
-				Bold(true).
-				Padding(0, 1)
+			Foreground(ColorText).
+			Background(ColorAccent).
+			Bold(true).
+			Padding(0, 1)
 
 	styleChipModel = lipgloss.NewStyle().
 			Foreground(ColorAccentHi).
@@ -153,8 +154,8 @@ var (
 			Bold(true)
 
 	styleListSelDim = lipgloss.NewStyle().
-				Foreground(ColorAccentHi).
-				Background(ColorPanel2)
+			Foreground(ColorAccentHi).
+			Background(ColorPanel2)
 
 	styleListDim = lipgloss.NewStyle().
 			Foreground(ColorDim)
@@ -173,8 +174,8 @@ var (
 				Bold(true)
 
 	styleRoleSystem = lipgloss.NewStyle().
-				Foreground(ColorDim).
-				Italic(true)
+			Foreground(ColorDim).
+			Italic(true)
 )
 
 // widthOr returns the width if positive, otherwise the fallback.

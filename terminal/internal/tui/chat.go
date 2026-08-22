@@ -70,40 +70,37 @@ func newChatInput() textarea.Model {
 
 // ─── Chat screen ────────────────────────────────────────────────────────────
 
-// renderChat renders the chat screen: header bar, conversation, bordered
-// input, and status bar at the bottom.
+// renderChat renders the chat screen: compact header, conversation, bordered
+// input, and status bar at the bottom — all centered in a content column.
 func (a *App) renderChat() string {
-	colW := a.width - 8
-	if colW < 60 {
-		colW = a.width - 2
-	}
-	if colW < 40 {
-		colW = 40
-	}
+	colW := contentWidth(a.width)
 
 	header := a.renderChatHeader(colW)
+	headerH := lipgloss.Height(header)
 	composer := a.renderChatInputBox(colW)
 	composerH := lipgloss.Height(composer)
 	status := a.renderStatusBar()
 	statusH := lipgloss.Height(status)
-	conversation := a.renderConversation(colW, a.height-statusH-composerH-2)
+	conversation := a.renderConversation(colW, a.height-headerH-statusH-composerH)
 
-	// Pad the left/right so text hugs a centered column.
+	// Pad the left/right so everything hugs a centered column.
 	pad := (a.width - colW) / 2
 	if pad < 1 {
 		pad = 1
 	}
+	side := lipgloss.NewStyle().Padding(0, pad)
 
-	return lipgloss.JoinVertical(lipgloss.Left,
-		lipgloss.NewStyle().Padding(0, pad).Render(header),
-		conversation,
-		lipgloss.NewStyle().Padding(0, pad).Render(composer),
-		status,
+	body := lipgloss.JoinVertical(lipgloss.Left,
+		side.Render(header),
+		side.Render(conversation),
+		side.Render(composer),
 	)
+	return lipgloss.JoinVertical(lipgloss.Left, body, status)
 }
 
-// renderChatHeader is a header bar: LayerFlow logo, model badge, session
-// title, and navigation hints — with a bottom border separator.
+// renderChatHeader is a compact single-line header: the wordmark, model ·
+// provider, session title, and hints on wide terminals — with a hairline
+// bottom separator.
 func (a *App) renderChatHeader(w int) string {
 	title := "New session"
 	if a.session != nil {
@@ -119,41 +116,61 @@ func (a *App) renderChatHeader(w int) string {
 		model = "default"
 	}
 
+	modelLine := lipgloss.JoinHorizontal(lipgloss.Left,
+		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(shorten(model, 44)),
+		styleDim.Render(" · "),
+		styleMuted.Render(providerFor(model)),
+	)
+
 	left := lipgloss.JoinHorizontal(lipgloss.Left,
-		styleWordmark.Render("LayerFlow"),
+		renderWordmarkInline(),
 		"  ",
-		styleChipModel.Render(model),
-		"  ",
-		lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render(shorten(title, 48)),
+		modelLine,
 	)
 
-	right := lipgloss.JoinHorizontal(lipgloss.Left,
-		styleDim.Render("esc home"),
-		"  ",
-		styleDim.Render("ctrl+i improve"),
-	)
-
-	spacer := w - lipgloss.Width(left) - lipgloss.Width(right) - 4
-	if spacer < 1 {
-		spacer = 1
+	// Secondary info (title, hints) only when there is room for it.
+	var right string
+	if w >= 72 {
+		right = lipgloss.JoinHorizontal(lipgloss.Left,
+			styleDim.Render("esc home"),
+			"  ",
+			styleDim.Render("ctrl+i improve"),
+		)
+		if a.session != nil && title != "New session" {
+			right = lipgloss.JoinHorizontal(lipgloss.Left,
+				lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render(shorten(title, 24)),
+				"   ",
+				right,
+			)
+		}
 	}
-	line := lipgloss.JoinHorizontal(lipgloss.Left,
-		left,
-		lipgloss.NewStyle().Width(spacer).Render(""),
-		right,
-	)
 
-	// Header bar with a bottom border line.
-	headerBar := lipgloss.NewStyle().
+	inner := w - 2 // Padding(0, 1) on each side
+	remaining := inner - lipgloss.Width(left)
+	var line string
+	if right != "" && remaining-lipgloss.Width(right) >= 2 {
+		line = lipgloss.JoinHorizontal(lipgloss.Left,
+			left,
+			lipgloss.NewStyle().Width(remaining-lipgloss.Width(right)).Render(""),
+			right,
+		)
+	} else if remaining > 0 {
+		line = lipgloss.JoinHorizontal(lipgloss.Left,
+			left,
+			lipgloss.NewStyle().Width(remaining).Render(""),
+		)
+	} else {
+		line = left
+	}
+
+	return lipgloss.NewStyle().
 		Background(ColorPanel).
-		Width(w).
+		Width(inner).
 		BorderBottom(true).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(ColorBorder).
 		Padding(0, 1).
 		Render(line)
-
-	return headerBar
 }
 
 // renderConversation renders message history + streaming, ChatGPT style:
@@ -213,8 +230,13 @@ func (a *App) renderConversation(w, maxH int) string {
 		lines = lines[len(lines)-maxH:]
 	}
 
+	innerW := w - 8
+	if innerW < 10 {
+		innerW = 10
+	}
+
 	content := lipgloss.NewStyle().
-		Width(w).
+		Width(innerW).
 		Padding(0, 4).
 		Render(strings.Join(lines, "\n"))
 	return content
@@ -227,8 +249,12 @@ func (a *App) renderChatWelcome(w, maxH int) string {
 		"   ",
 		styleChip.Render("enter send"),
 	)
-	row := lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(hint)
-	return lipgloss.NewStyle().Height(maxH).Width(w).Render(row)
+	innerW := w - 8
+	if innerW < 10 {
+		innerW = 10
+	}
+	row := lipgloss.NewStyle().Width(innerW).Align(lipgloss.Center).Render(hint)
+	return lipgloss.NewStyle().Height(maxH).Width(innerW).Padding(0, 4).Render(row)
 }
 
 // renderMessage renders a single persisted message.
@@ -270,25 +296,24 @@ func renderMarkdownW(content string, width int) string {
 	return renderMarkdownRich(content, width)
 }
 
-// renderChatInput draws the composer at the bottom of the chat screen: a
-// "You " prefix and the input on clean lines with a hairline underline. There
-// is no border box, so no stray corners or pipes can leak into the text.
+// renderChatInput draws the composer at the bottom of the chat screen inside
+// a rounded border (orange when focused). The box's total width — borders
+// and padding included — is exactly w so it never overflows the terminal.
 func (a *App) renderChatInputBox(w int) string {
-	ti := a.chatInput
-	avail := w - 6
-	if avail < 20 {
-		avail = 20
+	inner := w - 4 // border (2) + padding (2)
+	if inner < 10 {
+		inner = 10
 	}
-	ti.SetWidth(avail)
+	a.chatInput.SetWidth(inner)
 
-	view := ti.View()
+	view := a.chatInput.View()
 
 	style := inputBoxStyle
 	if a.chatFocused {
 		style = inputBoxFocusedStyle
 	}
 
-	box := style.Width(w).Render(view)
+	box := style.Width(inner).Render(view)
 
 	if a.loading {
 		box = lipgloss.JoinVertical(lipgloss.Left, box,
@@ -312,16 +337,9 @@ func (a *App) updateChat(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func chatComposerWidth(width int) int {
-	colW := width - 8
-	if colW < 60 {
-		colW = width - 2
-	}
-	if colW < 40 {
-		colW = 40
-	}
-	avail := colW - 6
-	if avail < 20 {
-		avail = 20
+	avail := contentWidth(width) - 4
+	if avail < 10 {
+		avail = 10
 	}
 	return avail
 }
@@ -677,7 +695,7 @@ func (a *App) handleImproveResult(msg improveResultMsg) (tea.Model, tea.Cmd) {
 		if len(errStr) > 60 {
 			errStr = errStr[:60] + "…"
 		}
-		a.pushToast("Improve failed: " + errStr, toastError)
+		a.pushToast("Improve failed: "+errStr, toastError)
 		return a, nil
 	}
 
