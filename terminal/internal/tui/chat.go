@@ -99,18 +99,8 @@ func (a *App) renderChat() string {
 }
 
 // renderChatHeader is a compact single-line header: the wordmark, model ·
-// provider, session title, and hints on wide terminals — with a hairline
-// bottom separator.
+// provider, and hints on wide terminals — with a hairline bottom separator.
 func (a *App) renderChatHeader(w int) string {
-	title := "New session"
-	if a.session != nil {
-		if a.session.Title != "" {
-			title = a.session.Title
-		} else {
-			title = a.session.ID
-		}
-	}
-
 	model := a.st.Model
 	if model == "" {
 		model = "default"
@@ -128,7 +118,8 @@ func (a *App) renderChatHeader(w int) string {
 		modelLine,
 	)
 
-	// Secondary info (title, hints) only when there is room for it.
+	// Hints only on medium+ terminals; the session title lives in the
+	// status bar to keep the header compact.
 	var right string
 	if w >= 72 {
 		right = lipgloss.JoinHorizontal(lipgloss.Left,
@@ -136,22 +127,28 @@ func (a *App) renderChatHeader(w int) string {
 			"  ",
 			styleDim.Render("ctrl+i improve"),
 		)
-		if a.session != nil && title != "New session" {
-			right = lipgloss.JoinHorizontal(lipgloss.Left,
-				lipgloss.NewStyle().Foreground(ColorText).Bold(true).Render(shorten(title, 24)),
-				"   ",
-				right,
-			)
-		}
 	}
 
-	inner := w - 2 // Padding(0, 1) on each side
+	// Header total width = w (BorderBottom adds a line below, no side
+	// borders). Padding(0,1) → text area = w-2.
+	inner := w - 2 // text area inside padding
 	remaining := inner - lipgloss.Width(left)
+
+	// Fit check: drop the right side if it doesn't leave a comfortable gap.
+	const minGap = 3
+	if right != "" && remaining-lipgloss.Width(right) < minGap {
+		right = ""
+	}
+
 	var line string
-	if right != "" && remaining-lipgloss.Width(right) >= 2 {
+	if right != "" {
+		gap := remaining - lipgloss.Width(right)
+		if gap < 0 {
+			gap = 0
+		}
 		line = lipgloss.JoinHorizontal(lipgloss.Left,
 			left,
-			lipgloss.NewStyle().Width(remaining-lipgloss.Width(right)).Render(""),
+			lipgloss.NewStyle().Width(gap).Render(""),
 			right,
 		)
 	} else if remaining > 0 {
@@ -165,7 +162,7 @@ func (a *App) renderChatHeader(w int) string {
 
 	return lipgloss.NewStyle().
 		Background(ColorPanel).
-		Width(inner).
+		Width(w).
 		BorderBottom(true).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(ColorBorder).
@@ -230,13 +227,10 @@ func (a *App) renderConversation(w, maxH int) string {
 		lines = lines[len(lines)-maxH:]
 	}
 
-	innerW := w - 8
-	if innerW < 10 {
-		innerW = 10
-	}
-
+	// Width(w).Padding(0,4) → total block = w, text area = w-8. Messages
+	// above were wrapped at w-8, so they fit exactly inside the padding.
 	content := lipgloss.NewStyle().
-		Width(innerW).
+		Width(w).
 		Padding(0, 4).
 		Render(strings.Join(lines, "\n"))
 	return content
@@ -249,12 +243,8 @@ func (a *App) renderChatWelcome(w, maxH int) string {
 		"   ",
 		styleChip.Render("enter send"),
 	)
-	innerW := w - 8
-	if innerW < 10 {
-		innerW = 10
-	}
-	row := lipgloss.NewStyle().Width(innerW).Align(lipgloss.Center).Render(hint)
-	return lipgloss.NewStyle().Height(maxH).Width(innerW).Padding(0, 4).Render(row)
+	row := lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(hint)
+	return lipgloss.NewStyle().Height(maxH).Width(w).Padding(0, 4).Render(row)
 }
 
 // renderMessage renders a single persisted message.
@@ -300,11 +290,15 @@ func renderMarkdownW(content string, width int) string {
 // a rounded border (orange when focused). The box's total width — borders
 // and padding included — is exactly w so it never overflows the terminal.
 func (a *App) renderChatInputBox(w int) string {
-	inner := w - 4 // border (2) + padding (2)
-	if inner < 10 {
-		inner = 10
+	n := w - 2 // style width (excludes border, includes padding)
+	if n < 6 {
+		n = 6
 	}
-	a.chatInput.SetWidth(inner)
+	textW := n - 2 // exclude padding → text area
+	if textW < 10 {
+		textW = 10
+	}
+	a.chatInput.SetWidth(textW)
 
 	view := a.chatInput.View()
 
@@ -313,7 +307,7 @@ func (a *App) renderChatInputBox(w int) string {
 		style = inputBoxFocusedStyle
 	}
 
-	box := style.Width(inner).Render(view)
+	box := style.Width(n).Render(view)
 
 	if a.loading {
 		box = lipgloss.JoinVertical(lipgloss.Left, box,
@@ -337,11 +331,11 @@ func (a *App) updateChat(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func chatComposerWidth(width int) int {
-	avail := contentWidth(width) - 4
-	if avail < 10 {
-		avail = 10
+	w := contentWidth(width) - 4 // text area inside border + padding
+	if w < 10 {
+		w = 10
 	}
-	return avail
+	return w
 }
 
 func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {

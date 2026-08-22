@@ -117,19 +117,24 @@ func (a *App) renderHome() string {
 
 // renderHomeInputBox draws the input inside a rounded border box. The box's
 // total width — borders and padding included — is exactly w, so it never
-// overflows the terminal.
+// overflows the terminal. lipgloss Width(N) includes padding but excludes
+// border, so N = w-2 and the text area = N-2 = w-4.
 func (a *App) renderHomeInputBox(w int) string {
-	inner := w - 4 // border (2) + padding (2)
-	if inner < 10 {
-		inner = 10
+	n := w - 2 // style width (excludes border, includes padding)
+	if n < 6 {
+		n = 6
 	}
-	a.home.SetWidth(inner)
+	textW := n - 2 // exclude padding → text area
+	if textW < 10 {
+		textW = 10
+	}
+	a.home.SetWidth(textW)
 
 	style := inputBoxStyle
 	if a.homeFocused {
 		style = inputBoxFocusedStyle
 	}
-	return style.Width(inner).Render(a.home.View())
+	return style.Width(n).Render(a.home.View())
 }
 
 // renderHomeHints shows the key hints under the input. Secondary hints hide
@@ -202,15 +207,18 @@ func (a *App) renderStatusBar() string {
 	}
 	right := lipgloss.JoinHorizontal(lipgloss.Left, rightParts...)
 
-	barW := a.width - 2 // statusBarStyle adds 1 padding on each side
-	if barW < 1 {
-		barW = 1
+	// statusBarStyle has Padding(0,1) and no border, so Width(a.width) gives
+	// a total block of a.width with a text area of a.width-2.
+	barW := a.width
+	if barW < 4 {
+		barW = 4
 	}
-	spacer := barW - lipgloss.Width(left) - lipgloss.Width(right)
+	inner := barW - 2 // text area inside padding
+	spacer := inner - lipgloss.Width(left) - lipgloss.Width(right)
 	if spacer < 0 {
 		// Not enough room: drop the secondary side entirely.
 		right = ""
-		spacer = barW - lipgloss.Width(left)
+		spacer = inner - lipgloss.Width(left)
 		if spacer < 0 {
 			spacer = 0
 		}
@@ -266,11 +274,11 @@ func (a *App) refreshHomeHeight() {
 }
 
 func homeComposerWidth(width int) int {
-	avail := contentWidth(width) - 4
-	if avail < 10 {
-		avail = 10
+	w := contentWidth(width) - 4 // text area inside border + padding
+	if w < 10 {
+		w = 10
 	}
-	return avail
+	return w
 }
 
 // homeSubmit sends the typed text as the first message, or just enters the
