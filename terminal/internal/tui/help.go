@@ -67,7 +67,7 @@ func (h *helpModel) View() string {
 				{"/", "Commands"},
 				{"Ctrl+P", "Command palette"},
 				{"Ctrl+K", "Sessions"},
-				{"Ctrl+L", "Models"},
+				{"Ctrl+M", "Models"},
 				{"Ctrl+T", "Activity"},
 				{"Ctrl+N", "New chat"},
 				{"Esc", "Home / close"},

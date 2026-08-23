@@ -20,19 +20,28 @@ func testApp() *App {
 	return a
 }
 
-// TestRenderBrandCompact checks the wordmark stays small and readable:
-// LayerFlow + .dev on a single line, tagline below, no ASCII art.
+// TestRenderBrandCompact checks the wordmark renders at all widths without
+// overflow, always carries the tagline, and falls back to the compact
+// LayerFlow.dev wordmark on narrow terminals.
 func TestRenderBrandCompact(t *testing.T) {
-	b := renderBrand(80)
-	lines := strings.Split(strings.TrimRight(b, "\n"), "\n")
-	if len(lines) > 3 {
-		t.Fatalf("brand should be at most 3 lines, got %d", len(lines))
+	for _, w := range []int{40, 60, 80, 120} {
+		for _, h := range []int{10, 24, 50} {
+			b := renderBrand(w, h)
+			if !strings.Contains(b, taglineText) {
+				t.Fatalf("brand must contain tagline %q (w=%d h=%d)", taglineText, w, h)
+			}
+			lines := strings.Split(strings.TrimRight(b, "\n"), "\n")
+			for _, ln := range lines {
+				if lw := lipgloss.Width(ln); lw > w {
+					t.Errorf("brand w=%d h=%d: line width %d exceeds terminal width", w, h, lw)
+				}
+			}
+		}
 	}
-	if !strings.Contains(b, "LayerFlow") || !strings.Contains(b, ".dev") {
-		t.Fatal("brand must contain LayerFlow.dev")
-	}
-	if !strings.Contains(b, taglineText) {
-		t.Fatalf("brand must contain tagline %q", taglineText)
+
+	// On a small window the compact inline wordmark is used and still readable.
+	if b := renderBrand(40, 24); !strings.Contains(b, "LayerFlow") {
+		t.Fatalf("compact brand should contain the LayerFlow text, got:\n%s", b)
 	}
 }
 
@@ -100,18 +109,20 @@ func TestViewInitializing(t *testing.T) {
 	}
 }
 
-// TestHomeFirstRunNotices checks the first-run copy for both auth states.
+// TestHomeFirstRunNotices checks the first-run sign-in guidance for both auth
+// states. The home screen stays minimal — it must not try to teach the user
+// how it works, just point at the composer and sign-in when needed.
 func TestHomeFirstRunNotices(t *testing.T) {
 	a := testApp()
 	a.width, a.height = 100, 30
-	if out := a.renderHome(); !strings.Contains(out, "Connected") {
-		t.Fatal("authenticated home should show Connected status")
+	if out := a.renderHome(); !strings.Contains(out, "Model") {
+		t.Fatal("authenticated home should carry model info in the status bar")
 	}
 
 	a2 := testApp()
 	a2.st.Authenticated = false
-	if out := a2.renderHome(); !strings.Contains(out, "Not signed in") || !strings.Contains(out, "Press Enter to sign in") {
-		t.Fatal("unauthenticated home should show sign-in notice")
+	if out := a2.renderHome(); !strings.Contains(out, "Enter to sign in") {
+		t.Fatal("unauthenticated home should show sign-in guidance in the hints")
 	}
 }
 
@@ -130,32 +141,46 @@ func TestStatusBarCompact(t *testing.T) {
 	}
 }
 
-// TestHomeContextBlock checks the workspace/model/git/status rows render and
-// that a non-git directory shows a subtle "not a repository" instead of an
-// error.
-func TestHomeContextBlock(t *testing.T) {
+// TestHomeStatusBarCarriesWorkspaceAndGit checks the workspace + git live in
+// the bottom status bar (not as a block above the composer) and that a
+// non-git directory never surfaces a raw git error.
+func TestHomeStatusBarCarriesWorkspaceAndGit(t *testing.T) {
 	a := testApp()
 	a.width, a.height = 100, 28
 	a.st.GitRepo = false
 	a.st.Workspace = "~/Documents"
 	out := a.renderHome()
-	if !strings.Contains(out, "Workspace") || !strings.Contains(out, "Model") {
-		t.Fatal("home context should show Workspace and Model rows")
-	}
-	if !strings.Contains(out, "not a repository") {
-		t.Fatal("non-git directory should show 'not a repository', not an error")
+	if !strings.Contains(out, "~/Documents") {
+		t.Fatal("home status bar should show the workspace")
 	}
 	if strings.Contains(out, "fatal:") || strings.Contains(out, "exit status") {
 		t.Fatal("home must not surface raw git errors")
 	}
 
-	// Inside a repo: shows branch ✓.
+	// Inside a repo the branch appears in the status bar: " · main".
 	b := testApp()
 	b.width, b.height = 100, 28
 	b.st.GitRepo = true
 	b.st.Branch = "main"
-	if out := b.renderHome(); !strings.Contains(out, "main ✓") {
-		t.Fatalf("git repo should show branch ✓, got: %s", out)
+	b.st.Workspace = "~/Documents/LayerFlow"
+	if out := b.renderHome(); !strings.Contains(out, "main") {
+		t.Fatalf("git repo should show the branch in the status bar, got: %s", out)
+	}
+}
+
+// TestHomeNoContextBlockAboveComposer verifies the clean layout: there is no
+// workspace/model/git/status block sitting directly above the chat input.
+func TestHomeNoContextBlockAboveComposer(t *testing.T) {
+	a := testApp()
+	a.width, a.height = 120, 40
+	out := a.renderHome()
+	// The composer is the primary element; workspace must live in the status
+	// bar (bottom), not repeated near the brand.
+	if strings.Index(out, "Workspace\n") >= 0 {
+		t.Fatal("home should not show a 'Workspace' label block above the composer")
+	}
+	if !strings.Contains(out, "Ask anything") {
+		t.Fatal("home should show the composer placeholder 'Ask anything'")
 	}
 }
 
@@ -173,45 +198,6 @@ func TestHomeTipArea(t *testing.T) {
 			if lw := lipgloss.Width(line); lw > w {
 				t.Errorf("tip w=%d: line width %d exceeds terminal width", w, lw)
 			}
-		}
-	}
-}
-
-// TestWelcomeScreen checks the first-run celebration renders without
-// overflow and contains the key branding + congratulations copy.
-func TestWelcomeScreen(t *testing.T) {
-	for _, w := range []int{40, 60, 80, 120} {
-		for _, h := range []int{10, 20, 30} {
-			a := testApp()
-			a.width, a.height = w, h
-			a.welcome = &welcomeScreen{app: a}
-			out := a.View()
-			if !strings.Contains(out, "LayerFlow") {
-				t.Fatalf("welcome should contain LayerFlow at w=%d h=%d", w, h)
-			}
-			if !strings.Contains(out, "Congratulations") {
-				t.Fatalf("welcome should contain Congratulations at w=%d h=%d", w, h)
-			}
-			if !strings.Contains(out, "successfully installed") {
-				t.Fatalf("welcome should contain 'successfully installed' at w=%d h=%d", w, h)
-			}
-			for _, line := range strings.Split(out, "\n") {
-				if lw := lipgloss.Width(line); lw > w {
-					t.Errorf("welcome w=%d h=%d: line width %d exceeds terminal width", w, h, lw)
-				}
-			}
-		}
-	}
-}
-
-// TestWelcomeNoOverflow asserts the welcome screen never panics at tiny sizes.
-func TestWelcomeNoOverflow(t *testing.T) {
-	for _, w := range []int{0, 1, 5, 10, 20} {
-		for _, h := range []int{0, 1, 5} {
-			a := testApp()
-			a.width, a.height = w, h
-			a.welcome = &welcomeScreen{app: a}
-			_ = a.View()
 		}
 	}
 }

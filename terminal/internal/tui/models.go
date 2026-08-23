@@ -243,7 +243,7 @@ func (m *modelsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch key := msg; key.String() {
-		case "esc", "ctrl+l":
+		case "esc", "ctrl+m":
 			m.app.closeOverlay()
 			return m.app, nil
 		case "up":

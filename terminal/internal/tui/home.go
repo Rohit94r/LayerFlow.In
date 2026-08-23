@@ -65,36 +65,42 @@ func contentWidth(w int) int {
 	return cw
 }
 
-// renderHome renders the chat-first home screen: the LayerFlow.dev wordmark
-// with tagline, a compact context block (workspace/model/git/status), the
-// input box, key hints, a rotating tip, and a status line at the bottom.
+// renderHome renders the chat-first home screen. It follows a strict order —
+// BRAND → COMPOSER → HINTS → TIP — with nothing competing for attention:
+//
+//	                         LayerFlow.dev
+//	                    AI workspace for developers
+//
+//	┌─────────────────────────────────────────────────┐
+//	│ Ask anything about your code, projects, docs    │
+//	└─────────────────────────────────────────────────┘
+//
+//	          Enter Send     / Commands      Ctrl+P
+//
+//	                     ● Tip  Type something
 func (a *App) renderHome() string {
-	brand := renderBrand(a.width)
-	colW := contentWidth(a.width)
-
-	contextBlock := a.renderHomeContext(colW)
-	inputBox := a.renderHomeInputBox(colW)
-	hints := renderHomeHints(colW, a.st.Authenticated)
-	tip := renderTip(colW, a.st.Authenticated)
+	brand := renderBrand(a.width, a.height)
+	boxW := homeComposerBoxWidth(a.width)
+	inputBox := a.renderHomeInputBox(boxW)
+	hints := renderHomeHints(a.width, a.st.Authenticated)
+	tip := renderTip(a.width, a.st.Authenticated)
 	status := a.renderStatusBar()
 
 	mainContent := lipgloss.JoinVertical(lipgloss.Center,
 		brand,
 		"",
-		contextBlock,
-		"",
 		inputBox,
 		"",
 		hints,
-		"",
+		"  ",
 		tip,
 	)
 
-	// Keep the content around the upper third so the input sits near the
-	// natural eye line, above the status bar.
-	availableH := a.height - lipgloss.Height(status) - 2
+	// Reserve the status bar at the bottom, then center the remaining content
+	// vertically with a slight upward bias so the composer sits naturally.
+	availableH := a.height - lipgloss.Height(status) - 1
 	contentH := lipgloss.Height(mainContent)
-	top := (availableH - contentH) / 3
+	top := (availableH - contentH) / 2
 	if top < 1 {
 		top = 1
 	}
@@ -108,79 +114,21 @@ func (a *App) renderHome() string {
 	return lipgloss.JoinVertical(lipgloss.Left, centered, status)
 }
 
-// renderHomeContext draws a compact, subtle context block under the brand:
-//
-//	Workspace   ~/Documents/LayerFlow
-//	Model       llama-3.3-70b · auto
-//	Git         main ✓
-//	Status      ● Connected
-//
-// Rows drop off on narrow terminals so the input always has room.
-func (a *App) renderHomeContext(w int) string {
-	const labelW = 11
-
-	row := func(label, value string) string {
-		return lipgloss.JoinHorizontal(lipgloss.Left,
-			styleDim.Render(label),
-			lipgloss.NewStyle().Width(labelW-len(label)).Render(""),
-			styleMuted.Render(value),
-		)
+// homeComposerBoxWidth returns the total width (borders + padding included) of
+// the home composer. It uses ~80% of the terminal width so the input is wide
+// and dominant, clamped to a comfortable maximum and never overflowing.
+func homeComposerBoxWidth(total int) int {
+	w := int(float64(total) * 0.8)
+	if w > 100 {
+		w = 100
 	}
-
-	workspace := a.st.Workspace
-	if workspace == "" {
-		workspace = a.st.Project
+	if w < 30 && total > 2 {
+		w = total - 2
 	}
-
-	model := a.st.Model
-	if model == "" {
-		model = "default"
+	if w < 12 {
+		w = 12
 	}
-	modelLine := shorten(model, 40) + " · auto"
-
-	// Git row: only meaningful inside a repo; outside is shown subtly.
-	gitLine := "not a repository"
-	if a.st.GitRepo {
-		b := a.st.Branch
-		if b == "" {
-			b = "(detached)"
-		}
-		gitLine = b + " ✓"
-	}
-
-	// Connection row.
-	statusLine := lipgloss.JoinHorizontal(lipgloss.Left,
-		lipgloss.NewStyle().Foreground(ColorSuccess).Render("●"),
-		" ",
-		styleMuted.Render("Connected"),
-	)
-	if !a.st.Authenticated {
-		statusLine = lipgloss.JoinHorizontal(lipgloss.Left,
-			lipgloss.NewStyle().Foreground(ColorDim).Render("○"),
-			" ",
-			styleMuted.Render("Not signed in"),
-		)
-	}
-
-	var rows []string
-	rows = append(rows, row("Workspace", workspace))
-	rows = append(rows, row("Model", modelLine))
-	if w >= 60 {
-		rows = append(rows, row("Git", gitLine))
-	}
-	if w >= 52 {
-		rows = append(rows, row("Status", statusLine))
-	}
-
-	// Sign-in guidance for first-run users, below the context block.
-	if !a.st.Authenticated {
-		rows = append(rows, "")
-		rows = append(rows, styleDim.Render("Press Enter to sign in · type /help for commands"))
-	}
-
-	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(
-		lipgloss.JoinVertical(lipgloss.Left, rows...),
-	)
+	return w
 }
 
 // renderHomeInputBox draws the input inside a rounded border box. The box's
@@ -233,9 +181,11 @@ func renderHomeHints(w int, authenticated bool) string {
 	return lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(row)
 }
 
-// renderStatusBar draws one compact status line: auth dot, model · provider
-// on the left; session, usage, and version on the right (hidden on narrow
-// terminals).
+// renderStatusBar draws one clean status line: auth dot + model on the left,
+// workspace · git in the middle (wide terminals only), and session · usage ·
+// version on the right. Secondary info hides automatically on narrow windows.
+//
+//	● Model · llama-3.3-70b        ~/Documents/LayerFlow · main        Session new · $0.00
 func (a *App) renderStatusBar() string {
 	model := a.st.Model
 	if model == "" {
@@ -250,16 +200,34 @@ func (a *App) renderStatusBar() string {
 	left := lipgloss.JoinHorizontal(lipgloss.Left,
 		" ", authDot, " ",
 		styleDim.Render("Model "),
-		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(shorten(model, 44)),
-		styleDim.Render(" · "),
-		styleMuted.Render(providerFor(model)),
+		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(shorten(model, 26)),
 	)
+
+	// Middle: workspace · git branch. Shown only when there is horizontal room
+	// and real value (never a raw git error — outside a repo we show nothing).
+	var center string
+	if a.width >= 92 {
+		ws := a.st.Workspace
+		if ws == "" {
+			ws = homePath(a.st.Project)
+		}
+		ws = shorten(ws, 36)
+		git := ""
+		if a.st.GitRepo {
+			b := a.st.Branch
+			if b == "" {
+				b = "(detached)"
+			}
+			git = " · " + b
+		}
+		center = lipgloss.JoinHorizontal(lipgloss.Left, styleMuted.Render(ws), styleDim.Render(git))
+	}
 
 	session := "new"
 	usage := "$0.00"
 	if a.session != nil {
 		if t := a.session.Title; t != "" && t != "New session" {
-			session = shorten(t, 16)
+			session = shorten(t, 14)
 		}
 		usage = fmt.Sprintf("$%.2f", float64(a.session.CostMicro)/1_000_000)
 	}
@@ -272,8 +240,10 @@ func (a *App) renderStatusBar() string {
 			styleDim.Render(" · "),
 			styleMuted.Render(usage),
 		)
+	} else {
+		rightParts = append(rightParts, styleMuted.Render(usage))
 	}
-	if a.width >= 90 {
+	if a.width >= 100 {
 		version := "v" + a.st.Version
 		if version == "v" || version == "vdev" {
 			version = "dev"
@@ -282,25 +252,34 @@ func (a *App) renderStatusBar() string {
 	}
 	right := lipgloss.JoinHorizontal(lipgloss.Left, rightParts...)
 
-	// statusBarStyle has Padding(0,1) and no border, so Width(a.width) gives
-	// a total block of a.width with a text area of a.width-2.
+	// statusBarStyle has Padding(0,1) and no border, so Width(a.width) gives a
+	// total block of a.width with a text area of a.width-2.
 	barW := a.width
 	if barW < 4 {
 		barW = 4
 	}
 	inner := barW - 2 // text area inside padding
-	spacer := inner - lipgloss.Width(left) - lipgloss.Width(right)
+
+	midGroup := lipgloss.JoinHorizontal(lipgloss.Left, left, "  ", center)
+	spacer := inner - lipgloss.Width(midGroup) - lipgloss.Width(right)
 	if spacer < 0 {
-		// Not enough room: drop the secondary side entirely.
-		right = ""
-		spacer = inner - lipgloss.Width(left)
+		// Not enough room: drop the middle group's center, then the right side.
+		midGroup = left
+		spacer = inner - lipgloss.Width(midGroup) - lipgloss.Width(right)
 		if spacer < 0 {
-			spacer = 0
+			right = ""
+			spacer = inner - lipgloss.Width(midGroup)
+			if spacer < 1 {
+				spacer = 1
+			}
 		}
+	}
+	if spacer < 1 {
+		spacer = 1
 	}
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Left,
-		left,
+		midGroup,
 		lipgloss.NewStyle().Width(spacer).Render(""),
 		right,
 	)
@@ -349,7 +328,7 @@ func (a *App) refreshHomeHeight() {
 }
 
 func homeComposerWidth(width int) int {
-	w := contentWidth(width) - 4 // text area inside border + padding
+	w := homeComposerBoxWidth(width) - 4 // text area inside border + padding
 	if w < 10 {
 		w = 10
 	}

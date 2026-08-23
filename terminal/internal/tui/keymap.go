@@ -34,7 +34,7 @@ func DefaultKeyMap() KeyMap {
 		Palette:    key.NewBinding(key.WithKeys("ctrl+p"), key.WithHelp("ctrl+p", "palette")),
 		Search:     key.NewBinding(key.WithKeys("ctrl+r"), key.WithHelp("ctrl+r", "search")),
 		Sessions:   key.NewBinding(key.WithKeys("ctrl+k"), key.WithHelp("ctrl+k", "sessions")),
-		Models:     key.NewBinding(key.WithKeys("ctrl+l"), key.WithHelp("ctrl+l", "models")),
+		Models:     key.NewBinding(key.WithKeys("ctrl+m"), key.WithHelp("ctrl+m", "models")),
 		Activity:   key.NewBinding(key.WithKeys("ctrl+t"), key.WithHelp("ctrl+t", "activity")),
 		Help:       key.NewBinding(key.WithKeys("?"), key.WithHelp("?", "help")),
 		NewSession: key.NewBinding(key.WithKeys("ctrl+n"), key.WithHelp("ctrl+n", "new")),

@@ -147,7 +147,6 @@ type App struct {
 	activity *activityModel
 	login    *loginModel
 	help     *helpModel
-	welcome  *welcomeScreen
 
 	// Streaming cancellation
 	cancelFn func()
@@ -190,11 +189,6 @@ func (a *App) Init() tea.Cmd {
 func (a *App) View() string {
 	if a.width == 0 || a.height == 0 {
 		return "Initializing..."
-	}
-
-	// The first-run celebration takes over the whole screen until dismissed.
-	if a.welcome != nil {
-		return styleApp.Width(a.width).Height(a.height).Render(a.welcome.View())
 	}
 
 	var body string
@@ -245,16 +239,6 @@ func (a *App) View() string {
 
 // Update implements tea.Model.
 func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// The first-run welcome screen consumes all keys until dismissed.
-	if a.welcome != nil {
-		// Still handle window-size messages so the welcome screen resizes.
-		if ws, ok := msg.(tea.WindowSizeMsg); ok {
-			a.width = ws.Width
-			a.height = ws.Height
-		}
-		return a.welcome.Update(msg)
-	}
-
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
@@ -519,7 +503,6 @@ func (a *App) closeOverlay() {
 	a.activity = nil
 	a.help = nil
 	a.login = nil
-	a.welcome = nil
 }
 
 // updateOverlay routes messages to the active overlay.
@@ -563,8 +546,8 @@ func performTuiLogin(key string) error {
 }
 
 // Run launches the full-screen TUI. It returns when the program exits.
-// On first launch (no marker file), a celebratory welcome screen is shown
-// before the home screen.
+// On first launch the user goes straight to the clean home screen — no
+// promotional splash or congratulations wall.
 func Run(version string) error {
 	st, err := NewState(version)
 	if err != nil {
@@ -573,11 +556,6 @@ func Run(version string) error {
 	defer st.Close()
 
 	app := NewApp(st)
-
-	// First-run celebration: shows once after a fresh install, then never again.
-	if isFirstRun() {
-		app.welcome = &welcomeScreen{app: app}
-	}
 
 	prog := tea.NewProgram(app, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	app.prog = prog

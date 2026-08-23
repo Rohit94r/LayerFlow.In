@@ -13,7 +13,7 @@ var homeTips = []string{
 	"Ctrl+P opens the command palette",
 	"Tab switches to agents",
 	"Ctrl+K opens recent chats",
-	"Ctrl+L switches the model",
+	"Ctrl+M switches the model",
 	"Type a question and press Enter to start",
 	"Ctrl+T shows git, sync & usage",
 	"Esc returns to the home screen",
@@ -27,9 +27,9 @@ func renderTip(width int, authenticated bool) string {
 	idx := int(time.Now().Unix()/8) % len(homeTips)
 	tip := homeTips[idx]
 
-	// Unauthenticated users get the sign-in tip first.
+	// Unauthenticated users get a clear sign-in nudge first.
 	if !authenticated {
-		tip = "Press Enter to sign in · type /help for commands"
+		tip = "Sign in to continue · press Enter or run `lf login`"
 	}
 
 	dot := lipgloss.NewStyle().Foreground(ColorWarn).Render("●")
