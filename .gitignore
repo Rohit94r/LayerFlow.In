@@ -59,5 +59,8 @@ apps/api/.data/
 dump.rdb
 terminal/bin/
 
+# built terminal binary (local build output)
+terminal/lf
+
 # scratch / status notes
 COMPLETE

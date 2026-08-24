@@ -97,8 +97,9 @@ func (a *App) renderHome() string {
 	)
 
 	// Reserve the status bar at the bottom, then center the remaining content
-	// vertically with a slight upward bias so the composer sits naturally.
-	availableH := a.height - lipgloss.Height(status) - 1
+	// vertically so the whitespace above and below the logo/composer block is
+	// balanced — no lopsided "dead zone" at the bottom.
+	availableH := a.height - lipgloss.Height(status)
 	contentH := lipgloss.Height(mainContent)
 	top := (availableH - contentH) / 2
 	if top < 1 {

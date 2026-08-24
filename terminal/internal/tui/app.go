@@ -160,6 +160,18 @@ type App struct {
 	// messages. Only the streaming buffer is re-rendered on new text.
 	renderedCache       map[string]string
 	lastStreamRenderLen int
+
+	// Chat viewport scrolling. scrollOffset == 0 means "follow the latest
+	// message"; scrolling up increases it. streamDoneAt tracks the last token
+	// arrival so we can show a "new messages" hint without forcing a scroll.
+	scrollOffset int
+	viewH        int // conversation viewport height (set during render)
+	lastStreamAt time.Time
+
+	// Model error fallback: a request is retried once with an available
+	// model instead of leaving an invalid model selected.
+	fallbackTried bool
+	lastPrompt    []cloud.Message
 }
 
 // NewApp creates the root app model.
@@ -349,6 +361,7 @@ func (a *App) cancelStream() {
 		a.cancelFn = nil
 	}
 	a.streaming = false
+	a.cancelled = true
 	a.pushToast("Streaming cancelled", toastInfo)
 }
 

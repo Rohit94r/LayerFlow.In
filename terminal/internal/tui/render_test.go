@@ -1,18 +1,21 @@
 package tui
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
 
+	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/session"
 )
 
 func testApp() *App {
 	a := NewApp(&State{
 		Model:         "llama-3.3-70b-versatile",
-		Version:       "0.2.9",
+		Version:       "0.2.10",
 		Authenticated: true,
 	})
 	a.width = 80
@@ -199,5 +202,81 @@ func TestHomeTipArea(t *testing.T) {
 				t.Errorf("tip w=%d: line width %d exceeds terminal width", w, lw)
 			}
 		}
+	}
+}
+
+// TestUserErrorFriendly confirms raw provider/model errors are converted to
+// short, user-visible messages and never surface verbatim.
+func TestUserErrorFriendly(t *testing.T) {
+	rawModel := `Error: The model "llama-3.3-70b-versatile" does not exist or you do not have access to it.`
+	if got := userError(errors.New(rawModel)); strings.Contains(got, "llama-3.3-70b") || strings.Contains(got, "does not exist") {
+		t.Fatalf("raw model error must not leak through userError, got: %s", got)
+	}
+	if got := userError(errors.New("post https://layerflow.dev: connection refused")); !strings.Contains(got, "Unable to reach LayerFlow") {
+		t.Fatalf("connection error should be friendly, got: %s", got)
+	}
+	if got := userError(cloud.ErrInvalidKey); !strings.Contains(got, "lf login") {
+		t.Fatalf("invalid key should point at login, got: %s", got)
+	}
+}
+
+// TestSystemNoticeTruncates ensures internal multi-line content renders as a
+// single compact line, never as raw chat body.
+func TestSystemNoticeTruncates(t *testing.T) {
+	internal := "You are LayerFlow, a coding agent.\nPerform a repository audit now.\nReport only JSON output.\n"
+	if got := systemNotice(internal); strings.Contains(got, "repository audit") || strings.Contains(got, "coding agent") || strings.Contains(got, "\n") {
+		t.Fatalf("system notice must hide internal instructions, got: %q", got)
+	}
+	if got := systemNotice("          "); strings.TrimSpace(got) == "" {
+		t.Fatalf("system notice should still render a placeholder, got empty")
+	}
+}
+
+// TestConversationScrollNoOverflow renders a scrollable conversation when the
+// user is scrolled up (scrollOffset > 0) and confirms no width overflow and a
+// follow hint appears.
+func TestConversationScrollNoOverflow(t *testing.T) {
+	for _, w := range []int{60, 80, 100, 120} {
+		a := testApp()
+		a.width, a.height = w, 24
+		a.screen = screenChat
+		var lines []string
+		for i := 0; i < 80; i++ {
+			lines = append(lines, fmt.Sprintf("line number %02d", i))
+		}
+		a.messages = []session.Message{{Role: "assistant", Content: strings.Join(lines, "\n")}}
+		a.scrollOffset = 20
+		out := a.renderConversation(contentWidth(w), 14)
+		if !strings.Contains(out, "follow") {
+			t.Fatalf("scrolled view should show a follow hint at w=%d", w)
+		}
+		for _, line := range strings.Split(out, "\n") {
+			if lw := lipgloss.Width(line); lw > w {
+				t.Errorf("conv w=%d: line width %d exceeds terminal width", w, lw)
+			}
+		}
+	}
+}
+
+// TestStreamErrorUsesFriendlyNotice appends a friendly system notice (never a
+// raw error) when a stream fails and fallback is exhausted.
+func TestStreamErrorUsesFriendlyNotice(t *testing.T) {
+	a := testApp()
+	a.width, a.height = 100, 30
+	a.fallbackTried = true // skip fallback so no network call is made
+	_, _ = a.handleStreamError(cloud.ErrInvalidKey)
+	found := false
+	for _, m := range a.messages {
+		if m.Role == "system" {
+			if strings.Contains(m.Content, "lf login") {
+				found = true
+			}
+			if strings.Contains(m.Content, "invalid LayerFlow API key") || strings.Contains(m.Content, "Error:") {
+				t.Fatalf("raw error leaked into chat: %s", m.Content)
+			}
+		}
+	}
+	if !found {
+		t.Fatalf("expected a friendly login notice in system messages, got %+v", a.messages)
 	}
 }

@@ -70,8 +70,9 @@ func newChatInput() textarea.Model {
 
 // ─── Chat screen ────────────────────────────────────────────────────────────
 
-// renderChat renders the chat screen: compact header, conversation, bordered
-// input, and status bar at the bottom — all centered in a content column.
+// renderChat renders the chat screen: compact header, a scrollable conversation
+// viewport (owns all flexible height), a bottom-anchored composer, and the
+// status bar. Layout: Header → Viewport → Composer → StatusBar.
 func (a *App) renderChat() string {
 	colW := contentWidth(a.width)
 
@@ -81,7 +82,14 @@ func (a *App) renderChat() string {
 	composerH := lipgloss.Height(composer)
 	status := a.renderStatusBar()
 	statusH := lipgloss.Height(status)
-	conversation := a.renderConversation(colW, a.height-headerH-statusH-composerH)
+
+	viewH := a.height - headerH - statusH - composerH
+	if viewH < 5 {
+		viewH = 5
+	}
+	a.viewH = viewH
+
+	conversation := a.renderConversation(colW, viewH)
 
 	// Pad the left/right so everything hugs a centered column.
 	pad := (a.width - colW) / 2
@@ -98,34 +106,22 @@ func (a *App) renderChat() string {
 	return lipgloss.JoinVertical(lipgloss.Left, body, status)
 }
 
-// renderChatHeader is a compact single-line header: the wordmark, model ·
-// provider, and hints on wide terminals — with a hairline bottom separator.
+// renderChatHeader is a compact single-line header: the LayerFlow wordmark
+// (session identity) plus light hints on wide terminals — with a hairline
+// bottom separator. Model/workspace/cost stay in the bottom status bar so
+// nothing is duplicated.
 func (a *App) renderChatHeader(w int) string {
-	model := a.st.Model
-	if model == "" {
-		model = "default"
-	}
-
-	modelLine := lipgloss.JoinHorizontal(lipgloss.Left,
-		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(shorten(model, 44)),
-		styleDim.Render(" · "),
-		styleMuted.Render(providerFor(model)),
-	)
-
 	left := lipgloss.JoinHorizontal(lipgloss.Left,
 		renderWordmarkInline(),
-		"  ",
-		modelLine,
 	)
 
-	// Hints only on medium+ terminals; the session title lives in the
-	// status bar to keep the header compact.
+	// Hints only on medium+ terminals.
 	var right string
-	if w >= 72 {
+	if w >= 60 {
 		right = lipgloss.JoinHorizontal(lipgloss.Left,
 			styleDim.Render("esc home"),
 			"  ",
-			styleDim.Render("ctrl+i improve"),
+			styleDim.Render("ctrl+m model"),
 		)
 	}
 
@@ -170,14 +166,18 @@ func (a *App) renderChatHeader(w int) string {
 		Render(line)
 }
 
-// renderConversation renders message history + streaming, ChatGPT style:
-// a role label and plain content — no heavy borders around messages.
-// Uses a render cache so persisted messages are only glamour-rendered once;
-// only the streaming buffer is re-rendered when new text arrives.
+var (
+	scrollStep = 8
+)
+
+// renderConversation renders message history + streaming in a scrollable
+// chat viewport. When scrollOffset == 0 it auto-follows the latest message;
+// scrolling up (PgUp) holds the position and a "follow" hint appears.
 func (a *App) renderConversation(w, maxH int) string {
 	if maxH < 5 {
 		maxH = 5
 	}
+	a.viewH = maxH
 
 	var sb strings.Builder
 	for _, m := range a.messages {
@@ -200,13 +200,13 @@ func (a *App) renderConversation(w, maxH int) string {
 	streamLen := a.streamingText.Len()
 	if streamLen > 0 && streamLen != a.lastStreamRenderLen {
 		a.lastStreamRenderLen = streamLen
+		a.lastStreamAt = time.Now()
 	}
 	if streamLen > 0 {
 		partial := a.streamingText.String()
 		role := styleRoleAssistant.Render("LayerFlow")
 		cursor := ""
-		// Blink the cursor every other tick (220ms × 2 = 440ms cycle) for
-		// a smoother feel — not aggressive flashing.
+		// Blink the cursor every other tick (220ms × 2 = 440ms cycle).
 		if a.cursorOn && streamLen%2 == 0 {
 			cursor = "▍"
 		}
@@ -221,10 +221,50 @@ func (a *App) renderConversation(w, maxH int) string {
 		return a.renderChatWelcome(w, maxH)
 	}
 
-	// Tail-based auto-scroll: show the last maxH lines.
 	lines := strings.Split(raw, "\n")
-	if len(lines) > maxH {
-		lines = lines[len(lines)-maxH:]
+	total := len(lines)
+	maxOff := total - maxH
+	if maxOff < 0 {
+		maxOff = 0
+	}
+	if a.scrollOffset > maxOff {
+		a.scrollOffset = maxOff
+	}
+	if a.scrollOffset < 0 {
+		a.scrollOffset = 0
+	}
+	follow := a.scrollOffset == 0
+
+	var shown []string
+	if total <= maxH {
+		shown = lines
+	} else if follow {
+		shown = lines[total-maxH:]
+	} else {
+		start := total - maxH - a.scrollOffset
+		if start < 0 {
+			start = 0
+		}
+		end := total - a.scrollOffset
+		if end < start+maxH {
+			end = start + maxH
+		}
+		if end > total {
+			end = total
+		}
+		shown = lines[start:end]
+	}
+
+	joined := strings.Join(shown, "\n")
+
+	// A quiet affordance when the user is scrolled away from the latest
+	// message — never a forced jump.
+	if !follow {
+		hint := "↑ older"
+		if a.streaming {
+			hint = "↓ streaming…"
+		}
+		joined = styleDim.Render(hint+"  ·  End to follow") + "\n" + joined
 	}
 
 	// Width(w).Padding(0,4) → total block = w, text area = w-8. Messages
@@ -232,7 +272,7 @@ func (a *App) renderConversation(w, maxH int) string {
 	content := lipgloss.NewStyle().
 		Width(w).
 		Padding(0, 4).
-		Render(strings.Join(lines, "\n"))
+		Render(joined)
 	return content
 }
 
@@ -261,10 +301,51 @@ func renderMessage(m session.Message, w int) string {
 			renderMarkdownW(m.Content, w-8),
 		)
 	case "system":
-		return styleRoleSystem.Render("  " + m.Content)
+		// System rows are user-visible notices only — never raw internal
+		// instructions or provider dumps. They render as a quiet, truncated
+		// footnote so internal content can never appear as chat body.
+		return styleRoleSystem.Render(systemNotice(m.Content))
 	default:
 		return renderMarkdownW(m.Content, w-8)
 	}
+}
+
+// systemNotice reduces an internal/system message to a single compact,
+// user-visible line. Instruction-like lines and multi-line dumps are never
+// shown — the notice collapses to a neutral confirmation instead.
+func systemNotice(content string) string {
+	markers := []string{
+		"you are a", "you are an", "you are layerflow", "system prompt",
+		"developer prompt", "perform a repository audit", "coding agent",
+		"report only json", "your job", "instructions:", "rules:",
+		"act as", "you are to", "ignore the previous",
+	}
+	s := strings.TrimSpace(content)
+	if s == "" {
+		return "· Command completed"
+	}
+	for _, ln := range strings.Split(s, "\n") {
+		ln = strings.TrimSpace(ln)
+		if ln == "" {
+			continue
+		}
+		lower := strings.ToLower(ln)
+		internal := false
+		for _, m := range markers {
+			if strings.HasPrefix(lower, m) {
+				internal = true
+				break
+			}
+		}
+		if internal {
+			continue
+		}
+		if len(ln) > 88 {
+			ln = ln[:85] + "…"
+		}
+		return "· " + ln
+	}
+	return "· Command completed"
 }
 
 // renderMarkdown renders markdown text with the LayerFlow theme and rich
@@ -309,9 +390,12 @@ func (a *App) renderChatInputBox(w int) string {
 
 	box := style.Width(n).Render(view)
 
-	if a.loading {
+	if a.streaming || a.loading {
 		box = lipgloss.JoinVertical(lipgloss.Left, box,
-			styleDim.Render("  Working..."),
+			lipgloss.JoinHorizontal(lipgloss.Left,
+				lipgloss.NewStyle().Foreground(ColorAccent).Render("⟳ Generating…"),
+				styleDim.Render("   Ctrl+C to cancel"),
+			),
 		)
 	}
 	return box
@@ -353,6 +437,23 @@ func (a *App) handleChatKey(key tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Slash popup opens without leaving the chat screen.
 	if key.String() == "/" {
 		a.openSlashPopup()
+		return a, nil
+	}
+
+	// Viewport scrolling: PgUp/PgDn scroll the conversation, End returns to
+	// the latest message while keeping the composer and status bar fixed.
+	switch key.String() {
+	case "pgup":
+		a.scrollOffset += scrollStep
+		return a, nil
+	case "pgdown":
+		a.scrollOffset -= scrollStep
+		if a.scrollOffset < 0 {
+			a.scrollOffset = 0
+		}
+		return a, nil
+	case "end":
+		a.scrollOffset = 0
 		return a, nil
 	}
 
@@ -502,11 +603,17 @@ func (a *App) sendMessage(text string) (tea.Model, tea.Cmd) {
 	}
 	prompt := make([]cloud.Message, 0, len(history))
 	for _, m := range history {
-		if m.Role == "tool" || m.Role == "function" {
+		if m.Role == "tool" || m.Role == "function" || m.Role == "system" {
 			continue
 		}
 		prompt = append(prompt, cloud.Message{Role: m.Role, Content: m.Content})
 	}
+
+	// Reset viewport + fallback state for this turn.
+	a.scrollOffset = 0
+	a.cancelled = false
+	a.fallbackTried = false
+	a.lastPrompt = prompt
 
 	a.loading = true
 	a.streaming = true
@@ -556,14 +663,10 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 	a.loading = false
 	a.cancelFn = nil
 	a.lastStreamRenderLen = 0
+	a.scrollOffset = 0
 
 	if msg.err != nil {
-		a.pushToast(msg.err.Error(), toastError)
-		a.messages = append(a.messages, session.Message{
-			Role:    "system",
-			Content: "Error: " + msg.err.Error(),
-		})
-		return a, nil
+		return a.handleStreamError(msg.err)
 	}
 
 	reply := a.streamingText.String()
@@ -572,15 +675,17 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 	}
 
 	assistant := &session.Message{
-		SessionID:    a.session.ID,
-		Role:         "assistant",
-		Content:      reply,
-		Model:        a.st.Model,
-		InputTokens:  msg.resp.Usage.PromptTokens,
-		OutputTokens: msg.resp.Usage.CompletionTokens,
+		SessionID: a.session.ID,
+		Role:      "assistant",
+		Content:   reply,
+		Model:     a.st.Model,
 	}
-	if msg.resp != nil && msg.resp.Model != "" {
-		assistant.Model = msg.resp.Model
+	if msg.resp != nil {
+		assistant.InputTokens = msg.resp.Usage.PromptTokens
+		assistant.OutputTokens = msg.resp.Usage.CompletionTokens
+		if msg.resp.Model != "" {
+			assistant.Model = msg.resp.Model
+		}
 	}
 	if err := a.st.Sessions.AddMessage(context.Background(), assistant); err != nil {
 		a.pushToast("save reply: "+err.Error(), toastError)
@@ -588,15 +693,90 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 	a.messages = append(a.messages, *assistant)
 	a.streamingText.Reset()
 
-	// Update session usage.
 	if msg.resp != nil {
 		a.session.InputTokens += msg.resp.Usage.PromptTokens
 		a.session.OutputTokens += msg.resp.Usage.CompletionTokens
 	}
 	_ = a.st.Sessions.Update(context.Background(), a.session)
 
-	a.pushToast(fmt.Sprintf("✓ %s  %d tok", assistant.Model, msg.resp.Usage.TotalTokens), toastSuccess)
+	a.pushToast("✓ "+assistant.Model, toastSuccess)
 	return a, nil
+}
+
+// handleStreamError converts a raw stream error into a friendly notice. If the
+// active model failed and a valid alternative exists, the request is retried
+// once with the fallback model so an invalid model can never stay selected.
+func (a *App) handleStreamError(err error) (tea.Model, tea.Cmd) {
+	if a.cancelled {
+		return a, nil
+	}
+	friendly := userError(err)
+
+	if !a.fallbackTried && len(a.lastPrompt) > 0 {
+		next := cloud.PickAvailableModel(context.Background(), a.st.Client, a.st.Model)
+		if next != "" && next != a.st.Model {
+			a.fallbackTried = true
+			a.st.Model = next
+			a.st.Cfg.Model = next
+			a.st.CmdCtx.Model = next
+			a.st.Router.SetOverride("model", next)
+			if a.session != nil {
+				a.session.Model = next
+				_ = a.st.Sessions.Update(context.Background(), a.session)
+			}
+			a.streamingText.Reset()
+			a.pushToast("Model unavailable — switched to "+shortModel(next), toastInfo)
+			return a, a.streamCmd(a.lastPrompt)
+		}
+	}
+
+	a.messages = append(a.messages, session.Message{Role: "system", Content: friendly})
+	a.pushToast(friendly, toastError)
+	return a, nil
+}
+
+// shortModel collapses a long model id for status/toast display.
+func shortModel(id string) string {
+	s := strings.TrimSpace(id)
+	if n := strings.IndexAny(s, "-/"); n > 0 && len(s) > 22 {
+		return s[:n]
+	}
+	if len(s) > 26 {
+		return shorten(s, 26)
+	}
+	return s
+}
+
+// userError maps a raw error to a short, user-visible message. Raw provider
+// text, HTTP bodies, and internal errors never surface directly.
+func userError(err error) string {
+	if err == nil {
+		return "Something went wrong. Try again."
+	}
+	s := err.Error()
+	sl := strings.ToLower(s)
+	switch {
+	case err == cloud.ErrInvalidKey || strings.Contains(sl, "401") || strings.Contains(sl, "unauthorized"):
+		return "Authentication failed. Run `lf login` to reconnect."
+	case strings.Contains(sl, "does not exist") ||
+		strings.Contains(sl, "model not found") ||
+		strings.Contains(sl, "no access") ||
+		strings.Contains(sl, "not available") ||
+		strings.Contains(sl, "invalid model"):
+		return "The selected model isn't available here. Switch model or use Auto (/models)."
+	case strings.Contains(sl, "timed out") || strings.Contains(sl, "timeout") || strings.Contains(sl, "deadline"):
+		return "LayerFlow didn't respond in time. Try again."
+	case strings.Contains(sl, "no such host") ||
+		strings.Contains(sl, "connection refused") ||
+		strings.Contains(sl, "failed to connect") ||
+		strings.Contains(sl, "network") ||
+		strings.Contains(sl, "unreachable"):
+		return "Unable to reach LayerFlow. Check your connection, then try again."
+	case strings.Contains(sl, "budget") || strings.Contains(sl, "quota") || strings.Contains(sl, "limit"):
+		return "Usage limit reached for this workspace."
+	default:
+		return "Something went wrong. Try again, or run `lf doctor`."
+	}
 }
 
 // runSlashCommand routes a slash command through the cmds router and renders
@@ -607,18 +787,19 @@ func (a *App) runSlashCommand(input string) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
-	// The cmds handlers write to stdout. Capture it.
-	out, err := captureOutput(func() error {
+	// Run the command. Its stdout/stderr is captured so internal tool output
+	// never spills into the chat UI. Functionality is unchanged.
+	_, err := captureOutput(func() error {
 		_, rerr := cmds.Route(input, a.st.CmdCtx)
 		return rerr
 	})
 
 	var system session.Message
 	if err != nil {
-		system = session.Message{Role: "system", Content: "Error: " + err.Error()}
-	} else if strings.TrimSpace(out) != "" {
-		system = session.Message{Role: "system", Content: strings.TrimSpace(out)}
+		system = session.Message{Role: "system", Content: userError(err)}
 	} else {
+		// The command ran; keep the chat row as a short confirmation. Raw
+		// command output stays in the terminal/CLI, never in the chat body.
 		system = session.Message{Role: "system", Content: "✓ " + input}
 	}
 	a.messages = append(a.messages, system)
@@ -646,10 +827,16 @@ func captureOutput(fn func() error) (string, error) {
 
 func shorten(s string, n int) string {
 	s = strings.Join(strings.Fields(s), " ")
-	if len(s) <= n {
+	if n < 1 {
+		return "…"
+	}
+	// Rune-safe truncation: never split a multi-byte UTF-8 character (CJK,
+	// emoji, accented letters) in the middle.
+	runes := []rune(s)
+	if len(runes) <= n {
 		return s
 	}
-	return s[:n-1] + "…"
+	return string(runes[:n-1]) + "…"
 }
 
 func timeNow() time.Time { return time.Now() }

@@ -454,11 +454,16 @@ func resolveChatModel(cfg *config.Config, flag string) string {
 
 func shorten(s string, n int) string {
 	s = strings.Join(strings.Fields(s), " ")
-	if len(s) <= n {
+	if n < 1 {
+		return "…"
+	}
+	// Rune-safe truncation so multi-byte UTF-8 (CJK, emoji) never gets split.
+	runes := []rune(s)
+	if len(runes) <= n {
 		return s
 	}
 	if n <= 3 {
-		return s[:n]
+		return string(runes[:n])
 	}
-	return strings.TrimSpace(s[:n-1]) + "…"
+	return strings.TrimSpace(string(runes[:n-1])) + "…"
 }
