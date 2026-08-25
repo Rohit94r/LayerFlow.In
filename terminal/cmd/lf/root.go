@@ -66,6 +66,7 @@ func init() {
 		newDaemonCmd(),
 		newVersionCmd(),
 		newUpgradeCmd(),
+		newContentCmd(),
 	)
 }
 

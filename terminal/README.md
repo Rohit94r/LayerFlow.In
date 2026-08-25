@@ -121,6 +121,48 @@ There are two kinds of LayerFlow API keys, managed in the dashboard under
 | `lf cost` | Token & cost usage |
 | `lf mcp list/add/remove/health` | MCP server management |
 | `lf daemon start/stop/status` | Background daemon |
+| `lf content plan/draft/status/keywords/cron` | Content marketing automation |
+
+### Content automation (`lf content`)
+
+A ranking-safe content-marketing workflow — plan a cadence, generate drafts
+from real LayerFlow data (models, cost, version — never invented), analyze
+Search Console keywords by opportunity, and get daily reminders via cron.
+
+```bash
+# Generate the publishing calendar (3 posts/week: pillar + cluster + data/tutorial)
+lf content plan --weeks 4 --per-week 3
+
+# See the whole plan and what's due
+lf content status
+
+# Generate a draft from real product data (model registry, costs, version)
+lf content draft <slug>
+lf content draft --all
+
+# Mark a post published
+lf content publish <slug>
+
+# Rank keywords from a Search Console CSV/TSV export by opportunity
+lf content keywords --file search-console.csv       # or pipe: cat file | lf content keywords
+
+# Install a daily reminder cron (macOS/Linux; scheduled task on Windows)
+lf content cron install --at 09:00
+lf content cron status
+lf content cron uninstall
+
+# What's due right now (cron invokes this with --quiet)
+lf content remind
+```
+
+Drafts land in `~/.config/layerflow/content/drafts/<slug>.md`. Content state
+lives in `~/.config/layerflow/content/` and is plain JSON — no database.
+
+**Why 3 posts/week and not more:** Google's spam policies (scaled content
+abuse, enforced by SpamBrain in the 2024→2026 updates) demote sites that mass
+publish thin AI content. A small number of high-value, original, data-backed
+posts with an experienced voice compounds authority; publishing thin ones at
+volume gets a site deindexed.
 
 ## Slash Commands
 
