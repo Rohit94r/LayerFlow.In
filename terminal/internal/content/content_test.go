@@ -1,6 +1,7 @@
 package content
 
 import (
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -211,5 +212,113 @@ func TestReminderTextRenders(t *testing.T) {
 	txt := st.ReminderText(time.Now().UTC())
 	if !strings.Contains(txt, "Semantic Caching Guide") || !strings.Contains(txt, "semantic caching llm") {
 		t.Fatalf("reminder text missing post, got: %s", txt)
+	}
+}
+
+// TestValidateDraft runs the quality gate and confirms it rejects thin or
+// placeholder content.
+func TestValidateDraft(t *testing.T) {
+	good := "## Why this matters\n\n" + strings.Repeat("real substance here ", 40) +
+		"\n## How it works\n\n" + strings.Repeat("more genuine content ", 40) +
+		"\n## Try it yourself\n\n" + strings.Repeat("final closing notes ", 40)
+	if err := validateDraft(good); err != nil {
+		t.Fatalf("valid draft rejected: %v", err)
+	}
+	// Too short.
+	short := "## Why this matters\n## How it works\n## Try it yourself\nfew words"
+	if err := validateDraft(short); err == nil {
+		t.Fatal("short draft must be rejected")
+	}
+	// Missing required section.
+	miss := strings.Repeat("word ", 60)
+	if err := validateDraft(miss); err == nil {
+		t.Fatal("draft missing sections must be rejected")
+	}
+	// Placeholder content.
+	ph := "## Why this matters\n## How it works\n## Try it yourself\n" + strings.Repeat("word ", 60) + "\n$0.00 TODO placeholder"
+	if err := validateDraft(ph); err == nil {
+		t.Fatal("draft with placeholders must be rejected")
+	}
+}
+
+// TestAutoPublishStagesWhenNotLive confirms that with AutoPush off the run
+// only writes drafts (never pushes) and the quality gate blocks bad content.
+func TestAutoPublishStagesWhenNotLive(t *testing.T) {
+	st := newTestStore(t)
+	d := DefaultDirection()
+	d.Weeks = 1
+	d.PostsPerWeek = 1
+	if _, err := st.Plan(d); err != nil {
+		t.Fatalf("plan: %v", err)
+	}
+	// Force a post for today so it is due.
+	st.posts[0].ScheduledAt = time.Now().UTC()
+	cfg := DefaultAutopublish()
+	cfg.AutoPush = false
+	cfg.Live = false
+	data := RealData{DefaultModel: "deepseek-chat", Version: "v", CostPerM: map[string]string{}, UpdatedAt: time.Now()}
+	rep, err := st.AutoPublish(cfg, data, time.Now().UTC())
+	if err != nil {
+		t.Fatalf("autopublish: %v", err)
+	}
+	if len(rep.Generated) != 1 {
+		t.Fatalf("expected 1 generated, got %+v", rep)
+	}
+	if len(rep.Pushed) != 0 || len(rep.Published) != 0 {
+		t.Fatal("staging mode must never push or publish")
+	}
+	// Draft file exists on disk.
+	slug := st.Posts()[0].Slug
+	if st.Find(slug).DraftPath == "" {
+		t.Fatal("draft path should be recorded")
+	}
+	if _, err := os.Stat(st.Find(slug).DraftPath); err != nil {
+		t.Fatalf("draft file should exist: %v", err)
+	}
+}
+
+// TestAutoPublishRespectsMaxPerRun confirms the backlog cap bounds a batch.
+func TestAutoPublishRespectsMaxPerRun(t *testing.T) {
+	st := newTestStore(t)
+	d := DefaultDirection()
+	d.Weeks = 1
+	d.PostsPerWeek = 3
+	if _, err := st.Plan(d); err != nil {
+		t.Fatalf("plan: %v", err)
+	}
+	// Make all due + overdue so a backlog builds.
+	now := time.Now().UTC()
+	for i := range st.posts {
+		st.posts[i].ScheduledAt = now.AddDate(0, 0, -i)
+	}
+	cfg := DefaultAutopublish()
+	cfg.MaxPerRun = 1
+	data := RealData{DefaultModel: "deepseek-chat", UpdatedAt: now}
+	rep, err := st.AutoPublish(cfg, data, now)
+	if err != nil {
+		t.Fatalf("autopublish: %v", err)
+	}
+	if len(rep.Generated) != 1 {
+		t.Fatalf("expected batch capped to 1, got %+v", rep)
+	}
+}
+
+// TestSaveLoadAutopublishConfig round-trips the config via YAML.
+func TestSaveLoadAutopublishConfig(t *testing.T) {
+	st := newTestStore(t)
+	cfg := DefaultAutopublish()
+	cfg.Live = true
+	cfg.AutoPush = true
+	cfg.Repo = "/tmp/blog"
+	cfg.DraftDir = "posts"
+	if err := st.SaveAutopublishConfig(cfg); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	got, err := st.LoadAutopublishConfig()
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if !got.Live || !got.AutoPush || got.Repo != "/tmp/blog" || got.DraftDir != "posts" {
+		t.Fatalf("config did not round-trip: %+v", got)
 	}
 }

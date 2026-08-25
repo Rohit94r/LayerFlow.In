@@ -155,6 +155,52 @@ lf content cron uninstall
 lf content remind
 ```
 
+### Fully-automatic daily publishing
+
+Point one daily cron at `lf content autopublish` and it generates, validates,
+and (when configured) pushes + publishes the day's posts with **zero manual
+steps**:
+
+```bash
+# One-time setup: write the config and install a daily autopublish cron.
+# Defaults are safe: it stages drafts to content/blog and only marks posts
+# published (live) when you pass --live.
+lf content autopublish setup --at 09:00 --live
+
+# Or drive it manually / test it:
+lf content autopublish
+```
+
+The config lives at `~/.config/layerflow/content/config.yaml`:
+
+```yaml
+branch: main
+auto_push: true        # commit + push automatically
+max_per_run: 3         # safety cap so a backlog never floods the repo
+repo: /path/to/blog    # optional separate blog repo; empty = LayerFlow content/
+draft_dir: content/blog
+live: true             # mark posts published after a successful push
+```
+
+Every run:
+
+1. **Generates** any missing draft for a due, unpublished post from real
+   LayerFlow data (model registry, cost, version — never invented).
+2. **Quality-gates** it — a post under the minimum length, missing a required
+   section, or containing a placeholder is **rejected and never pushed**.
+3. **Writes** it into the configured blog dir.
+4. **Pushes** (when `auto_push`) — commits to the branch and pushes to the
+   remote, idempotently (re-runs don't fail on an unchanged tree).
+
+A post is only marked **published** after a successful push when `live` is on;
+otherwise it is staged for review. The daily cron runs `lf content
+autopublish --quiet`, so a clean day emits no output.
+
+> **Why the quality gate matters:** automatic publishing only helps if the
+> content clears the bar. Google's spam systems demote sites that mass-publish
+> thin, low-value AI content. Generating real, data-backed posts and refusing
+> anything below standard is what makes this loop sustainable.
+
 Drafts land in `~/.config/layerflow/content/drafts/<slug>.md`. Content state
 lives in `~/.config/layerflow/content/` and is plain JSON — no database.
 

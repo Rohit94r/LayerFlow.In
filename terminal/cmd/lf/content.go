@@ -31,6 +31,7 @@ func newContentCmd() *cobra.Command {
 		newContentRemindCmd(),
 		newContentCronCmd(),
 		newContentKeywordsCmd(),
+		newContentAutoPublishCmd(),
 	)
 	return cmd
 }
@@ -303,6 +304,109 @@ func newContentKeywordsCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&file, "file", "f", "", "Path to Search Console CSV/TSV (defaults to stdin)")
 	cmd.Flags().IntVarP(&top, "top", "t", 0, "Show top N keywords (default all)")
 	return cmd
+}
+
+// newContentAutoPublishCmd runs the fully-automatic publish loop. Point cron
+// at this daily and it generates, validates, and (when configured) pushes and
+// publishes the day's posts with zero manual steps.
+func newContentAutoPublishCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "autopublish",
+		Short: "Auto-generate, validate, and push today's posts (cron-safe)",
+		Long: `Run the automatic publish loop. For every post due today it noiselessly
+generates a draft from real LayerFlow data, runs a quality gate (length +
+required sections + no placeholders), writes it to the configured blog dir,
+and — when auto_push is enabled in the autopublish config — commits and pushes
+it. Point your daily cron here and it runs with no manual steps.
+
+Quality-gated drafts are always safe; a post that fails the gate is rejected
+and never pushed, so a bad run can't flood the repo.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			st, err := contentStore()
+			if err != nil {
+				return err
+			}
+			quiet, _ := cmd.Flags().GetBool("quiet")
+			cfg, err := st.LoadAutopublishConfig()
+			if err != nil {
+				return err
+			}
+			rep, err := st.AutoPublish(cfg, realContentData(), time.Now())
+			if err != nil {
+				return err
+			}
+			if !quiet {
+				fmt.Print(rep.String())
+			}
+			return nil
+		},
+	}
+	cmd.Flags().Bool("quiet", false, "Suppress output when there is nothing to do (for cron)")
+	cmd.AddCommand(newContentAutoPublishSetupCmd())
+	return cmd
+}
+
+// newContentAutoPublishSetupCmd configures the autopublish pipeline and wires
+// the daily cron in one step (the "make it run every day" command).
+func newContentAutoPublishSetupCmd() *cobra.Command {
+	var branch, repo, draftDir, at string
+	var live bool
+	cmd := &cobra.Command{
+		Use:   "setup",
+		Short: "Configure autopublish and install the daily cron",
+		Long: `Write the autopublish config (branch, blog dir, live promotion) and install a
+daily cron that runs 'lf content autopublish'. After this, generation + push
+happens every day with no manual steps.
+
+'live' controls whether posts are marked published (and promoted) after a
+successful push; leave it off to stage drafts for review.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			st, err := contentStore()
+			if err != nil {
+				return err
+			}
+			cfg := content.DefaultAutopublish()
+			if branch != "" {
+				cfg.Branch = branch
+			}
+			if repo != "" {
+				cfg.Repo = repo
+			}
+			if draftDir != "" {
+				cfg.DraftDir = draftDir
+			}
+			cfg.Live = live
+			cfg.AutoPush = live // pushing without live is the same as staging
+			if err := st.SaveAutopublishConfig(cfg); err != nil {
+				return err
+			}
+			fmt.Println("Autopublish configured:")
+			fmt.Printf("  repo: %s\n  branch: %s\n  blog dir: %s\n  live: %v\n",
+				displayRepo(cfg.Repo), cfg.Branch, cfg.DraftDir, cfg.Live)
+
+			exe, _ := os.Executable()
+			entry, err := st.InstallAutoCron(exe, at)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Daily cron installed:\n  %s\n", entry)
+			fmt.Println("Every morning LayerFlow will generate + push the day's post automatically.")
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&branch, "branch", "", "Git branch to commit to (default main)")
+	cmd.Flags().StringVar(&repo, "repo", "", "Separate content/blog repo path (default: LayerFlow repo content/)")
+	cmd.Flags().StringVar(&draftDir, "dir", "", "Blog sub-directory (default content/blog)")
+	cmd.Flags().StringVarP(&at, "at", "a", "09:00", "Daily run time (HH:MM)")
+	cmd.Flags().BoolVar(&live, "live", false, "Mark posts published after a successful push (default: stage for review)")
+	return cmd
+}
+
+func displayRepo(repo string) string {
+	if repo == "" {
+		return "~/.config/layerflow/content (store dir)"
+	}
+	return repo
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────

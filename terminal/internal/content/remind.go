@@ -106,15 +106,38 @@ func cronMinute(hhmm string) string {
 	return "0"
 }
 
+// InstallAutoCron sets up a daily cron that runs `lf content autopublish` —
+// the fully-automatic generate-and-push loop. Used by `lf content
+// autopublish setup`.
+func (s *Store) InstallAutoCron(exe string, dailyAt string) (string, error) {
+	hour, minute := "9", "0"
+	if dailyAt != "" {
+		hour = cronHour(dailyAt)
+		minute = cronMinute(dailyAt)
+	}
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		entry := fmt.Sprintf("%s %s * * * %s content autopublish --quiet >/dev/null 2>&1", minute, hour, exe)
+		if err := s.appendCron(entry, "content autopublish"); err != nil {
+			return "", err
+		}
+		return entry, nil
+	}
+	return "", s.installWindowsTask(exe)
+}
+
 // installUnixCron appends a crontab entry for `lf content remind`.
 func (s *Store) installUnixCron(exe, hour, minute string) (string, error) {
 	entry := fmt.Sprintf("%s %s * * * %s content remind --quiet >/dev/null 2>&1", minute, hour, exe)
-	// Try to append idempotently (skip if already present).
+	return entry, s.appendCron(entry, "content remind")
+}
+
+// appendCron adds a crontab entry, idempotently (won't duplicate a matching
+// line).
+func (s *Store) appendCron(entry, marker string) error {
 	out, err := exec.Command("crontab", "-l").Output()
-	if err == nil && strings.Contains(string(out), "content remind") {
-		return entry, nil // already installed
+	if err == nil && strings.Contains(string(out), marker) {
+		return nil // already installed
 	}
-	// Build new crontab.
 	existing := strings.TrimSpace(string(out))
 	body := entry
 	if existing != "" {
@@ -122,10 +145,7 @@ func (s *Store) installUnixCron(exe, hour, minute string) (string, error) {
 	}
 	cmd := exec.Command("crontab", "-")
 	cmd.Stdin = strings.NewReader(body + "\n")
-	if err := cmd.Run(); err != nil {
-		return "", fmt.Errorf("install cron (macOS/Linux): %w", err)
-	}
-	return entry, nil
+	return cmd.Run()
 }
 
 // installWindowsTask registers a scheduled task (best-effort placeholder).
@@ -137,7 +157,11 @@ func (s *Store) installWindowsTask(exe string) error {
 	return cmd.Run()
 }
 
-// UninstallCron removes the installed reminder entry.
+// cronMarkers are the subcommand strings that indicate a LayerFlow content
+// cron entry (remind or autopublish).
+var cronMarkers = []string{"content remind", "content autopublish"}
+
+// UninstallCron removes any installed LayerFlow content reminder entry.
 func (s *Store) UninstallCron() error {
 	out, err := exec.Command("crontab", "-l").Output()
 	if err != nil {
@@ -147,7 +171,7 @@ func (s *Store) UninstallCron() error {
 	var kept []string
 	removed := false
 	for _, ln := range lines {
-		if strings.Contains(ln, "content remind") {
+		if strings.Contains(ln, "content remind") || strings.Contains(ln, "content autopublish") {
 			removed = true
 			continue
 		}
@@ -161,13 +185,18 @@ func (s *Store) UninstallCron() error {
 	return cmd.Run()
 }
 
-// IsCronInstalled reports whether the reminder cron is present.
+// IsCronInstalled reports whether any LayerFlow content cron is present.
 func (s *Store) IsCronInstalled() bool {
 	out, err := exec.Command("crontab", "-l").Output()
 	if err != nil {
 		return false
 	}
-	return strings.Contains(string(out), "content remind")
+	for _, m := range cronMarkers {
+		if strings.Contains(string(out), m) {
+			return true
+		}
+	}
+	return false
 }
 
 // publishNotice returns the file path where a draft should be written.
