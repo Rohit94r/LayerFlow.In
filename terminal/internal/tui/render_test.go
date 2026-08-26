@@ -280,3 +280,52 @@ func TestStreamErrorUsesFriendlyNotice(t *testing.T) {
 		t.Fatalf("expected a friendly login notice in system messages, got %+v", a.messages)
 	}
 }
+
+// TestNoPanelBackgroundBands is a regression guard for the gray/blue
+// rectangle bug: the chat header, status bar, and input must not paint a
+// distinct rectangular background (ColorPanel #161616) behind normal text.
+// Everything sits flat on the near-black base background.
+func TestNoPanelBackgroundBands(t *testing.T) {
+	const panelBand = "48;2;22;22;22" // #161616 background ANSI code
+	for _, w := range []int{60, 80, 100, 120} {
+		a := testApp()
+		a.width, a.height = w, 30
+		a.screen = screenChat
+		a.session = &session.Session{Title: "Fix auth"}
+		a.messages = []session.Message{{Role: "user", Content: "hi"}}
+		for name, out := range map[string]string{
+			"chat":   a.renderChat(),
+			"home":   a.renderHome(),
+			"status": a.renderStatusBar(),
+			"header": a.renderChatHeader(w),
+		} {
+			if strings.Contains(out, panelBand) {
+				t.Errorf("%s w=%d: rendered a gray panel background band", name, w)
+			}
+		}
+	}
+}
+
+// TestModelErrorDoesNotClaimConnected ensures an unavailable model is not
+// reported with a false "Connected"/green state in the status bar; model
+// identity always reflects the real configured value.
+func TestModelErrorDoesNotClaimConnected(t *testing.T) {
+	a := testApp()
+	a.width, a.height = 100, 30
+	a.st.Authenticated = false
+	out := a.renderStatusBar()
+	if strings.Contains(out, "Connected") {
+		t.Fatalf("unauthenticated status must not claim Connected: %q", out)
+	}
+	if !strings.Contains(out, "○") {
+		t.Fatalf("unauthenticated status should show an open (○) dot, got: %q", out)
+	}
+
+	// Authenticated shows the filled dot.
+	b := testApp()
+	b.width, b.height = 100, 30
+	b.st.Authenticated = true
+	if !strings.Contains(b.renderStatusBar(), "●") {
+		t.Fatalf("authenticated status should show a dot, got: %q", b.renderStatusBar())
+	}
+}

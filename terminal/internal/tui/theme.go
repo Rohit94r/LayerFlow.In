@@ -119,7 +119,6 @@ var (
 	// ── Status / footer ───────────────────────────────────────────────────
 	styleStatus = lipgloss.NewStyle().
 			Foreground(ColorMuted).
-			Background(ColorPanel).
 			Padding(0, 1)
 
 	styleFooter = lipgloss.NewStyle().

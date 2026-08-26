@@ -46,10 +46,10 @@ var inputBoxFocusedStyle = lipgloss.NewStyle().
 	BorderForeground(ColorAccent).
 	Padding(0, 1)
 
-// statusBarStyle is the compact bottom status line.
+// statusBarStyle is the compact bottom status line. Transparent background so
+// it sits flat on the near-black screen — no gray band.
 var statusBarStyle = lipgloss.NewStyle().
 	Foreground(ColorMuted).
-	Background(ColorPanel).
 	Padding(0, 1)
 
 // contentWidth clamps the main content column to a comfortable reading

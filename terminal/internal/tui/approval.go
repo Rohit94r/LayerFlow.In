@@ -167,10 +167,10 @@ func (v ApprovalView) Render() string {
 }
 
 func (v ApprovalView) renderButtons() string {
-	btnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	btnStyle := lipgloss.NewStyle().Foreground(ColorMuted)
 	activeStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("15")).
-		Background(lipgloss.Color("62")).
+		Foreground(ColorText).
+		Background(ColorAccent).
 		Bold(true).
 		Padding(0, 2)
 

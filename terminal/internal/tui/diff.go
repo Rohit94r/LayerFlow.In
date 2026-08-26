@@ -290,10 +290,3 @@ func (v DiffView) totalLines() int {
 	}
 	return count
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

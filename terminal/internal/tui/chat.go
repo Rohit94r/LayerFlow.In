@@ -157,7 +157,6 @@ func (a *App) renderChatHeader(w int) string {
 	}
 
 	return lipgloss.NewStyle().
-		Background(ColorPanel).
 		Width(w).
 		BorderBottom(true).
 		BorderStyle(lipgloss.NormalBorder()).
