@@ -3,6 +3,7 @@ package tui
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -327,5 +328,37 @@ func TestModelErrorDoesNotClaimConnected(t *testing.T) {
 	b.st.Authenticated = true
 	if !strings.Contains(b.renderStatusBar(), "●") {
 		t.Fatalf("authenticated status should show a dot, got: %q", b.renderStatusBar())
+	}
+}
+
+// TestNoBackgroundArtifacts guards against ANY background-emit code in the
+// main chat/home/status rendering paths, so nothing can render as a gray or
+// colored rectangle behind text. Only the base near-black background and the
+// H1 accent heading may carry a background.
+func TestNoBackgroundArtifacts(t *testing.T) {
+	re := regexp.MustCompile(`48;2;\d+;\d+;\d+|48;5;\d+`)
+	a := testApp()
+	a.width, a.height = 100, 30
+	a.screen = screenChat
+	a.session = &session.Session{Title: "x"}
+	a.messages = []session.Message{
+		{Role: "user", Content: "hi"},
+		{Role: "assistant", Content: "use `inline` code\n\n```go\npackage main\n```"},
+		{Role: "system", Content: "some system note"},
+	}
+	for name, out := range map[string]string{
+		"home":         a.renderHome(),
+		"status":       a.renderStatusBar(),
+		"header":       a.renderChatHeader(94),
+		"inputbox":     a.renderChatInputBox(94),
+		"conversation": a.renderConversation(94, 16),
+	} {
+		if m := re.FindAllString(out, -1); len(m) > 0 {
+			t.Errorf("%s emitted background codes: %v", name, m)
+		}
+	}
+	// Message rendering directly (inline code must be flat).
+	if m := re.FindAllString(renderMessage(a.messages[1], 90), -1); len(m) > 0 {
+		t.Errorf("assistant message emitted background codes: %v", m)
 	}
 }

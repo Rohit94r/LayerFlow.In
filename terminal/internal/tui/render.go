@@ -109,8 +109,10 @@ func layerflowStyle() ansi.StyleConfig {
 		ImageText: ansi.StylePrimitive{Color: stringPtr("#FB923C")},
 		Code: ansi.StyleBlock{
 			StylePrimitive: ansi.StylePrimitive{
-				Color:           stringPtr("#4ADE80"),
-				BackgroundColor: stringPtr("#161616"),
+				// Foreground-only inline code. Deliberately no background so
+				// it sits flat on the near-black screen (a background here
+				// renders as a gray chip behind the word).
+				Color: stringPtr("#4ADE80"),
 			},
 		},
 		CodeBlock: ansi.StyleCodeBlock{
