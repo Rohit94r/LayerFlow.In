@@ -107,9 +107,13 @@ func newChatCmd() *cobra.Command {
 func newRunCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run <task>",
-		Short: "Run a single task agent",
-		Long:  `Run a non-interactive single task with live step streaming and tool approvals.`,
-		Args:  cobra.ExactArgs(1),
+		Short: "Run a single task (one-shot agent)",
+		Long: `Run a non-interactive single task. Sends the task to the model via the
+LayerFlow gateway with a focused task prompt and streams the reply. A full
+multi-step agent loop with tool execution and approval gates runs on the
+server (Agents v2 in the dashboard); the terminal run is a single-shot
+wrapper around the gateway chat completion for now.`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			maxSteps, _ := cmd.Flags().GetInt("max-steps")
 			model, _ := cmd.Flags().GetString("model")
@@ -130,8 +134,8 @@ func newRunCmd() *cobra.Command {
 func newSessionsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "sessions",
-		Short: "List, restore, branch, or delete sessions",
-		Long:  `Manage chat sessions. Use --open to open a session, --id to select one.`,
+		Short: "List or delete sessions",
+		Long:  `List local chat sessions from SQLite. Use --id ID --delete to delete one. Interactive --open restore is not wired yet.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			open, _ := cmd.Flags().GetBool("open")
 			id, _ := cmd.Flags().GetString("id")
@@ -150,14 +154,23 @@ func newSessionsCmd() *cobra.Command {
 
 // newLoginCmd creates the `lf login` command.
 func newLoginCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with a LayerFlow platform key",
-		Long:  `Paste your LayerFlow platform key (lf_live_...). Stored in the OS keyring.`,
+		Short: "Authenticate with LayerFlow (browser flow)",
+		Long: `Authenticate the CLI.
+
+By default this opens a browser device-code flow: approve on layerflow.dev and
+the CLI receives a platform key (lf_live_...). If the browser flow is
+unavailable, it falls back to pasting a platform key from the dashboard
+(API Keys → Platform keys). Pass --api-key (or set LF_API_KEY) to skip the
+browser flow and use a pasted/env key directly.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return performLogin()
+			useAPIKey, _ := cmd.Flags().GetBool("api-key")
+			return performLogin(useAPIKey)
 		},
 	}
+	cmd.Flags().Bool("api-key", false, "Skip the browser flow; use a pasted/env platform key")
+	return cmd
 }
 
 // newLogoutCmd creates the `lf logout` command.
@@ -216,8 +229,8 @@ func newModelsCmd() *cobra.Command {
 func newDoctorCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "doctor",
-		Short: "Run diagnostics",
-		Long:  `Check config, DB, providers, keyring, MCP health, and audit chain.`,
+		Short: "Run local diagnostics",
+		Long:  `Check config, local SQLite storage, keyring auth, git, project manifests, and (with --audit) audit-chain integrity. Does not probe the gateway — use 'lf models' to verify cloud connectivity.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			audit, _ := cmd.Flags().GetBool("audit")
 			return runDoctor(audit)
@@ -310,7 +323,7 @@ func newDaemonCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "daemon",
 		Short: "Background daemon lifecycle",
-		Long:  `Manage the background daemon for sync, indexing, and notifications.`,
+		Long:  `Manage the background daemon. The daemon runs a long-running process with a file watcher and an IPC socket; full sync-queue draining and indexing are being wired — for now use 'lf sync' to push/pull manually.`,
 	}
 
 	cmd.AddCommand(
@@ -355,8 +368,8 @@ func newVersionCmd() *cobra.Command {
 func newUpgradeCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "upgrade",
-		Short: "Self-update to the latest version",
-		Long:  `Check for updates and self-update atomically.`,
+		Short: "Check for a newer lf release",
+		Long:  `Check GitHub for a newer lf release and print the official install command. Atomic in-place self-update is not implemented yet — re-run the installer to update.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return performUpgrade()
 		},

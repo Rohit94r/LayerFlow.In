@@ -178,8 +178,17 @@ func (a *App) renderConversation(w, maxH int) string {
 	}
 	a.viewH = maxH
 
+	innerW := w - 8 // text area inside the conversation's horizontal padding
 	var sb strings.Builder
-	for _, m := range a.messages {
+	for i, m := range a.messages {
+		// A hairline divider between turns gives the conversation structure and
+		// reading rhythm without competing with the message content.
+		if i > 0 {
+			if rule := renderRule(innerW); rule != "" {
+				sb.WriteString(rule)
+				sb.WriteString("\n")
+			}
+		}
 		if m.ID != "" {
 			if cached, ok := a.renderedCache[m.ID]; ok {
 				sb.WriteString(cached)
@@ -202,8 +211,14 @@ func (a *App) renderConversation(w, maxH int) string {
 		a.lastStreamAt = time.Now()
 	}
 	if streamLen > 0 {
+		if len(a.messages) > 0 {
+			if rule := renderRule(innerW); rule != "" {
+				sb.WriteString(rule)
+				sb.WriteString("\n")
+			}
+		}
 		partial := a.streamingText.String()
-		role := styleRoleAssistant.Render("LayerFlow")
+		role := renderRoleAssistant()
 		cursor := ""
 		// Blink the cursor every other tick (220ms × 2 = 440ms cycle).
 		if a.cursorOn && streamLen%2 == 0 {
@@ -286,17 +301,36 @@ func (a *App) renderChatWelcome(w, maxH int) string {
 	return lipgloss.NewStyle().Height(maxH).Width(w).Padding(0, 4).Render(row)
 }
 
+// renderRoleUser builds the "You" role line with a leading accent tick.
+func renderRoleUser() string {
+	return lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("❯"),
+		" ",
+		styleRoleUser.Render("You"),
+	)
+}
+
+// renderRoleAssistant builds the "LayerFlow" role line with a leading accent
+// diamond, matching the user role line so the conversation reads cleanly.
+func renderRoleAssistant() string {
+	return lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
+		styleRoleAssistant.Render("LayerFlow"),
+	)
+}
+
 // renderMessage renders a single persisted message.
 func renderMessage(m session.Message, w int) string {
 	switch m.Role {
 	case "user":
 		return lipgloss.JoinVertical(lipgloss.Left,
-			styleRoleUser.Render("You"),
-			lipgloss.NewStyle().Width(w-8).Render(m.Content),
+			renderRoleUser(),
+			lipgloss.NewStyle().Foreground(ColorText).Width(w-8).Render(m.Content),
 		)
 	case "assistant":
 		return lipgloss.JoinVertical(lipgloss.Left,
-			styleRoleAssistant.Render("LayerFlow"),
+			renderRoleAssistant(),
 			renderMarkdownW(m.Content, w-8),
 		)
 	case "system":

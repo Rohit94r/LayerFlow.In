@@ -92,6 +92,19 @@ func ClearAPIKey() error {
 	return keyring.Delete(keyringService, keyringAPIKey)
 }
 
+// AccessToken returns the workspace API key (lf_live_...) obtained from a
+// successful device-code login, or "" when no session is held. The server
+// mints this key on device approval and returns it as the OAuth access_token,
+// so the rest of the CLI can read it as a normal platform key.
+func (a *Auth) AccessToken() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.token == nil {
+		return ""
+	}
+	return a.token.AccessToken
+}
+
 // IsAuthenticated returns true if a valid or refreshable session exists.
 func (a *Auth) IsAuthenticated() bool {
 	a.mu.Lock()

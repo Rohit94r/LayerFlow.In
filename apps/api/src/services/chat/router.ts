@@ -5,6 +5,7 @@ import { db } from "../../db/client";
 import { aiChatMessages, aiChatSessions } from "../../db/schema/chat";
 import { providerKeys } from "../../db/schema/gateway";
 import { AppError } from "../../middleware/app-error";
+import { canUseManagedProvider } from "../../middleware/plan-limits";
 import { logger } from "../../config/logger";
 import { decryptSecret } from "../crypto";
 import {
@@ -142,12 +143,20 @@ async function buildCandidates(workspaceId: string, provider: Provider): Promise
 
   const platform = platformApiKey(provider);
   if (platform && isKeyUsable(await platformKeyHealth(provider))) {
-    candidates.push({
-      keyId: null,
-      keyHint: `platform:${provider}`,
-      source: "platform",
-      apiKey: async () => platform,
-    });
+    // Managed (platform-key) use is gated by the workspace plan. If the plan
+    // disallows this provider and there is no usable BYOK key for it, the
+    // platform candidate is simply not offered — chat auto-fails-over to the
+    // next allowed provider instead of erroring. BYOK candidates above are
+    // never gated. Beta mode (billing unconfigured) always allows.
+    const access = await canUseManagedProvider(workspaceId, provider, false);
+    if (access.allowed) {
+      candidates.push({
+        keyId: null,
+        keyHint: `platform:${provider}`,
+        source: "platform",
+        apiKey: async () => platform,
+      });
+    }
   }
   return candidates;
 }

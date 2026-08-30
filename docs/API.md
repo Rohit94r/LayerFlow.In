@@ -95,7 +95,7 @@ Session-authenticated dashboard endpoints plus the CLI device protocol:
 
 Entities: `session | message | memory | project`. Ops are bounded: 100 KB
 payload, 200 ops/batch. CLI auth: `X-LF-Device` + signed token (see
-`apps/api/src/middleware/auth-sync.ts`). See `docs/lf-terminal.md`.
+`apps/api/src/middleware/auth-sync.ts`).
 
 ## Memory, search, learning
 

@@ -22,7 +22,11 @@ func (a *App) openLogin() {
 // View renders the login overlay.
 func (l *loginModel) View() string {
 	var body []string
-	body = append(body, styleTitle.Render("Sign in to LayerFlow Cloud"))
+	body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
+		styleTitle.Render("Sign in to LayerFlow Cloud"),
+	))
 	body = append(body, "")
 	body = append(body, styleMuted.Render("Paste your platform key (lf_live_…). It is stored in your OS keyring."))
 	body = append(body, "")

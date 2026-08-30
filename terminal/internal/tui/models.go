@@ -134,24 +134,29 @@ func (m *modelsModel) load() tea.Cmd {
 func (m *modelsModel) View() string {
 	var body []string
 	body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
 		styleTitle.Render("Switch model"),
 		"  ",
 		styleDim.Render("enter select · esc close"),
 	))
+	body = append(body, "")
 
 	if m.loading {
-		body = append(body, "", styleDim.Render("  loading…"))
+		body = append(body, styleDim.Render("  loading…"))
 	} else if len(m.models) == 0 {
-		body = append(body, "", styleMuted.Render("  No models advertised by the gateway."))
+		body = append(body, styleMuted.Render("  No models advertised by the gateway."))
 	} else {
 		avail, unavail := m.groupModels()
 
 		if len(avail) > 0 {
-			body = append(body, "", styleDim.Render("AVAILABLE"))
+			body = append(body, renderSectionLabel("Available"))
+			body = append(body, "")
 			body = append(body, m.renderGroup(avail)...)
 		}
 		if len(unavail) > 0 {
-			body = append(body, "", styleDim.Render("ADD A KEY TO USE"))
+			body = append(body, "", renderSectionLabel("Add a key to use"))
+			body = append(body, "")
 			body = append(body, m.renderGroup(unavail)...)
 		}
 		body = append(body, "")

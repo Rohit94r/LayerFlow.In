@@ -1,9 +1,9 @@
 # LayerFlow Roadmap
 
-Status as of 2026-08-14: **private beta ready**. The frontend is live on
-Vercel; backend deployment is documented in `docs/DEPLOYMENT.md` and pending
-host setup. This roadmap is the gap list from the production audit
-(`AUDIT_REPORT.md`).
+Status as of 2026-08-28: **production-ready, pending backend host setup.** The
+frontend is live on Vercel; backend deployment (API + worker off Vercel) is
+documented in `docs/DEPLOYMENT.md`. This roadmap is the gap list — see
+`docs/PRODUCT-STATUS.md` for the full feature audit.
 
 ## Now → 30 days (stabilization, public beta)
 
@@ -24,10 +24,13 @@ host setup. This roadmap is the gap list from the production audit
 - Budget alert emails on threshold crossings.
 
 **Continuity (browser ↔ terminal)**
-- Durable CLI sync journal (persist pending ops locally; resume after offline).
+- Terminal agent loop: make `lf run` a real multi-step loop with tool execution,
+  approval gates, and the inline diff viewer (`tui/diff.go` is written but not
+  yet invoked). Server-side agent runtime is already complete.
+- `lf upgrade` atomic self-update; `lf daemon` real sync-queue draining.
 - "Continue in Terminal" ↔ "Open in Browser" handoff actions in both UIs.
-- `chat` / `run` / `sync` / `rescue` / `upgrade` subcommands: replace stubs with
-  real provider execution via the gateway.
+- (DONE, kept for reference) Durable CLI sync journal — SQLite-backed, resumes
+  after offline (`internal/sync/sqlite_journal.go`).
 
 **Platform**
 - Model-router decision log (which provider/model answered each turn) visible in

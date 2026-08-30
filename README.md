@@ -54,7 +54,26 @@ streaming chat, palette, sessions, model switcher, activity, help) and wired
 commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
 `doctor`, `rescue`, `cost`, `mcp list`, `daemon`, `upgrade`, `version`.
 
-**Recent updates (v0.2.7):**
+**Recent updates (v0.2.15):**
+- Terminal TUI: full premium redesign — title-rule brand hero, accent warm-up
+  hint rows, hairline status-bar separator, role-marked chat messages
+  (`❯ You` / `◆ LayerFlow`) with turn dividers, and consistent accent-dot
+  section labels + single-line rows across sessions, models, search, help,
+  login and activity overlays
+- Terminal TUI: sessions list no longer wraps model chips onto a second line
+- CLI: `lf login` browser device-code flow (server-mints `lf_live_` key) with
+  `--api-key` paste fallback (`terminal/cmd/lf/login.go`)
+- CLI: honest per-command help text for `run`, `sessions`, `doctor`, `daemon`,
+  `upgrade` (`terminal/cmd/lf/root.go`)
+- API: plan-limit enforcement for managed providers wired at all key-resolution
+  points — gateway (`loadProviderApiKey`), chat failover (`buildCandidates`),
+  and `GET /v1/models` availability (`listConfiguredProviders`) so a free user
+  sees the free platform providers as available
+- API: DeepSeek/Kimi/xAI platform key env vars added to the Render Blueprint
+- Terminal: `AccessToken()` returns the device-login key
+  (`terminal/internal/auth/auth.go`)
+
+**Earlier (v0.2.7):**
 - Terminal TUI: clean text wordmark (replaced pixel-block ASCII art)
 - Terminal TUI: render cache fixes streaming performance (no re-rendering all messages every tick)
 - Terminal TUI: `/improve` slash command + `Ctrl+I` keybinding for prompt improvement
@@ -121,7 +140,7 @@ commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
 | `packages/model-registry/` | Typed catalog of providers, models, pricing (integer micro-dollars), capabilities |
 | `docker-compose.yml` | Local Postgres 16 (pgvector) + Redis 7 for the API |
 | `render.yaml` | Render Blueprint: `layerflow-api` (web) + `layerflow-api-worker` (worker) |
-| `docs/`, `flow.md`, `plan.md` | Architecture, workflow, status notes |
+| `docs/` | Architecture, status, deployment, security — start at `docs/README.md` |
 
 ## Getting started
 
@@ -366,7 +385,9 @@ npm run smoke --workspace @layerflow/api
 
 ## Docs
 
+- `docs/README.md` — index/map of all docs (start here)
+- `docs/PRODUCT-STATUS.md` — honest snapshot: what's built, what works, what's left
+- `docs/DEPLOYMENT.md` — zero-to-production deployment guide
+- `docs/architecture.md`, `docs/tech-stack.md`, `docs/API.md`, `docs/SECURITY.md`
 - `apps/api/README.md` — full endpoint map, budgets, seeding, conventions
-- `docs/tech-stack.md`, `docs/architecture.md`, `docs/workflow.md`
 - `terminal/README.md` — CLI reference
-- `flow.md` — repo map started here

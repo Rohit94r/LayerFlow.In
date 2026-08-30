@@ -16,16 +16,31 @@ import (
 	"github.com/layerflow/terminal/internal/config"
 )
 
-// performLogin authenticates the CLI with a LayerFlow platform key
-// (lf_live_...), validating it against the cloud before storing it in the
-// OS keyring. The key comes from LF_API_KEY or an interactive prompt.
+// performLogin authenticates the CLI. By default it uses the browser
+// device-code flow: the server mints a workspace API key on approval and
+// returns it as the OAuth access_token, which we store as the CLI's platform
+// key. If the device endpoint is unreachable or the user passes --api-key
+// (or sets LF_API_KEY), it falls back to pasting a platform key.
 //
 // There are two kinds of LayerFlow keys:
 //   - Platform keys (lf_live_...) — LayerFlow-hosted, billed through your
 //     plan. This is what the CLI uses.
 //   - Private own keys (BYOK) — your own provider accounts, managed in the
 //     dashboard (API Keys → Private own keys).
-func performLogin() error {
+func performLogin(useAPIKey bool) error {
+	// 1) Browser device-code flow (default) — the pro experience. Transparently
+	//    falls back to the API-key paste flow if the server endpoint is
+	//    unavailable or the user set LF_API_KEY / passed --api-key.
+	if !useAPIKey && strings.TrimSpace(os.Getenv("LF_API_KEY")) == "" {
+		a := auth.New()
+		if err := a.Login(); err != nil {
+			fmt.Fprintf(os.Stderr, "Browser login unavailable (%v); falling back to API key.\n", err)
+		} else if key := a.AccessToken(); strings.HasPrefix(key, "lf_live_") {
+			return finishLogin(key)
+		}
+	}
+
+	// 2) API-key paste / env flow.
 	key := strings.TrimSpace(os.Getenv("LF_API_KEY"))
 	if key == "" {
 		cfg, err := config.Load("")
@@ -42,9 +57,15 @@ func performLogin() error {
 		key = strings.TrimSpace(scanner.Text())
 	}
 	if !strings.HasPrefix(key, "lf_live_") {
-		return errors.New("that does not look like a LayerFlow platform key (expected lf_live_…). Create one in the dashboard: API Keys → Platform keys")
+		return errors.New("that does not look like a LayerFlow platform key (expected lf_live_…). Create one in the dashboard: API Keys → Platform keys, or run `lf login` for the browser flow")
 	}
+	return finishLogin(key)
+}
 
+// finishLogin validates the platform key against the cloud and persists it to
+// the OS keyring, falling back to the config file when the keyring is
+// unavailable (headless shells, locked keychain, sandboxes).
+func finishLogin(key string) error {
 	cfg, err := config.Load("")
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
@@ -58,15 +79,12 @@ func performLogin() error {
 	fmt.Printf("Checking key against %s…\n", baseURL)
 	if err := client.Validate(ctx); err != nil {
 		if errors.Is(err, cloud.ErrInvalidKey) {
-			return errors.New("that platform key was rejected. Generate one in the dashboard: API Keys → Platform keys.")
+			return errors.New("that platform key was rejected. Generate one in the dashboard: API Keys → Platform keys")
 		}
 		return fmt.Errorf("could not reach LayerFlow: %w", err)
 	}
 
 	if err := auth.SetAPIKey(key); err != nil {
-		// The OS keyring may be unavailable (headless shells, locked keychain,
-		// sandboxes). Fall back to storing the key in the config file so the
-		// CLI stays usable; warn so the user knows it is not keyring-encrypted.
 		if ferr := storeAPIKeyInConfig(cfg, key); ferr != nil {
 			return fmt.Errorf("store API key (keyring and config both failed): %v; keyring error: %w", ferr, err)
 		}

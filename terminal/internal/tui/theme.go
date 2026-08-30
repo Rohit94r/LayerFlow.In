@@ -99,12 +99,6 @@ var (
 			Bold(true).
 			Padding(0, 1)
 
-	styleChipModel = lipgloss.NewStyle().
-			Foreground(ColorAccentHi).
-			Border(thinBorder).
-			BorderForeground(ColorAccentDim).
-			Padding(0, 1)
-
 	// ── Input ─────────────────────────────────────────────────────────────
 	styleInput = lipgloss.NewStyle().
 			Border(roundBorder).
@@ -175,7 +169,54 @@ var (
 	styleRoleSystem = lipgloss.NewStyle().
 			Foreground(ColorDim).
 			Italic(true)
+
+	// ── Premium helpers ───────────────────────────────────────────────────
+	// styleRule renders a subtle hairline divider (zinc-800 on near-black).
+	styleRule = lipgloss.NewStyle().
+			Foreground(ColorBorder)
+
+	// styleHotkey is the accent-bold key hint used in hint rows and footers.
+	styleHotkey = lipgloss.NewStyle().
+			Foreground(ColorAccentHi).
+			Bold(true)
+
+	// styleSection is a small-caps section label (dim + tracked-out).
+	styleSection = lipgloss.NewStyle().
+			Foreground(ColorMuted).
+			Bold(true)
+
+	// styleAccentDot is the little bullet used to lead focused list rows.
+	styleAccentDot = lipgloss.NewStyle().
+			Foreground(ColorAccent)
+
+	// styleGood is a friendly success/accent marker (chip-friendly, no bg).
+	styleGood = lipgloss.NewStyle().
+			Foreground(ColorSuccess).
+			Bold(true)
 )
+
+// renderRule draws a full-width hairline rule at the given width (clamped to
+// zero). Used to separate message turns, list sections, and the status footer.
+func renderRule(width int) string {
+	if width < 1 {
+		return ""
+	}
+	return styleRule.Render(strings.Repeat("─", width))
+}
+
+// renderSectionLabel renders an uppercase, tracked-out section label with a
+// subtle leading bullet — the shared visual language for overlay groups.
+func renderSectionLabel(text string) string {
+	t := strings.ToUpper(strings.TrimSpace(text))
+	if t == "" {
+		return ""
+	}
+	return lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
+		styleSection.Render(t),
+	)
+}
 
 // widthOr returns the width if positive, otherwise the fallback.
 func widthOr(w int, fallback int) int {

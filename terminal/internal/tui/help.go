@@ -83,10 +83,10 @@ func (h *helpModel) View() string {
 
 	keyW := 12
 	for _, s := range sections {
-		body = append(body, styleDim.Render(s.title))
+		body = append(body, renderSectionLabel(s.title))
 		for _, r := range s.rows {
 			body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
-				lipgloss.NewStyle().Width(keyW).Bold(true).Render(r[0]),
+				lipgloss.NewStyle().Width(keyW).Foreground(ColorAccentHi).Bold(true).Render(r[0]),
 				styleMuted.Render(r[1]),
 			))
 		}
@@ -94,7 +94,7 @@ func (h *helpModel) View() string {
 	}
 
 	// Slash commands reference (compact, from the real registry).
-	body = append(body, styleDim.Render("Slash Commands"))
+	body = append(body, renderSectionLabel("Slash Commands"))
 	for _, c := range cmds.ListCommands() {
 		aliases := ""
 		if len(c.Aliases) > 0 {

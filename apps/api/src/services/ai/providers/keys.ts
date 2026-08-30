@@ -4,6 +4,7 @@ import { db } from "../../../db/client";
 import { getEnv } from "../../../config/env";
 import { providerKeys } from "../../../db/schema/gateway";
 import { AppError } from "../../../middleware/app-error";
+import { canUseManagedProvider } from "../../../middleware/plan-limits";
 import { decryptSecret } from "../../../services/crypto";
 
 /**
@@ -81,6 +82,18 @@ export async function loadProviderApiKey(
 
   const platformKey = platformProviderKey(provider);
   if (platformKey) {
+    // Managed (platform-key) use is gated by the workspace plan so a free
+    // user can never burn a paid provider key. BYOK already returned above
+    // and is never gated. In beta mode (billing not configured) this is a
+    // cheap env check that always allows — the "free first month" path.
+    const access = await canUseManagedProvider(workspaceId, provider, false);
+    if (!access.allowed) {
+      throw new AppError(
+        402,
+        "plan_provider_not_included",
+        access.reason ?? `Your plan doesn't include ${provider} managed access.`,
+      );
+    }
     return platformKey;
   }
 

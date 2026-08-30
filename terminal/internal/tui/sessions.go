@@ -82,21 +82,24 @@ func firstLine(text string) string {
 func (s *sessionsModel) View() string {
 	var body []string
 	body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
 		styleTitle.Render("Recent chats"),
 		"  ",
 		styleDim.Render("enter open · r rename · b branch · e export · ⌫ delete · esc close"),
 	))
+	body = append(body, "")
 
 	if s.loading {
-		body = append(body, "", styleDim.Render("  loading…"))
+		body = append(body, styleDim.Render("  loading…"))
 	} else if s.loaded && len(s.rows) == 0 {
-		body = append(body, "", styleMuted.Render("  No chats for this project yet. Start one from the home screen."))
+		body = append(body, styleMuted.Render("  No chats for this project yet. Start one from the home screen."))
 	} else if s.loaded {
-		body = append(body, "")
 		for i, row := range s.rows {
 			body = append(body, s.renderRow(i, row))
 		}
-		body = append(body, "", styleFooter.Render("  Select a chat to open or act on it."))
+		body = append(body, "")
+		body = append(body, styleFooter.Render("  Select a chat to open or act on it."))
 	}
 
 	inner := lipgloss.JoinVertical(lipgloss.Left, body...)
@@ -120,16 +123,29 @@ func (s *sessionsModel) renderRow(i int, row sessionRow) string {
 	if model == "" {
 		model = "default"
 	}
+	model = shortModel(model)
+
+	// Keep the whole row comfortably under the panel width so the title,
+	// preview, model tag and date never wrap onto a second line. The preview
+	// absorbs the remaining budget.
+	name := shorten(title, 24)
+	date := t.Format("Jan 02 15:04")
+	base := lipgloss.Width(name) + lipgloss.Width(model) + lipgloss.Width(date) + 10
+	previewBudget := 74 - base
+	if previewBudget < 6 {
+		previewBudget = 6
+	}
+	preview := shorten(row.preview, previewBudget)
 
 	line := lipgloss.JoinHorizontal(lipgloss.Left,
 		" ",
-		lipgloss.NewStyle().Bold(true).Render(shorten(title, 32)),
+		lipgloss.NewStyle().Bold(true).Render(name),
 		"  ",
-		styleMuted.Render(shorten(row.preview, 46)),
+		styleMuted.Render(preview),
 		"  ",
-		styleChipModel.Render(model),
+		lipgloss.NewStyle().Foreground(ColorAccentHi).Render(model),
 		"  ",
-		styleDim.Render(t.Format("Jan 02 15:04")),
+		styleDim.Render(date),
 	)
 
 	if s.renaming && i == s.selected {

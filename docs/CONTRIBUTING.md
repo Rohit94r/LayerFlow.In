@@ -87,5 +87,5 @@ No repository secrets are required; tests run against PGlite + mocked Redis.
 - `docs/DEPLOYMENT.md` — production deployment (env vars, hosts, migrations).
 - `docs/API.md` — REST + SSE reference. Update when routes change.
 - `docs/SECURITY.md` — security model + incident checklist.
-- `docs/architecture.md`, `docs/tech-stack.md`, `docs/workflow.md`,
-  `docs/lf-terminal.md` — background reading.
+- `docs/architecture.md`, `docs/tech-stack.md` — background reading.
+- `docs/lf-terminal.md` design notes have been folded into `terminal/README.md`; read the code in `terminal/`.

@@ -84,13 +84,15 @@ const drawerWidth = 44
 func (act *activityModel) View() string {
 	var body []string
 	body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
+		styleAccentDot.Render("◆"),
+		" ",
 		styleTitle.Render("Activity"),
 		"  ",
 		styleDim.Render("r refresh · esc close"),
 	))
 
 	// ── Repository ──
-	body = append(body, "", styleDim.Render("REPOSITORY"))
+	body = append(body, "", renderSectionLabel("Repository"))
 	if act.gotGit {
 		branch := act.git.Branch
 		if branch == "" {
@@ -113,7 +115,7 @@ func (act *activityModel) View() string {
 	}
 
 	// ── This session ──
-	body = append(body, "", styleDim.Render("SESSION"))
+	body = append(body, "", renderSectionLabel("Session"))
 	inTok, outTok := 0, 0
 	var cost float64
 	if act.app.session != nil {
@@ -131,7 +133,7 @@ func (act *activityModel) View() string {
 
 	// ── Recent commands ──
 	if n := len(inputHistory); n > 0 {
-		body = append(body, "", styleDim.Render("RECENT COMMANDS"))
+		body = append(body, "", renderSectionLabel("Recent commands"))
 		start := n - 4
 		if start < 0 {
 			start = 0
@@ -142,7 +144,7 @@ func (act *activityModel) View() string {
 	}
 
 	// ── Sync ──
-	body = append(body, "", styleDim.Render("SYNC"))
+	body = append(body, "", renderSectionLabel("Sync"))
 	if act.syncedAt != "" {
 		body = append(body, act.drawerRow("watermark", act.syncedAt))
 	}

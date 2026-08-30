@@ -32,9 +32,9 @@ func renderTip(width int, authenticated bool) string {
 		tip = "Sign in to continue · press Enter or run `lf login`"
 	}
 
-	dot := lipgloss.NewStyle().Foreground(ColorWarn).Render("●")
-	label := lipgloss.NewStyle().Foreground(ColorWarn).Bold(true).Render("Tip")
-	text := styleDim.Render("  " + tip)
+	dot := lipgloss.NewStyle().Foreground(ColorAccent).Render("●")
+	label := lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render("Tip")
+	text := styleDim.Render(" " + tip)
 
 	row := lipgloss.JoinHorizontal(lipgloss.Left, dot, " ", label, text)
 	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(row)

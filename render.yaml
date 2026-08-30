@@ -57,6 +57,21 @@ services:
         sync: false
       - key: GEMINI_MODEL
         sync: false
+      # Cheap / Chinese providers — add when ready (DeepSeek $10 deposit is the
+      # next rung after the free Groq+Gemini tiers). All optional; unset = that
+      # provider simply isn't offered in managed mode.
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: DEEPSEEK_MODEL
+        sync: false
+      - key: KIMI_API_KEY
+        sync: false
+      - key: KIMI_MODEL
+        sync: false
+      - key: XAI_API_KEY
+        sync: false
+      - key: XAI_MODEL
+        sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: ELEVENLABS_VOICE_ID

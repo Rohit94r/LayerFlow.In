@@ -76,7 +76,7 @@ func (s *searchModel) View() string {
 		} else {
 			groups := s.grouped()
 			for _, g := range groups {
-				body = append(body, "", styleDim.Render(strings.ToUpper(g.title)))
+				body = append(body, "", renderSectionLabel(g.title))
 				for _, h := range g.hits {
 					body = append(body, s.renderHit(h))
 				}

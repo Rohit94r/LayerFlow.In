@@ -46,10 +46,14 @@ var inputBoxFocusedStyle = lipgloss.NewStyle().
 	BorderForeground(ColorAccent).
 	Padding(0, 1)
 
-// statusBarStyle is the compact bottom status line. Transparent background so
-// it sits flat on the near-black screen — no gray band.
+// statusBarStyle is the compact bottom status line: a hairline top rule that
+// separates it from the content, over a transparent background so it sits flat
+// on the near-black screen — no gray band.
 var statusBarStyle = lipgloss.NewStyle().
 	Foreground(ColorMuted).
+	BorderTop(true).
+	BorderStyle(lipgloss.NormalBorder()).
+	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
 // contentWidth clamps the main content column to a comfortable reading
@@ -159,7 +163,7 @@ func (a *App) renderHomeInputBox(w int) string {
 func renderHomeHints(w int, authenticated bool) string {
 	hint := func(hotkey, text string) string {
 		return lipgloss.JoinHorizontal(lipgloss.Left,
-			styleMuted.Bold(true).Render(hotkey),
+			styleHotkey.Render(hotkey),
 			" ",
 			styleDim.Render(text),
 		)
