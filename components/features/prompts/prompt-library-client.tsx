@@ -11,7 +11,7 @@ import { PromptCard } from "@/components/features/prompts/prompt-card";
 import type { Prompt } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const FILTERS = ["All", "≥90", "80–89", "Favorites"] as const;
+const FILTERS = ["All", "Favorites"] as const;
 
 const SORTS = ["Most run", "Newest", "A–Z"] as const;
 
@@ -23,8 +23,6 @@ export default function PromptLibraryClient({ prompts }: { prompts: Prompt[] }) 
   const filtered = useMemo(() => {
     const matches = prompts.filter((p) => {
       if (filter === "Favorites" && !p.favorite) return false;
-      if (filter === "≥90" && p.score < 90) return false;
-      if (filter === "80–89" && (p.score < 80 || p.score >= 90)) return false;
       const haystack = `${p.title} ${p.description} ${p.tags.join(" ")} ${p.content}`.toLowerCase();
       return !query || haystack.includes(query.toLowerCase());
     });

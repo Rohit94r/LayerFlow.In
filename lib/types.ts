@@ -91,10 +91,12 @@ export interface Prompt {
   description: string;
   content: string;
   originalContent?: string;
-  score: number;
+  /** Improve-run quality score, when the prompt came from an Improve run. Not
+   *  provided by the prompt-library API for manual/imported prompts. */
+  score?: number;
   tags: string[];
-  model: string;
-  version: number;
+  model?: string;
+  version?: number;
   favorite: boolean;
   usageCount: number;
   /** Where the prompt came from: manual, imported from chat, or an Improve run. */

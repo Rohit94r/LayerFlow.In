@@ -10,10 +10,12 @@ export function PromptCard({ prompt }: { prompt: Prompt }) {
       className="group flex flex-col rounded-2xl border border-border bg-surface/40 p-5 transition-colors duration-150 hover:border-border-strong hover:bg-surface-2/50"
     >
       <div className="flex items-start justify-between gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 font-mono text-sm font-bold text-brand">
-          {prompt.score}
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-base">
+          {prompt.source === "improve" ? "✨" : prompt.source === "chat" ? "💬" : "📝"}
         </span>
-        <span className="text-right font-mono text-[10px] text-faint">v{prompt.version}</span>
+        {prompt.version != null ? (
+          <span className="text-right font-mono text-[10px] text-faint">v{prompt.version}</span>
+        ) : null}
       </div>
       <h3 className="mt-4 text-sm font-semibold text-ink transition-colors duration-150 group-hover:text-brand">
         {prompt.title}
@@ -31,7 +33,8 @@ export function PromptCard({ prompt }: { prompt: Prompt }) {
           </Badge>
         ))}
         <span className="ml-auto text-[10px] text-faint">
-          {prompt.usageCount} uses · {timeAgo(prompt.updatedAt)}
+          {prompt.usageCount > 0 ? `${prompt.usageCount} ${prompt.usageCount === 1 ? "use" : "uses"} · ` : ""}
+          {timeAgo(prompt.updatedAt)}
         </span>
       </div>
     </Link>
