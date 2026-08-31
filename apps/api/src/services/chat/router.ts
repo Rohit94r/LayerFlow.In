@@ -11,6 +11,9 @@ import { decryptSecret } from "../crypto";
 import {
   platformApiKey,
   resolveAdapter,
+  createProviderWatchdog,
+  createNonStreamingWatchdog,
+  providerTimeoutError,
   type ChatCompletionResult,
   type ProviderAdapter,
 } from "../ai/providers";
@@ -45,7 +48,7 @@ export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   // Cheap / fast tier first so "auto" never surprises the user with a flagship bill.
   { model: "gpt-4o-mini", provider: "openai" },
   { model: "gemini-flash-latest", provider: "google" },
-  { model: "llama-3.3-70b-versatile", provider: "groq" },
+  { model: "openai/gpt-oss-120b", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
   { model: "kimi-k2", provider: "kimi" },
@@ -65,6 +68,7 @@ function reasonForStatus(status: number): string {
   if (status === 401 || status === 403) return "the key was invalid";
   if (status === 429) return "the provider rate-limited the key";
   if (status === 402) return "the key hit its quota";
+  if (status === 504) return "the provider timed out";
   return "the provider had an error";
 }
 
@@ -192,28 +196,63 @@ async function runSingleCall(input: {
   }
 
   // Per-provider temperature so a model switch never inherits the last model's.
-  const req = {
+  const baseReq = {
     model,
     messages,
     apiKey,
     maxTokens: MAX_CHAT_OUTPUT_TOKENS,
     temperature: defaultTemperature(provider),
-    signal: input.signal,
   };
+
+  // Watchdog: a provider that opens a connection but never answers (blocked
+  // network path, silently throttled endpoint) must fail over instead of
+  // hanging the chat on keepalives forever. First-delta budget for streaming
+  // adapters; total-call budget for non-streaming ones.
+  const isStreaming = Boolean(adapter.chatCompletionStream);
+  const watchdog = isStreaming
+    ? createProviderWatchdog(signal)
+    : createNonStreamingWatchdog(signal);
 
   try {
     let result: ChatCompletionResult;
-    if (adapter.chatCompletionStream) {
-      result = await adapter.chatCompletionStream(req, {
-        onDelta: (text) => void onDelta(text),
-      });
+    if (isStreaming) {
+      result = await adapter.chatCompletionStream!(
+        { ...baseReq, signal: watchdog.signal },
+        {
+          onDelta: watchdog.wrapOnDelta((text) => void onDelta(text)),
+        },
+      );
     } else {
-      result = await adapter.chatCompletion(req);
+      result = await adapter.chatCompletion({ ...baseReq, signal: watchdog.signal });
       if (result.content) await onDelta(result.content);
     }
+    watchdog.dispose();
     await markKeyHealthy(identity);
     return result;
   } catch (err) {
+    watchdog.dispose();
+
+    // The caller (browser/CLI) went away mid-call — not a provider failure.
+    // Cancel quietly without poisoning key health.
+    if (watchdog.callerAborted()) {
+      throw err instanceof AppError
+        ? err
+        : new AppError(400, "client_closed", "The request was cancelled");
+    }
+
+    // Watchdog timeout — mark the key degraded with a cooldown so the next
+    // turn skips the hanging endpoint, then throw a typed error so the
+    // failover chain tries the next provider.
+    if (watchdog.timedOut()) {
+      await markKeyFailed(identity, {
+        statusCode: 504,
+        code: "provider_timeout",
+        errorMessage: "provider call exceeded the watchdog timeout",
+        cooldownSeconds: 120,
+      });
+      throw providerTimeoutError();
+    }
+
     const status = err instanceof AppError ? err.status : 502;
     const code = err instanceof AppError ? err.code : "provider_error";
     await markKeyFailed(identity, {

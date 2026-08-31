@@ -655,10 +655,12 @@ func (a *App) sendMessage(text string) (tea.Model, tea.Cmd) {
 	return a, a.streamCmd(prompt)
 }
 
-// streamCmd starts the SSE streaming loop.
+// streamCmd starts the SSE streaming loop and returns the first drain command.
 func (a *App) streamCmd(prompt []cloud.Message) tea.Cmd {
 	ch := make(chan streamChunkMsg, 64)
 	done := make(chan struct{})
+	a.streamCh = ch
+	a.streamDone = done
 
 	ctx, cancelFn := context.WithCancel(context.Background())
 	a.cancelFn = cancelFn
@@ -675,18 +677,23 @@ func (a *App) streamCmd(prompt []cloud.Message) tea.Cmd {
 		a.streamErr = err
 	}()
 
-	// Pump channel into the tea program.
-	return func() tea.Msg {
-		select {
-		case c, ok := <-ch:
-			if ok {
-				return c
-			}
-			<-done
-			return streamDoneMsg{resp: a.streamResp, err: a.streamErr}
-		case <-done:
-			return streamDoneMsg{resp: a.streamResp, err: a.streamErr}
+	return a.drainStream
+}
+
+// drainStream is a re-armable pump. Bubble Tea invokes a command once per
+// frame, so each call returns at most one message; the Update handler must
+// return a.drainStream again to keep draining the channel without parking the
+// stream on the goroutine.
+func (a *App) drainStream() tea.Msg {
+	select {
+	case c, ok := <-a.streamCh:
+		if ok {
+			return c
 		}
+		<-a.streamDone
+		return streamDoneMsg{resp: a.streamResp, err: a.streamErr}
+	case <-a.streamDone:
+		return streamDoneMsg{resp: a.streamResp, err: a.streamErr}
 	}
 }
 

@@ -155,6 +155,13 @@ type App struct {
 	streamResp *cloud.ChatResponse
 	streamErr  error
 
+	// Live streaming pump channels. The pump is a re-armable command: Bubble
+	// Tea calls a command exactly once per frame, so the streamChunkMsg handler
+	// must return a *new* drain command after each chunk or the next chunk never
+	// gets read and the chat stalls after the first token.
+	streamCh   chan streamChunkMsg
+	streamDone chan struct{}
+
 	// Render cache: message ID → pre-rendered string. Avoids re-running
 	// glamour markdown on every View() tick (220ms) for all historical
 	// messages. Only the streaming buffer is re-rendered on new text.
@@ -270,7 +277,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case streamChunkMsg:
 		a.streamingText.WriteString(msg.text)
-		return a, nil
+		// Re-arm the pump: without returning a fresh command Bubble Tea never
+		// reads the next chunk and the stream stalls after the first token.
+		return a, a.drainStream
 
 	case streamDoneMsg:
 		return a.handleStreamDone(msg)
