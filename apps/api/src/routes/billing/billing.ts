@@ -6,8 +6,9 @@ import { db } from "../../db/client";
 import {
   createCheckoutSession,
   getCurrentSubscription,
+  getBillingInvoices,
+  getBillingPlansDisplay,
   handleWebhook,
-  isBillingConfigured,
 } from "../../services/billing/dodo";
 import type { AppEnv } from "../../types";
 
@@ -18,15 +19,28 @@ const checkoutSchema = z.object({
 /**
  * Billing routes (Dodo Payments).
  *
- *   POST /api/billing/checkout — create a hosted checkout session (auth)
+  *   POST /api/billing/checkout — create a hosted checkout session (auth)
  *   GET  /api/billing/status   — current plan + subscription state (auth)
+ *   GET  /api/billing/plans    — paid-plan catalog with features (auth)
+ *   GET  /api/billing/invoices — payment history (auth)
  *   POST /api/billing/webhook  — Dodo webhook receiver (signed, no auth)
  */
 export const billingRouter = new Hono<AppEnv>();
 
+// GET /api/billing/plans — paid-plan catalog with feature bullets.
+billingRouter.get("/plans", requireAuth, async (c) => {
+  return c.json({ plans: getBillingPlansDisplay() });
+});
+
 billingRouter.get("/status", requireAuth, async (c) => {
   const status = await getCurrentSubscription(c.get("workspaceId"));
-  return c.json({ status, configured: isBillingConfigured() });
+  return c.json({ status, configured: status.configured });
+});
+
+// GET /api/billing/invoices — payment.succeeded events as invoice rows.
+billingRouter.get("/invoices", requireAuth, async (c) => {
+  const invoices = await getBillingInvoices(c.get("workspaceId"));
+  return c.json({ invoices });
 });
 
 billingRouter.post("/checkout", requireAuth, async (c) => {

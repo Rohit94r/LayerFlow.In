@@ -1,11 +1,19 @@
 import DodoPayments from "dodopayments";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "../../db/client";
 import { billingEvents, subscriptions } from "../../db/schema";
 import { AppError } from "../../middleware/app-error";
 import { getEnv } from "../../config/env";
 import { logger } from "../../config/logger";
-import { getBillingPlan, getPlanProductId, type BillingPlanId } from "./plans";
+import {
+  BILLING_PLANS,
+  PLAN_DESCRIPTIONS,
+  PLAN_FEATURES,
+  getBillingPlan,
+  getPlanProductId,
+  type BillingPlan,
+  type BillingPlanId,
+} from "./plans";
 
 /** The unexported types above come straight off the SDK client instance so
  * they can never drift from the installed version. */
@@ -31,6 +39,16 @@ export interface SubscriptionStatusResult {
   provider: "dodo" | null;
   providerSubscriptionId: string | null;
   active: boolean;
+  /** Whether Dodo Payments is wired up (product IDs set in env). */
+  configured: boolean;
+}
+
+/** A payment.succeeded event rendered as an invoice row. */
+export interface BillingInvoice {
+  id: string;
+  date: string;
+  amount: string;
+  status: "paid";
 }
 
 export interface WebhookHandleResult {
@@ -113,6 +131,8 @@ export async function getCurrentSubscription(
     where: (s, { eq }) => eq(s.workspaceId, workspaceId),
   });
 
+  const configured = isBillingConfigured();
+
   if (!sub || sub.plan === "free") {
     return {
       plan: "free",
@@ -121,6 +141,7 @@ export async function getCurrentSubscription(
       provider: null,
       providerSubscriptionId: null,
       active: false,
+      configured,
     };
   }
 
@@ -132,7 +153,70 @@ export async function getCurrentSubscription(
     provider: sub.dodoSubscriptionId ? "dodo" : null,
     providerSubscriptionId: sub.dodoSubscriptionId,
     active,
+    configured,
   };
+}
+
+/** Paid plans with their feature bullets + descriptions, for the Billing page. */
+export interface BillingPlanDisplay {
+  id: BillingPlanId;
+  name: string;
+  priceLabel: string;
+  description: string;
+  features: string[];
+  highlighted: boolean;
+  trialPeriodDays?: number;
+}
+
+export function getBillingPlansDisplay(): BillingPlanDisplay[] {
+  return BILLING_PLANS.map((p, i) => ({
+    id: p.id,
+    name: p.name,
+    priceLabel: p.priceLabel,
+    description: PLAN_DESCRIPTIONS[p.id],
+    features: PLAN_FEATURES[p.id],
+    highlighted: i === 0, // Starter is the most popular entry point
+    trialPeriodDays: p.trialPeriodDays,
+  }));
+}
+
+/** List invoices from processed payment.succeeded webhook events. */
+export async function getBillingInvoices(workspaceId: string): Promise<BillingInvoice[]> {
+  if (!isBillingConfigured()) return [];
+  const rows = await db
+    .select({
+      eventId: billingEvents.eventId,
+      type: billingEvents.type,
+      workspaceId: billingEvents.workspaceId,
+      payload: billingEvents.payload,
+      processedAt: billingEvents.processedAt,
+    })
+    .from(billingEvents)
+    .where(eq(billingEvents.type, "payment.succeeded"))
+    .orderBy(desc(billingEvents.processedAt))
+    .limit(50);
+
+  const invoices: BillingInvoice[] = [];
+  for (const r of rows) {
+    if (r.workspaceId !== workspaceId) continue;
+    const payload = r.payload as Record<string, unknown> | null;
+    const amountMicro =
+      typeof payload?.amount_available === "number"
+        ? payload.amount_available
+        : typeof payload?.amount === "number"
+          ? payload.amount
+          : null;
+    if (amountMicro == null) continue;
+    // Dodo amounts are in the minor currency unit (e.g. cents); prices are $5/$14.
+    const dollars = amountMicro / 100;
+    invoices.push({
+      id: `INV-${r.processedAt.toISOString().slice(0, 10).replace(/-/g, "")}-${r.eventId.slice(0, 8)}`,
+      date: r.processedAt.toISOString().slice(0, 10),
+      amount: `$${dollars.toFixed(2)}`,
+      status: "paid",
+    });
+  }
+  return invoices;
 }
 
 /**

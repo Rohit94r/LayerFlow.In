@@ -25,6 +25,37 @@ export const BILLING_PLANS: BillingPlan[] = [
   { id: "team", name: "Team", priceLabel: "Custom" },
 ];
 
+/** Feature bullets shown on the Billing page for each paid plan. */
+export const PLAN_FEATURES: Record<BillingPlanId, string[]> = {
+  starter: [
+    "Unlimited chat + auto model switching",
+    "BYOK — encrypted provider keys",
+    "AI Memory + context search",
+    "Cost analytics + budgets",
+    "3 workspaces",
+  ],
+  pro: [
+    "Everything in Starter",
+    "Autonomous agents + approvals",
+    "Team workspaces (roles + invitations)",
+    "Smart routing + model budgets",
+    "CSV / JSON / PDF exports",
+  ],
+  team: [
+    "Everything in Pro",
+    "Unlimited seats",
+    "Priority processing queue",
+    "Early access: browser companion",
+  ],
+};
+
+/** Human-friendly description per plan for the Billing page cards. */
+export const PLAN_DESCRIPTIONS: Record<BillingPlanId, string> = {
+  starter: "For solo builders who switch models weekly and never want to re-explain work.",
+  pro: "For teams and heavy AI workflows with autonomous agents.",
+  team: "For organizations needing unlimited seats and priority support.",
+};
+
 export function getBillingPlan(id: string): BillingPlan {
   const plan = BILLING_PLANS.find((p) => p.id === id);
   if (!plan) throw new AppError(400, "unknown_plan", `Unknown plan: ${id}`);
