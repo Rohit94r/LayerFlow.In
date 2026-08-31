@@ -2,7 +2,7 @@
   "name": "layerflow-web",
   "version": "1.0.0",
   "private": true,
-  "description": "LayerFlow — the AI coding platform. Rescue chats, carry context between AI tools, and control AI spend.",
+    "description": "LayerFlow — the AI workspace. Chat, build agents, run real work, and continue the same workflow from browser to terminal.",
   "workspaces": [
     "apps/*",
     "packages/*"

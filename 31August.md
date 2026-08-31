@@ -47,15 +47,11 @@ build passes.
 - [x] Remove dead mock files (`lib/data/workspace.ts`, `lib/data/prompts.ts`)
 - [x] Remove empty packages (`packages/config`, `packages/ui`), empty
       `apps/api/src/services/{analytics,marketing}` dirs, empty `terminal/test/`
-- [ ] Delete/replace `docs/tech-stack.md` (describes a product that never
-      shipped: Stripe, Node CLI, WebSocket, mock phase)
-- [ ] Rewrite `docs/architecture.md` (lists passport/rescue/code pages that
-      don't exist; nav is Home/Chat/.../Settings)
-- [ ] Fix stale doc claims in `CONTRIBUTING.md`, `API.md`:
-      `PATCH /api/chat/:id/model` is really `POST /api/chat/:id/switch`;
-      no `/api/chat/:id/memory`; PRODUCT-STATUS model count
-- [ ] Demote Rescue to an import utility in `package.json` description +
-      marketing copy (already demoted in sidebar)
+- [x] Delete/replace `docs/tech-stack.md` (stale Hinglish doc; describes Stripe/Node CLI/mock phase — removed)
+- [x] Rewrite `docs/architecture.md` (now lists the 17 real pages; no `/code`/passport/mock claims)
+- [x] Fix stale `docs/API.md` chat routes (`POST /api/chat/:id/switch`, `PATCH /api/chat/:id/auto-switch`, `POST /api/chat/keys-health`; no `/api/chat/:id/memory`)
+- [x] Demote Rescue to an import utility in `package.json` description +
+        marketing copy (already demoted in sidebar)
 - [ ] Archive superseded `docs/REBUILD-PLAN.md` (this file replaces it)
 
 **Acceptance:** every doc describes the actual repo. `grep -r "mock\|TODO"`

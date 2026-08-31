@@ -48,6 +48,12 @@ jobs:
       - name: API tests
         run: npm test --workspace @layerflow/api
 
+      - name: Web unit tests (repo root)
+        run: npm test
+
+      - name: Lint (eslint)
+        run: npm run lint
+
       - name: Build API bundle (tsup)
         run: npm run build --workspace @layerflow/api
 

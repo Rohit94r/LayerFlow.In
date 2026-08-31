@@ -95,7 +95,7 @@ prod without the worker.
 
 ### Models & providers — ✅
 9 adapters: OpenAI · Anthropic · Google · DeepSeek · Groq · xAI · Kimi
-(Moonshot) · OpenRouter · generic openai-compatible. 21-model registry with
+(Moonshot) · OpenRouter · generic openai-compatible. 19-model registry with
 micro-dollar pricing. Key resolution: **BYOK → platform env → error**
 (`services/ai/providers/keys.ts`). Intelligence router classifies task →
 recommends model with savings % (`services/intelligence/`).

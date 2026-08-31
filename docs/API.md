@@ -72,11 +72,13 @@ All under `/api/auth/*` (Google OAuth, session, user). Handled by
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/api/chat` | Create chat + first message. |
+| POST | `/api/chat` | Create chat session. |
+| GET | `/api/chat` | List sessions. |
+| POST | `/api/chat/keys-health` | Provider key health snapshot for the model picker. |
 | POST | `/api/chat/:id/messages` | Send a message. **SSE streaming** response. |
+| POST | `/api/chat/:id/switch` | Switch model (`{ model: "<id>" \| "auto" }`); provider failover is automatic. |
+| PATCH | `/api/chat/:id/auto-switch` | Toggle auto-failover on/off. |
 | GET/PATCH/DELETE | `/api/chat/:id` | Read, rename, delete. |
-| POST | `/api/chat/:id/memory` | Save a chat as a memory. |
-| PATCH | `/api/chat/:id/model` | Switch model; provider failover is automatic. |
 
 `/api/sessions` and `/api/runs` back the session/run views. `/api/improve` and
 `/api/compare` are chat-assist features.

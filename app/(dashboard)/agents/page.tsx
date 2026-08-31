@@ -134,7 +134,7 @@ export default function AgentsPage() {
               />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="px-1 text-[11px] font-medium text-muted">
-                  Try: "I want a Freelancer Pipeline Agent" or "Student Study Agent"
+                  Try: “I want a Freelancer Pipeline Agent” or “Student Study Agent”
                 </span>
                 <Button
                   onClick={() => router.push(encodeNewAgentUrl("job_applying", goal))}
