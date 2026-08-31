@@ -1,4 +1,10 @@
 import type { AiTool, ModelInfo, ModelClass } from "@/lib/types";
+import {
+  MODELS as REGISTRY_MODELS,
+  computeCostMicro,
+  type ModelInfo as RegistryModel,
+  type Provider as RegistryProvider,
+} from "@layerflow/model-registry";
 
 // ── AI tool brand metadata ───────────────────────────────────
 
@@ -76,163 +82,90 @@ export function toolMeta(tool: AiTool): AiToolMeta {
   return AI_TOOLS[tool] ?? AI_TOOLS.generic;
 }
 
-// ── Model registry (mock price sheet) ────────────────────────
+// ── Model catalog — derived from @layerflow/model-registry (single source of
+// truth shared with the API + gateway; never hand-maintained here). The API
+// keeps a versioned model_pricing table for effective-dated overrides. ──────
 
-const cl: ModelClass = "cheap";
-const ba: ModelClass = "balanced";
-const fl: ModelClass = "flagship";
+const REGISTRY_PROVIDER_LABELS: Record<RegistryProvider, string> = {
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  google: "Google",
+  deepseek: "DeepSeek",
+  groq: "Groq",
+  xai: "xAI",
+  kimi: "Moonshot",
+  openrouter: "OpenRouter",
+};
 
-export const MODELS: ModelInfo[] = [
-  {
-    id: "claude-opus",
-    provider: "Anthropic",
-    name: "Claude Opus 4.5",
-    class: fl,
-    quality: 97,
-    costIn: 5.0,
-    costOut: 25.0,
-    speed: 3,
-    bestFor: "Hard reasoning, long-form writing, complex analysis",
+/** Relative-speed heuristic per host (Groq is the speed king). */
+const PROVIDER_SPEED: Record<RegistryProvider, number> = {
+  groq: 10,
+  google: 8,
+  openai: 6,
+  deepseek: 6,
+  kimi: 6,
+  xai: 5,
+  anthropic: 4,
+  openrouter: 5,
+};
+
+const BEST_FOR: Record<string, string> = {
+  "gpt-4o": "General-purpose reasoning with tools and vision",
+  "gpt-4o-mini": "High-volume everyday tasks at low cost",
+  "gpt-4.1": "Long-context coding and agentic work",
+  "gpt-4.1-mini": "Cheap long-context coding",
+  "o3-mini": "Step-by-step reasoning on a budget",
+  "claude-sonnet-4": "Best-in-class coding and careful analysis",
+  "claude-opus-4": "Hardest reasoning and long-form writing",
+  "claude-3-5-haiku": "Fast summaries, classification, drafts",
+  "gemini-2.5-pro": "Long-context reasoning (1M+ tokens)",
+  "gemini-flash-latest": "Summaries, extraction, cheap continuations",
+  "deepseek-chat": "Cheap coding and reasoning",
+  "deepseek-reasoner": "Deep chain-of-thought problems",
+  "llama-3.3-70b-versatile": "Speed-critical interactive tasks",
+  "openai/gpt-oss-120b": "Strong open-weight model at Groq speed",
+  "openai/gpt-oss-20b": "Cheapest open-weight route for simple work",
+  "grok-3": "Fast reasoning, coding, current-events answers",
+  "grok-3-mini": "Cheap fast reasoning for everyday tasks",
+  "kimi-k2": "Agentic tasks, large context, long chats",
+  "kimi-k2-thinking": "Agentic work with visible reasoning",
+};
+
+function classForPrice(inputMicroPerMTok: number): ModelClass {
+  if (inputMicroPerMTok <= 300_000) return "cheap";
+  if (inputMicroPerMTok <= 800_000) return "balanced";
+  return "flagship";
+}
+
+/** Display quality band per class — a UI heuristic, not a benchmark claim. */
+const QUALITY_BY_CLASS: Record<ModelClass, number> = {
+  cheap: 84,
+  balanced: 90,
+  flagship: 96,
+};
+
+function toUiModel(m: RegistryModel): ModelInfo {
+  const cls = classForPrice(m.inputPricePerMTokMicro);
+  return {
+    id: m.id,
+    provider: REGISTRY_PROVIDER_LABELS[m.provider],
+    name: m.displayName,
+    class: cls,
+    quality: QUALITY_BY_CLASS[cls],
+    costIn: m.inputPricePerMTokMicro / 1_000_000,
+    costOut: m.outputPricePerMTokMicro / 1_000_000,
+    speed: PROVIDER_SPEED[m.provider] ?? 5,
+    bestFor: BEST_FOR[m.id] ?? "General chat and analysis",
     supportsByok: true,
-  },
-  {
-    id: "claude-sonnet",
-    provider: "Anthropic",
-    name: "Claude Sonnet 4.5",
-    class: ba,
-    quality: 92,
-    costIn: 3.0,
-    costOut: 15.0,
-    speed: 5,
-    bestFor: "Balanced reasoning and writing quality",
-    supportsByok: true,
-  },
-  {
-    id: "claude-haiku",
-    provider: "Anthropic",
-    name: "Claude Haiku 4.5",
-    class: cl,
-    quality: 82,
-    costIn: 1.0,
-    costOut: 5.0,
-    speed: 8,
-    bestFor: "Fast summaries, classification, drafts",
-    supportsByok: true,
-  },
-  {
-    id: "gpt-5",
-    provider: "OpenAI",
-    name: "GPT-5",
-    class: fl,
-    quality: 94,
-    costIn: 1.25,
-    costOut: 10.0,
-    speed: 4,
-    bestFor: "Reasoning-heavy tasks with tools",
-    supportsByok: true,
-  },
-  {
-    id: "gpt-5-mini",
-    provider: "OpenAI",
-    name: "GPT-5 Mini",
-    class: cl,
-    quality: 84,
-    costIn: 0.25,
-    costOut: 2.0,
-    speed: 7,
-    bestFor: "High-volume, simple tasks",
-    supportsByok: true,
-  },
-  {
-    id: "gemini-flash",
-    provider: "Google",
-    name: "Gemini Flash",
-    class: cl,
-    quality: 86,
-    costIn: 0.3,
-    costOut: 2.5,
-    speed: 9,
-    bestFor: "Summaries, extraction, cheap continuations",
-    supportsByok: true,
-  },
-  {
-    id: "gemini-pro",
-    provider: "Google",
-    name: "Gemini 2.5 Pro",
-    class: fl,
-    quality: 95,
-    costIn: 1.25,
-    costOut: 10.0,
-    speed: 4,
-    bestFor: "Long-context reasoning (1M+ tokens)",
-    supportsByok: true,
-  },
-  {
-    id: "deepseek-v3",
-    provider: "DeepSeek",
-    name: "DeepSeek V3.2",
-    class: cl,
-    quality: 88,
-    costIn: 0.27,
-    costOut: 1.1,
-    speed: 6,
-    bestFor: "Cheap coding and reasoning",
-    supportsByok: true,
-  },
-  {
-    id: "kimi-k2",
-    provider: "Moonshot",
-    name: "Kimi K2",
-    class: ba,
-    quality: 89,
-    costIn: 0.6,
-    costOut: 2.5,
-    speed: 6,
-    bestFor: "Agentic tasks, large context, long chats",
-    supportsByok: true,
-  },
-  {
-    id: "grok-3",
-    provider: "xAI",
-    name: "Grok 3",
-    class: fl,
-    quality: 93,
-    costIn: 3.0,
-    costOut: 15.0,
-    speed: 5,
-    bestFor: "Fast reasoning, coding, real-time answers",
-    supportsByok: true,
-  },
-  {
-    id: "grok-3-mini",
-    provider: "xAI",
-    name: "Grok 3 mini",
-    class: cl,
-    quality: 86,
-    costIn: 0.3,
-    costOut: 0.5,
-    speed: 8,
-    bestFor: "Cheap fast reasoning for everyday tasks",
-    supportsByok: true,
-  },
-  {
-    id: "llama-3.3-70b-versatile",
-    provider: "Groq",
-    name: "Llama 3.3 70B (Groq)",
-    class: cl,
-    quality: 82,
-    costIn: 0.59,
-    costOut: 0.79,
-    speed: 10,
-    bestFor: "Speed-critical interactive tasks",
-    supportsByok: true,
-  },
-];
+  };
+}
+
+export const MODELS: ModelInfo[] = REGISTRY_MODELS.map(toUiModel);
 
 export const MODEL_BY_ID = Object.fromEntries(MODELS.map((m) => [m.id, m]));
 
 /** Human labels for backend provider slugs shown in Rescue reports / Cost. */
-export const PROVIDER_LABELS: Record<string, string> = {
+export const PROVIDER_SLUG_LABELS: Record<string, string> = {
   openai: "OpenAI",
   anthropic: "Anthropic",
   google: "Google Gemini",
@@ -243,18 +176,13 @@ export const PROVIDER_LABELS: Record<string, string> = {
   openrouter: "OpenRouter",
 };
 
-/** Model display names for the backend model catalog (model-registry). */
-export const RESCUE_MODEL_NAMES: Record<string, string> = {
-  "gpt-4o": "GPT-4o",
-  "gpt-4o-mini": "GPT-4o mini",
-  "claude-sonnet-4": "Claude Sonnet 4",
-  "claude-3-5-haiku": "Claude 3.5 Haiku",
-  "gemini-flash-latest": "Gemini Flash",
-  "deepseek-chat": "DeepSeek V3 (chat)",
-  "llama-3.3-70b-versatile": "Llama 3.3 70B (Groq)",
-  "grok-3-mini": "Grok 3 mini",
-  "kimi-k2": "Kimi K2",
-};
+/** Back-compat alias — existing imports read PROVIDER_LABELS. */
+export const PROVIDER_LABELS = PROVIDER_SLUG_LABELS;
+
+/** Model display names for the backend catalog (model-registry). */
+export const RESCUE_MODEL_NAMES: Record<string, string> = Object.fromEntries(
+  REGISTRY_MODELS.map((m) => [m.id, m.displayName]),
+);
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -272,9 +200,13 @@ export function formatTokens(value: number): string {
 }
 
 export function estimateCost(modelId: string, tokensIn: number, tokensOut: number): number {
-  const m = MODEL_BY_ID[modelId];
-  if (!m) return 0;
-  return (tokensIn / 1_000_000) * m.costIn + (tokensOut / 1_000_000) * m.costOut;
+  const micro = computeCostMicro(modelId, tokensIn, tokensOut);
+  if (micro == null) {
+    const m = MODEL_BY_ID[modelId];
+    if (!m) return 0;
+    return (tokensIn / 1_000_000) * m.costIn + (tokensOut / 1_000_000) * m.costOut;
+  }
+  return micro / 1_000_000;
 }
 
 export function timeAgo(iso: string): string {
