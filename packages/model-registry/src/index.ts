@@ -202,6 +202,28 @@ export const MODELS: readonly ModelInfo[] = [
     maxOutputTokens: 32_768,
     capabilities: TEXT_CAPS,
   },
+  {
+    id: "openai/gpt-oss-120b",
+    provider: "groq",
+    displayName: "GPT-OSS 120B (Groq)",
+    inputPricePerMTokMicro: 150_000,
+    outputPricePerMTokMicro: 600_000,
+    cachedInputPricePerMTokMicro: 75_000,
+    contextWindow: 131_072,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "openai/gpt-oss-20b",
+    provider: "groq",
+    displayName: "GPT-OSS 20B (Groq)",
+    inputPricePerMTokMicro: 75_000,
+    outputPricePerMTokMicro: 300_000,
+    cachedInputPricePerMTokMicro: 37_500,
+    contextWindow: 131_072,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
 
   // --- xAI ---
   {

@@ -102,6 +102,16 @@ export const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().optional(),
+
+  // Provider-call watchdog (ms). A provider that opens a connection but never
+  // responds is aborted and marked timed-out so failover moves on instead of
+  // hanging chat/streams forever.
+  /** Abort a streaming provider call when no first delta arrives. Default 25000. */
+  PROVIDER_FIRST_DELTA_TIMEOUT_MS: z.coerce.number().int().min(1_000).optional(),
+  /** Abort a streaming provider call when no delta arrives for this long. Default 45000. */
+  PROVIDER_STREAM_IDLE_TIMEOUT_MS: z.coerce.number().int().min(1_000).optional(),
+  /** Total budget for non-streaming provider calls. Default 90000. */
+  PROVIDER_TOTAL_TIMEOUT_MS: z.coerce.number().int().min(1_000).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

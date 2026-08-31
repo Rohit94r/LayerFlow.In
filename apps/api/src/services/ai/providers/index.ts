@@ -12,6 +12,13 @@ import type { ProviderAdapter } from "./types";
 
 export type { ChatMessage, ChatCompletionRequest, ChatCompletionResult, ProviderAdapter } from "./types";
 export { hasProviderKey, loadProviderApiKey, platformApiKey, platformDefaultModel } from "./keys";
+export {
+  createProviderWatchdog,
+  createNonStreamingWatchdog,
+  providerTimeoutError,
+  type ProviderWatchdog,
+  type WatchdogConfig,
+} from "./watchdog";
 
 const ADAPTERS: Record<Provider, ProviderAdapter> = {
   openai: openaiAdapter,

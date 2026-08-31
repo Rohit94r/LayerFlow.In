@@ -80,7 +80,7 @@ async function notifyRunFinished(input: {
 const AGENT_MODEL_PRIORITY: { model: string; provider: string }[] = [
   { model: "gpt-4o-mini", provider: "openai" },
   { model: "gemini-flash-latest", provider: "google" },
-  { model: "llama-3.3-70b-versatile", provider: "groq" },
+  { model: "openai/gpt-oss-120b", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
   { model: "kimi-k2", provider: "kimi" },

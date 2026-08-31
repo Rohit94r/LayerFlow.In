@@ -42,7 +42,7 @@ const extractSchema = z
 const EXTRACT_CHAIN: Array<{ provider: string; model: string }> = [
   { provider: "openai", model: "gpt-4o-mini" },
   { provider: "google", model: "gemini-flash-latest" },
-  { provider: "groq", model: "llama-3.3-70b-versatile" },
+  { provider: "groq", model: "openai/gpt-oss-120b" },
   { provider: "deepseek", model: "deepseek-chat" },
   { provider: "kimi", model: "kimi-k2" },
   { provider: "anthropic", model: "claude-3-5-haiku" },

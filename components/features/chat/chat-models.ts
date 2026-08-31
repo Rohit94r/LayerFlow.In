@@ -22,7 +22,7 @@ export const PICKER_MODELS: PickerModel[] = [
   { id: "claude-sonnet-4", provider: "anthropic", label: "Claude Sonnet 4", kind: "flagship" },
   { id: "claude-3-5-haiku", provider: "anthropic", label: "Claude 3.5 Haiku", kind: "cheap" },
   { id: "deepseek-chat", provider: "deepseek", label: "DeepSeek Chat", kind: "cheap" },
-  { id: "llama-3.3-70b-versatile", provider: "groq", label: "Llama 3.3 70B (Groq)", kind: "cheap" },
+  { id: "openai/gpt-oss-120b", provider: "groq", label: "GPT-OSS 120B (Groq)", kind: "cheap" },
   { id: "grok-3-mini", provider: "xai", label: "Grok 3 mini", kind: "cheap" },
   { id: "grok-3", provider: "xai", label: "Grok 3", kind: "flagship" },
   { id: "kimi-k2", provider: "kimi", label: "Kimi K2", kind: "balanced" },

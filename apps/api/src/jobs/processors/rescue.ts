@@ -32,7 +32,7 @@ const DEFAULT_RESCUE_MODEL = "gpt-4o-mini";
 const RESCUE_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   { model: "gpt-4o-mini", provider: "openai" },
   { model: "gemini-flash-latest", provider: "google" },
-  { model: "llama-3.3-70b-versatile", provider: "groq" },
+  { model: "openai/gpt-oss-120b", provider: "groq" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
   { model: "kimi-k2", provider: "kimi" },
@@ -121,7 +121,7 @@ function costRows(input: {
     "claude-3-5-haiku",
     "gemini-flash-latest",
     "deepseek-chat",
-    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-120b",
     "grok-3-mini",
     "kimi-k2",
   ];
