@@ -1,0 +1,92 @@
+# LayerFlow VPS deployment (Hostinger - Caddy handles SSL)
+# Uses port 3100 because Caddy proxies api.layerflow.dev -> localhost:3100
+# No nginx needed - Caddy is already running on the host.
+#
+# Start: docker compose -f docker-compose.vps.yml up -d --build
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: layerflow/api:latest
+    container_name: lf-api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "3100:8787"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 1.0
+    networks:
+      - lf-net
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: layerflow/worker:latest
+    container_name: lf-worker
+    restart: unless-stopped
+    env_file: .env
+    command: ["node", "--max-old-space-size=256", "dist/worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 256m
+    mem_reservation: 128m
+    cpus: 0.5
+    networks:
+      - lf-net
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: lf-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: layerflow
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: layerflow
+    volumes:
+      - lf-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U layerflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    mem_reservation: 128m
+    networks:
+      - lf-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: lf-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - lf-redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    mem_limit: 128m
+    mem_reservation: 64m
+    networks:
+      - lf-net
+
+networks:
+  lf-net:
+    driver: bridge
+
+volumes:
+  lf-pgdata:
+  lf-redisdata:
