@@ -20,7 +20,13 @@ export const redis = new Redis(getEnv().REDIS_URL, {
     }
     return delay;
   },
-  enableOfflineQueue: false,
+  // Keep the offline queue ENABLED: on Vercel/serverless every cold start
+  // creates this client lazily, so the FIRST command (e.g. device-code writes
+  // for `lf login`) used to race the TCP+TLS handshake and reject immediately
+  // with "Stream isn't writeable" -> 500s on cold instances. With the queue on,
+  // that first command waits for the connection instead (still bounded by
+  // maxRetriesPerRequest + retryStrategy when Redis is truly down).
+  enableOfflineQueue: true,
 });
 
 redis.on("error", (err) => {
