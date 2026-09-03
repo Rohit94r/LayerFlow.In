@@ -223,9 +223,7 @@ export default function CostClient() {
           title="No spend yet"
           description="Start chatting with any AI model and your cost breakdown will appear here — per model, per provider, with savings tracking."
           action={
-            <Link href="/chat">
-              <Button>Start chatting</Button>
-            </Link>
+            <Button onClick={() => window.location.href='/chat'}>Start chatting</Button>
           }
         />
       </div>

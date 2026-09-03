@@ -92,6 +92,7 @@ export function PasteView({
               <button
                 key={t}
                 type="button"
+                aria-label={`Set source to ${t}`}
                 onClick={() => setSource(t)}
                 className={cn(
                   "rounded-full border px-3 py-1.5 transition-all",
@@ -116,6 +117,7 @@ export function PasteView({
               <button
                 key={t}
                 type="button"
+                aria-label={`Set target to ${t}`}
                 onClick={() => setTarget(t)}
                 className={cn(
                   "rounded-full border px-3 py-1.5 transition-all",

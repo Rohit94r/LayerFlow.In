@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/layerflow/terminal/internal/config"
+	"github.com/layerflow/terminal/internal/memory"
 	"github.com/layerflow/terminal/internal/search"
 	"github.com/layerflow/terminal/internal/storage"
 	"github.com/layerflow/terminal/internal/watcher"
@@ -97,6 +98,46 @@ func Start(cfg *config.Config) error {
 	} else {
 		d.watcher = w
 	}
+
+	// Initialize search index
+	searchIdx := search.NewHybridIndex(db)
+	d.indexer = searchIdx
+
+	// Initialize search schema (FTS tables) and memory schema
+	ctx := context.Background()
+	if err := searchIdx.InitSchema(ctx); err != nil {
+		slog.Warn("daemon: search schema init failed", "err", err)
+	}
+	if err := memory.NewSQLStore(db).InitSchema(ctx); err != nil {
+		slog.Warn("daemon: memory schema init failed", "err", err)
+	}
+
+	// Build initial search index from project files
+	go func() {
+		root, _ := os.Getwd()
+		var files []search.FileMeta
+		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info == nil || info.IsDir() {
+				return nil
+			}
+			if strings.HasPrefix(info.Name(), ".") {
+				return nil
+			}
+			files = append(files, search.FileMeta{
+				Path:    path,
+				Size:    info.Size(),
+				ModTime: info.ModTime().Unix(),
+			})
+			return nil
+		})
+		if len(files) > 0 {
+			if err := searchIdx.Build(ctx, root, files); err != nil {
+				slog.Warn("daemon: initial search build failed", "err", err)
+			} else {
+				slog.Info("daemon: initial search index built", "files", len(files))
+			}
+		}
+	}()
 
 	// Start HTTP server for IPC
 	mux := http.NewServeMux()

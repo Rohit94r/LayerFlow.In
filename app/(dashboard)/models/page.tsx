@@ -38,13 +38,7 @@ const MODEL_LABELS: Record<string, string> = {
   "kimi-k2": "Kimi K2",
 };
 
-const CLASS_META: Record<ModelClass, { label: string; cls: string }> = {
-  flagship: { label: "Flagship", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
-  balanced: { label: "Balanced", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  cheap: { label: "Cheap & fast", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-};
-
-const KNOWN_PROVIDERS: { slug: string; label: string }[] = [
+const PROVIDER_LABELS: { slug: string; label: string }[] = [
   { slug: "openai", label: "OpenAI" },
   { slug: "anthropic", label: "Anthropic" },
   { slug: "google", label: "Google (Gemini)" },
@@ -54,6 +48,12 @@ const KNOWN_PROVIDERS: { slug: string; label: string }[] = [
   { slug: "kimi", label: "Kimi (Moonshot)" },
   { slug: "openrouter", label: "OpenRouter" },
 ];
+
+const CLASS_META: Record<ModelClass, { label: string; cls: string }> = {
+  flagship: { label: "Flagship", cls: "bg-violet-500/10 text-violet-400 border-violet-500/20" },
+  balanced: { label: "Balanced", cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+  cheap: { label: "Cheap & fast", cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+};
 
 export default function ModelsClient() {
   const [keys, setKeys] = useState<ProviderKey[]>([]);
@@ -68,6 +68,36 @@ export default function ModelsClient() {
     reason: string;
   } | null>(null);
   const [recError, setRecError] = useState<string | null>(null);
+  const [liveProviders, setLiveProviders] = useState<{ slug: string; label: string }[]>(PROVIDER_LABELS);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getServerCookieHeader();
+        // Fetch live provider list from the API
+        const modelsRes = await apiFetch<{ models: Array<{ provider: string; displayName: string }> }>(
+          "/api/models",
+          { ...(headers.Cookie ? { headers } : {}) },
+        );
+        if (!cancelled && modelsRes?.models) {
+          const seen = new Set<string>();
+          const providers: { slug: string; label: string }[] = [];
+          for (const m of modelsRes.models) {
+            if (!seen.has(m.provider)) {
+              seen.add(m.provider);
+              const label = PROVIDER_LABELS.find((p) => p.slug === m.provider)?.label ?? m.provider;
+              providers.push({ slug: m.provider, label });
+            }
+          }
+          if (providers.length > 0) setLiveProviders(providers);
+        }
+      } catch {
+        // fall back to static list
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,7 +226,6 @@ export default function ModelsClient() {
                   <p className="text-sm font-bold text-ink">{recommendation.recommendedModel}</p>
                   <p className="text-[10px] text-faint">model id</p>
                 </div>
-                <Button size="sm">Use for routing</Button>
               </div>
             </div>
             <p className="mt-4 rounded-xl border border-border bg-surface-2/40 p-3.5 text-xs leading-relaxed text-muted">
@@ -272,7 +301,7 @@ export default function ModelsClient() {
         />
         <PanelBody>
           <div className="grid gap-3 sm:grid-cols-2">
-            {KNOWN_PROVIDERS.map((p) => {
+            {liveProviders.map((p) => {
               const key = keyFor(p.slug);
               const connected = Boolean(key);
               return (
@@ -320,7 +349,7 @@ export default function ModelsClient() {
             <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
               <Field label="Provider">
                 <select className="workspace-input" value={provider} onChange={(e) => setProvider(e.target.value)}>
-                  {KNOWN_PROVIDERS.map((p) => (
+                  {liveProviders.map((p) => (
                     <option key={p.slug} value={p.slug}>
                       {p.label}
                     </option>
@@ -330,6 +359,7 @@ export default function ModelsClient() {
               <Field label="API key">
                 <Input
                   type="password"
+                  autoComplete="new-password"
                   value={secret}
                   onChange={(e) => setSecret(e.target.value)}
                   placeholder="sk-…"

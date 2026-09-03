@@ -76,9 +76,6 @@ export default async function ProjectDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" icon={<Pencil className="h-3.5 w-3.5" />}>
-            Edit project
-          </Button>
           <Link href="/chat">
             <Button size="sm" icon={<Plus className="h-3.5 w-3.5" />}>
               New Continue Pack

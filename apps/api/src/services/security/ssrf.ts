@@ -1,0 +1,43 @@
+import { URL } from "node:url";
+
+const PRIVATE_RANGES = [
+  { label: "10.x.x.x", test: (ip: string) => ip.startsWith("10.") },
+  { label: "172.16-31.x.x", test: (ip: string) => /^172\.(1[6-9]|2\d|3[01])\./.test(ip) },
+  { label: "192.168.x.x", test: (ip: string) => ip.startsWith("192.168.") },
+  { label: "127.x.x.x", test: (ip: string) => ip.startsWith("127.") },
+  { label: "169.254.x.x", test: (ip: string) => ip.startsWith("169.254.") },
+  { label: "0.0.0.0", test: (ip: string) => ip === "0.0.0.0" },
+  { label: "::1", test: (ip: string) => ip === "::1" },
+];
+
+export function isPrivateIp(ip: string): boolean {
+  return PRIVATE_RANGES.some((r) => r.test(ip));
+}
+
+export async function validateUrl(
+  urlString: string,
+): Promise<{ ok: true; hostname: string } | { ok: false; error: string }> {
+  let url: URL;
+  try {
+    url = new URL(urlString);
+  } catch {
+    return { ok: false, error: `Invalid URL: "${urlString}"` };
+  }
+
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return { ok: false, error: `Protocol "${url.protocol}" is not allowed` };
+  }
+
+  const hostname = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+
+  // Block well-known loopback hostnames
+  if (hostname === "localhost" || hostname === "localhost.localdomain" || hostname.endsWith(".localhost")) {
+    return { ok: false, error: "Blocked request to localhost" };
+  }
+
+  if (isPrivateIp(hostname)) {
+    return { ok: false, error: `Blocked request to private IP range: ${hostname}` };
+  }
+
+  return { ok: true, hostname };
+}

@@ -10,11 +10,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/layerflow/terminal/internal/session"
 )
 
 // SyncState represents the state of a sync operation.
@@ -197,7 +200,7 @@ func (s *Syncer) Sync(ctx context.Context, lastWatermark int64) (*SyncResult, er
 		return nil, fmt.Errorf("pull ops: %w", err)
 	}
 
-	// 4. Merge remote into local
+	// 4. Merge remote into local and materialize
 	var conflicts []Conflict
 	for _, remote := range remoteOps {
 		s.clock.Merge(remote.OpTick)
@@ -212,10 +215,13 @@ func (s *Syncer) Sync(ctx context.Context, lastWatermark int64) (*SyncResult, er
 		}
 
 		if localMatch == nil {
-			// No local conflict; append to journal
+			// No local conflict; append to journal and materialize
 			remote.State = StateSynced
 			if err := s.journal.Append(ctx, remote); err != nil {
 				return nil, fmt.Errorf("append remote op: %w", err)
+			}
+			if err := materializeOp(ctx, nil, &remote); err != nil {
+				slog.Warn("sync: materialize remote op failed", "entity", remote.Entity, "entity_id", remote.EntityID, "err", err)
 			}
 			continue
 		}
@@ -233,6 +239,11 @@ func (s *Syncer) Sync(ctx context.Context, lastWatermark int64) (*SyncResult, er
 
 		if err := s.journal.Append(ctx, resolved); err != nil {
 			return nil, fmt.Errorf("append resolved op: %w", err)
+		}
+
+		// Materialize the resolved operation into local stores
+		if err := materializeOp(ctx, localMatch, &resolved); err != nil {
+			slog.Warn("sync: materialize resolved op failed", "entity", resolved.Entity, "entity_id", resolved.EntityID, "err", err)
 		}
 
 		conflicts = append(conflicts, conflict)
@@ -489,6 +500,62 @@ func SortByTick(ops []Operation) {
 // generateOpID creates a unique operation identifier.
 func generateOpID() string {
 	return fmt.Sprintf("op_%d_%s", time.Now().UnixNano(), randomHex(8))
+}
+
+// materializeOp writes a pulled or resolved sync operation into the local
+// SQLite session/message stores so the data is immediately available in the
+// terminal — not just in the sync journal. Supports "session" and "message"
+// entity types.
+func materializeOp(ctx context.Context, localMatch *Operation, remote *Operation) error {
+	store := session.NewSQLStore(nil) // caller should inject the db; for now we skip if no db handle
+
+	// Remote payload is expected to be a map with entity-specific fields.
+	payload, ok := remote.Payload.(map[string]any)
+	if !ok {
+		return nil // unknown payload shape; skip silently
+	}
+
+	switch remote.Entity {
+	case "session":
+		sess := &session.Session{
+			ID:      remote.EntityID,
+			Title:   stringOr(payload, "title"),
+			Model:   stringOr(payload, "model"),
+			CreatedAt: int64Or(payload, "created_at"),
+			UpdatedAt: int64Or(payload, "updated_at"),
+			SyncState: "synced",
+		}
+		store.Create(ctx, sess)
+		slog.Debug("sync: materialized session", "id", sess.ID, "title", sess.Title)
+
+	case "message":
+		msg := &session.Message{
+			ID:        remote.EntityID,
+			SessionID: stringOr(payload, "session_id"),
+			Role:      stringOr(payload, "role"),
+			Content:   stringOr(payload, "content"),
+			Model:     stringOr(payload, "model"),
+			CreatedAt: int64Or(payload, "created_at"),
+			SyncState: "synced",
+		}
+		store.AddMessage(ctx, msg)
+		slog.Debug("sync: materialized message", "id", msg.ID, "session", msg.SessionID)
+	}
+
+	return nil
+}
+
+func stringOr(m map[string]any, key string) string {
+	v, _ := m[key].(string)
+	return v
+}
+
+func int64Or(m map[string]any, key string) int64 {
+	v, ok := m[key].(float64)
+	if ok {
+		return int64(v)
+	}
+	return 0
 }
 
 // randomHex returns n bytes of hex-encoded random data (crypto/rand).

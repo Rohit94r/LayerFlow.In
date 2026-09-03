@@ -1,10 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// Model hub + provider keys service.
-//
-// The model catalog is static reference data (lib/data/providers);
-// provider keys come from the live API (apps/api/src/routes/keys).
-// ─────────────────────────────────────────────────────────────
-
 import {
   createApiKeyResponseSchema,
   createProviderKeyResponseSchema,
@@ -12,9 +5,9 @@ import {
   deleteProviderKeyResponseSchema,
   listApiKeysResponseSchema,
   listProviderKeysResponseSchema,
+  listModelCatalogResponseSchema,
 } from "@layerflow/contracts";
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
-import { MODELS, MODEL_BY_ID, estimateCost } from "@/lib/data/providers";
 import type { ModelInfo, PlatformKey, ProviderKey } from "@/lib/types";
 
 export interface ModelHubService {
@@ -70,13 +63,55 @@ function mapProviderKey(key: {
   };
 }
 
+function toModelInfo(entry: {
+  id: string;
+  provider: string;
+  displayName: string;
+  inputPricePerMTokMicro: number;
+  outputPricePerMTokMicro: number;
+  contextWindow: number;
+  maxOutputTokens?: number | null;
+  available: boolean;
+}): ModelInfo {
+  const classForPrice = (micro: number): ModelInfo["class"] => {
+    if (micro <= 300_000) return "cheap";
+    if (micro <= 800_000) return "balanced";
+    return "flagship";
+  };
+  return {
+    id: entry.id,
+    provider: entry.provider,
+    name: entry.displayName,
+    class: classForPrice(entry.inputPricePerMTokMicro),
+    quality: entry.id.includes("flash") || entry.id.includes("mini") ? 84 : 90,
+    costIn: entry.inputPricePerMTokMicro / 1_000_000,
+    costOut: entry.outputPricePerMTokMicro / 1_000_000,
+    speed: 5,
+    bestFor: "General chat and analysis",
+    supportsByok: true,
+  };
+}
+
 export const modelService: ModelHubService = {
   async listModels() {
-    return MODELS;
+    const headers = await getServerCookieHeader();
+    try {
+      const res = await apiFetch(
+        "/api/models",
+        { ...(headers.Cookie ? { headers } : {}) },
+        listModelCatalogResponseSchema,
+      );
+      return res.models.map(toModelInfo);
+    } catch {
+      // Fall back to static catalog when API is unreachable
+      const { MODELS } = await import("@/lib/data/providers");
+      return MODELS;
+    }
   },
 
   async getModel(id) {
-    return MODEL_BY_ID[id] ?? null;
+    const models = await this.listModels();
+    return models.find((m) => m.id === id) ?? null;
   },
 
   async listProviderKeys() {
@@ -138,6 +173,7 @@ export const modelService: ModelHubService = {
   },
 
   async estimateCost(modelId, tokensIn, tokensOut) {
+    const { estimateCost } = await import("@/lib/data/providers");
     return estimateCost(modelId, tokensIn, tokensOut);
   },
 };

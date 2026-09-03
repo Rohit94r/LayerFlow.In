@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
+import { logger } from "../../config/logger";
 import { db } from "../../db/client";
 import {
   createCheckoutSession,
@@ -66,6 +67,12 @@ billingRouter.post("/webhook", async (c) => {
     "webhook-signature": c.req.header("webhook-signature") ?? "",
     "webhook-timestamp": c.req.header("webhook-timestamp") ?? "",
   };
-  await handleWebhook(rawBody, headers);
-  return c.json({ received: true });
+  try {
+    await handleWebhook(rawBody, headers);
+    return c.json({ received: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Webhook processing failed";
+    logger.error({ err, headers: { ...headers, "webhook-signature": "[REDACTED]" } }, "webhook processing error");
+    throw new AppError(400, "webhook_error", message);
+  }
 });

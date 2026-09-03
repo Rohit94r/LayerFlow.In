@@ -20,6 +20,14 @@ const [{ serve }, { createApp }, { logger }] = await Promise.all([
 
 const app = createApp();
 
+// ── Context engine bootstrap ─────────────────────────────────────
+// Importing the context engine registers its default providers
+// (memory, session history, search) so they are available across
+// chat, agents, and terminal for unified context building.
+import("./services/context/engine").catch((err) => {
+  logger.warn({ err }, "context engine init failed (non-fatal)");
+});
+
 // Dual-stack (::) so both http://127.0.0.1:8787 and http://localhost:8787
 // work. macOS browsers often resolve localhost → ::1 first; IPv4-only bind
 // made the sign-in page falsely show "API offline".
@@ -31,6 +39,18 @@ const server = serve(
     );
   },
 );
+
+// ── WebSocket upgrade handler ────────────────────────────────────
+// Hono's serve() callback returns a Node.js HTTP server. We attach the
+// WebSocket upgrade listener to handle /api/ws connections. The
+// `setupWsServer` function intercepts the `upgrade` event, validates
+// the WebSocket key, and bridges events to connected clients.
+import("./routes/ws/ws").then(({ setupWsServer }) => {
+  setupWsServer(server);
+  logger.info("WebSocket upgrade handler attached");
+}).catch((err) => {
+  logger.warn({ err }, "WebSocket setup failed (non-fatal)");
+});
 
 /**
  * Graceful shutdown: stop accepting connections, then close DB/Redis and

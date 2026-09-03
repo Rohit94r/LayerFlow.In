@@ -651,6 +651,7 @@ export function ChatClient() {
                     />
                   ))
                 )}
+                {streaming ? <span role="status" className="sr-only">AI is generating a response</span> : null}
                 {streaming ? <TypingIndicator /> : null}
               </div>
             </div>

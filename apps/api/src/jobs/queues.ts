@@ -27,7 +27,7 @@ export type JobName =
 
 let queue: Queue | undefined;
 
-function getQueue(): Queue {
+export function getQueue(): Queue {
   if (!queue) {
     queue = new Queue(DEFAULT_QUEUE, { connection: createBullConnection() });
   }

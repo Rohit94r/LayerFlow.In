@@ -177,6 +177,67 @@ describe("keys, BYOK, budget, gateway", () => {
     expect(((await res.json()) as any).error.code).toBe("unauthorized");
   });
 
+  it.runIf(redisUp)("releases reservation on provider failure (gateway /v1/chat/completions)", async () => {
+    const { createApp } = await import("../app");
+    const { createTestSession } = await import("./auth");
+    const { setAdapterForTests } = await import("../services/ai/providers");
+    const { redis } = await import("../redis/client");
+    const app = createApp();
+    const session = await createTestSession();
+
+    // Set a tight budget
+    await app.request("/api/budgets/current", {
+      method: "PUT",
+      headers: { cookie: session.cookie, "content-type": "application/json" },
+      body: JSON.stringify({ monthlyLimitMicro: 50_000_000, hardBlock: true }),
+    });
+
+    await app.request("/api/provider-keys", {
+      method: "POST",
+      headers: { cookie: session.cookie, "content-type": "application/json" },
+      body: JSON.stringify({ provider: "openai", secret: "sk-test-mock-key-12345678" }),
+    });
+
+    const keyRes = await app.request("/api/keys", {
+      method: "POST",
+      headers: { cookie: session.cookie, "content-type": "application/json" },
+      body: JSON.stringify({ name: "gateway test" }),
+    });
+    const { secret } = (await keyRes.json()) as any;
+
+    // Mock adapter that FAILS
+    setAdapterForTests("openai", {
+      provider: "openai",
+      async chatCompletion() {
+        throw new Error("provider rejected the request");
+      },
+    });
+
+    const res = await app.request("/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${secret}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: "hi" }],
+      }),
+    });
+    expect(res.status).toBe(502);
+
+    // After failure, the budget counter should NOT be decremented (reservation released)
+    const monthlyKey = `budget:monthly:${session.workspaceId}:*`;
+    const keys = await redis.keys(monthlyKey);
+    let spent = 0;
+    for (const key of keys) {
+      const val = await redis.get(key);
+      spent += Number(val ?? 0);
+    }
+    // The budget counter should be 0 or very low — reservation was released on failure
+    expect(spent).toBeLessThan(100);
+  });
+
   it("gateway chat completions works with mocked provider adapter", async () => {
     const { createApp } = await import("../app");
     const { createTestSession } = await import("./auth");

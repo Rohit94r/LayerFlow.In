@@ -44,8 +44,8 @@ export function MobileNav() {
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            aria-hidden
             onClick={() => setOpen(false)}
+            role="presentation"
           />
           <div
             id="mobile-nav"

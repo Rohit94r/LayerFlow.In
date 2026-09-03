@@ -90,8 +90,132 @@ func TestRenderChatNoOverflow(t *testing.T) {
 	}
 }
 
-// TestRenderTinyDimensions asserts rendering never panics at degenerate
-// terminal sizes.
+// TestRenderStatusBar verifies the bottom status bar renders model/workspace
+// info at various widths and never exceeds terminal bounds.
+func TestRenderStatusBar(t *testing.T) {
+	for _, w := range []int{40, 60, 80, 100, 120} {
+		a := testApp()
+		a.width, a.height = w, 30
+		a.st.Authenticated = true
+		a.st.Model = "gpt-4o-mini"
+		a.st.Provider = "openai"
+		a.st.Workspace = "my-project"
+		a.st.Version = "0.2.10"
+
+		out := a.renderStatusBar()
+		for _, line := range strings.Split(out, "\n") {
+			if lw := lipgloss.Width(line); lw > w {
+				t.Errorf("statusBar w=%d: line width %d exceeds terminal width", w, lw)
+			}
+		}
+
+		// Must contain the model name at all widths
+		if !strings.Contains(out, "gpt-4o-mini") {
+			t.Errorf("statusBar w=%d: must contain model name", w)
+		}
+	}
+}
+
+// TestRenderStatusBarWorkspace checks that the status bar renders without
+// error at different workspace configurations.
+func TestRenderStatusBarWorkspace(t *testing.T) {
+	tests := []struct {
+		width     int
+		workspace string
+	}{
+		{40, "my-project"},
+		{60, "my-project"},
+		{60, "a-very-long-workspace-name-that-exceeds-twelve-chars"},
+	}
+
+	for _, tc := range tests {
+		a := testApp()
+		a.width, a.height = tc.width, 30
+		a.st.Authenticated = true
+		a.st.Model = "gpt-4o-mini"
+		a.st.Provider = "openai"
+		a.st.Workspace = tc.workspace
+
+		out := a.renderStatusBar()
+		// Must render without panic and mention the model
+		if !strings.Contains(out, "gpt-4o-mini") {
+			t.Errorf("width=%d: expected model name in status bar, got: %q", tc.width, out)
+		}
+		// Must not exceed terminal width
+		for _, line := range strings.Split(out, "\n") {
+			if lw := lipgloss.Width(line); lw > tc.width+1 { // +1 for border
+				t.Errorf("width=%d: line width %d exceeds terminal width", tc.width, lw)
+			}
+		}
+	}
+}
+
+// TestShortProvider verifies the shortProvider shortens provider names for the
+// status bar display.
+func TestShortProvider(t *testing.T) {
+	tests := []struct {
+		input  string
+		expect string
+	}{
+		{"openai", "oai"},
+		{"anthropic", "ant"},
+		{"google", "gmi"},
+		{"groq", "grq"},
+		{"deepseek", "dps"},
+		{"xai", "xai"},
+		{"kimi", "kmi"},
+		{"unknownLong", "unkn"},
+		{"abc", "abc"},
+		{"", ""},
+	}
+
+	for _, tc := range tests {
+		got := shortProvider(tc.input)
+		if got != tc.expect {
+			t.Errorf("shortProvider(%q) = %q, want %q", tc.input, got, tc.expect)
+		}
+	}
+}
+
+// TestRenderRule verifies renderRule draws a full-width line at the given width
+// and handles degenerate widths gracefully.
+func TestRenderRule(t *testing.T) {
+	tests := []struct {
+		width     int
+		minLength int
+	}{
+		{80, 80},
+		{40, 40},
+		{100, 100},
+		{0, 0},
+		{-1, 0},
+		{1, 1},
+	}
+
+	for _, tc := range tests {
+		rule := renderRule(tc.width)
+		if tc.minLength <= 0 {
+			if rule != "" {
+				t.Errorf("renderRule(%d) = %q, want empty string", tc.width, rule)
+			}
+			continue
+		}
+		if len(rule) < tc.minLength {
+			t.Errorf("renderRule(%d) = %q (len %d), expected at least %d chars", tc.width, rule, len(rule), tc.minLength)
+		}
+		// Should contain the dash character
+		if !strings.Contains(rule, "─") {
+			t.Errorf("renderRule(%d) = %q, expected '─' characters", tc.width, rule)
+		}
+	}
+}
+
+// TestRenderRuleNoPanic ensures renderRule never panics at any width.
+func TestRenderRuleNoPanic(t *testing.T) {
+	for _, w := range []int{-10, -1, 0, 1, 5, 10, 50, 100, 200} {
+		_ = renderRule(w)
+	}
+}
 func TestRenderTinyDimensions(t *testing.T) {
 	for _, w := range []int{0, 1, 5, 10, 20} {
 		for _, h := range []int{0, 1, 5} {

@@ -66,7 +66,10 @@ export function ProjectCard({ project }: { project: Project }) {
           >
             {project.name.charAt(0)}
           </span>
-          <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
+          <div
+            className="flex items-center gap-1.5"
+            role="presentation"
+          >
             <Badge
               tone={project.stage === "active" ? "mint" : project.stage === "paused" ? "amber" : "neutral"}
             >

@@ -3,9 +3,13 @@ import type { SearchResult, SearchType } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { prompts, promptVersions } from "../../db/schema/prompts";
 import { promptSessions } from "../../db/schema/sessions";
+import { memories } from "../../db/schema/memory";
+import { files } from "../../db/schema/files";
+import { agentRuns, agents } from "../../db/schema/agents";
 
 /**
- * Keyword search over prompts + sessions using Postgres ILIKE.
+ * Keyword search over prompts, sessions, memories, files, and agent runs
+ * using Postgres ILIKE.
  * No special indexes required — works on Docker Postgres and the PGlite
  * test database. See src/search/README.md for the embedding/semantic half.
  */
@@ -93,6 +97,118 @@ export async function keywordSearch(opts: {
           description: row.description,
           status: row.status,
           updatedAt: row.updatedAt.toISOString(),
+        });
+      }
+    }
+  }
+
+  // Memories
+  if (opts.type === "all") {
+    const remaining = opts.limit - results.length;
+    if (remaining > 0) {
+      const memoryRows = await db
+        .select({
+          id: memories.id,
+          title: memories.title,
+          body: memories.body,
+          sourceType: memories.sourceType,
+          updatedAt: memories.updatedAt,
+        })
+        .from(memories)
+        .where(
+          and(
+            eq(memories.workspaceId, opts.workspaceId),
+            or(
+              ilike(memories.title, pattern),
+              ilike(memories.body, pattern),
+            ),
+          ),
+        )
+        .orderBy(desc(memories.updatedAt))
+        .limit(remaining);
+
+      for (const row of memoryRows) {
+        results.push({
+          type: "memory" as const,
+          id: row.id,
+          title: row.title,
+          description: snippetAround(row.body, safe),
+          updatedAt: row.updatedAt.toISOString(),
+        });
+      }
+    }
+  }
+
+  // Files
+  if (opts.type === "all") {
+    const remaining = opts.limit - results.length;
+    if (remaining > 0) {
+      const fileRows = await db
+        .select({
+          id: files.id,
+          fileName: files.fileName,
+          mimeType: files.mimeType,
+          sizeBytes: files.sizeBytes,
+          createdAt: files.createdAt,
+        })
+        .from(files)
+        .where(
+          and(
+            eq(files.workspaceId, opts.workspaceId),
+            ilike(files.fileName, pattern),
+          ),
+        )
+        .orderBy(desc(files.createdAt))
+        .limit(remaining);
+
+      for (const row of fileRows) {
+        results.push({
+          type: "file" as const,
+          id: row.id,
+          title: row.fileName,
+          description: `${row.mimeType} · ${row.sizeBytes} bytes`,
+          updatedAt: row.createdAt.toISOString(),
+        });
+      }
+    }
+  }
+
+  // Agent runs
+  if (opts.type === "all") {
+    const remaining = opts.limit - results.length;
+    if (remaining > 0) {
+      const agentRunRows = await db
+        .select({
+          id: agentRuns.id,
+          agentId: agentRuns.agentId,
+          input: agentRuns.input,
+          output: agentRuns.output,
+          status: agentRuns.status,
+          createdAt: agentRuns.createdAt,
+          agentName: agents.name,
+        })
+        .from(agentRuns)
+        .leftJoin(agents, eq(agents.id, agentRuns.agentId))
+        .where(
+          and(
+            eq(agentRuns.workspaceId, opts.workspaceId),
+            or(
+              ilike(agentRuns.input, pattern),
+              ilike(agentRuns.output ?? "", pattern),
+            ),
+          ),
+        )
+        .orderBy(desc(agentRuns.createdAt))
+        .limit(remaining);
+
+      for (const row of agentRunRows) {
+        results.push({
+          type: "agent_run" as const,
+          id: row.id,
+          title: `Agent run: ${row.agentName ?? "unknown"}`,
+          description: snippetAround(row.input, safe),
+          status: row.status ?? null,
+          updatedAt: row.createdAt.toISOString(),
         });
       }
     }

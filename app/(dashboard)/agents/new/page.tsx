@@ -425,7 +425,12 @@ export default function NewAgentPage() {
               </div>
 
               <Field label="What do you want this agent to do?">
-                <Textarea value={goalText} onChange={(event) => setGoalText(event.target.value)} rows={3} />
+                <Textarea
+                  aria-label="What do you want this agent to do?"
+                  value={goalText}
+                  onChange={(event) => setGoalText(event.target.value)}
+                  rows={3}
+                />
               </Field>
 
               <div className="rounded-2xl border border-border bg-surface-2 p-4">
@@ -435,7 +440,7 @@ export default function NewAgentPage() {
                 </div>
                 <FieldGrid>
                   <Field label="Role">
-                    <Input value={goal.role} onChange={(event) => updateGoal("role", event.target.value)} />
+                    <Input aria-label="Role" value={goal.role} onChange={(event) => updateGoal("role", event.target.value)} />
                   </Field>
                   <Field label="Internship or full-time">
                     <Select value={goal.opportunityType} onChange={(event) => updateGoal("opportunityType", event.target.value)}>
@@ -445,25 +450,25 @@ export default function NewAgentPage() {
                     </Select>
                   </Field>
                   <Field label="Preferred locations">
-                    <Input value={goal.locations} onChange={(event) => updateGoal("locations", event.target.value)} />
+                    <Input aria-label="Preferred locations" value={goal.locations} onChange={(event) => updateGoal("locations", event.target.value)} />
                   </Field>
                   <Field label="Salary range">
-                    <Input value={goal.salaryRange} onChange={(event) => updateGoal("salaryRange", event.target.value)} />
+                    <Input aria-label="Salary range" value={goal.salaryRange} onChange={(event) => updateGoal("salaryRange", event.target.value)} />
                   </Field>
                   <Field label="Experience level">
-                    <Input value={goal.experienceLevel} onChange={(event) => updateGoal("experienceLevel", event.target.value)} />
+                    <Input aria-label="Experience level" value={goal.experienceLevel} onChange={(event) => updateGoal("experienceLevel", event.target.value)} />
                   </Field>
                   <Field label="Preferred companies">
-                    <Input value={goal.preferredCompanies} onChange={(event) => updateGoal("preferredCompanies", event.target.value)} />
+                    <Input aria-label="Preferred companies" value={goal.preferredCompanies} onChange={(event) => updateGoal("preferredCompanies", event.target.value)} />
                   </Field>
                   <Field label="Industries">
-                    <Input value={goal.industries} onChange={(event) => updateGoal("industries", event.target.value)} />
+                    <Input aria-label="Industries" value={goal.industries} onChange={(event) => updateGoal("industries", event.target.value)} />
                   </Field>
                   <Field label="Work authorization">
-                    <Input value={goal.workAuthorization} onChange={(event) => updateGoal("workAuthorization", event.target.value)} />
+                    <Input aria-label="Work authorization" value={goal.workAuthorization} onChange={(event) => updateGoal("workAuthorization", event.target.value)} />
                   </Field>
                   <Field label="Notice period">
-                    <Input value={goal.noticePeriod} onChange={(event) => updateGoal("noticePeriod", event.target.value)} />
+                    <Input aria-label="Notice period" value={goal.noticePeriod} onChange={(event) => updateGoal("noticePeriod", event.target.value)} />
                   </Field>
                 </FieldGrid>
               </div>
@@ -522,7 +527,7 @@ export default function NewAgentPage() {
               {resumeMode === "paste" ? (
                 <div className="space-y-3">
                   <Field label="Paste resume text">
-                    <Textarea value={resumeText} onChange={(event) => setResumeText(event.target.value)} rows={8} />
+                    <Textarea aria-label="Paste resume text" value={resumeText} onChange={(event) => setResumeText(event.target.value)} rows={8} />
                   </Field>
                   <div className="flex justify-end">
                     <Button onClick={extractFromPaste} disabled={!resumeText.trim()} icon={<Sparkles className="h-3.5 w-3.5" />}>
@@ -552,9 +557,9 @@ export default function NewAgentPage() {
                 {(Object.keys(extraction) as Array<keyof ResumeExtraction>).map((key) => (
                   <Field key={key} label={key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase())}>
                     {["skills", "education", "projects", "experience", "certifications"].includes(key) ? (
-                      <Textarea value={extraction[key]} onChange={(event) => updateExtraction(key, event.target.value)} rows={3} />
+                      <Textarea aria-label={key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase())} value={extraction[key]} onChange={(event) => updateExtraction(key, event.target.value)} rows={3} />
                     ) : (
-                      <Input value={extraction[key]} onChange={(event) => updateExtraction(key, event.target.value)} />
+                      <Input aria-label={key.replace(/([A-Z])/g, " $1").replace(/^./, (char) => char.toUpperCase())} value={extraction[key]} onChange={(event) => updateExtraction(key, event.target.value)} />
                     )}
                   </Field>
                 ))}
@@ -581,10 +586,10 @@ export default function NewAgentPage() {
 
               <FieldGrid>
                 <Field label="Interview availability">
-                  <Input value={prefs.availability} onChange={(event) => updatePrefs("availability", event.target.value)} />
+                  <Input aria-label="Interview availability" value={prefs.availability} onChange={(event) => updatePrefs("availability", event.target.value)} />
                 </Field>
                 <Field label="Time zone">
-                  <Input value={prefs.timeZone} onChange={(event) => updatePrefs("timeZone", event.target.value)} />
+                  <Input aria-label="Time zone" value={prefs.timeZone} onChange={(event) => updatePrefs("timeZone", event.target.value)} />
                 </Field>
                 <Field label="Communication preference">
                   <Input value={prefs.communication} onChange={(event) => updatePrefs("communication", event.target.value)} />

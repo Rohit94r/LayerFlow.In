@@ -3,6 +3,8 @@ import Script from "next/script";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/theme";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import { Toaster } from "@/components/ui/toast";
 import "./globals.css";
 
 const SITE_URL = "https://layerflow.dev";
@@ -102,7 +104,10 @@ export default function RootLayout({
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }}
         />
-        {children}
+        <ThemeProvider>
+          {children}
+          <Toaster />
+        </ThemeProvider>
         <Script
           id="json-ld"
           type="application/ld+json"

@@ -35,9 +35,40 @@ export const sessionSearchResultSchema = z.object({
 });
 export type SessionSearchResult = z.infer<typeof sessionSearchResultSchema>;
 
+export const memorySearchResultSchema = z.object({
+  type: z.literal("memory"),
+  id: idSchema,
+  title: z.string(),
+  description: z.string().nullish(),
+  updatedAt: timestampSchema,
+});
+export type MemorySearchResult = z.infer<typeof memorySearchResultSchema>;
+
+export const fileSearchResultSchema = z.object({
+  type: z.literal("file"),
+  id: idSchema,
+  title: z.string(),
+  description: z.string().nullish(),
+  updatedAt: timestampSchema,
+});
+export type FileSearchResult = z.infer<typeof fileSearchResultSchema>;
+
+export const agentRunSearchResultSchema = z.object({
+  type: z.literal("agent_run"),
+  id: idSchema,
+  title: z.string(),
+  description: z.string().nullish(),
+  status: z.string().nullish(),
+  updatedAt: timestampSchema,
+});
+export type AgentRunSearchResult = z.infer<typeof agentRunSearchResultSchema>;
+
 export const searchResultSchema = z.discriminatedUnion("type", [
   promptSearchResultSchema,
   sessionSearchResultSchema,
+  memorySearchResultSchema,
+  fileSearchResultSchema,
+  agentRunSearchResultSchema,
 ]);
 export type SearchResult = z.infer<typeof searchResultSchema>;
 

@@ -511,7 +511,7 @@ export default function AgentDetailPage() {
                         </span>
                         {timeAgo(run.createdAt)}
                       </summary>
-                      <p className="mt-2 text-[11px] leading-5 text-muted">{run.output || run.errorMessage || run.input}</p>
+                      <p className="mt-2 text-[11px] leading-5 text-muted" role="status">{run.output || run.errorMessage || run.input}</p>
                       <p className="mt-2 text-[10px] text-faint">
                         {run.inputTokens.toLocaleString()} in · {run.outputTokens.toLocaleString()} out · {formatMoney(run.cost)}
                       </p>
@@ -544,9 +544,9 @@ export default function AgentDetailPage() {
       ) : null}
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-ink shadow-xl">
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-ink shadow-xl" role="status" aria-live="polite">
           {toast}
-          <button type="button" className="ml-3 text-faint" onClick={() => setToast(null)}>
+          <button type="button" aria-label="Dismiss" className="ml-3 text-faint" onClick={() => setToast(null)}>
             x
           </button>
         </div>

@@ -234,6 +234,7 @@ export function TeamManager({
               <Field label="Email">
                 <Input
                   type="email"
+                  autoComplete="email"
                   placeholder="teammate@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

@@ -21,7 +21,9 @@ import { promptsRouter } from "./prompts/prompts";
 import { rescueRouter } from "./rescue/rescue";
 import { improveRouter } from "./improve/improve";
 import { agentsRouter } from "./agents/agents";
+import { builderRouter } from "./agents/builder";
 import { chatRouter } from "./chat/chat";
+import { modelsRouter } from "./models/models";
 import { runsRouter } from "./runs/runs";
 import { searchRouter, similarRouter } from "./search/search";
 import { sessionsRouter } from "./sessions/sessions";
@@ -35,15 +37,11 @@ import { workspacesRouter } from "./workspace/workspaces";
 import { syncRouter } from "./sync/sync";
 import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
+import { wsRouter } from "./ws/ws";
 import { deviceAuthRouter } from "./auth/device";
 
 /**
  * Route registration. Add new feature routers here:
- *
- *   import { promptsRouter } from "./prompts/prompts";
- *   app.route("/api/prompts", promptsRouter);
- *
- * Sub-routers own their own middleware (requireAuth etc.).
  */
 export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/admin", adminRouter);
@@ -63,22 +61,14 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/intelligence", intelligenceRouter);
   app.route("/api/workspace/settings", settingsRouter);
   app.route("/api/routing-rules", routingRulesRouter);
-
-  // Budgets / usage / keys / gateway
   app.route("/api/budgets", budgetsRouter);
   app.route("/api/usage", usageRouter);
   app.route("/api/savings", savingsRouter);
   app.route("/api/keys", apiKeysRouter);
   app.route("/api/provider-keys", providerKeysRouter);
   app.route("/v1", gatewayRouter);
-
-  // CLI sync protocol (also used by the web /terminal dashboard)
   app.route("/api/v1/sync", syncRouter);
-
-  // CLI device authorization flow (lf login)
   app.route("/api/v1/auth", deviceAuthRouter);
-
-  // Memory / search / learning / community
   app.route("/api/memory", memoryRouter);
   app.route("/api/search", searchRouter);
   app.route("/api/similar", similarRouter);
@@ -86,6 +76,8 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/rescue", rescueRouter);
   app.route("/api/improve", improveRouter);
   app.route("/api/agents", agentsRouter);
+  app.route("/api/agents/builder", builderRouter);
+  app.route("/api/models", modelsRouter);
   app.route("/api/chat", chatRouter);
   app.route("/api/collections", collectionsRouter);
   app.route("/api/profiles", profilesRouter);
@@ -94,4 +86,5 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/comments", commentsRouter);
   app.route("/api/notifications", notificationsRouter);
   app.route("/api/team", teamRouter);
+  app.route("/api/ws", wsRouter);
 }

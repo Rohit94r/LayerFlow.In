@@ -14,6 +14,9 @@ import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
 export interface SearchResults {
   prompts: SearchResult[];
   sessions: SearchResult[];
+  memories: SearchResult[];
+  files: SearchResult[];
+  agentRuns: SearchResult[];
   total: number;
 }
 
@@ -25,7 +28,7 @@ export const searchService: SearchService = {
   async search(query) {
     const q = query.trim();
     if (!q) {
-      return { prompts: [], sessions: [], total: 0 };
+      return { prompts: [], sessions: [], memories: [], files: [], agentRuns: [], total: 0 };
     }
 
     const headers = await getServerCookieHeader();
@@ -37,15 +40,24 @@ export const searchService: SearchService = {
 
     const prompts: SearchResult[] = [];
     const sessions: SearchResult[] = [];
+    const memories: SearchResult[] = [];
+    const files: SearchResult[] = [];
+    const agentRuns: SearchResult[] = [];
     for (const hit of res.results) {
       if (hit.type === "prompt") prompts.push(hit);
-      else sessions.push(hit);
+      else if (hit.type === "session") sessions.push(hit);
+      else if (hit.type === "memory") memories.push(hit);
+      else if (hit.type === "file") files.push(hit);
+      else if (hit.type === "agent_run") agentRuns.push(hit);
     }
 
     return {
       prompts,
       sessions,
-      total: prompts.length + sessions.length,
+      memories,
+      files,
+      agentRuns,
+      total: prompts.length + sessions.length + memories.length + files.length + agentRuns.length,
     };
   },
 };

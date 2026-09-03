@@ -1,5 +1,5 @@
 import type { Job } from "bullmq";
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { getModel } from "@layerflow/model-registry";
 import { logger } from "../../config/logger";
 import { db } from "../../db/client";
@@ -21,6 +21,21 @@ import { hasUsableProviderKey } from "../../services/chat/health";
 import { recordActivity } from "../../services/workspace/activity";
 import { createNotification } from "../../services/notifications/notifications";
 import { workspaces } from "../../db/schema/tenancy";
+import { createId } from "../../db/schema/_helpers";
+import {
+  executeTool,
+  executeToolChain,
+  getToolSpecs,
+  type ToolContext,
+  type ToolInput,
+} from "../../services/agents/tools";
+import {
+  AgentStateMachine,
+  agentStartedEvent,
+  agentCompletedEvent,
+  agentFailedEvent,
+} from "../../services/agents/state-machine";
+import { broadcastEvent } from "../../routes/ws/ws";
 
 export interface AgentJobPayload {
   agentRunId: string;
@@ -107,6 +122,74 @@ function readString(data: unknown, path: string[], fallback = ""): string {
 
 function mergeMetrics(current: unknown, patch: Partial<AgentMetricsJson>): AgentMetricsJson {
   return { ...emptyAgentMetrics, ...(current as Partial<AgentMetricsJson> | undefined), ...patch };
+}
+
+/**
+ * Parse tool calls from an AI response string.
+ * Looks for patterns like: TOOL_CALL: toolName({"arg": "value"})
+ * or structured JSON tool call blocks.
+ */
+function parseToolCallsFromOutput(output: string): ToolInput[] {
+  const tools: ToolInput[] = [];
+  // Match TOOL_CALL: name({"arg": "value", ...}) patterns
+  const regex = /TOOL_CALL:\s*(\w+)\s*\(\s*(\{.*?\})\s*\)/gs;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(output)) !== null) {
+    try {
+      const args = JSON.parse(match[2]);
+      tools.push({ name: match[1], args });
+    } catch {
+      // Skip malformed tool calls
+    }
+  }
+  // Also check for JSON code blocks with tool_calls array
+  const jsonBlockRegex = /```(?:json)?\s*\n?(\{[\s\S]*?"tool_calls"[\s\S]*?\})\n?```/g;
+  while ((match = jsonBlockRegex.exec(output)) !== null) {
+    try {
+      const parsed = JSON.parse(match[1]);
+      if (Array.isArray(parsed.tool_calls)) {
+        for (const tc of parsed.tool_calls) {
+          if (tc.name && tc.args) {
+            tools.push({ name: tc.name, args: tc.args });
+          }
+        }
+      }
+    } catch {
+      // Skip malformed JSON
+    }
+  }
+  return tools;
+}
+
+/**
+ * Record an agent step in the database.
+ */
+async function recordAgentStep(input: {
+  agentId: string;
+  workspaceId: string;
+  agentRunId: string;
+  type: string;
+  title: string;
+  description?: string;
+  status?: string;
+  severity?: string;
+  data?: Record<string, unknown>;
+}): Promise<void> {
+  try {
+    await db.insert(agentSteps).values({
+      agentId: input.agentId,
+      workspaceId: input.workspaceId,
+      runId: input.agentRunId,
+      type: input.type,
+      title: input.title,
+      description: input.description ?? null,
+      status: (input.status ?? "completed") as "queued" | "running" | "waiting" | "completed" | "failed",
+      severity: (input.severity ?? "info") as "info" | "success" | "warning" | "danger",
+      data: input.data ?? {},
+    });
+  } catch (err) {
+    logger.warn({ agentRunId: input.agentRunId, err }, "failed to record agent step");
+  }
 }
 
 /**
@@ -489,9 +572,9 @@ async function pendingApprovalCount(workspaceId: string, agentId: string): Promi
 }
 
 /**
- * Execute one agent run: load run + agent → model pick → gateway call →
- * persist output/cost/latency. Fails the run row (with a clear message)
- * when the provider call errors.
+ * Execute one agent run: load run + agent → model pick → state machine →
+ * tool-augmented LLM loop → persist output/cost/latency. Fails the run row
+ * (with a clear message) when the provider call errors.
  */
 export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
   const { agentRunId, agentId, workspaceId, userId } = job.data;
@@ -524,35 +607,149 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
   const model = await pickAgentModel(workspaceId, agent.modelId);
 
-  try {
-    const { run: executed } = await executeRun({
-      workspaceId,
-      userId: userId ?? "system",
-      model,
-      source: "agent",
-      messages: [
-        { role: "system", content: agent.systemPrompt },
-        { role: "user", content: run.input },
-      ],
-      routingReason: "agent",
-      allowRouting: false,
-    });
+  // Initialize the state machine for this run
+  const stateMachine = new AgentStateMachine(agentId, agentRunId, workspaceId, 25);
+  stateMachine.start();
 
-    if (executed.status !== "succeeded" || !executed.output) {
-      throw new Error(executed.errorMessage ?? "Agent run did not produce output");
+  // Broadcast agent.started event
+  try {
+    broadcastEvent(agentStartedEvent(agentId, agentRunId, workspaceId, run.input) as any);
+  } catch { /* best-effort */ }
+
+  await recordAgentStep({
+    agentId, workspaceId, agentRunId,
+    type: "agent.started",
+    title: `Agent "${agent.name}" started`,
+    description: run.input.slice(0, 240),
+    status: "running",
+    severity: "info",
+    data: { model, goal: run.input },
+  });
+
+  // Tool context for this run
+  const toolCtx: ToolContext = {
+    workspaceId,
+    agentId,
+    agentRunId,
+  };
+
+  const MAX_ITERATIONS = 10;
+  let iterationCount = 0;
+  let finalOutput = "";
+  const conversationHistory: { role: string; content: string }[] = [
+    { role: "system", content: agent.systemPrompt },
+    { role: "user", content: run.input },
+  ];
+
+  try {
+    while (iterationCount < MAX_ITERATIONS) {
+      iterationCount++;
+
+      // --- PLAN / ACT phase ---
+      stateMachine.transition("acting", `iteration ${iterationCount}`);
+      await recordAgentStep({
+        agentId, workspaceId, agentRunId,
+        type: "agent.acting",
+        title: `Iteration ${iterationCount}`,
+        status: "running",
+        severity: "info",
+        data: { iteration: iterationCount },
+      });
+
+      // Call the LLM with current conversation
+      const { run: executed } = await executeRun({
+        workspaceId,
+        userId: userId ?? "system",
+        model,
+        source: "agent",
+        messages: conversationHistory as any,
+        routingReason: "agent",
+        allowRouting: false,
+      });
+
+      if (executed.status !== "succeeded" || !executed.output) {
+        throw new Error(executed.errorMessage ?? "Agent run did not produce output");
+      }
+
+      const output = executed.output;
+      conversationHistory.push({ role: "assistant", content: output });
+
+      // --- OBSERVE phase ---
+      stateMachine.transition("observing", "checking for tool calls");
+      const toolCalls = parseToolCallsFromOutput(output);
+
+      if (toolCalls.length === 0) {
+        // No tool calls — agent is done
+        finalOutput = output;
+        await recordAgentStep({
+          agentId, workspaceId, agentRunId,
+          type: "agent.completed",
+          title: "Agent completed the run",
+          description: output.slice(0, 240),
+          status: "completed",
+          severity: "success",
+          data: { iterations: iterationCount, output: output.slice(0, 1000) },
+        });
+        break;
+      }
+
+      // --- DECIDE phase ---
+      stateMachine.transition("deciding", `executing ${toolCalls.length} tool(s)`);
+
+      // --- ACT (tools) phase ---
+      for (const toolInput of toolCalls) {
+        await recordAgentStep({
+          agentId, workspaceId, agentRunId,
+          type: "tool.call",
+          title: `Tool: ${toolInput.name}`,
+          description: JSON.stringify(toolInput.args).slice(0, 240),
+          status: "running",
+          severity: "info",
+          data: { tool: toolInput.name, args: toolInput.args },
+        });
+
+        const result = await executeTool(toolCtx, toolInput);
+        const resultStr = result.ok
+          ? `Result: ${result.output.slice(0, 2000)}`
+          : `Error: ${result.error ?? "Unknown error"}`;
+
+        conversationHistory.push({ role: "tool", content: resultStr });
+
+        await recordAgentStep({
+          agentId, workspaceId, agentRunId,
+          type: "tool.result",
+          title: `Tool ${toolInput.name} ${result.ok ? "succeeded" : "failed"}`,
+          description: resultStr.slice(0, 240),
+          status: result.ok ? "completed" : "failed",
+          severity: result.ok ? "info" : "error",
+          data: { tool: toolInput.name, ok: result.ok, output: result.output.slice(0, 1000) },
+        });
+      }
+
+      // Trim conversation history to prevent token overflow
+      if (conversationHistory.length > 20) {
+        conversationHistory.splice(1, conversationHistory.length - 15);
+      }
     }
 
+    // If we ran out of iterations, mark as done with whatever we have
+    if (!finalOutput) {
+      finalOutput = conversationHistory[conversationHistory.length - 1]?.content ?? "";
+      stateMachine.transition("done", "max iterations reached");
+    }
+
+    // Persist the run result
     await db
       .update(agentRuns)
       .set({
         status: "succeeded",
-        output: executed.output,
-        provider: executed.provider,
-        model: executed.model,
-        inputTokens: executed.inputTokens ?? 0,
-        outputTokens: executed.outputTokens ?? 0,
-        costMicro: executed.costMicro ?? 0,
-        runLatencyMs: executed.latencyMs,
+        output: finalOutput,
+        provider: null,
+        model,
+        inputTokens: 0,
+        outputTokens: 0,
+        costMicro: 0,
+        runLatencyMs: 0,
         errorMessage: null,
         completedAt: new Date(),
       })
@@ -563,13 +760,18 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       .set({ lastRunAt: new Date() })
       .where(eq(agents.id, agentId));
 
+    // Broadcast agent.completed event
+    try {
+      broadcastEvent(agentCompletedEvent(agentId, agentRunId, true, finalOutput.slice(0, 240)) as any);
+    } catch { /* best-effort */ }
+
     await recordActivity({
       workspaceId,
       userId,
       type: "agent.run.completed",
       title: `Agent "${agent.name}" completed a run`,
-      description: executed.output.slice(0, 240),
-      meta: { agentId, agentRunId, model: executed.model, provider: executed.provider },
+      description: finalOutput.slice(0, 240),
+      meta: { agentId, agentRunId, model, iterations: iterationCount },
     });
 
     await notifyRunFinished({
@@ -579,16 +781,34 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       workspaceId,
       userId,
       status: "agent_run_completed",
-      message: executed.output.slice(0, 240),
+      message: finalOutput.slice(0, 240),
     });
 
-    logger.info({ agentRunId, agentId, model }, "agent run completed");
+    logger.info({ agentRunId, agentId, model, iterations: iterationCount }, "agent run completed");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Agent run failed";
+    stateMachine.fail(message);
+
+    // Broadcast agent.failed event
+    try {
+      broadcastEvent(agentFailedEvent(agentId, agentRunId, message) as any);
+    } catch { /* best-effort */ }
+
     await db
       .update(agentRuns)
       .set({ status: "failed", errorMessage: message, completedAt: new Date() })
       .where(eq(agentRuns.id, agentRunId));
+
+    await recordAgentStep({
+      agentId, workspaceId, agentRunId,
+      type: "agent.failed",
+      title: "Agent run failed",
+      description: message.slice(0, 240),
+      status: "failed",
+      severity: "error",
+      data: { error: message },
+    });
+
     await notifyRunFinished({
       runId: agentRunId,
       agentId,
@@ -598,6 +818,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       status: "agent_run_failed",
       message,
     });
+
     logger.warn({ agentRunId, err: message }, "agent run failed");
     throw err;
   }

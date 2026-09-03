@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   createProjectRequestSchema,
@@ -10,6 +10,7 @@ import {
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { projects } from "../../db/schema/workspace";
+import { prompts } from "../../db/schema/prompts";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
 import { recordActivity } from "../../services/workspace/activity";
@@ -19,7 +20,18 @@ export const projectsRouter = new Hono<AppEnv>();
 
 projectsRouter.use(requireAuth);
 
-function toProjectDto(row: typeof projects.$inferSelect): Project {
+async function projectCounts(projectId: string) {
+  const [promptRow] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(prompts)
+    .where(and(eq(prompts.projectId, projectId), isNull(prompts.archivedAt)));
+  return {
+    promptCount: Number(promptRow?.count ?? 0),
+    learningCount: 0,
+  };
+}
+
+function toProjectDto(row: typeof projects.$inferSelect, counts?: { promptCount: number; learningCount: number }): Project {
   return {
     id: row.id,
     workspaceId: row.workspaceId,
@@ -27,6 +39,8 @@ function toProjectDto(row: typeof projects.$inferSelect): Project {
     name: row.name,
     description: row.description,
     status: row.status,
+    promptCount: counts?.promptCount ?? 0,
+    learningCount: counts?.learningCount ?? 0,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -49,7 +63,14 @@ projectsRouter.get("/", async (c) => {
     offset: query.offset,
   });
 
-  const response: ListProjectsResponse = { projects: rows.map(toProjectDto) };
+  const projectsWithCounts = await Promise.all(
+    rows.map(async (row) => {
+      const counts = await projectCounts(row.id);
+      return toProjectDto(row, counts);
+    }),
+  );
+
+  const response: ListProjectsResponse = { projects: projectsWithCounts };
   return c.json(response);
 });
 
@@ -63,7 +84,8 @@ projectsRouter.get("/:id", async (c) => {
   });
   if (!project) throw new AppError(404, "not_found", "Project not found");
 
-  const response: ProjectResponse = { project: toProjectDto(project) };
+  const counts = await projectCounts(project.id);
+  const response: ProjectResponse = { project: toProjectDto(project, counts) };
   return c.json(response);
 });
 

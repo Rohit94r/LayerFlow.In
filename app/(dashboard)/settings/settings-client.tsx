@@ -164,6 +164,7 @@ export default function SettingsClient() {
                 </span>
                 <Switch
                   label={n.label}
+                  aria-label={n.label}
                   checked={n.on}
                   onCheckedChange={(on) =>
                     setNotifications((ns) => ns.map((x) => (x.id === n.id ? { ...x, on } : x)))
@@ -195,14 +196,10 @@ export default function SettingsClient() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Link href="/billing">
-                  <Button variant="secondary" size="sm">
-                    Compare plans
-                  </Button>
-                </Link>
-                <Link href="/billing">
-                  <Button size="sm">Upgrade to Starter · $5</Button>
-                </Link>
+                <Button variant="secondary" size="sm" onClick={() => window.location.href = "/billing"}>
+                  Compare plans
+                </Button>
+                <Button size="sm" onClick={() => window.location.href = "/billing"}>Upgrade to Starter · $5</Button>
               </div>
             </div>
           </PanelBody>

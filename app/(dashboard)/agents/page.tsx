@@ -178,11 +178,9 @@ export default function AgentsPage() {
             <h2 className="text-base font-semibold tracking-tight text-ink">Agent marketplace</h2>
             <p className="text-xs text-muted">Reusable workers with permissions, cost expectations, and outcomes built in. Anyone can build their own agent — teachers, students, freelancers, and more.</p>
           </div>
-          <Link href="/agents/new">
-            <Button variant="outline" size="sm" icon={<Plus className="h-3.5 w-3.5" />}>
+          <Button variant="outline" size="sm" icon={<Plus className="h-3.5 w-3.5" />} onClick={() => router.push("/agents/new")}>
               Blank agent
             </Button>
-          </Link>
         </div>
 
         {loading && templates.length === 0 ? (
@@ -330,9 +328,9 @@ export default function AgentsPage() {
       </section>
 
       {toast ? (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-ink shadow-xl">
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-border bg-surface px-4 py-2 text-xs text-ink shadow-xl" role="status" aria-live="polite">
           {toast}
-          <button type="button" className="ml-3 text-faint" onClick={() => setToast(null)}>
+          <button type="button" aria-label="Dismiss" className="ml-3 text-faint" onClick={() => setToast(null)}>
             x
           </button>
         </div>

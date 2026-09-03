@@ -71,6 +71,8 @@ function mapProject(project: {
   name: string;
   description?: string | null;
   status: "active" | "archived";
+  promptCount?: number;
+  learningCount?: number;
   createdAt: string;
   updatedAt: string;
 }): Project {
@@ -81,8 +83,8 @@ function mapProject(project: {
     name: project.name,
     description: project.description ?? "",
     color,
-    promptCount: 0,
-    learningCount: 0,
+    promptCount: project.promptCount ?? 0,
+    learningCount: project.learningCount ?? 0,
     stage: project.status === "archived" ? "done" : "active",
     createdAt: project.createdAt,
     updatedAt: project.updatedAt,

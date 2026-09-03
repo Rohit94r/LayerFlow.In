@@ -9,6 +9,8 @@ import {
   type AiChatSessionRow,
 } from "../../db/schema/chat";
 import { rescueReports } from "../../db/schema/rescue";
+import { logger } from "../../config/logger";
+import { AppError } from "../../middleware/app-error";
 
 // ── DTO mapping ──────────────────────────────────────────────
 
@@ -150,12 +152,15 @@ export async function getChatSession(
   });
   if (!row) return null;
 
-  const extras = await sessionExtras(workspaceId, [row.id]);
+  const [messages, extras] = await Promise.all([
+    db.query.aiChatMessages.findMany({
+      where: eq(aiChatMessages.sessionId, sessionId),
+      orderBy: [asc(aiChatMessages.createdAt)],
+    }),
+    sessionExtras(workspaceId, [row.id]),
+  ]);
   const e = extras.get(row.id);
-  const messages = await db.query.aiChatMessages.findMany({
-    where: eq(aiChatMessages.sessionId, sessionId),
-    orderBy: [asc(aiChatMessages.createdAt)],
-  });
+
   return {
     session: toSessionDto(row, { messageCount: e?.messageCount ?? 0, costMicro: e?.costMicro ?? 0 }),
     messages: messages.map(toMessageDto),
@@ -365,4 +370,124 @@ export async function importRescueToChatSession(input: {
     .where(eq(aiChatSessions.id, session.id));
 
   return { session, messages: seeded };
+}
+// -- Session Resume ----------------------------------------------------------
+
+/**
+ * Resume a previous session from a given state point.
+ *
+ * Creates a new chat session that continues from a previous session's context,
+ * preserving messages up to a cutoff point. Used by the terminal's reconnect
+ * feature and the agent runtime to continue interrupted conversations.
+ */
+export async function resumeSession(input: {
+  workspaceId: string;
+  userId: string;
+  previousSessionId: string;
+  /** Optional: new title for the resumed session */
+  title?: string;
+  /** Optional: only include messages up to this timestamp */
+  cutoffAt?: string;
+  /** Optional: override the default model */
+  defaultModel?: string;
+}): Promise<{ session: AiChatSessionRow; messages: AiChatMessageRow[] }> {
+  // Get the previous session.
+  const previousSession = await db.query.aiChatSessions.findFirst({
+    where: and(
+      eq(aiChatSessions.id, input.previousSessionId),
+      eq(aiChatSessions.workspaceId, input.workspaceId),
+    ),
+  });
+  if (!previousSession) {
+    throw new AppError(404, "not_found", "Previous session not found");
+  }
+
+  // Create a new session that references the old one.
+  const newSession = await createChatSession({
+    workspaceId: input.workspaceId,
+    userId: input.userId,
+    title: input.title ?? `${previousSession.title} (resumed)`,
+    source: "new",
+    defaultModel: input.defaultModel ?? previousSession.defaultModel ?? undefined,
+    autoSwitch: previousSession.autoSwitch,
+    context: {
+      ...(previousSession.context as Record<string, unknown>),
+      resumedFrom: input.previousSessionId,
+      resumedAt: new Date().toISOString(),
+    },
+  });
+
+  // Copy messages from the previous session, optionally up to a cutoff.
+  const messageQuery = db.query.aiChatMessages.findMany({
+    where: and(
+      eq(aiChatMessages.sessionId, input.previousSessionId),
+    ),
+    orderBy: [asc(aiChatMessages.createdAt)],
+  });
+
+  // We need to apply the cutoff in a filter, so use db.select directly.
+  const previousMessages = await messageQuery;
+
+  let messagesToCopy = previousMessages;
+  if (input.cutoffAt) {
+    const cutoffDate = new Date(input.cutoffAt);
+    messagesToCopy = previousMessages.filter((m) => m.createdAt <= cutoffDate);
+  }
+
+  // Re-insert the copied messages into the new session.
+  const copiedMessages: AiChatMessageRow[] = [];
+  for (const msg of messagesToCopy) {
+    const [copied] = await db
+      .insert(aiChatMessages)
+      .values({
+        sessionId: newSession.id,
+        role: msg.role,
+        content: msg.content,
+        model: msg.model,
+        provider: msg.provider,
+        keyHint: msg.keyHint,
+        keyId: msg.keyId,
+        tokensIn: msg.tokensIn,
+        tokensOut: msg.tokensOut,
+        costMicro: msg.costMicro,
+        latencyMs: msg.latencyMs,
+        switchedFrom: msg.switchedFrom,
+        errorCode: msg.errorCode,
+        errorMessage: msg.errorMessage,
+      })
+      .returning();
+    copiedMessages.push(copied);
+    // Throttle: yield to event loop every 10 messages to avoid blocking.
+    if (copiedMessages.length % 10 === 0) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  }
+
+  // Update the new session's lastMessageAt.
+  if (copiedMessages.length > 0) {
+    const lastMsg = copiedMessages[copiedMessages.length - 1];
+    await db
+      .update(aiChatSessions)
+      .set({ lastMessageAt: lastMsg.createdAt })
+      .where(eq(aiChatSessions.id, newSession.id));
+  }
+
+  // Add a system message noting the resume.
+  await insertChatMessage({
+    sessionId: newSession.id,
+    role: "system",
+    content: `Session resumed from ${previousSession.title} (${messagesToCopy.length} messages carried forward).`,
+  });
+
+  logger.info(
+    {
+      previousSessionId: input.previousSessionId,
+      newSessionId: newSession.id,
+      messagesCopied: messagesToCopy.length,
+      userId: input.userId,
+    },
+    "session resumed",
+  );
+
+  return { session: newSession, messages: copiedMessages };
 }

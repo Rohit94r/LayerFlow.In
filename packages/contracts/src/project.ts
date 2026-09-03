@@ -11,6 +11,8 @@ export const projectSchema = z.object({
   name: z.string(),
   description: z.string().nullish(),
   status: projectStatusSchema,
+  promptCount: z.number().int().default(0),
+  learningCount: z.number().int().default(0),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 });

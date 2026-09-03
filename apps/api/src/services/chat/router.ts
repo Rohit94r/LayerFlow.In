@@ -17,6 +17,7 @@ import {
   type ChatCompletionResult,
   type ProviderAdapter,
 } from "../ai/providers";
+import { generateTraceId } from "../ai/trace";
 import { estimateTokens } from "../intelligence/analyze";
 import { buildMessages } from "./context";
 import { normalizeMarkdown } from "./markdown";
@@ -28,6 +29,7 @@ import {
   markKeyFailed,
   markKeyHealthy,
   platformKeyHealth,
+  recordProviderLatency,
 } from "./health";
 import {
   countSessionMessages,
@@ -281,6 +283,7 @@ export async function runChatMessage(input: {
   onEvent: (event: ChatRunEvent) => void | Promise<void>;
 }): Promise<void> {
   const { workspaceId, sessionId, content } = input;
+  const traceId = generateTraceId();
 
   const session = await db.query.aiChatSessions.findFirst({
     where: and(eq(aiChatSessions.id, sessionId), eq(aiChatSessions.workspaceId, workspaceId)),
@@ -376,6 +379,11 @@ export async function runChatMessage(input: {
       keyHint: candidates[0].keyHint,
     });
 
+    logger.info(
+      { traceId, workspaceId, sessionId, model: choice.model, provider: choice.provider },
+      "chat provider call starting",
+    );
+
     for (const payload of candidates) {
       try {
         if (choice.model !== builtForModel) {
@@ -433,6 +441,12 @@ export async function runChatMessage(input: {
           if (!row) {
             logger.error({ messageId: assistantMessage.id }, "chat reply row missing after persist");
           }
+        }
+
+        try {
+          await recordProviderLatency(workspaceId, choice.provider, result.latencyMs);
+        } catch {
+          // best-effort
         }
 
         try {

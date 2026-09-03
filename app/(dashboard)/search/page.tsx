@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Library, BookUser } from "@/components/ui/icons";
+import { Search, Library, BookUser, Brain, Code2, Bot } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Row } from "@/components/shared/row";
@@ -11,11 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { searchService, type SearchResults } from "@/lib/services/search";
 import { timeAgo } from "@/lib/data/providers";
 
-const EMPTY: SearchResults = { prompts: [], sessions: [], total: 0 };
+const EMPTY: SearchResults = { prompts: [], sessions: [], memories: [], files: [], agentRuns: [], total: 0 };
 
 const GROUPS = [
   { key: "prompts", label: "Prompts", icon: Library, href: (id: string) => `/prompts/${id}` },
   { key: "sessions", label: "Sessions", icon: BookUser, href: (id: string) => `/chat/${id}` },
+  { key: "memories", label: "Memories", icon: Brain, href: (id: string) => `/memory?id=${id}` },
+  { key: "files", label: "Files", icon: Code2, href: (id: string) => `/files/${id}` },
+  { key: "agentRuns", label: "Agent Runs", icon: Bot, href: (id: string) => `/agents/runs/${id}` },
 ] as const;
 
 export default function SearchPage() {
@@ -129,9 +132,21 @@ export default function SearchPage() {
                         subtitle={sub}
                         trailing={
                           item.type === "prompt" ? undefined : (
-                            <Badge tone={item.status === "completed" ? "green" : item.status === "paused" ? "amber" : "neutral"}>
-                              {item.status}
-                            </Badge>
+                            item.type === "session" || item.type === "agent_run" ? (
+                              <Badge
+                                tone={
+                                  item.status === "completed"
+                                    ? "green"
+                                    : item.status === "failed"
+                                      ? "red"
+                                      : item.status === "paused"
+                                        ? "amber"
+                                        : "neutral"
+                                }
+                              >
+                                {item.status}
+                              </Badge>
+                            ) : undefined
                           )
                         }
                         className="rounded-lg"

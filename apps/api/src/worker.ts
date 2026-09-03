@@ -1,8 +1,9 @@
 import "./db/prefer-ipv4";
 import { Worker } from "bullmq";
+import { Hono } from "hono";
 import { logger } from "./config/logger";
 import { processors } from "./jobs/processors";
-import { closeQueues, DEFAULT_QUEUE, registerScheduledJobs, type JobName } from "./jobs/queues";
+import { closeQueues, DEFAULT_QUEUE, getQueue, registerScheduledJobs, type JobName } from "./jobs/queues";
 import {
   captureException,
   flushSentry,
@@ -10,6 +11,7 @@ import {
   installProcessErrorHandlers,
 } from "./observability/sentry";
 import { createBullConnection } from "./redis/client";
+import { redis } from "./redis/client";
 
 /**
  * Job worker entrypoint (`npm run worker`). Second process next to the API;
@@ -18,6 +20,36 @@ import { createBullConnection } from "./redis/client";
  */
 initSentry();
 installProcessErrorHandlers();
+
+// ── Health HTTP endpoint ──────────────────────────────────────
+const healthApp = new Hono();
+
+healthApp.get("/health", async (c) => {
+  const checks: { redis: boolean; queueDepth: number } = { redis: false, queueDepth: 0 };
+  try {
+    const pong = await redis.ping();
+    checks.redis = pong === "PONG";
+  } catch {
+    checks.redis = false;
+  }
+  try {
+    const queue = getQueue();
+    const jobCounts = await queue.getJobCounts("waiting", "active", "delayed");
+    checks.queueDepth = (jobCounts.waiting ?? 0) + (jobCounts.active ?? 0);
+  } catch {
+    checks.queueDepth = -1;
+  }
+  const ok = checks.redis;
+  return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
+});
+
+// Start health server on a separate port so the worker's health is reachable
+// independently of the API process.
+const HEALTH_PORT = Number(process.env.WORKER_HEALTH_PORT ?? 9091);
+import { serve } from "@hono/node-server";
+serve({ fetch: healthApp.fetch, port: HEALTH_PORT }, (info) => {
+  logger.info({ port: info.port }, "worker health endpoint started");
+});
 
 const worker = new Worker(
   DEFAULT_QUEUE,

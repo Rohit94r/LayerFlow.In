@@ -5,6 +5,7 @@ import { db } from "../../db/client";
 import { providerKeys } from "../../db/schema/gateway";
 import { providerKeyHealth, type ProviderKeyHealthRow } from "../../db/schema/chat";
 import { platformApiKey } from "../ai/providers";
+import { redis } from "../../redis/client";
 
 export type KeyStatus = "healthy" | "degrading" | "dead" | "expired";
 
@@ -17,7 +18,78 @@ export interface KeyHealthIdentity {
   keyHint: string;
 }
 
-/** Record a successful provider call → key returns to healthy, failures reset. */
+// ── Per-provider rolling latency tracking ────────────────────
+
+const LATENCY_WINDOW = 10; // keep last N observations
+const LATENCY_PREFIX = "lf:provider-latency";
+
+function latencyKey(workspaceId: string, provider: string): string {
+  return `${LATENCY_PREFIX}:${workspaceId}:${provider}`;
+}
+
+/**
+ * Record a successful provider call's latency for rolling-average tracking.
+ * Stores last N observations as a Redis list; trimmed on every push.
+ */
+export async function recordProviderLatency(
+  workspaceId: string,
+  provider: string,
+  latencyMs: number,
+): Promise<void> {
+  if (latencyMs < 0) return;
+  try {
+    const key = latencyKey(workspaceId, provider);
+    await redis.lpush(key, String(latencyMs));
+    await redis.ltrim(key, 0, LATENCY_WINDOW - 1);
+    // Expire after 24h so stale data doesn't accumulate
+    await redis.expire(key, 86400);
+  } catch {
+    // best-effort; latency is a nice-to-have
+  }
+}
+
+/**
+ * Get the rolling average latency for a provider (or null if insufficient data).
+ */
+export async function averageProviderLatency(
+  workspaceId: string,
+  provider: string,
+): Promise<number | null> {
+  try {
+    const key = latencyKey(workspaceId, provider);
+    const values = await redis.lrange(key, 0, LATENCY_WINDOW - 1);
+    if (values.length < 3) return null; // need at least 3 samples
+    const nums = values.map(Number).filter((n) => !isNaN(n));
+    if (nums.length === 0) return null;
+    return Math.round(nums.reduce((a, b) => a + b, 0) / nums.length);
+  } catch {
+    return null;
+  }
+}
+
+/** Sort providers by latency (fastest first). Useful for auto-fastest mode. */
+export async function providersSortedByLatency(
+  workspaceId: string,
+  providers: string[],
+): Promise<string[]> {
+  const withLatency = await Promise.all(
+    providers.map(async (p) => ({
+      provider: p,
+      avgLatency: await averageProviderLatency(workspaceId, p),
+    })),
+  );
+  return withLatency
+    .sort((a, b) => {
+      // Known-latency providers sort before unknown
+      if (a.avgLatency === null && b.avgLatency === null) return 0;
+      if (a.avgLatency === null) return 1;
+      if (b.avgLatency === null) return -1;
+      return a.avgLatency - b.avgLatency;
+    })
+    .map((e) => e.provider);
+}
+
+// ── Key health tracking ─────────────────────────────────────
 export async function markKeyHealthy(id: KeyHealthIdentity): Promise<void> {
   await db
     .insert(providerKeyHealth)

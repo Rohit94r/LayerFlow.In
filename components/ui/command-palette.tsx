@@ -102,7 +102,7 @@ export function CommandPalette({ open, onClose, onAction }: CommandPaletteProps)
                 placeholder="Search pages and actions…"
                 aria-label="Search commands"
                 autoFocus
-                className="h-12 w-full bg-transparent text-sm text-ink outline-none placeholder:text-faint"
+                className="h-12 w-full bg-transparent text-sm text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand placeholder:text-faint"
               />
               <Kbd>esc</Kbd>
             </div>

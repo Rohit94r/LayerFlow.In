@@ -24,4 +24,6 @@ export * from "./chat";
 export * from "./community";
 export * from "./notifications";
 export * from "./admin";
+export * from "./models";
 export * from "./team";
+export * from "./events";
