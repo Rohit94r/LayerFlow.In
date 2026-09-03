@@ -9,7 +9,6 @@ node_modules
 !README.md
 .DS_Store
 *.test.ts
-apps/api/src
 apps/api/node_modules
 docs
 scripts

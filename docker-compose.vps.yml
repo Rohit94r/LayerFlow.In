@@ -40,6 +40,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # The image HEALTHCHECK probes the API port (8787), which the worker does
+    # not listen on, so it shows "unhealthy" forever. Disable it — nothing
+    # depends on worker health.
+    healthcheck:
+      disable: true
     mem_limit: 256m
     mem_reservation: 128m
     cpus: 0.5
@@ -47,7 +52,7 @@ services:
       - lf-net
 
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: lf-postgres
     restart: unless-stopped
     environment:

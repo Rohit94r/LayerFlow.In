@@ -20,8 +20,12 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 RUN apk add --no-cache curl ca-certificates tzdata
 
-COPY package.json package-lock.json ./
-RUN npm install --omit=dev --ignore-scripts && npm cache clean --force
+# Copy the fully-built dependency tree (includes every @layerflow/api prod
+# dependency: @sentry/node, pg, hono, ioredis, ...) from the build stage.
+# The root package.json only declares frontend deps, so a fresh `npm install`
+# here would NOT install the API deps and the bundle would crash at boot with
+# ERR_MODULE_NOT_FOUND (e.g. @sentry/node).
+COPY --from=build /app/node_modules ./node_modules
 
 COPY --from=build /app/apps/api/dist ./dist
 COPY --from=build /app/apps/api/drizzle ./drizzle
