@@ -1,221 +1,150 @@
-# LayerFlow — Docker Commands Guide (Simple)
+# LayerFlow — Commands You Actually Need
 
-Everything you need to run LayerFlow on your VPS.
-
----
-
-## 🔐 SSH into Your VPS
-
-```bash
-ssh rohit@72.60.99.68
-# Password: Impiclabs@Rohit01
-```
+Your production setup: **frontend + backend on Vercel, database on Neon, Redis on Upstash.**
+The VPS Docker stack is optional (backup/legacy). Local dev needs Postgres + Redis.
 
 ---
 
-## 📁 Your Project Location
+## 🖥️ LOCAL DEVELOPMENT (day-to-day)
 
-Everything goes in: `~/apps/layerflow/`
-
----
-
-## 🚀 First Time Setup (Run Once)
-
-### Step 1: Clone the code
+### Option A — no Docker (simplest): point local dev at Neon + Upstash
+Edit `apps/api/.env`:
+```
+DATABASE_URL=<your Neon URL from Vercel env>
+REDIS_URL=<your Upstash rediss:// URL from Vercel env>
+```
+Then just run:
 ```bash
-cd ~/apps
-git clone https://github.com/Rohit94r/LayerFlow.In.git layerflow
-cd layerflow
+npm run dev
 ```
+That single command starts ALL THREE processes:
+- web     → http://localhost:3000  (Next.js frontend)
+- api     → http://localhost:8787  (Hono API)
+- worker  → BullMQ background jobs
 
-### Step 2: Create your secrets file
+### Option B — with Docker (isolated local DB)
 ```bash
-cp .env.production .env
-nano .env
+docker compose up -d          # starts local Postgres(pgvector) :5432 + Redis :6379
+npm run dev                   # starts web + api + worker together
 ```
-
-Fill in these MINIMUM required fields:
-```
-BETTER_AUTH_SECRET=    # Generate: openssl rand -hex 32
-PROVIDER_KEYS_KEK=     # Generate: openssl rand -hex 32
-POSTGRES_PASSWORD=     # Pick a password
-GROQ_API_KEY=          # Get from https://console.groq.com/keys (free)
-```
-
-### Step 3: Start everything
+Stop the containers when done:
 ```bash
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose down           # stops them (keeps data)
+docker compose down -v        # stops AND wipes local data
 ```
 
-### Step 4: Run database migrations
+### Run each process in its own terminal (if you prefer)
 ```bash
-docker compose -f docker-compose.prod.yml exec api npx drizzle-kit migrate
+npm run dev:web               # terminal 1 — frontend :3000
+npm run dev:api               # terminal 2 — API :8787
+npm run dev:worker            # terminal 3 — background worker
 ```
 
-### Step 5: Check it's working
+### Local health check
 ```bash
-curl http://localhost:8787/health/live
-# Should return: {"status":"ok"}
+curl http://localhost:8787/health/live     # {"status":"ok"}
+curl http://localhost:3000/api/lf-health   # full same-origin check
 ```
 
 ---
 
-## 📋 Everyday Commands
+## 🗄️ DATABASE (Neon — production)
 
-### See what's running
+### Apply migrations to Neon (after changing the schema)
 ```bash
-docker ps
+# 1. put the Neon DATABASE_URL inline (from Vercel → Settings → Env):
+cd apps/api
+DATABASE_URL="postgresql://...neon.tech/neondb?sslmode=require" npx drizzle-kit migrate
 ```
 
-### See logs (live)
+### Inspect Neon directly
 ```bash
-docker compose -f docker-compose.prod.yml logs -f
-# Add --tail=50 to see last 50 lines only
+psql "<NEON_DATABASE_URL>" -c "\dt"                            # list tables
+psql "<NEON_DATABASE_URL>" -c "SELECT count(*) FROM users;"    # any query
+psql "<NEON_DATABASE_URL>" -c "SELECT extname FROM pg_extension;"  # pgvector check
 ```
 
-### See API logs only
+### Schema sanity check (should print tables=76)
 ```bash
-docker compose -f docker-compose.prod.yml logs -f api
-```
-
-### See worker logs only
-```bash
-docker compose -f docker-compose.prod.yml logs -f worker
-```
-
-### Restart everything
-```bash
-docker compose -f docker-compose.prod.yml restart
-```
-
-### Restart just the API (fast, no DB restart)
-```bash
-docker compose -f docker-compose.prod.yml restart api
-```
-
-### Stop everything
-```bash
-docker compose -f docker-compose.prod.yml down
-```
-
-### Stop everything + delete databases (WARNING: loses all data)
-```bash
-docker compose -f docker-compose.prod.yml down -v
+psql "<NEON_DATABASE_URL>" -tAc \
+  "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
 ```
 
 ---
 
-## 🔄 Updating the Code
+## 🌐 PRODUCTION (Vercel + Neon) — verify it's live
 
 ```bash
+# Frontend + backend health (same-origin API mode)
+curl -s https://layerflow.dev/api/lf-health
+# → {"ok":true,"mode":"same-origin-api","status":"ok"}
+
+# Auth session endpoint
+curl -s https://layerflow.dev/api/auth/get-session     # null when signed out
+
+# Terminal login endpoint (device flow)
+curl -s -X POST https://layerflow.dev/api/v1/auth/device \
+  -H 'Content-Type: application/json' -d '{}'
+# → {"device_code":"...","user_code":"ABC123","verification_uri":"..."}
+```
+
+### Deploy a code change
+```bash
+git push            # if Vercel is connected to GitHub it auto-deploys
+# or explicit:
+npx vercel --prod
+```
+
+### Change env vars
+Vercel Dashboard → your project → Settings → Environment Variables.
+Required there: `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL`, `WEB_URL`, `API_URL`, `PROVIDER_KEYS_KEK`,
+`NEXT_PUBLIC_API_URL`, plus any provider keys (GROQ/GEMINI/...).
+
+---
+
+## 💻 TERMINAL APP (`lf`)
+
+```bash
+cd terminal
+./lf doctor          # diagnostics — all PASS except config/auth on first run
+./lf login           # authenticate (device flow opens layerflow.dev, or paste a platform API key)
+./lf models          # list available models
+./lf chat            # ask questions in the terminal
+./lf sessions        # list/restore previous sessions
+./lf cost            # token + cost usage
+./lf logout          # revoke + purge credentials
+```
+
+---
+
+## 🐘 OPTIONAL: VPS Docker stack (only if you use the VPS backend)
+
+```bash
+ssh rohit@72.60.99.68                 # password auth
 cd ~/apps/layerflow
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-```
 
-That's it. Git pull gets new code, Docker rebuilds and restarts.
+git pull                              # get latest code
+docker compose -f docker-compose.vps.yml up -d --build   # build + start all 4 containers
+./scripts/vps-migrate.sh              # apply DB migrations to the VPS Postgres
 
----
-
-## 📊 Check Resource Usage
-
-### Container memory usage
-```bash
-docker stats --no-stream
-```
-
-### Disk usage
-```bash
-docker system df
-```
-
-### Clean up old/unused images
-```bash
-docker image prune -a -f
+docker ps                             # what's running
+docker compose -f docker-compose.vps.yml logs -f api     # API logs
+docker compose -f docker-compose.vps.yml logs -f worker  # worker logs
+docker compose -f docker-compose.vps.yml restart api     # restart API only
+docker compose -f docker-compose.vps.yml down            # stop everything
+docker stats --no-stream              # memory per container
+curl http://localhost:3100/health/ready                  # {"status":"ok",...}
 ```
 
 ---
 
-## 🐘 Database Commands
+## 🔧 Quick troubleshooting
 
-### Connect to Postgres directly
-```bash
-docker compose -f docker-compose.prod.yml exec postgres psql -U layerflow layerflow
-```
-Then type SQL queries like:
-```sql
-SELECT * FROM users;
-SELECT count(*) FROM ai_chat_sessions;
-\q   (to quit)
-```
-
-### Run database migrations manually
-```bash
-docker compose -f docker-compose.prod.yml exec api npx drizzle-kit migrate
-```
-
-### Seed demo data (local dev only, never on production)
-```bash
-docker compose -f docker-compose.prod.yml exec api npx tsx src/db/seed.ts
-```
-
----
-
-## 🔧 Troubleshooting
-
-### "Container exited with code 137"
-→ Out of memory. Check `docker logs <container-name>` and reduce memory usage.
-
-### "Port already in use"
-→ Something else is using that port. Run `ss -tlnp | grep 3100` to see what.
-
-### "Can't connect to database"
-→ Check your DATABASE_URL in .env file.
-→ Make sure Postgres container is running: `docker ps | grep postgres`
-
-### "API not starting"
-```bash
-docker compose -f docker-compose.prod.yml logs api --tail=50
-```
-
-### Reset everything fresh
-```bash
-cd ~/apps/layerflow
-docker compose -f docker-compose.prod.yml down -v
-docker compose -f docker-compose.prod.yml up -d --build
-docker compose -f docker-compose.prod.yml exec api npx drizzle-kit migrate
-```
-
----
-
-## 🏗️ How It All Connects
-
-```
-Internet
-   |
-   v
-Caddy (port 443)  ← Handles HTTPS for api.layerflow.dev
-   |
-   v
-Caddy (port 3100) ← Proxies to your container
-   |
-   v
-docker-compose.prod.yml
-   ├── api (port 8787)     ← The LayerFlow API
-   ├── worker              ← Background jobs
-   ├── postgres (port 5432)← Database (optional, skip if using Neon)
-   └── redis (port 6379)   ← Cache (optional, skip if using Upstash)
-```
-
----
-
-## 💡 Pro Tips
-
-1. **Use Neon for Postgres** (free tier) — saves ~256MB RAM. Get URL at https://neon.tech
-2. **Use Upstash for Redis** (free tier) — saves ~128MB RAM. Get URL at https://upstash.com
-3. **Get a free Groq API key** at https://console.groq.com/keys — lets you use AI models for free
-4. **Run `docker stats`** to monitor memory usage anytime
-5. **Set up auto-updates** with cron: `crontab -e` and add:
-   ```
-   0 4 * * * cd ~/apps/layerflow && git pull && docker compose -f docker-compose.prod.yml up -d --build 2>&1 | logger
-   ```
+| Symptom | Fix |
+|---|---|
+| `lf login` fails with 500 once | cold-start race — retry; 2nd attempt works |
+| `ECONNREFUSED 5432/6379` locally | run `docker compose up -d` or point `.env` at Neon/Upstash |
+| API 500 on a DB route | check migrations applied to Neon (`drizzle-kit migrate`) |
+| Vercel deploy fails | run `npm run build` locally first — it must pass |
+| Need a fresh local DB | `docker compose down -v && docker compose up -d` |
