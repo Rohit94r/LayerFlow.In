@@ -48,6 +48,7 @@ function providerDisplayName(provider: string): string {
     groq: "Groq",
     xai: "xAI",
     openrouter: "OpenRouter",
+    opencode: "OpenCode Zen",
   };
   return map[provider] ?? provider;
 }

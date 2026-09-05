@@ -19,6 +19,7 @@ export const DEFAULT_TEMPERATURE: Record<Provider, number> = {
   xai: 0.8,
   kimi: 0.7,
   openrouter: 0.7,
+  opencode: 0.7,
 };
 
 export function defaultTemperature(provider: Provider): number {
@@ -60,6 +61,9 @@ const SYSTEM_PROMPTS: Record<Provider, string> = {
   openrouter:
     "You are the AI assistant the user selected through OpenRouter for LayerFlow. Match the best practices " +
     "of the model you are: clear, structured Markdown, direct answers, and no claim of a different identity.",
+  opencode:
+    "You are the OpenCode Zen assistant powering LayerFlow. Answer clearly and concisely with Markdown " +
+    "structure when it helps — code blocks for code, lists for enumeration. Never claim a different model identity.",
 };
 
 export function providerSystemPrompt(provider: Provider): string {

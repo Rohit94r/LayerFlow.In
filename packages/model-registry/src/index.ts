@@ -17,6 +17,7 @@ export const PROVIDERS = [
   "xai",
   "kimi",
   "openrouter",
+  "opencode",
 ] as const;
 
 export type Provider = (typeof PROVIDERS)[number];
@@ -268,6 +269,58 @@ export const MODELS: readonly ModelInfo[] = [
     maxOutputTokens: 65_536,
     capabilities: { streaming: true, toolCalling: true, vision: false, reasoning: true },
   },
+
+  // --- OpenCode Zen ---
+  {
+    id: "big-pickle",
+    provider: "opencode",
+    displayName: "Big Pickle",
+    inputPricePerMTokMicro: 0,
+    outputPricePerMTokMicro: 0,
+    contextWindow: 200_000,
+    maxOutputTokens: 32_768,
+    capabilities: ALL_CAPS,
+  },
+  {
+    id: "deepseek-v4-flash",
+    provider: "opencode",
+    displayName: "DeepSeek V4 Flash (Zen)",
+    inputPricePerMTokMicro: 270_000,
+    outputPricePerMTokMicro: 1_100_000,
+    contextWindow: 128_000,
+    maxOutputTokens: 16_384,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "deepseek-v4-flash-free",
+    provider: "opencode",
+    displayName: "DeepSeek V4 Flash Free",
+    inputPricePerMTokMicro: 0,
+    outputPricePerMTokMicro: 0,
+    contextWindow: 128_000,
+    maxOutputTokens: 16_384,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "mimo-v2.5-free",
+    provider: "opencode",
+    displayName: "MiMo V2.5 Free",
+    inputPricePerMTokMicro: 0,
+    outputPricePerMTokMicro: 0,
+    contextWindow: 128_000,
+    maxOutputTokens: 16_384,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "nemotron-3-ultra-free",
+    provider: "opencode",
+    displayName: "Nemotron 3 Ultra Free",
+    inputPricePerMTokMicro: 0,
+    outputPricePerMTokMicro: 0,
+    contextWindow: 200_000,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
 ] as const;
 
 const MODELS_BY_ID = new Map(MODELS.map((m) => [m.id, m]));
@@ -326,10 +379,11 @@ export function resolveProvider(modelId: string): Provider | undefined {
     [/^(gpt-|o[134](-|$)|chatgpt-|text-embedding-)/, "openai"],
     [/^claude-/, "anthropic"],
     [/^(gemini-|gemma-)/, "google"],
-    [/^deepseek-/, "deepseek"],
+    [/^(deepseek-)/, "deepseek"],
     [/^grok-/, "xai"],
     [/^(kimi-|moonshot-)/, "kimi"],
     [/^(llama-|llama3|mixtral-|qwen-)/, "groq"],
+    [/^(big-pickle|mimo-|nemotron-)/, "opencode"],
   ];
   for (const [pattern, provider] of prefixMap) {
     if (pattern.test(modelId)) return provider;

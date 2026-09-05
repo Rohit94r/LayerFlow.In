@@ -18,9 +18,9 @@ import { isBillingConfigured } from "../services/billing/dodo";
 
 const PLAN_PROVIDER_ACCESS: Record<string, Set<string>> = {
   free: new Set(["groq", "google"]),
-  starter: new Set(["groq", "google", "deepseek", "kimi", "xai"]),
-  pro: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter"]),
-  team: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter"]),
+  starter: new Set(["groq", "google", "deepseek", "kimi", "xai", "opencode"]),
+  pro: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter", "opencode"]),
+  team: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter", "opencode"]),
 };
 
 export function getPlanForWorkspace(workspaceId: string): ReturnType<typeof getCurrentSubscription> {

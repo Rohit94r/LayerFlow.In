@@ -5,6 +5,7 @@ import { deepseekAdapter } from "./deepseek";
 import { googleAdapter } from "./google";
 import { groqAdapter } from "./groq";
 import { kimiAdapter } from "./kimi";
+import { opencodeAdapter } from "./opencode";
 import { openaiAdapter } from "./openai";
 import { openrouterAdapter } from "./openrouter";
 import { xaiAdapter } from "./xai";
@@ -29,6 +30,7 @@ const ADAPTERS: Record<Provider, ProviderAdapter> = {
   xai: xaiAdapter,
   kimi: kimiAdapter,
   openrouter: openrouterAdapter,
+  opencode: opencodeAdapter,
 };
 
 /** Resolve the adapter for a known provider name. */
@@ -69,6 +71,7 @@ export function resetAdapterForTests(provider: Provider): void {
     xai: xaiAdapter,
     kimi: kimiAdapter,
     openrouter: openrouterAdapter,
+    opencode: opencodeAdapter,
   };
   ADAPTERS[provider] = originals[provider];
 }

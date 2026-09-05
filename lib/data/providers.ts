@@ -95,6 +95,7 @@ const REGISTRY_PROVIDER_LABELS: Record<RegistryProvider, string> = {
   xai: "xAI",
   kimi: "Moonshot",
   openrouter: "OpenRouter",
+  opencode: "OpenCode Zen",
 };
 
 /** Relative-speed heuristic per host (Groq is the speed king). */
@@ -107,6 +108,7 @@ const PROVIDER_SPEED: Record<RegistryProvider, number> = {
   xai: 5,
   anthropic: 4,
   openrouter: 5,
+  opencode: 7,
 };
 
 const BEST_FOR: Record<string, string> = {
@@ -129,6 +131,11 @@ const BEST_FOR: Record<string, string> = {
   "grok-3-mini": "Cheap fast reasoning for everyday tasks",
   "kimi-k2": "Agentic tasks, large context, long chats",
   "kimi-k2-thinking": "Agentic work with visible reasoning",
+  "big-pickle": "Free stealth model through OpenCode Zen",
+  "deepseek-v4-flash": "Fast DeepSeek V4 coding through Zen",
+  "deepseek-v4-flash-free": "Free DeepSeek V4 Flash for testing",
+  "mimo-v2.5-free": "Free MiMo V2.5 through Zen",
+  "nemotron-3-ultra-free": "Free Nemotron 3 Ultra through Zen",
 };
 
 function classForPrice(inputMicroPerMTok: number): ModelClass {
@@ -174,6 +181,7 @@ export const PROVIDER_SLUG_LABELS: Record<string, string> = {
   xai: "xAI (Grok)",
   kimi: "Kimi (Moonshot)",
   openrouter: "OpenRouter",
+  opencode: "OpenCode Zen",
 };
 
 /** Back-compat alias — existing imports read PROVIDER_LABELS. */
