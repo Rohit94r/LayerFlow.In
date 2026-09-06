@@ -34,13 +34,14 @@ describe("device auth (lf terminal)", () => {
     body?: string,
     contentType?: string,
   ): Promise<{ status: number; json: any }> {
-    return app.request(path, {
+    const res = app.request(path, {
       method,
       headers: body !== undefined ? { "content-type": contentType ?? "application/json" } : {},
       ...(body !== undefined ? { body } : {}),
-    }).then(async (res) => {
-      const text = await res.text();
-      return { status: res.status, json: text ? JSON.parse(text) : undefined };
+    });
+    return Promise.resolve(res).then(async (r: Response) => {
+      const text = await r.text();
+      return { status: r.status, json: text ? JSON.parse(text) : undefined };
     });
   }
 
