@@ -217,7 +217,7 @@ func (m *modelsModel) renderGroup(models []cloud.Model) []string {
 
 		row := lipgloss.JoinHorizontal(lipgloss.Left,
 			marker,
-			lipgloss.NewStyle().Bold(true).Render(mdl.ID),
+			lipgloss.NewStyle().Bold(true).Render(shortenModel(mdl.ID)),
 			lipgloss.NewStyle().Width(4).Render(""),
 			badge,
 			lipgloss.NewStyle().Width(6).Render(""),

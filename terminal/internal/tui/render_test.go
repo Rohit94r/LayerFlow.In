@@ -486,3 +486,53 @@ func TestNoBackgroundArtifacts(t *testing.T) {
 		t.Errorf("assistant message emitted background codes: %v", m)
 	}
 }
+
+// TestWrapText confirms long user lines wrap to the column width and never
+// overflow, while explicit newlines are preserved.
+func TestWrapText(t *testing.T) {
+	in := "alpha beta gamma delta"
+	got := wrapText(in, 10)
+	for _, line := range strings.Split(got, "\n") {
+		if lipgloss.Width(line) > 10 {
+			t.Errorf("wrapped line exceeds width: %q (%d > 10)", line, lipgloss.Width(line))
+		}
+	}
+	if !strings.Contains(got, "\n") {
+		t.Errorf("expected wrapping, got: %q", got)
+	}
+
+	// Explicit newline preserved.
+	multi := wrapText("line one\nline two", 40)
+	if strings.Count(multi, "\n") != 1 {
+		t.Errorf("newlines not preserved: %q", multi)
+	}
+
+	// Short line unchanged.
+	if short := wrapText("hello", 40); short != "hello" {
+		t.Errorf("short line changed: %q", short)
+	}
+}
+
+// TestRenderMessagePlainSystem confirms the verbatim /permissions table renders
+// out of the "plain:" system message and is not collapsed by systemNotice.
+func TestRenderMessagePlainSystem(t *testing.T) {
+	body := "Tool Permissions\n─────────────────\n  write_file write  [ask] fs.write"
+	m := session.Message{Role: "system", Content: "plain:" + body}
+	out := renderMessage(m, 90)
+	if !strings.Contains(out, "write_file") {
+		t.Errorf("plain system message dropped content: %q", out)
+	}
+	if strings.Contains(out, "plain:") {
+		t.Errorf("plain: prefix leaked into render: %q", out)
+	}
+}
+
+// TestRenderMessageSystemCollapse confirms non-plain system messages are still
+// collapsed to a short notice (security: raw internal content never shown).
+func TestRenderMessageSystemCollapse(t *testing.T) {
+	m := session.Message{Role: "system", Content: "you are a coding agent\nperform a repository audit\ninternal detail"}
+	out := renderMessage(m, 90)
+	if strings.Contains(out, "repository audit") || strings.Contains(out, "coding agent") {
+		t.Errorf("system message leaked internal content: %q", out)
+	}
+}

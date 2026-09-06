@@ -179,6 +179,11 @@ type App struct {
 	// model instead of leaving an invalid model selected.
 	fallbackTried bool
 	lastPrompt    []cloud.Message
+
+	// Agent (tool-calling) state for the chat conversation.
+	toolRound      int
+	lastToolCalls  []cloud.ToolCall
+	pendingToolIdx int
 }
 
 // NewApp creates the root app model.
@@ -284,6 +289,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case streamDoneMsg:
 		return a.handleStreamDone(msg)
 
+	case toolRoundDoneMsg:
+		return a.handleToolRoundDone(msg)
+
 	case improveResultMsg:
 		return a.handleImproveResult(msg)
 
@@ -295,6 +303,13 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case loginResultMsg:
 		return a.handleLoginResult(msg)
 	case modelsLoadedMsg:
+		// When the model-switcher overlay is open, the async load result must
+		// reach the overlay so `loading` clears and the full model list renders.
+		// Otherwise the top-level auto-select handler consumes it and the
+		// overlay stays stuck on the seeded single row.
+		if a.overlay == overlayModels && a.models != nil {
+			return a.models.Update(msg)
+		}
 		return a.handleModelsLoaded(msg)
 	case errorMsg:
 		errStr := msg.err.Error()

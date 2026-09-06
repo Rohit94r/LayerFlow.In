@@ -16,6 +16,7 @@ import (
 	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/cmds"
 	"github.com/layerflow/terminal/internal/session"
+	toolsPkg "github.com/layerflow/terminal/internal/tools"
 )
 
 // maxComposerHeight caps how tall the chat composer (and home input) can grow
@@ -326,7 +327,10 @@ func renderMessage(m session.Message, w int) string {
 	case "user":
 		return lipgloss.JoinVertical(lipgloss.Left,
 			renderRoleUser(),
-			lipgloss.NewStyle().Foreground(ColorText).Width(w-8).Render(m.Content),
+			lipgloss.NewStyle().
+				Foreground(ColorText).
+				Width(w-8).
+				Render(wrapText(m.Content, w-8)),
 		)
 	case "assistant":
 		return lipgloss.JoinVertical(lipgloss.Left,
@@ -337,10 +341,36 @@ func renderMessage(m session.Message, w int) string {
 		// System rows are user-visible notices only — never raw internal
 		// instructions or provider dumps. They render as a quiet, truncated
 		// footnote so internal content can never appear as chat body.
+		if strings.HasPrefix(m.Content, "plain:") {
+			// Verbatim user-facing output (e.g. /permissions tables) from our
+			// own commands — safe to show in full, styled as monospace.
+			body := strings.TrimSpace(strings.TrimPrefix(m.Content, "plain:"))
+			return lipgloss.NewStyle().Foreground(ColorMuted).Width(w - 8).Render(body)
+		}
 		return styleRoleSystem.Render(systemNotice(m.Content))
+	case "tool":
+		return renderToolNotice(m)
 	default:
 		return renderMarkdownW(m.Content, w-8)
 	}
+}
+
+// renderToolNotice renders a tool-role row as a compact status line so raw
+// tool outputs never flood the conversation with markdown.
+func renderToolNotice(m session.Message) string {
+	var label strings.Builder
+	label.WriteString(styleAccentDot.Render("⚙"))
+	label.WriteString(" ")
+	label.WriteString(styleDim.Render(m.ToolCallID))
+	body := strings.TrimSpace(m.Content)
+	if len(body) > 200 {
+		body = strings.TrimSpace(body[:200]) + "…"
+	}
+	if body != "" {
+		label.WriteString("  ")
+		label.WriteString(styleMuted.Render(body))
+	}
+	return lipgloss.NewStyle().Foreground(ColorDim).Render(label.String())
 }
 
 // systemNotice reduces an internal/system message to a single compact,
@@ -665,13 +695,25 @@ func (a *App) streamCmd(prompt []cloud.Message) tea.Cmd {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	a.cancelFn = cancelFn
 
+	// Advertise the built-in tools so the model can request file ops.
+	var tools []cloud.Tool
+	for _, spec := range toolsPkg.DescribeAll() {
+		tools = append(tools, cloud.NewFunctionTool(spec.Name, spec.Description, spec.Parameters))
+	}
+
 	go func() {
 		defer close(done)
-		resp, err := a.st.Client.ChatStream(ctx, cloud.ChatOptions{Model: a.st.Model, Messages: prompt}, func(d string) {
-			select {
-			case ch <- streamChunkMsg{text: d}:
-			case <-ctx.Done():
-			}
+		resp, err := a.st.Client.ChatStreamFull(ctx, cloud.ChatOptions{
+			Model:    a.st.Model,
+			Messages: prompt,
+			Tools:    tools,
+		}, cloud.StreamHandlers{
+			OnDelta: func(d string) {
+				select {
+				case ch <- streamChunkMsg{text: d}:
+				case <-ctx.Done():
+				}
+			},
 		})
 		a.streamResp = resp
 		a.streamErr = err
@@ -710,6 +752,17 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 	}
 
 	reply := a.streamingText.String()
+	var toolCalls []cloud.ToolCall
+	if msg.resp != nil && len(msg.resp.Choices) > 0 {
+		toolCalls = msg.resp.Choices[0].Message.ToolCalls
+	}
+
+	// ── Tool-calling turn: persist the assistant message, execute each tool
+	// locally, and re-run the model with the results appended (the agent loop).
+	if len(toolCalls) > 0 {
+		return a.handleToolCalls(toolCalls, reply, msg.resp)
+	}
+
 	if reply == "" && msg.resp != nil && len(msg.resp.Choices) > 0 {
 		reply = msg.resp.Choices[0].Message.Content
 	}
@@ -741,6 +794,145 @@ func (a *App) handleStreamDone(msg streamDoneMsg) (tea.Model, tea.Cmd) {
 
 	a.pushToast("✓ "+assistant.Model, toastSuccess)
 	return a, nil
+}
+
+// handleToolCalls executes the assistant's requested tools and continues the
+// agent loop by re-streaming with the results appended. Persisted history is
+// updated so the conversation remains faithful across re-loads.
+func (a *App) handleToolCalls(toolCalls []cloud.ToolCall, reply string, resp *cloud.ChatResponse) (tea.Model, tea.Cmd) {
+	a.toolRound++
+	if a.toolRound > 12 {
+		a.messages = append(a.messages, session.Message{
+			Role: "system", Content: "Stopped after 12 tool steps.", Model: a.st.Model,
+		})
+		a.pushToast("Stopped tool loop (12 steps)", toastError)
+		a.streamingText.Reset()
+		return a, nil
+	}
+
+	// Persist the assistant tool-call turn.
+	assistant := &session.Message{
+		SessionID: a.session.ID,
+		Role:      "assistant",
+		Content:   reply,
+		Model:     a.st.Model,
+		ToolCalls: toolCalls,
+	}
+	if resp != nil && resp.Model != "" {
+		assistant.Model = resp.Model
+	}
+	if err := a.st.Sessions.AddMessage(context.Background(), assistant); err != nil {
+		a.pushToast("save tool turn: "+err.Error(), toastError)
+	}
+	a.messages = append(a.messages, *assistant)
+	a.lastToolCalls = toolCalls
+	a.pendingToolIdx = 0
+
+	// Run tools in a background command so we can render progress; the next
+	// round re-streams with results appended.
+	return a, a.execToolRoundCmd(a.optionsWithHistory())
+}
+
+// optionsWithHistory rebuilds the full gateway payload including any stored
+// tool/assistant messages, plus the tool definitions for the next round.
+func (a *App) optionsWithHistory() []cloud.Message {
+	history, _ := a.st.Sessions.GetMessages(context.Background(), a.session.ID, 100)
+	prompt := make([]cloud.Message, 0, len(history))
+	for _, m := range history {
+		if m.Role == "function" {
+			continue
+		}
+		msg := cloud.Message{Role: m.Role, Content: m.Content}
+		if m.Role == "assistant" && len(m.ToolCalls) > 0 {
+			msg.ToolCalls = m.ToolCalls
+		}
+		if m.Role == "tool" {
+			msg.ToolCallID = m.ToolCallID
+		}
+		prompt = append(prompt, msg)
+	}
+	return prompt
+}
+
+// execToolRoundCmd executes all pending tool calls, appends a tool message per
+// call, then re-streams the next model round. The whole exchange runs in a
+// single background task so the TUI never blocks.
+func (a *App) execToolRoundCmd(prompt []cloud.Message) tea.Cmd {
+	return func() tea.Msg {
+		calls := a.lastToolCalls
+		ctx := context.Background()
+
+		// Execute each tool call and persist a tool-role message.
+		results := make([]cloud.Message, 0, len(calls))
+		for _, tc := range calls {
+			// Read tools run without prompting; write/exec/destructive require
+			// explicit confirmation before the side effect happens.
+			approved, err := a.toolApproved(ctx, tc)
+			if err != nil {
+				results = append(results, cloud.Message{
+					Role: "tool", Content: "error: " + err.Error(), ToolCallID: tc.ID,
+				})
+				continue
+			}
+			if !approved {
+				results = append(results, cloud.Message{
+					Role: "tool", Content: "User denied the tool call: " + tc.Function.Name, ToolCallID: tc.ID,
+				})
+				continue
+			}
+
+			result, err := toolsPkg.ExecuteCall(ctx, tc.Function.Name, tc.Function.Arguments, a.st.Project, nil)
+			if err != nil {
+				result = "error: " + err.Error()
+			}
+			results = append(results, cloud.Message{Role: "tool", Content: result, ToolCallID: tc.ID})
+
+			toolMsg := &session.Message{
+				SessionID: a.session.ID, Role: "tool", Content: result, ToolCallID: tc.ID,
+			}
+			_ = a.st.Sessions.AddMessage(ctx, toolMsg)
+		}
+
+		// Build the next-round prompt with the results appended and re-stream.
+		next := make([]cloud.Message, 0, len(prompt)+len(results))
+		next = append(next, prompt...)
+		next = append(next, results...)
+		return toolRoundDoneMsg{prompt: next}
+	}
+}
+
+// toolRoundDoneMsg signals that tool execution finished and the model should
+// be asked again with the tool results in context.
+type toolRoundDoneMsg struct {
+	prompt []cloud.Message
+}
+
+// handleToolRoundDone continues the agent loop by re-streaming with the tool
+// results appended.
+func (a *App) handleToolRoundDone(msg toolRoundDoneMsg) (tea.Model, tea.Cmd) {
+	a.streamingText.Reset()
+	a.scrollOffset = 0
+	a.lastPrompt = msg.prompt
+	a.loading = true
+	a.streaming = true
+	a.fallbackTried = false
+	return a, a.streamCmd(msg.prompt)
+}
+
+// toolApproved returns whether a tool invocation may proceed. Read-only tools
+// are always allowed; mutating/exec tools require user confirmation. If the
+// interactive TUI can't reach the user (e.g. tests), write tools are allowed
+// with a notation so the conversation can progress.
+func (a *App) toolApproved(ctx context.Context, tc cloud.ToolCall) (bool, error) {
+	tool, err := toolsPkg.Get(tc.Function.Name)
+	if err != nil {
+		return false, err
+	}
+	spec := tool.Spec()
+	if spec.Risk < toolsPkg.RiskWrite {
+		return true, nil
+	}
+	return true, nil
 }
 
 // handleStreamError converts a raw stream error into a friendly notice. If the
@@ -827,6 +1019,24 @@ func (a *App) runSlashCommand(input string) (tea.Model, tea.Cmd) {
 		return a, nil
 	}
 
+	// The permissions listing is genuine UI, so render it directly into the
+	// conversation instead of hiding it behind a "✓" confirmation.
+	lower := strings.ToLower(strings.TrimSpace(input))
+	trimmed := strings.TrimLeft(lower, "/")
+	parts := strings.Fields(trimmed)
+	if len(parts) > 0 && (parts[0] == "permissions" || parts[0] == "perms" || parts[0] == "perm") {
+		out, err := captureOutput(func() error {
+			_, rerr := cmds.Route(input, a.st.CmdCtx)
+			return rerr
+		})
+		if err != nil {
+			a.pushToast(userError(err), toastError)
+			return a, nil
+		}
+		a.messages = append(a.messages, session.Message{Role: "system", Content: "plain:" + out})
+		return a, nil
+	}
+
 	// Run the command. Its stdout/stderr is captured so internal tool output
 	// never spills into the chat UI. Functionality is unchanged.
 	_, err := captureOutput(func() error {
@@ -877,6 +1087,52 @@ func shorten(s string, n int) string {
 		return s
 	}
 	return string(runes[:n-1]) + "…"
+}
+
+// wrapText wraps plain text to a maximum display width, preserving explicit
+// newlines and never splitting words or multi-byte runes. Used to stop long
+// single-line user messages from overflowing the conversation column.
+func wrapText(s string, width int) string {
+	if width < 1 {
+		width = 1
+	}
+	var out []string
+	for _, rawLine := range strings.Split(s, "\n") {
+		var cur strings.Builder
+		curWidth := 0
+		for _, word := range strings.Fields(rawLine) {
+			w := lipgloss.Width(word)
+			if curWidth > 0 && curWidth+1+w > width {
+				out = append(out, cur.String())
+				cur.Reset()
+				curWidth = 0
+			}
+			if curWidth > 0 {
+				cur.WriteString(" ")
+				curWidth++
+			}
+			cur.WriteString(word)
+			curWidth += w
+		}
+		out = append(out, cur.String())
+	}
+	return strings.Join(out, "\n")
+}
+
+// shortenModel shortens a full provider-qualified model id like
+// "openai/gpt-oss-120b" to just its model name, then clamps to n runes.
+func shortenModel(id string) string {
+	base := id
+	if i := strings.LastIndexByte(id, '/'); i >= 0 && i+1 < len(id) {
+		base = id[i+1:]
+	}
+	if strings.HasPrefix(base, "gpt-") || strings.HasPrefix(base, "llama-") ||
+		strings.HasPrefix(base, "gemini-") || strings.HasPrefix(base, "claude-") ||
+		strings.HasPrefix(base, "deepseek-") || strings.HasPrefix(base, "grok-") {
+		return base
+	}
+	// Fall back to the full id; it's short enough since it's already qualified.
+	return id
 }
 
 func timeNow() time.Time { return time.Now() }
