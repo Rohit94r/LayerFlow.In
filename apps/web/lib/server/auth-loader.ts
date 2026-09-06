@@ -1,7 +1,7 @@
 import { config as loadEnv } from "dotenv";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import type { Auth } from "@/apps/api/src/auth";
+import type { Auth } from "@layerflow/api/src/auth";
 
 /**
  * Server-side Better Auth loader shared by the Next.js auth route and
@@ -23,8 +23,13 @@ function ensureAuthEnv(): void {
   }
   if (process.env.LAYERFLOW_API_ENV_LOADED === "1") return;
   process.env.LAYERFLOW_API_ENV_LOADED = "1";
-  const envPath = resolve(process.cwd(), "apps/api/.env");
-  if (existsSync(envPath)) {
+  // Local dev env lives in apps/api/.env (cwd = apps/web → one level up);
+  // the second candidate covers running Next from the repo root.
+  const envPath = [
+    resolve(process.cwd(), "../api/.env"),
+    resolve(process.cwd(), "apps/api/.env"),
+  ].find((p) => existsSync(p));
+  if (envPath) {
     loadEnv({ path: envPath });
   }
   if (process.env.WEB_URL?.trim()) {
@@ -39,7 +44,7 @@ export function loadAuth(): Promise<Auth> {
   if (!authPromise) {
     authPromise = (async () => {
       ensureAuthEnv();
-      const { auth } = await import("@/apps/api/src/auth/index");
+      const { auth } = await import("@layerflow/api/src/auth/index");
       return auth;
     })();
   }

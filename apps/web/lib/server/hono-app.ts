@@ -27,8 +27,14 @@ function ensureLocalAuthEnv() {
   if (process.env.VERCEL === "1") return;
   if (process.env.LAYERFLOW_API_ENV_LOADED === "1") return;
   process.env.LAYERFLOW_API_ENV_LOADED = "1";
-  const envPath = resolve(process.cwd(), "apps/api/.env");
-  if (existsSync(envPath)) {
+  // Local dev env lives in apps/api/.env. Next runs with cwd = apps/web
+  // (workspace), so the file sits one level up; the second candidate covers
+  // running Next from the repo root (e.g. `next dev apps/web`).
+  const envPath = [
+    resolve(process.cwd(), "../api/.env"),
+    resolve(process.cwd(), "apps/api/.env"),
+  ].find((p) => existsSync(p));
+  if (envPath) {
     loadEnv({ path: envPath });
   }
   if (process.env.WEB_URL?.trim()) {
@@ -45,7 +51,7 @@ export function getHonoApp(): Promise<HonoFetchApp> {
     appPromise = (async () => {
       ensureLocalAuthEnv();
       ensureVercelAuthEnv();
-      const { createApp } = await import("../../apps/api/src/app");
+      const { createApp } = await import("@layerflow/api/src/app");
       return createApp();
     })();
   }
