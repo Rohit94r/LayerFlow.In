@@ -37,10 +37,12 @@ const nextConfig = {
   // Serve terminal/scripts/install.sh at https://layerflow.dev/install and
   // terminal/scripts/install.ps1 at https://layerflow.dev/install.ps1.
   // Force-include them in the serverless bundle so the routes never 404 on Vercel.
+  // Paths are relative to this web app (apps/web), so the scripts sit two
+  // levels up in the repo tree.
   outputFileTracingIncludes: {
-    "/install": ["./terminal/scripts/install.sh"],
-    "/install.sh": ["./terminal/scripts/install.sh"],
-    "/install.ps1": ["./terminal/scripts/install.ps1"],
+    "/install": ["../../terminal/scripts/install.sh"],
+    "/install.sh": ["../../terminal/scripts/install.sh"],
+    "/install.ps1": ["../../terminal/scripts/install.ps1"],
   },
 };
 

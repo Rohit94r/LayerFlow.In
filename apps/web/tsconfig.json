@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@layerflow/api/src/*": [
+        "../api/src/*"
       ]
     }
   },
