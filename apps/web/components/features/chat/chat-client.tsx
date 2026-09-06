@@ -174,7 +174,9 @@ export function ChatClient() {
   const contentRef = useRef("");
   const streamAbortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
   const nearBottomRef = useRef(true);
+  const wasStreamingRef = useRef(false);
 
   const streaming = stream !== null;
   const currentModel = active?.defaultModel ?? null;
@@ -237,6 +239,20 @@ export function ChatClient() {
       el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 4 && stream ? "smooth" : "auto" });
     }
   }, [messages, stream?.content]);
+
+  // When a stream finishes, the TypingIndicator unmounts and the final message
+  // bubble re-renders, which shifts scrollHeight and can leave the viewport a
+  // few pixels short. Force the bottom sentinel into view after the paint so
+  // the latest answer is always fully visible.
+  useEffect(() => {
+    if (wasStreamingRef.current && !stream) {
+      const el = bottomRef.current;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }
+    wasStreamingRef.current = Boolean(stream);
+  }, [stream]);
 
   const onScroll = () => {
     const el = scrollRef.current;
@@ -653,6 +669,7 @@ export function ChatClient() {
                 )}
                 {streaming ? <span role="status" className="sr-only">AI is generating a response</span> : null}
                 {streaming ? <TypingIndicator /> : null}
+                <div ref={bottomRef} className="h-px" aria-hidden="true" />
               </div>
             </div>
 
