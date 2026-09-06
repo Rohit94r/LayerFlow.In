@@ -144,6 +144,40 @@ export const MODELS: readonly ModelInfo[] = [
     capabilities: ALL_CAPS,
   },
 
+  // --- Groq (hosted open models) ---
+  {
+    id: "openai/gpt-oss-120b",
+    provider: "groq",
+    displayName: "GPT-OSS 120B (Groq)",
+    inputPricePerMTokMicro: 150_000,
+    outputPricePerMTokMicro: 600_000,
+    cachedInputPricePerMTokMicro: 75_000,
+    contextWindow: 131_072,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "openai/gpt-oss-20b",
+    provider: "groq",
+    displayName: "GPT-OSS 20B (Groq)",
+    inputPricePerMTokMicro: 75_000,
+    outputPricePerMTokMicro: 300_000,
+    cachedInputPricePerMTokMicro: 37_500,
+    contextWindow: 131_072,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
+  {
+    id: "llama-3.3-70b-versatile",
+    provider: "groq",
+    displayName: "Llama 3.3 70B (Groq)",
+    inputPricePerMTokMicro: 590_000,
+    outputPricePerMTokMicro: 790_000,
+    contextWindow: 128_000,
+    maxOutputTokens: 32_768,
+    capabilities: TEXT_CAPS,
+  },
+
   // --- Google ---
   {
     id: "gemini-flash-latest",
@@ -190,40 +224,6 @@ export const MODELS: readonly ModelInfo[] = [
     contextWindow: 64_000,
     maxOutputTokens: 64_000,
     capabilities: { streaming: true, toolCalling: false, vision: false, reasoning: true },
-  },
-
-  // --- Groq (hosted open models) ---
-  {
-    id: "llama-3.3-70b-versatile",
-    provider: "groq",
-    displayName: "Llama 3.3 70B (Groq)",
-    inputPricePerMTokMicro: 590_000,
-    outputPricePerMTokMicro: 790_000,
-    contextWindow: 128_000,
-    maxOutputTokens: 32_768,
-    capabilities: TEXT_CAPS,
-  },
-  {
-    id: "openai/gpt-oss-120b",
-    provider: "groq",
-    displayName: "GPT-OSS 120B (Groq)",
-    inputPricePerMTokMicro: 150_000,
-    outputPricePerMTokMicro: 600_000,
-    cachedInputPricePerMTokMicro: 75_000,
-    contextWindow: 131_072,
-    maxOutputTokens: 32_768,
-    capabilities: TEXT_CAPS,
-  },
-  {
-    id: "openai/gpt-oss-20b",
-    provider: "groq",
-    displayName: "GPT-OSS 20B (Groq)",
-    inputPricePerMTokMicro: 75_000,
-    outputPricePerMTokMicro: 300_000,
-    cachedInputPricePerMTokMicro: 37_500,
-    contextWindow: 131_072,
-    maxOutputTokens: 32_768,
-    capabilities: TEXT_CAPS,
   },
 
   // --- xAI ---
