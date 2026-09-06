@@ -27,6 +27,7 @@ export const FALLBACK_PICKER_MODELS: PickerModel[] = [
   { id: "claude-3-5-haiku", provider: "anthropic", label: "Claude 3.5 Haiku", kind: "cheap" },
   { id: "deepseek-chat", provider: "deepseek", label: "DeepSeek Chat", kind: "cheap" },
   { id: "openai/gpt-oss-120b", provider: "groq", label: "GPT-OSS 120B (Groq)", kind: "cheap" },
+  { id: "openrouter/auto", provider: "openrouter", label: "OpenRouter Auto", kind: "balanced" },
   { id: "grok-3-mini", provider: "xai", label: "Grok 3 mini", kind: "cheap" },
   { id: "grok-3", provider: "xai", label: "Grok 3", kind: "flagship" },
   { id: "kimi-k2", provider: "kimi", label: "Kimi K2", kind: "balanced" },

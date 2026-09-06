@@ -146,23 +146,23 @@ export const MODELS: readonly ModelInfo[] = [
 
   // --- Google ---
   {
-    id: "gemini-3.1-pro-preview",
-    provider: "google",
-    displayName: "Gemini 3.1 Pro",
-    inputPricePerMTokMicro: 2_000_000,
-    outputPricePerMTokMicro: 12_000_000,
-    cachedInputPricePerMTokMicro: 200_000,
-    contextWindow: 1_048_576,
-    maxOutputTokens: 65_536,
-    capabilities: REASONING_CAPS,
-  },
-  {
     id: "gemini-flash-latest",
     provider: "google",
     displayName: "Gemini Flash",
     inputPricePerMTokMicro: 300_000,
     outputPricePerMTokMicro: 2_500_000,
     cachedInputPricePerMTokMicro: 75_000,
+    contextWindow: 1_048_576,
+    maxOutputTokens: 65_536,
+    capabilities: REASONING_CAPS,
+  },
+  {
+    id: "gemini-3.1-pro-preview",
+    provider: "google",
+    displayName: "Gemini 3.1 Pro",
+    inputPricePerMTokMicro: 2_000_000,
+    outputPricePerMTokMicro: 12_000_000,
+    cachedInputPricePerMTokMicro: 200_000,
     contextWindow: 1_048_576,
     maxOutputTokens: 65_536,
     capabilities: REASONING_CAPS,
@@ -268,6 +268,18 @@ export const MODELS: readonly ModelInfo[] = [
     contextWindow: 200_000,
     maxOutputTokens: 65_536,
     capabilities: { streaming: true, toolCalling: true, vision: false, reasoning: true },
+  },
+
+  // --- OpenRouter (router across many vendors) ---
+  {
+    id: "openrouter/auto",
+    provider: "openrouter",
+    displayName: "OpenRouter Auto",
+    inputPricePerMTokMicro: 2_000_000,
+    outputPricePerMTokMicro: 8_000_000,
+    contextWindow: 200_000,
+    maxOutputTokens: 32_768,
+    capabilities: ALL_CAPS,
   },
 
   // --- OpenCode Zen ---

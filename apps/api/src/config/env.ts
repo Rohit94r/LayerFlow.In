@@ -56,6 +56,8 @@ export const envSchema = z.object({
   /** xAI (Grok). */
   XAI_API_KEY: z.string().optional(),
   XAI_MODEL: z.string().optional(),
+  /** OpenRouter — OpenAI-compatible router for many vendors. */
+  OPENROUTER_API_KEY: z.string().optional(),
   /** ElevenLabs — reserved for future audio / sound-effect features. */
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(),

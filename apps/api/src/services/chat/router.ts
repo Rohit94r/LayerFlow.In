@@ -51,6 +51,7 @@ export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   { model: "gpt-4o-mini", provider: "openai" },
   { model: "gemini-flash-latest", provider: "google" },
   { model: "openai/gpt-oss-120b", provider: "groq" },
+  { model: "openrouter/auto", provider: "openrouter" },
   { model: "grok-3-mini", provider: "xai" },
   { model: "deepseek-chat", provider: "deepseek" },
   { model: "kimi-k2", provider: "kimi" },
