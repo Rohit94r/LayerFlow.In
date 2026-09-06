@@ -365,8 +365,8 @@ gatewayRouter.post("/chat/completions", async (c) => {
     return c.json(completion);
   } catch (err) {
     await releaseBudget({ reservationId: reservation.reservationId });
-    const status = err instanceof AppError ? err.status : 500;
-    const code = err instanceof AppError ? err.code : "internal_error";
+    const status = err instanceof AppError ? err.status : 502;
+    const code = err instanceof AppError ? err.code : "provider_error";
     await writeGatewayLog({
       workspaceId,
       apiKeyId,
@@ -378,7 +378,9 @@ gatewayRouter.post("/chat/completions", async (c) => {
       errorCode: code,
       requestId,
     });
-    throw err;
+    throw err instanceof AppError
+      ? err
+      : new AppError(status, code, err instanceof Error ? err.message : "provider error");
   }
 });
 
