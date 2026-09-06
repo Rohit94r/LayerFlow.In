@@ -20,6 +20,9 @@ func init() {
 	_ = Register(&CreatePatchTool{})
 	_ = Register(&RunCommandTool{})
 	_ = Register(&OpenEditorTool{})
+	_ = Register(&GitStatusTool{})
+	_ = Register(&GitPullTool{})
+	_ = Register(&GitPushTool{})
 }
 
 // ---------------------------------------------------------------------------

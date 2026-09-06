@@ -4,10 +4,14 @@ package session
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/layerflow/terminal/internal/cloud"
 )
 
 // Session represents a conversation session.
@@ -34,6 +38,7 @@ type Message struct {
 	Role         string // system, user, assistant, tool
 	Content      string
 	ToolCallID   string
+	ToolCalls    []cloud.ToolCall
 	Model        string
 	Provider     string
 	InputTokens  int
@@ -240,7 +245,7 @@ func (s *SQLStore) Branch(ctx context.Context, sessionID string, title string) (
 
 	// Copy messages from parent to branch.
 	rows, err := tx.QueryContext(ctx, `
-		SELECT id, role, content, tool_call_id, model, provider,
+		SELECT id, role, content, tool_call_id, tool_calls, model, provider,
 			input_tokens, output_tokens, created_at, edited_at, hidden,
 			op_id, device_id, op_tick, sync_state
 		FROM messages WHERE session_id = ?
@@ -253,22 +258,25 @@ func (s *SQLStore) Branch(ctx context.Context, sessionID string, title string) (
 
 	for rows.Next() {
 		var m Message
+		var toolCallsJSON string
 		if err := rows.Scan(
-			&m.ID, &m.Role, &m.Content, &m.ToolCallID, &m.Model, &m.Provider,
+			&m.ID, &m.Role, &m.Content, &m.ToolCallID, &toolCallsJSON, &m.Model, &m.Provider,
 			&m.InputTokens, &m.OutputTokens, &m.CreatedAt, &m.EditedAt, &m.Hidden,
 			&m.OpID, &m.DeviceID, &m.OpTick, &m.SyncState,
 		); err != nil {
 			return nil, err
 		}
+		m.ToolCalls = decodeToolCalls(toolCallsJSON)
 		m.ID = uuid.New().String()
 		m.SessionID = branch.ID
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO messages (id, session_id, role, content, tool_call_id, model, provider,
+			INSERT INTO messages (id, session_id, role, content, tool_call_id, tool_calls, model, provider,
 				input_tokens, output_tokens, created_at, edited_at, hidden,
 				op_id, device_id, op_tick, sync_state)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.SessionID, m.Role, m.Content, m.ToolCallID, m.Model, m.Provider,
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			m.ID, m.SessionID, m.Role, m.Content, m.ToolCallID, encodeToolCalls(m.ToolCalls),
+			m.Model, m.Provider,
 			m.InputTokens, m.OutputTokens, m.CreatedAt, m.EditedAt, m.Hidden,
 			m.OpID, m.DeviceID, m.OpTick, m.SyncState,
 		)
@@ -281,6 +289,30 @@ func (s *SQLStore) Branch(ctx context.Context, sessionID string, title string) (
 	}
 
 	return branch, tx.Commit()
+}
+
+// encodeToolCalls serializes an assistant's function calls to a TEXT column.
+func encodeToolCalls(tcs []cloud.ToolCall) string {
+	if len(tcs) == 0 {
+		return ""
+	}
+	b, err := json.Marshal(tcs)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+// decodeToolCalls parses the ToolCalls stored in a message.
+func decodeToolCalls(s string) []cloud.ToolCall {
+	if strings.TrimSpace(s) == "" {
+		return nil
+	}
+	var tcs []cloud.ToolCall
+	if err := json.Unmarshal([]byte(s), &tcs); err != nil {
+		return nil
+	}
+	return tcs
 }
 
 // Restore re-creates a session from its branch history by walking the parent chain.
@@ -306,11 +338,12 @@ func (s *SQLStore) AddMessage(ctx context.Context, m *Message) error {
 	}
 
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO messages (id, session_id, role, content, tool_call_id, model, provider,
+		INSERT INTO messages (id, session_id, role, content, tool_call_id, tool_calls, model, provider,
 			input_tokens, output_tokens, created_at, edited_at, hidden,
 			op_id, device_id, op_tick, sync_state)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		m.ID, m.SessionID, m.Role, m.Content, m.ToolCallID, m.Model, m.Provider,
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		m.ID, m.SessionID, m.Role, m.Content, m.ToolCallID, encodeToolCalls(m.ToolCalls),
+		m.Model, m.Provider,
 		m.InputTokens, m.OutputTokens, m.CreatedAt, m.EditedAt, m.Hidden,
 		m.OpID, m.DeviceID, m.OpTick, m.SyncState,
 	)
@@ -324,7 +357,7 @@ func (s *SQLStore) GetMessages(ctx context.Context, sessionID string, limit int)
 	}
 
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT id, session_id, role, content, tool_call_id, model, provider,
+		SELECT id, session_id, role, content, tool_call_id, tool_calls, model, provider,
 			input_tokens, output_tokens, created_at, edited_at, hidden,
 			op_id, device_id, op_tick, sync_state
 		FROM messages WHERE session_id = ? AND hidden = 0
@@ -338,13 +371,16 @@ func (s *SQLStore) GetMessages(ctx context.Context, sessionID string, limit int)
 	var messages []Message
 	for rows.Next() {
 		var m Message
+		var toolCallsJSON string
 		if err := rows.Scan(
-			&m.ID, &m.SessionID, &m.Role, &m.Content, &m.ToolCallID, &m.Model, &m.Provider,
+			&m.ID, &m.SessionID, &m.Role, &m.Content, &m.ToolCallID, &toolCallsJSON,
+			&m.Model, &m.Provider,
 			&m.InputTokens, &m.OutputTokens, &m.CreatedAt, &m.EditedAt, &m.Hidden,
 			&m.OpID, &m.DeviceID, &m.OpTick, &m.SyncState,
 		); err != nil {
 			return nil, err
 		}
+		m.ToolCalls = decodeToolCalls(toolCallsJSON)
 		messages = append(messages, m)
 	}
 	return messages, rows.Err()

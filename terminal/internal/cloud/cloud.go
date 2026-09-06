@@ -61,8 +61,39 @@ func PickAvailableModel(ctx context.Context, c *Client, preferred string) string
 
 // Message is a single chat message in gateway format.
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role         string           `json:"role"`
+	Content      string           `json:"content"`
+	ToolCallID   string           `json:"tool_call_id,omitempty"`
+	ToolCalls    []ToolCall       `json:"tool_calls,omitempty"`
+}
+
+// ToolCall is an OpenAI-shaped function invocation.
+type ToolCall struct {
+	ID       string `json:"id"`
+	Type     string `json:"type"`
+	Function struct {
+		Name      string `json:"name"`
+		Arguments string `json:"arguments"`
+	} `json:"function"`
+}
+
+// Tool is an OpenAI-shaped function definition advertised to the model.
+type Tool struct {
+	Type     string `json:"type"`
+	Function struct {
+		Name        string         `json:"name"`
+		Description string         `json:"description"`
+		Parameters  map[string]any `json:"parameters"`
+	} `json:"function"`
+}
+
+// NewFunctionTool builds a Tool from a function name/description/schema.
+func NewFunctionTool(name, description string, parameters map[string]any) Tool {
+	t := Tool{Type: "function"}
+	t.Function.Name = name
+	t.Function.Description = description
+	t.Function.Parameters = parameters
+	return t
 }
 
 // ChatOptions configures a chat completions call.
@@ -71,6 +102,7 @@ type ChatOptions struct {
 	Messages  []Message
 	MaxTokens *int
 	Stream    bool
+	Tools     []Tool
 }
 
 // ChatResponse is the OpenAI-shaped non-streamed completion response.
@@ -194,9 +226,21 @@ func (c *Client) Chat(ctx context.Context, opts ChatOptions) (*ChatResponse, err
 }
 
 // ChatStream streams an SSE chat completion, invoking onDelta for each
-// content delta. The returned ChatResponse carries the streamed content and
-// usage (when the gateway includes it).
+// content delta and onToolCall for each completed function call. The returned
+// ChatResponse carries the streamed content, tool calls, and usage (when the
+// gateway includes them).
 func (c *Client) ChatStream(ctx context.Context, opts ChatOptions, onDelta func(string)) (*ChatResponse, error) {
+	return c.ChatStreamFull(ctx, opts, StreamHandlers{OnDelta: onDelta})
+}
+
+// StreamHandlers carries optional callbacks for streamed events.
+type StreamHandlers struct {
+	OnDelta    func(string)
+	OnToolCall func(ToolCall)
+}
+
+// ChatStreamFull is the streaming variant with full event callbacks.
+func (c *Client) ChatStreamFull(ctx context.Context, opts ChatOptions, h StreamHandlers) (*ChatResponse, error) {
 	if len(opts.Messages) == 0 {
 		return nil, errors.New("no messages to send")
 	}
@@ -228,6 +272,9 @@ func (c *Client) ChatStream(ctx context.Context, opts ChatOptions, onDelta func(
 
 	out := &ChatResponse{Object: "chat.completion", Model: opts.Model}
 	var content strings.Builder
+	// Sparse accumulator keyed by tool-call index → ToolCall, because OpenAI
+	// streams id+name in a leading chunk and arguments across subsequent ones.
+	var toolIdx map[int]*ToolCall
 
 	scanner := bufio.NewScanner(resp.Body)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1*1024*1024)
@@ -244,7 +291,16 @@ func (c *Client) ChatStream(ctx context.Context, opts ChatOptions, onDelta func(
 		var chunk struct {
 			Choices []struct {
 				Delta struct {
-					Content string `json:"content"`
+					Content   string     `json:"content"`
+					ToolCalls []struct {
+						Index    int    `json:"index"`
+						ID       string `json:"id"`
+						Type     string `json:"type"`
+						Function struct {
+							Name      string `json:"name"`
+							Arguments string `json:"arguments"`
+						} `json:"function"`
+					} `json:"tool_calls"`
 				} `json:"delta"`
 				FinishReason *string `json:"finish_reason"`
 			} `json:"choices"`
@@ -276,8 +332,29 @@ func (c *Client) ChatStream(ctx context.Context, opts ChatOptions, onDelta func(
 			delta := chunk.Choices[0].Delta.Content
 			if delta != "" {
 				content.WriteString(delta)
-				if onDelta != nil {
-					onDelta(delta)
+				if h.OnDelta != nil {
+					h.OnDelta(delta)
+				}
+			}
+			if len(chunk.Choices[0].Delta.ToolCalls) > 0 {
+				if toolIdx == nil {
+					toolIdx = make(map[int]*ToolCall)
+				}
+				for _, raw := range chunk.Choices[0].Delta.ToolCalls {
+					tc := toolIdx[raw.Index]
+					if tc == nil {
+						tc = &ToolCall{Type: "function"}
+						toolIdx[raw.Index] = tc
+					}
+					if raw.ID != "" {
+						tc.ID = raw.ID
+					}
+					if raw.Function.Name != "" {
+						tc.Function.Name += raw.Function.Name
+					}
+					if raw.Function.Arguments != "" {
+						tc.Function.Arguments += raw.Function.Arguments
+					}
 				}
 			}
 		}
@@ -291,12 +368,24 @@ func (c *Client) ChatStream(ctx context.Context, opts ChatOptions, onDelta func(
 		return nil, fmt.Errorf("read stream: %w", err)
 	}
 
+	var toolCalls []ToolCall
+	for i := 0; i < len(toolIdx); i++ {
+		if tc := toolIdx[i]; tc != nil && tc.ID != "" && tc.Function.Name != "" {
+			toolCalls = append(toolCalls, *tc)
+		}
+	}
+	for _, tc := range toolCalls {
+		if h.OnToolCall != nil {
+			h.OnToolCall(tc)
+		}
+	}
+
 	out.Choices = []struct {
 		Index        int     `json:"index"`
 		Message      Message `json:"message"`
 		FinishReason string  `json:"finish_reason"`
 	}{
-		{Index: 0, Message: Message{Role: "assistant", Content: content.String()}, FinishReason: "stop"},
+		{Index: 0, Message: Message{Role: "assistant", Content: content.String(), ToolCalls: toolCalls}, FinishReason: "stop"},
 	}
 	return out, nil
 }
@@ -308,6 +397,9 @@ func (o ChatOptions) requestBody() map[string]any {
 	}
 	if o.MaxTokens != nil {
 		body["max_tokens"] = *o.MaxTokens
+	}
+	if len(o.Tools) > 0 {
+		body["tools"] = o.Tools
 	}
 	return body
 }
