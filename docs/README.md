@@ -6,10 +6,16 @@ docs. (Historical planning notes were removed; `git log` has them if needed.)
 ## Read in this order (new engineer onboarding, ~2 hours)
 
 1. **[../README.md](../README.md)** — what LayerFlow is, repo map, getting started.
-2. **[PRODUCT-STATUS.md](PRODUCT-STATUS.md)** — honest snapshot: every feature, what works, what's left, scores. Read this before touching anything.
-3. **[architecture.md](architecture.md)** — the three surfaces (web / API+worker / terminal) and how they connect.
-4. **[tech-stack.md](tech-stack.md)** — the full stack with versions.
-5. **[DEPLOYMENT.md](DEPLOYMENT.md)** — zero-to-production. The one remaining blocker (worker not running in prod) lives here.
+2. **[../ARCHITECTURE.md](../ARCHITECTURE.md)** — the full "where is what" code map. Start here when you don't know where something lives.
+3. **[PRODUCT-STATUS.md](PRODUCT-STATUS.md)** — honest snapshot: every feature, what works, what's left, scores. Read this before touching anything.
+4. **[architecture.md](architecture.md)** — the three surfaces (web / API+worker / terminal) and how they connect.
+5. **[tech-stack.md](tech-stack.md)** — the full stack with versions.
+6. **[DEPLOYMENT.md](DEPLOYMENT.md)** — zero-to-production. The one remaining blocker (worker not running in prod) lives here.
+
+## Sub-folders
+
+- `plans/` — dated planning/execution docs (historical, e.g. `2025-08-31-master-plan.md`).
+- `ops/` — ops runbooks (`docker-commands.md`).
 
 ## Reference
 

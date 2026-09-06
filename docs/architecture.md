@@ -88,4 +88,4 @@ npm test --workspace @layerflow/api          # API tests (PGlite + mocked Redis)
 npm run build      # Next.js production build
 ```
 
-The full dev loop is in `31August.md` -> "Daily dev loop".
+The full dev loop is in `docs/plans/2025-08-31-master-plan.md` -> "Daily dev loop".
