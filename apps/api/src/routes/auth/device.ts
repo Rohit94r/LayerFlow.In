@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { Context } from "hono";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
 import { redis } from "../../redis/client";
@@ -31,9 +32,20 @@ const tokenRequestSchema = z.object({
   grant_type: z.string().default("urn:ietf:params:oauth:grant-type:device_code"),
 });
 
+// The lf terminal sends form-urlencoded bodies (Go's client.PostForm),
+// while other clients send JSON. Parse both.
+async function readDeviceBody(c: Context<AppEnv>): Promise<Record<string, string | File>> {
+  const contentType = c.req.header("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    const raw = await c.req.text();
+    return raw ? JSON.parse(raw) : {};
+  }
+  return c.req.parseBody();
+}
+
 // POST /api/v1/auth/device — CLI requests a device code
 deviceAuthRouter.post("/device", async (c) => {
-  const body = deviceRequestSchema.parse(await c.req.json().catch(() => ({})));
+  const body = deviceRequestSchema.parse(await readDeviceBody(c).catch(() => ({})));
 
   const deviceCode = randomBytes(32).toString("hex");
   const userCode = randomBytes(3).toString("hex").toUpperCase();
@@ -65,7 +77,7 @@ deviceAuthRouter.post("/device", async (c) => {
 
 // POST /api/v1/auth/token — CLI polls for the token
 deviceAuthRouter.post("/token", async (c) => {
-  const body = tokenRequestSchema.parse(await c.req.json());
+  const body = tokenRequestSchema.parse(await readDeviceBody(c).catch(() => ({})));
 
   const raw = await redis.get(DEVICE_KEY(body.device_code));
   if (!raw) {
