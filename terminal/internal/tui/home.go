@@ -39,11 +39,13 @@ func newHomeInput() homeInput {
 var inputBoxStyle = lipgloss.NewStyle().
 	Border(roundBorder).
 	BorderForeground(ColorBorder).
+	Background(ColorBG).
 	Padding(0, 1)
 
 var inputBoxFocusedStyle = lipgloss.NewStyle().
 	Border(roundBorder).
 	BorderForeground(ColorAccent).
+	Background(ColorBG).
 	Padding(0, 1)
 
 // statusBarStyle is the compact bottom status line: a hairline top rule that
@@ -51,18 +53,17 @@ var inputBoxFocusedStyle = lipgloss.NewStyle().
 // on the near-black screen — no gray band.
 var statusBarStyle = lipgloss.NewStyle().
 	Foreground(ColorMuted).
+	Background(ColorBG).
 	BorderTop(true).
 	BorderStyle(lipgloss.NormalBorder()).
 	BorderForeground(ColorBorder).
 	Padding(0, 1)
 
-// contentWidth clamps the main content column to a comfortable reading
-// width: at most 100 columns and never wider than the terminal.
+// contentWidth returns the main content column width. Wider terminals get the
+// full usable width (minus a small edge margin) so the chat fills the screen;
+// content stays centered but no longer capped so nothing hugs a narrow gutter.
 func contentWidth(w int) int {
 	cw := w - 2
-	if cw > 100 {
-		cw = 100
-	}
 	if cw < 20 {
 		cw = 20
 	}
@@ -123,13 +124,7 @@ func (a *App) renderHome() string {
 // the home composer. It uses ~80% of the terminal width so the input is wide
 // and dominant, clamped to a comfortable maximum and never overflowing.
 func homeComposerBoxWidth(total int) int {
-	w := int(float64(total) * 0.8)
-	if w > 100 {
-		w = 100
-	}
-	if w < 30 && total > 2 {
-		w = total - 2
-	}
+	w := contentWidth(total)
 	if w < 12 {
 		w = 12
 	}

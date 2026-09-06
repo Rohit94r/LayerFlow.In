@@ -28,6 +28,7 @@ func (l *loginModel) View() string {
 	))
 	body = append(body, "")
 	body = append(body, styleMuted.Render("Paste your platform key (lf_live_…). It is stored in your OS keyring."))
+	body = append(body, styleMuted.Render("Tip: right-click or Ctrl+V to paste."))
 	body = append(body, "")
 
 	visible := showCaretTail(l.input, 42)

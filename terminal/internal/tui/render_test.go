@@ -366,8 +366,8 @@ func TestConversationScrollNoOverflow(t *testing.T) {
 		a.width, a.height = w, 24
 		a.screen = screenChat
 		var lines []string
-		for i := 0; i < 80; i++ {
-			lines = append(lines, fmt.Sprintf("line number %02d", i))
+		for i := 0; i < 400; i++ {
+			lines = append(lines, fmt.Sprintf("line number %03d", i))
 		}
 		a.messages = []session.Message{{Role: "assistant", Content: strings.Join(lines, "\n")}}
 		a.scrollOffset = 20

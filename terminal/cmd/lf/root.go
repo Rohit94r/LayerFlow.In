@@ -156,20 +156,19 @@ func newSessionsCmd() *cobra.Command {
 func newLoginCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "login",
-		Short: "Authenticate with LayerFlow (browser flow)",
+		Short: "Authenticate with LayerFlow (paste a platform key)",
 		Long: `Authenticate the CLI.
 
-By default this opens a browser device-code flow: approve on layerflow.dev and
-the CLI receives a platform key (lf_live_...). If the browser flow is
-unavailable, it falls back to pasting a platform key from the dashboard
-(API Keys → Platform keys). Pass --api-key (or set LF_API_KEY) to skip the
-browser flow and use a pasted/env key directly.`,
+By default this asks for a platform key (lf_live_...) that you paste from the
+dashboard (API Keys → Platform keys). Pass --browser to use the browser
+device-code flow instead: approve on layerflow.dev and the CLI receives a
+platform key automatically. Set LF_API_KEY to authenticate non-interactively.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			useAPIKey, _ := cmd.Flags().GetBool("api-key")
-			return performLogin(useAPIKey)
+			browser, _ := cmd.Flags().GetBool("browser")
+			return performLogin(browser)
 		},
 	}
-	cmd.Flags().Bool("api-key", false, "Skip the browser flow; use a pasted/env platform key")
+	cmd.Flags().Bool("browser", false, "Use the browser device-code flow instead of pasting a platform key")
 	return cmd
 }
 

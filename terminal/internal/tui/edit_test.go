@@ -36,6 +36,31 @@ func TestLineEditorPaste(t *testing.T) {
 	}
 }
 
+// TestLineEditorMultiRuneNoPaste covers Windows legacy consoles, where pasted
+// text arrives as a single KeyRunes key without the Paste flag.
+func TestLineEditorMultiRuneNoPaste(t *testing.T) {
+	e := newLineEditor("")
+	k := tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune("lf_live_windows_paste")})
+	if !e.handleKey(k) {
+		t.Fatal("multi-rune input should be inserted")
+	}
+	if got := e.Value(); got != "lf_live_windows_paste" {
+		t.Fatalf("value = %q, want full pasted text", got)
+	}
+}
+
+// TestLineEditorSpace ensures the KeySpace type inserts a space (Bubble Tea
+// does not deliver spaces as KeyRunes on some terminals/keymaps).
+func TestLineEditorSpace(t *testing.T) {
+	e := newLineEditor("")
+	if !e.handleKey(tea.KeyMsg(tea.Key{Type: tea.KeySpace})) {
+		t.Fatal("space should be inserted")
+	}
+	if got := e.Value(); got != " " {
+		t.Fatalf("value = %q, want a space", got)
+	}
+}
+
 // TestLineEditorInsertAtCursor ensures typing lands at the cursor, not the end.
 func TestLineEditorInsertAtCursor(t *testing.T) {
 	e := newLineEditor("good")
@@ -113,12 +138,19 @@ func TestLineEditorMultiByte(t *testing.T) {
 	}
 }
 
-// TestLineEditorIgnoredKeys verifies control/handled keys don't inject text.
+// TestLineEditorIgnoredKeys verifies control/navigation keys don't inject text.
 func TestLineEditorIgnoredKeys(t *testing.T) {
 	e := newLineEditor("")
-	for _, k := range []string{"enter", "esc", "up", "down", "tab"} {
-		if e.handleKey(tea.KeyMsg(tea.Key{Type: tea.KeyRunes, Runes: []rune(k)})) {
-			t.Fatalf("navigation key %q should not be inserted", k)
+	navigation := []tea.KeyMsg{
+		tea.KeyMsg(tea.Key{Type: tea.KeyEnter}),
+		tea.KeyMsg(tea.Key{Type: tea.KeyEsc}),
+		tea.KeyMsg(tea.Key{Type: tea.KeyUp}),
+		tea.KeyMsg(tea.Key{Type: tea.KeyDown}),
+		tea.KeyMsg(tea.Key{Type: tea.KeyTab}),
+	}
+	for _, k := range navigation {
+		if e.handleKey(k) {
+			t.Fatalf("navigation key %q should not be inserted", k.String())
 		}
 	}
 	if got := e.Value(); got != "" {

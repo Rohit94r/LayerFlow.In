@@ -16,22 +16,20 @@ import (
 	"github.com/layerflow/terminal/internal/config"
 )
 
-// performLogin authenticates the CLI. By default it uses the browser
-// device-code flow: the server mints a workspace API key on approval and
-// returns it as the OAuth access_token, which we store as the CLI's platform
-// key. If the device endpoint is unreachable or the user passes --api-key
-// (or sets LF_API_KEY), it falls back to pasting a platform key.
+// performLogin authenticates the CLI. By default it asks directly for a
+// pasted platform key (lf_live_...) — no device-code round-trip, so it works
+// on any terminal/os including Windows where browser popups are unreliable.
+// The browser device-code flow remains available behind --browser.
 //
 // There are two kinds of LayerFlow keys:
 //   - Platform keys (lf_live_...) — LayerFlow-hosted, billed through your
 //     plan. This is what the CLI uses.
 //   - Private own keys (BYOK) — your own provider accounts, managed in the
 //     dashboard (API Keys → Private own keys).
-func performLogin(useAPIKey bool) error {
-	// 1) Browser device-code flow (default) — the pro experience. Transparently
-	//    falls back to the API-key paste flow if the server endpoint is
-	//    unavailable or the user set LF_API_KEY / passed --api-key.
-	if !useAPIKey && strings.TrimSpace(os.Getenv("LF_API_KEY")) == "" {
+func performLogin(browser bool) error {
+	// 1) Optional browser device-code flow, only when --browser is passed and
+	//    no LF_API_KEY override is set.
+	if browser && strings.TrimSpace(os.Getenv("LF_API_KEY")) == "" {
 		a := auth.New()
 		if err := a.Login(); err != nil {
 			fmt.Fprintf(os.Stderr, "Browser login unavailable (%v); falling back to API key.\n", err)
@@ -40,7 +38,7 @@ func performLogin(useAPIKey bool) error {
 		}
 	}
 
-	// 2) API-key paste / env flow.
+	// 2) API-key paste / env flow (default).
 	key := strings.TrimSpace(os.Getenv("LF_API_KEY"))
 	if key == "" {
 		cfg, err := config.Load("")
@@ -57,7 +55,7 @@ func performLogin(useAPIKey bool) error {
 		key = strings.TrimSpace(scanner.Text())
 	}
 	if !strings.HasPrefix(key, "lf_live_") {
-		return errors.New("that does not look like a LayerFlow platform key (expected lf_live_…). Create one in the dashboard: API Keys → Platform keys, or run `lf login` for the browser flow")
+		return errors.New("that does not look like a LayerFlow platform key (expected lf_live_…). Create one in the dashboard: API Keys → Platform keys")
 	}
 	return finishLogin(key)
 }

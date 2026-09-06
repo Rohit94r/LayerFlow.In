@@ -92,12 +92,14 @@ func (a *App) renderChat() string {
 
 	conversation := a.renderConversation(colW, viewH)
 
-	// Pad the left/right so everything hugs a centered column.
+	// Pad the left/right so everything hugs a centered column, with the app
+	// background painted all the way to the screen edges so no terminal-colored
+	// gutter shows through on any platform (Windows included).
 	pad := (a.width - colW) / 2
 	if pad < 1 {
 		pad = 1
 	}
-	side := lipgloss.NewStyle().Padding(0, pad)
+	side := lipgloss.NewStyle().Padding(0, pad).Background(ColorBG)
 
 	body := lipgloss.JoinVertical(lipgloss.Left,
 		side.Render(header),
@@ -162,6 +164,7 @@ func (a *App) renderChatHeader(w int) string {
 		BorderBottom(true).
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(ColorBorder).
+		Background(ColorBG).
 		Padding(0, 1).
 		Render(line)
 }
@@ -283,10 +286,13 @@ func (a *App) renderConversation(w, maxH int) string {
 	}
 
 	// Width(w).Padding(0,4) → total block = w, text area = w-8. Messages
-	// above were wrapped at w-8, so they fit exactly inside the padding.
+	// above were wrapped at w-8, so they fit exactly inside the padding. The
+	// explicit background keeps the gutters black instead of the terminal's
+	// default color on every platform.
 	content := lipgloss.NewStyle().
 		Width(w).
 		Padding(0, 4).
+		Background(ColorBG).
 		Render(joined)
 	return content
 }
@@ -299,7 +305,7 @@ func (a *App) renderChatWelcome(w, maxH int) string {
 		styleChip.Render("enter send"),
 	)
 	row := lipgloss.NewStyle().Width(w).Align(lipgloss.Center).Render(hint)
-	return lipgloss.NewStyle().Height(maxH).Width(w).Padding(0, 4).Render(row)
+	return lipgloss.NewStyle().Height(maxH).Width(w).Padding(0, 4).Background(ColorBG).Render(row)
 }
 
 // renderRoleUser builds the "You" role line with a leading accent tick.
@@ -1042,6 +1048,13 @@ func (a *App) runSlashCommand(input string) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 		a.messages = append(a.messages, session.Message{Role: "system", Content: "plain:" + out})
+		return a, nil
+	}
+
+	// /login is a paste-overlay, not the browser device-code flow: we own the
+	// whole experience here (Windows terminals can't open browsers reliably).
+	if len(parts) > 0 && parts[0] == "login" {
+		a.openLogin()
 		return a, nil
 	}
 

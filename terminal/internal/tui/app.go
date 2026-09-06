@@ -269,6 +269,23 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		return a, nil
 
+	case tea.MouseMsg:
+		// Mouse wheel scrolls the chat conversation (only meaningful there).
+		if a.overlay == overlayNone && a.screen == screenChat {
+			switch msg.Button {
+			case tea.MouseButtonWheelUp:
+				a.scrollOffset += scrollStep
+				return a, nil
+			case tea.MouseButtonWheelDown:
+				a.scrollOffset -= scrollStep
+				if a.scrollOffset < 0 {
+					a.scrollOffset = 0
+				}
+				return a, nil
+			}
+		}
+		return a, nil
+
 	case tickMsg:
 		a.cursorOn = !a.cursorOn
 		return a, a.tickCmd()

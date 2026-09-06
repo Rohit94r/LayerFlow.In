@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"strings"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -140,14 +142,27 @@ func (e *lineEditor) handleKey(key tea.KeyMsg) bool {
 		e.deleteForward()
 		return true
 	default:
-		// Regular single-char input: a printable rune typed at the cursor.
-		// This covers KeyRunes and the special KeySpace event (String()==" ").
-		// Multi-rune keys (navigational like "up"/"enter") and control bytes
-		// (DEL, NUL, …) fall through and are ignored.
-		s := key.String()
-		r := []rune(s)
-		if len(r) == 1 && r[0] >= ' ' {
-			e.insertRunes(s)
+		// Text input: Bubble Tea delivers normal typing as a single-rune
+		// KeyRunes event, and pasted text as one KeyRunes event carrying every
+		// rune — the Paste flag is often unset on Windows legacy consoles, so
+		// rely on the type, not the flag. Insert all printable runes at once.
+		// The KeySpace type inserts a space. Control/editorial keys (arrows,
+		// enter, esc, …) have their own types and never reach this branch.
+		switch key.Type {
+		case tea.KeyRunes:
+			var sb strings.Builder
+			for _, r := range key.Runes {
+				if r >= ' ' {
+					sb.WriteRune(r)
+				}
+			}
+			if sb.Len() == 0 {
+				return false
+			}
+			e.insertRunes(sb.String())
+			return true
+		case tea.KeySpace:
+			e.insertRunes(" ")
 			return true
 		}
 		return false
