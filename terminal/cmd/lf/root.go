@@ -497,9 +497,9 @@ func runDoctor(checkAudit bool) error {
 		}
 	}
 
-	// Keychain has a stored refresh token.
-	if auth.New().IsAuthenticated() {
-		reports = append(reports, report{"authentication", "refresh token present", nil, lvlPass})
+	// Keychain has a stored refresh token OR a platform API key.
+	if auth.New().IsAuthenticated() || (func() bool { k, err := auth.GetAPIKey(); return err == nil && strings.TrimSpace(k) != "" })() {
+		reports = append(reports, report{"authentication", "signed in", nil, lvlPass})
 	} else {
 		reports = append(reports, report{"authentication", "not signed in", errors.New("run `lf login`"), lvlWarn})
 	}

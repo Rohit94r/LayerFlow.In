@@ -146,12 +146,12 @@ export const MODELS: readonly ModelInfo[] = [
 
   // --- Google ---
   {
-    id: "gemini-2.5-pro",
+    id: "gemini-3.1-pro-preview",
     provider: "google",
-    displayName: "Gemini 2.5 Pro",
-    inputPricePerMTokMicro: 1_250_000,
-    outputPricePerMTokMicro: 10_000_000,
-    cachedInputPricePerMTokMicro: 312_500,
+    displayName: "Gemini 3.1 Pro",
+    inputPricePerMTokMicro: 2_000_000,
+    outputPricePerMTokMicro: 12_000_000,
+    cachedInputPricePerMTokMicro: 200_000,
     contextWindow: 1_048_576,
     maxOutputTokens: 65_536,
     capabilities: REASONING_CAPS,

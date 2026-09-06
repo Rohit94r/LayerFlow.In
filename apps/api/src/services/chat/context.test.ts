@@ -43,7 +43,7 @@ describe("token budget", () => {
     expect(tokenBudgetForModel("deepseek-chat")).toBe(CHEAP_CONTEXT_BUDGET_TOKENS);
     expect(tokenBudgetForModel("gemini-flash-latest")).toBe(CHEAP_CONTEXT_BUDGET_TOKENS);
     expect(tokenBudgetForModel("gpt-4o")).toBe(PREMIUM_CONTEXT_BUDGET_TOKENS);
-    expect(tokenBudgetForModel("gemini-2.5-pro")).toBe(PREMIUM_CONTEXT_BUDGET_TOKENS);
+    expect(tokenBudgetForModel("gemini-3.1-pro-preview")).toBe(PREMIUM_CONTEXT_BUDGET_TOKENS);
     expect(tokenBudgetForModel("claude-sonnet-4")).toBe(PREMIUM_CONTEXT_BUDGET_TOKENS);
   });
 

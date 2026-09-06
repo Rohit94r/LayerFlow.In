@@ -58,7 +58,7 @@ export const CHAT_MODEL_PRIORITY: { model: string; provider: Provider }[] = [
   // reachable in the chain or picking it fails with a misleading error.
   { model: "claude-3-5-haiku", provider: "anthropic" },
   { model: "gpt-4o", provider: "openai" },
-  { model: "gemini-2.5-pro", provider: "google" },
+  { model: "gemini-3.1-pro-preview", provider: "google" },
   { model: "claude-sonnet-4", provider: "anthropic" },
   { model: "grok-3", provider: "xai" },
 ];

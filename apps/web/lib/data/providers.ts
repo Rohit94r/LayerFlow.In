@@ -120,7 +120,7 @@ const BEST_FOR: Record<string, string> = {
   "claude-sonnet-4": "Best-in-class coding and careful analysis",
   "claude-opus-4": "Hardest reasoning and long-form writing",
   "claude-3-5-haiku": "Fast summaries, classification, drafts",
-  "gemini-2.5-pro": "Long-context reasoning (1M+ tokens)",
+  "gemini-3.1-pro-preview": "Long-context reasoning (1M+ tokens)",
   "gemini-flash-latest": "Summaries, extraction, cheap continuations",
   "deepseek-chat": "Cheap coding and reasoning",
   "deepseek-reasoner": "Deep chain-of-thought problems",
