@@ -22,6 +22,8 @@ export const chatCompletionsRequestSchema = z.object({
   stream: z.boolean().optional(),
   stop: z.union([z.string(), z.array(z.string())]).optional(),
   user: z.string().optional(),
+  /** OpenAI-shaped tool definitions for function calling. */
+  tools: z.array(z.unknown()).optional(),
   /** LayerFlow extension: optional project attribution for budget scopes. */
   project_id: z.string().optional(),
 });

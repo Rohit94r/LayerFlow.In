@@ -4,6 +4,7 @@ import type {
   ChatCompletionRequest,
   ChatCompletionResult,
   ChatCompletionStreamHandlers,
+  ChatToolCall,
   ProviderAdapter,
 } from "./types";
 import type { Provider } from "@layerflow/model-registry";
@@ -40,6 +41,7 @@ export function createOpenAICompatibleAdapter(opts: {
             stream: false,
             ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
+            ...(req.tools != null ? { tools: req.tools } : {}),
           }),
           ...(req.signal ? { signal: req.signal } : {}),
         });
@@ -66,14 +68,18 @@ export function createOpenAICompatibleAdapter(opts: {
         );
       }
 
-      const choices = body.choices as Array<{ message?: { content?: string | null } }> | undefined;
+      const choices = body.choices as
+        | Array<{ message?: { content?: string | null; tool_calls?: ChatToolCall[] } }>
+        | undefined;
       const content = choices?.[0]?.message?.content ?? "";
+      const toolCalls = choices?.[0]?.message?.tool_calls;
       const usage = body.usage as
         | { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
         | undefined;
 
       return {
         content: typeof content === "string" ? content : "",
+        tool_calls: Array.isArray(toolCalls) ? toolCalls : undefined,
         inputTokens: usage?.prompt_tokens ?? 0,
         outputTokens: usage?.completion_tokens ?? 0,
         latencyMs,
@@ -107,6 +113,7 @@ export function createOpenAICompatibleAdapter(opts: {
             stream_options: { include_usage: true },
             ...(req.temperature != null ? { temperature: req.temperature } : {}),
             ...(req.maxTokens != null ? { max_tokens: req.maxTokens } : {}),
+            ...(req.tools != null ? { tools: req.tools } : {}),
           }),
           ...(req.signal ? { signal: req.signal } : {}),
         });
@@ -134,23 +141,55 @@ export function createOpenAICompatibleAdapter(opts: {
       let usage:
         | { prompt_tokens?: number; completion_tokens?: number }
         | undefined;
+      // Tool calls stream as per-index deltas: a first chunk carries
+      // {index, id, function:{name}}, later chunks carry {index, function:{arguments}}.
+      // Accumulate per index and emit each call once its id + name are known.
+      const toolCalls: ChatToolCall[] = [];
 
       for await (const event of parseSseJson(res.body)) {
         const choices = event.choices as
-          | Array<{ delta?: { content?: string | null } }>
+          | Array<{ delta?: { content?: string | null; tool_calls?: unknown } }>
           | undefined;
-        const delta = choices?.[0]?.delta?.content;
-        if (typeof delta === "string" && delta.length > 0) {
-          content += delta;
-          await handlers.onDelta(delta);
+        const delta = choices?.[0]?.delta;
+        if (delta) {
+          if (typeof delta.content === "string" && delta.content.length > 0) {
+            content += delta.content;
+            await handlers.onDelta(delta.content);
+          }
+          if (Array.isArray(delta.tool_calls)) {
+            for (const raw of delta.tool_calls as Array<{
+              index?: number;
+              id?: string;
+              type?: string;
+              function?: { name?: string; arguments?: string };
+            }>) {
+              const i = raw.index ?? toolCalls.length;
+              const acc = (toolCalls[i] ??= {
+                id: "",
+                type: "function",
+                function: { name: "", arguments: "" },
+              });
+              if (raw.id) acc.id = raw.id;
+              if (raw.function?.name) acc.function.name += raw.function.name;
+              if (raw.function?.arguments) acc.function.arguments += raw.function.arguments;
+            }
+          }
         }
         if (event.usage) {
           usage = event.usage as { prompt_tokens?: number; completion_tokens?: number };
         }
       }
 
+      const settled = toolCalls.filter((tc) => tc.id !== "" && tc.function.name !== "");
+      if (settled.length > 0 && handlers.onToolCall) {
+        for (const tc of settled) {
+          await handlers.onToolCall(tc);
+        }
+      }
+
       return {
         content,
+        tool_calls: settled.length > 0 ? settled : undefined,
         inputTokens: usage?.prompt_tokens ?? 0,
         outputTokens: usage?.completion_tokens ?? 0,
         latencyMs: Date.now() - started,

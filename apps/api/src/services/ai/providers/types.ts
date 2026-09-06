@@ -7,8 +7,22 @@ import type { Provider } from "@layerflow/model-registry";
  */
 
 export interface ChatMessage {
-  role: "system" | "user" | "assistant";
+  role: "system" | "user" | "assistant" | "tool";
   content: string;
+  /** Present on assistant messages that emitted function calls. */
+  tool_calls?: Array<{ id: string; type: string; function: { name: string; arguments: string } }>;
+  /** Present on tool role messages; the id of the call being answered. */
+  tool_call_id?: string;
+}
+
+/** OpenAI-shaped function tool definition. */
+export interface ChatTool {
+  type: "function";
+  function: {
+    name: string;
+    description?: string;
+    parameters?: Record<string, unknown>;
+  };
 }
 
 export interface ChatCompletionRequest {
@@ -28,6 +42,8 @@ export interface ChatCompletionRequest {
   temperature?: number;
   /** Optional client abort signal — cancels the upstream provider request. */
   signal?: AbortSignal;
+  /** OpenAI-shaped function definitions (function calling). */
+  tools?: ChatTool[];
 }
 
 export interface ChatCompletionResult {
@@ -37,11 +53,25 @@ export interface ChatCompletionResult {
   latencyMs: number;
   /** Provider-native response body for debugging / storage. */
   raw?: unknown;
+  /** Function calls emitted by the model, when tool calling was requested. */
+  tool_calls?: ChatToolCall[];
+}
+
+/** A single function call argument (OpenAI-shaped). */
+export interface ChatToolCall {
+  id: string;
+  type: "function";
+  function: {
+    name: string;
+    arguments: string;
+  };
 }
 
 export interface ChatCompletionStreamHandlers {
   /** Called once per token/text delta, in order. */
   onDelta: (text: string) => void | Promise<void>;
+  /** Called once per completed function call when tool calling was requested. */
+  onToolCall?: (toolCall: ChatToolCall) => void | Promise<void>;
 }
 
 export interface ProviderAdapter {

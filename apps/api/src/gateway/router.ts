@@ -24,7 +24,11 @@ import { improvePrompt } from "../services/improve/improve";
 import { buildCurrentBudgetResponse } from "../services/budgets/current";
 import { getCurrentSubscription } from "../services/billing/dodo";
 import type { AppEnv } from "../types";
-import type { ChatMessage } from "../services/ai/providers/types";
+import type {
+  ChatTool,
+  ChatToolCall,
+  ChatMessage,
+} from "../services/ai/providers/types";
 
 export const gatewayRouter = new Hono<AppEnv>();
 
@@ -32,11 +36,15 @@ gatewayRouter.use(requireApiKey);
 gatewayRouter.use(rateLimit({ requestsPerMinute: 60 }));
 
 function toChatMessages(
-  messages: Array<{ role: string; content?: string | null | unknown }>,
+  messages: Array<{ role: string; content?: string | null | unknown; tool_calls?: unknown; tool_call_id?: string }>,
 ): ChatMessage[] {
   return messages.map((m) => ({
-    role: (m.role === "system" || m.role === "assistant" ? m.role : "user") as ChatMessage["role"],
+    role: (m.role === "system" || m.role === "assistant" || m.role === "tool"
+      ? m.role
+      : "user") as ChatMessage["role"],
     content: typeof m.content === "string" ? m.content : m.content == null ? "" : JSON.stringify(m.content),
+    ...(Array.isArray(m.tool_calls) ? { tool_calls: m.tool_calls as ChatMessage["tool_calls"] } : {}),
+    ...(m.tool_call_id != null ? { tool_call_id: m.tool_call_id } : {}),
   }));
 }
 
@@ -44,6 +52,8 @@ function toRunMessages(messages: ChatMessage[]): RunMessage[] {
   return messages.map((m) => ({
     role: m.role,
     content: m.content,
+    ...(Array.isArray(m.tool_calls) ? { tool_calls: m.tool_calls } : {}),
+    ...(m.tool_call_id != null ? { tool_call_id: m.tool_call_id } : {}),
   }));
 }
 
@@ -117,18 +127,44 @@ gatewayRouter.post("/chat/completions", async (c) => {
 
   const projectId = body.project_id ?? c.get("apiKeyProjectId") ?? null;
   const rawMessages = toChatMessages(body.messages);
+  const hasTools = Array.isArray(body.tools) && body.tools.length > 0;
 
-  // Gateway keeps the client-requested model (no Auto override) but still
-  // compresses + applies short-answer caps when Prefer-cheap / tokenSaver is on.
-  const prepared = await prepareRunCall({
-    workspaceId,
-    messages: toRunMessages(rawMessages),
-    requestedModel: body.model,
-    allowRouting: false,
-  });
+  // Tool-calling requests must pass messages through unmodified (compression /
+  // routing would corrupt the tool_calls ↔ tool result chain), and short-answer
+  // caps would truncate function arguments. Bypass the savings pipeline in that
+  // case and honor the client-requested model directly.
+  const prepared = hasTools
+    ? {
+        messages: toRunMessages(rawMessages),
+        model: body.model,
+        requestedModel: body.model,
+        routingReason: null,
+        maxTokens: undefined,
+        compress: {
+          messages: toRunMessages(rawMessages),
+          originalTokens: 0,
+          compressedTokens: 0,
+          tokensSaved: 0,
+          applied: false,
+          method: "none" as const,
+        },
+        settings: {
+          executionMode: "suggest" as const,
+          preferCheap: false,
+          tokenSaver: false,
+          defaultModel: body.model,
+        },
+        shortAnswers: false,
+      }
+    : await prepareRunCall({
+        workspaceId,
+        messages: toRunMessages(rawMessages),
+        requestedModel: body.model,
+        allowRouting: false,
+      });
 
   const model = prepared.model;
-  const messages = toChatMessages(prepared.messages);
+  const messages = hasTools ? rawMessages : toChatMessages(prepared.messages);
   const maxTokens = body.max_tokens ?? body.max_completion_tokens ?? prepared.maxTokens;
   const { provider, adapter } = resolveProviderFromModel(model);
 
@@ -140,6 +176,7 @@ gatewayRouter.post("/chat/completions", async (c) => {
     max_tokens: maxTokens,
     max_completion_tokens: body.max_completion_tokens,
     stop: body.stop,
+    ...(body.tools ? { tools: body.tools } : {}),
   });
 
   const cached = await getExactCache(workspaceId, cacheKey);
@@ -179,6 +216,9 @@ gatewayRouter.post("/chat/completions", async (c) => {
     messages,
     apiKey,
     ...(maxTokens != null ? { maxTokens } : {}),
+    ...(Array.isArray(body.tools) && body.tools.length > 0
+      ? { tools: body.tools as unknown as ChatTool[] }
+      : {}),
   };
 
   try {
@@ -210,13 +250,21 @@ gatewayRouter.post("/chat/completions", async (c) => {
             emit(makeChunk({ role: "assistant", content: "" }));
 
             let result;
+            const toolCalls: ChatToolCall[] = [];
             if (adapter.chatCompletionStream) {
               result = await adapter.chatCompletionStream(providerReq, {
                 onDelta: (text) => emit(makeChunk({ content: text })),
+                onToolCall: async (tc) => {
+                  toolCalls.push(tc);
+                  emit(makeChunk({ tool_calls: [tc] }));
+                },
               });
             } else {
               result = await adapter.chatCompletion(providerReq);
               if (result.content) emit(makeChunk({ content: result.content }));
+              if (result.tool_calls) {
+                toolCalls.push(...result.tool_calls);
+              }
             }
 
             const actualMicro =
@@ -336,8 +384,12 @@ gatewayRouter.post("/chat/completions", async (c) => {
       choices: [
         {
           index: 0,
-          message: { role: "assistant", content: result.content },
-          finish_reason: "stop",
+          message: {
+            role: "assistant",
+            content: result.content,
+            ...(result.tool_calls ? { tool_calls: result.tool_calls } : {}),
+          },
+          finish_reason: result.tool_calls ? "tool_calls" : "stop",
         },
       ],
       usage: {

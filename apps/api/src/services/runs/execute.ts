@@ -8,7 +8,9 @@ import { AppError } from "../../middleware/app-error";
 import {
   loadProviderApiKey,
   resolveProviderFromModel,
+  type ChatCompletionRequest,
   type ChatCompletionResult,
+  type ChatMessage,
   type ProviderAdapter,
 } from "../ai/providers";
 import { estimateTokens } from "../intelligence/analyze";
@@ -291,10 +293,16 @@ export async function executeRun(input: ExecuteRunInput): Promise<ExecuteRunResu
     throw new RunExecutionError(failed, status, code, message);
   }
 
-  const providerReq = {
+  const providerReq: ChatCompletionRequest = {
     apiKey,
     model,
-    messages,
+    // Normalize RunMessage → ChatMessage so optional tool fields stay intact.
+    messages: messages.map((m) => ({
+      role: m.role as ChatMessage["role"],
+      content: m.content,
+      ...(m.tool_calls ? { tool_calls: m.tool_calls as ChatMessage["tool_calls"] } : {}),
+      ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
+    })),
     ...(prepared.maxTokens != null ? { maxTokens: prepared.maxTokens } : {}),
   };
 

@@ -3,6 +3,7 @@ import { computeCostMicro, getModel, type Provider } from "@layerflow/model-regi
 import type { ChatMessageRecord } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { aiChatMessages, aiChatSessions } from "../../db/schema/chat";
+import type { ChatMessage } from "../ai/providers";
 import { providerKeys } from "../../db/schema/gateway";
 import { AppError } from "../../middleware/app-error";
 import { canUseManagedProvider } from "../../middleware/plan-limits";
@@ -176,7 +177,7 @@ async function runSingleCall(input: {
   workspaceId: string;
   provider: Provider;
   model: string;
-  messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+  messages: ChatMessage[];
   adapter: ProviderAdapter;
   payload: KeyPayload;
   signal?: AbortSignal;
@@ -365,7 +366,7 @@ export async function runChatMessage(input: {
   // Rebuilt once per provider in the chain so the system prompt always belongs
   // to the model actually answering (never the previously requested one).
   let builtForModel: string | null = null;
-  let builtMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> | null = null;
+  let builtMessages: ChatMessage[] | null = null;
 
   for (const choice of chain) {
     if (!getModel(choice.model)) continue;

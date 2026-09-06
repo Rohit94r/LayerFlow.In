@@ -9,8 +9,10 @@ export type RunStatus = z.infer<typeof runStatusSchema>;
 
 /** Workspace-run chat message (stricter than the gateway OpenAI-shaped variant). */
 export const runMessageSchema = z.object({
-  role: z.enum(["system", "user", "assistant"]),
+  role: z.enum(["system", "user", "assistant", "tool"]),
   content: z.string(),
+  tool_calls: z.array(z.unknown()).optional(),
+  tool_call_id: z.string().optional(),
 });
 
 export type RunMessage = z.infer<typeof runMessageSchema>;

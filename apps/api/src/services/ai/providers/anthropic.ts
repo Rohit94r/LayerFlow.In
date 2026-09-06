@@ -23,7 +23,9 @@ function toAnthropicPayload(req: ChatCompletionRequest): {
     if (msg.role === "system") {
       systemParts.push(msg.content);
     } else {
-      messages.push({ role: msg.role, content: msg.content });
+      // Tool results are provider-specific; fold them into a user turn so the
+      // conversation stays coherent when a tool request is routed to Anthropic.
+      messages.push({ role: msg.role === "assistant" ? "assistant" : "user", content: msg.content });
     }
   }
 
