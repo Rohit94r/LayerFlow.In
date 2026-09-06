@@ -11,11 +11,11 @@ is wired end-to-end today.
 
 Three surfaces share one backend:
 
-- **Web app** (Next.js 16, repo root) — dashboard for prompts, sessions, rescue
+- **Web app** (`apps/web`) — Next.js 16 dashboard for prompts, sessions, rescue
   reports, agent runs, budgets/usage, and BYOK keys. The shared Hono app is
   also mounted same-origin under `/api/*` and `/v1/*`
-  (`app/api/[[...route]]/route.ts`), so a separate API host is optional in
-  production.
+  (`apps/web/app/api/[[...route]]/route.ts`), so a separate API host is
+  optional in production.
 - **API + worker** (`apps/api`) — one TypeScript codebase with two entrypoints:
   a Hono HTTP API (`src/index.ts`) and a BullMQ job worker (`src/worker.ts`).
   Postgres (with pgvector) is the source of truth; Redis backs the job queue,
@@ -39,6 +39,20 @@ Feature areas, all backed by real API routes:
 | Terminal (`/api/v1/sync/*`) | CLI sync protocol — sessions, messages, memories and project notes pushed from `lf` to the dashboard |
 | Team (`/api/team`) | Members, roles (owner/admin/member), invitations and RBAC |
 | Community (`/api/collections`, `/api/profiles`, …) | Public prompt collections, profiles, follows, likes, comments, notifications |
+
+## Repository layout
+
+See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for the full "where is what" map.
+
+```
+├── apps/web/        Browser app (Next.js) — chat, agents, workspace, billing
+├── apps/api/        Backend — Hono API + BullMQ worker, Postgres/Redis
+├── packages/        Shared TS packages (contracts, model-registry)
+├── terminal/        `lf` Go CLI — TUI, agent tools, MCP, daemon
+├── docs/            Product + engineering docs (plans/, ops/)
+├── scripts/         Deploy + ops shell scripts
+└── docker-compose*.yml / render.yaml / Dockerfile — deployment
+```
 
 ## Status
 
