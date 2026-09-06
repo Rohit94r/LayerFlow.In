@@ -15,6 +15,7 @@ import (
 	"github.com/layerflow/terminal/internal/session"
 	"github.com/layerflow/terminal/internal/storage"
 	"github.com/layerflow/terminal/internal/sync"
+	toolsPkg "github.com/layerflow/terminal/internal/tools"
 )
 
 // runNonInteractive streams a single completion for the given query.
@@ -80,7 +81,7 @@ func runTask(task string, maxSteps int, model, provider string) error {
 		return fmt.Errorf("create session: %w", err)
 	}
 
-	runner := &chatRunner{db: db, store: store, client: client, model: m}
+	runner := &chatRunner{db: db, store: store, client: client, model: m, cwd: dir, policy: toolsPkg.PolicyFromConfig(cfg.Permissions)}
 
 	fmt.Printf("Running task with %s (max %d steps, single-shot)\n", m, maxSteps)
 
@@ -116,6 +117,15 @@ type chatRunner struct {
 	store  *session.SQLStore
 	client *cloud.Client
 	model  string
+	cwd    string
+
+	// ToolsEnabled turns on function calling + local tool execution for the
+	// interactive agent loop.
+	ToolsEnabled bool
+	// policy holds the per-tool approval policy resolved from config.
+	policy toolsPkg.PolicyMap
+	// interactive enables stdin prompting for permission decisions.
+	interactive bool
 }
 
 func runChat(opts chatOptions) error {
@@ -168,7 +178,7 @@ func runChat(opts chatOptions) error {
 		}
 	}
 
-	runner := &chatRunner{db: db, store: store, client: client, model: model}
+	runner := &chatRunner{db: db, store: store, client: client, model: model, cwd: dir, ToolsEnabled: true, policy: toolsPkg.PolicyFromConfig(cfg.Permissions), interactive: opts.interactive}
 
 	if q := strings.TrimSpace(opts.query); q != "" {
 		if sess.Title == "" || sess.Title == "lf chat" {
@@ -189,8 +199,9 @@ func runChat(opts chatOptions) error {
 	return runner.repl(ctx, sess)
 }
 
-// exchange sends one user message, streams the assistant reply, and persists
-// both sides of the conversation.
+// exchange sends one user message, runs the agent loop (streams the assistant
+// reply, executes any requested tools locally, then continues until the model
+// answers), and persists both sides of the conversation.
 func (r *chatRunner) exchange(ctx context.Context, sess *session.Session, text string) error {
 	userMsg := &session.Message{SessionID: sess.ID, Role: "user", Content: text, Model: r.model}
 	if err := r.store.AddMessage(ctx, userMsg); err != nil {
@@ -206,67 +217,146 @@ func (r *chatRunner) exchange(ctx context.Context, sess *session.Session, text s
 	}
 	prompt := make([]cloud.Message, 0, len(history))
 	for _, m := range history {
-		if m.Role == "tool" || m.Role == "function" {
+		if m.Role == "function" {
 			continue
 		}
-		prompt = append(prompt, cloud.Message{Role: m.Role, Content: m.Content})
+		msg := cloud.Message{Role: m.Role, Content: m.Content}
+		if m.Role == "assistant" && len(m.ToolCalls) > 0 {
+			msg.ToolCalls = m.ToolCalls
+		}
+		if m.Role == "tool" {
+			msg.ToolCallID = m.ToolCallID
+		}
+		prompt = append(prompt, msg)
 	}
 
-	fmt.Print("\n")
-	var out strings.Builder
-	resp, err := r.client.ChatStream(ctx, cloud.ChatOptions{Model: r.model, Messages: prompt}, func(d string) {
-		out.WriteString(d)
-		fmt.Print(d)
-	})
-	fmt.Print("\n")
-	if err != nil {
-		return err
+	var tools []cloud.Tool
+	if r.ToolsEnabled {
+		for _, spec := range toolsPkg.DescribeAll() {
+			tools = append(tools, cloud.NewFunctionTool(spec.Name, spec.Description, spec.Parameters))
+		}
 	}
 
-	reply := out.String()
-	if reply == "" && len(resp.Choices) > 0 {
-		reply = resp.Choices[0].Message.Content
+	// Agent loop: keep streaming until the model either stops (final answer) or
+	// returns no tool calls. Each tool round appends assistant tool_calls + tool
+	// results to the transcript and re-asks.
+	approve := func(spec toolsPkg.Spec, plan *toolsPkg.Plan) (bool, error) {
+		if !r.interactive {
+			return true, nil
+		}
+		fmt.Printf("\n  ⚙ %s — %s [y/N] ", spec.Name, plan.Description)
+		reader := bufio.NewReader(os.Stdin)
+		line, _ := reader.ReadString('\n')
+		line = strings.ToLower(strings.TrimSpace(line))
+		return line == "y" || line == "yes", nil
+	}
+	approver := r.policy.ApprovalFunc(approve)
+
+	maxToolRounds := 12
+	for round := 0; round < maxToolRounds; round++ {
+		fmt.Print("\n")
+		var out strings.Builder
+		resp, err := r.client.ChatStreamFull(ctx, cloud.ChatOptions{
+			Model:    r.model,
+			Messages: prompt,
+			Tools:    tools,
+		}, cloud.StreamHandlers{
+			OnDelta: func(d string) {
+				out.WriteString(d)
+				fmt.Print(d)
+			},
+		})
+		fmt.Print("\n")
+		if err != nil {
+			return err
+		}
+
+		var toolCalls []cloud.ToolCall
+		if resp != nil && len(resp.Choices) > 0 {
+			toolCalls = resp.Choices[0].Message.ToolCalls
+		}
+		reply := out.String()
+
+		if len(toolCalls) == 0 {
+			if reply == "" && resp != nil && len(resp.Choices) > 0 {
+				reply = resp.Choices[0].Message.Content
+			}
+
+			assistant := &session.Message{
+				SessionID:    sess.ID,
+				Role:         "assistant",
+				Content:      reply,
+				Model:        r.model,
+				InputTokens:  resp.Usage.PromptTokens,
+				OutputTokens: resp.Usage.CompletionTokens,
+			}
+			if resp.Model != "" {
+				assistant.Model = resp.Model
+			}
+			if err := r.store.AddMessage(ctx, assistant); err != nil {
+				return fmt.Errorf("save assistant message: %w", err)
+			}
+			if err := r.enqueue(ctx, sess.ID, "message", assistant.ID, assistant); err != nil {
+				fmt.Fprintf(os.Stderr, "  (journal skipped: %v)\n", err)
+			}
+			sess.InputTokens += resp.Usage.PromptTokens
+			sess.OutputTokens += resp.Usage.CompletionTokens
+			if err := r.store.Update(ctx, sess); err != nil {
+				return fmt.Errorf("update session: %w", err)
+			}
+			if err := r.enqueue(ctx, sess.ID, "session", sess.ID, sess); err != nil {
+				fmt.Fprintf(os.Stderr, "  (journal skipped: %v)\n", err)
+			}
+			if err := r.syncAfter(ctx); err != nil {
+				fmt.Fprintf(os.Stderr, "  (sync skipped: %v)\n", err)
+			}
+			if resp.Usage.TotalTokens > 0 {
+				fmt.Printf("\n  [%s · %d in / %d out tokens · saved to session %s]\n",
+					resp.Model, resp.Usage.PromptTokens, resp.Usage.CompletionTokens, sess.ID)
+			}
+			return nil
+		}
+
+		// Persist the assistant's tool-call turn, run each tool locally, and
+		// append the results to the prompt for the next round.
+		assistant := &session.Message{
+			SessionID: sess.ID,
+			Role:      "assistant",
+			Content:   reply,
+			Model:     r.model,
+			ToolCalls: toolCalls,
+		}
+		if resp.Model != "" {
+			assistant.Model = resp.Model
+		}
+		if err := r.store.AddMessage(ctx, assistant); err != nil {
+			return fmt.Errorf("save tool-call message: %w", err)
+		}
+		_ = r.enqueue(ctx, sess.ID, "message", assistant.ID, assistant)
+
+		prompt = append(prompt, cloud.Message{Role: "assistant", Content: reply, ToolCalls: toolCalls})
+
+		for _, tc := range toolCalls {
+			fmt.Fprintf(os.Stderr, "\n  ⚙ %s\n", tc.Function.Name)
+			result, err := toolsPkg.ExecuteCall(ctx, tc.Function.Name, tc.Function.Arguments, r.cwd, approver)
+			if err != nil {
+				result = "error: " + err.Error()
+			}
+			toolMsg := &session.Message{
+				SessionID:  sess.ID,
+				Role:       "tool",
+				Content:    result,
+				ToolCallID: tc.ID,
+			}
+			if err := r.store.AddMessage(ctx, toolMsg); err != nil {
+				return fmt.Errorf("save tool result: %w", err)
+			}
+			_ = r.enqueue(ctx, sess.ID, "message", toolMsg.ID, toolMsg)
+			prompt = append(prompt, cloud.Message{Role: "tool", Content: result, ToolCallID: tc.ID})
+		}
 	}
 
-	assistant := &session.Message{
-		SessionID:    sess.ID,
-		Role:         "assistant",
-		Content:      reply,
-		Model:        r.model,
-		InputTokens:  resp.Usage.PromptTokens,
-		OutputTokens: resp.Usage.CompletionTokens,
-	}
-	if resp.Model != "" {
-		assistant.Model = resp.Model
-	}
-	if err := r.store.AddMessage(ctx, assistant); err != nil {
-		return fmt.Errorf("save assistant message: %w", err)
-	}
-	if err := r.enqueue(ctx, sess.ID, "message", assistant.ID, assistant); err != nil {
-		fmt.Fprintf(os.Stderr, "  (journal skipped: %v)\n", err)
-	}
-
-	if sess.Title == "" {
-		sess.Title = shorten(text, 60)
-	}
-	sess.InputTokens += resp.Usage.PromptTokens
-	sess.OutputTokens += resp.Usage.CompletionTokens
-	if err := r.store.Update(ctx, sess); err != nil {
-		return fmt.Errorf("update session: %w", err)
-	}
-	if err := r.enqueue(ctx, sess.ID, "session", sess.ID, sess); err != nil {
-		fmt.Fprintf(os.Stderr, "  (journal skipped: %v)\n", err)
-	}
-
-	if err := r.syncAfter(ctx); err != nil {
-		fmt.Fprintf(os.Stderr, "  (sync skipped: %v)\n", err)
-	}
-
-	if resp.Usage.TotalTokens > 0 {
-		fmt.Printf("\n  [%s · %d in / %d out tokens · saved to session %s]\n",
-			resp.Model, resp.Usage.PromptTokens, resp.Usage.CompletionTokens, sess.ID)
-	}
-	return nil
+	return fmt.Errorf("tool loop exceeded %d rounds", maxToolRounds)
 }
 
 // repl runs the interactive chat loop.
@@ -315,6 +405,7 @@ func (r *chatRunner) handleCommand(ctx context.Context, sess *session.Session, l
 		fmt.Println("  /new         start a fresh session")
 		fmt.Println("  /model <id>  switch model (e.g. /model gpt-4o-mini)")
 		fmt.Println("  /models      list gateway models and availability")
+		fmt.Println("  /permissions view/set tool approval policy")
 		fmt.Println("  /clear       reset the conversation context")
 		return true, nil
 
@@ -360,6 +451,9 @@ func (r *chatRunner) handleCommand(ctx context.Context, sess *session.Session, l
 		}
 		fmt.Printf("  Cleared %d message(s) — context reset\n", n)
 		return true, nil
+
+	case "/permissions", "/perms", "/perm":
+		return true, r.permissionsCmd(ctx, parts)
 
 	default:
 		fmt.Printf("  Unknown command %q — try /help\n", cmd)
@@ -435,6 +529,82 @@ func (r *chatRunner) syncAfter(ctx context.Context) error {
 		if res.ServerWatermark > cur {
 			_ = sync.SetWatermark(ctx, r.db, res.ServerWatermark)
 		}
+	}
+	return nil
+}
+
+// permissionsCmd lists and edits the per-tool approval policy. Forms:
+//
+//	/permissions                      list all tools + their policy
+//	/permissions <tool> <policy>      set a policy (allow|ask|deny|default)
+//	/permissions reset                restore risk-based defaults
+func (r *chatRunner) permissionsCmd(ctx context.Context, parts []string) error {
+	// List-only form.
+	if len(parts) < 2 {
+		fmt.Println("  Permissions — per-tool approval policy")
+		fmt.Println("  ───────────────────────────────────────")
+		for _, l := range toolsPkg.Describe(r.policy) {
+			fmt.Printf("  %-16s %-9s %-11s %s\n", l.Name, l.Risk, "["+l.Policy+"]", l.Scope)
+		}
+		fmt.Println()
+		fmt.Println("  Usage: /permissions <tool> <allow|ask|deny|default>   or   /permissions reset")
+		return nil
+	}
+
+	// Reset form.
+	if parts[1] == "reset" {
+		cfg, err := config.Load("")
+		if err != nil {
+			return err
+		}
+		clear(cfg.Permissions)
+		if err := cfg.Save(); err != nil {
+			return err
+		}
+		r.policy = toolsPkg.PolicyFromConfig(cfg.Permissions)
+		fmt.Println("  Permissions reset to risk-based defaults.")
+		return nil
+	}
+
+	if len(parts) < 3 {
+		fmt.Println("  Usage: /permissions <tool> <allow|ask|deny|default>")
+		return nil
+	}
+
+	name := parts[1]
+	policy := toolsPkg.ParsePolicy(parts[2])
+
+	// Validate the tool exists (or allow "all").
+	if name != "all" {
+		if _, err := toolsPkg.Get(name); err != nil {
+			fmt.Printf("  Unknown tool %q. See /permissions for the list.\n", name)
+			return nil
+		}
+	}
+
+	cfg, err := config.Load("")
+	if err != nil {
+		return err
+	}
+	if cfg.Permissions == nil {
+		cfg.Permissions = map[string]string{}
+	}
+
+	if policy == toolsPkg.PolicyDefault {
+		delete(cfg.Permissions, name)
+	} else {
+		cfg.Permissions[name] = policy.String()
+	}
+	if err := cfg.Save(); err != nil {
+		return err
+	}
+
+	// Refresh the live policy map and clear any denied grants.
+	r.policy = toolsPkg.PolicyFromConfig(cfg.Permissions)
+	if name == "all" {
+		fmt.Printf("  Saved global policy %q for all tools.\n", policy)
+	} else {
+		fmt.Printf("  Saved policy %q for %s.\n", policy, name)
 	}
 	return nil
 }

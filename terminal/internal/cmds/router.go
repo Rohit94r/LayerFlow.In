@@ -21,6 +21,7 @@ import (
 	"github.com/layerflow/terminal/internal/providers"
 	"github.com/layerflow/terminal/internal/search"
 	"github.com/layerflow/terminal/internal/session"
+	toolsPkg "github.com/layerflow/terminal/internal/tools"
 )
 
 // Command defines a single slash command.
@@ -106,27 +107,28 @@ var table map[string]Command
 // and table references handleHelp.
 func init() {
 	table = map[string]Command{
-		"help":     {Name: "help", Description: "Show available commands", Handler: handleHelp},
-		"model":    {Name: "model", Description: "Switch LLM model", Handler: handleModel},
-		"provider": {Name: "provider", Description: "Switch LLM provider", Handler: handleProvider},
-		"status":   {Name: "status", Description: "Show current status", Handler: handleStatus},
-		"new":      {Name: "new", Description: "Create a new session", Aliases: []string{"/reset"}, Handler: handleNew},
-		"sessions": {Name: "sessions", Description: "List all sessions", Aliases: []string{"/ls"}, Handler: handleSessions},
-		"use":      {Name: "use", Description: "Switch to a session", Handler: handleUse},
-		"compact":  {Name: "compact", Description: "Compact conversation history", Aliases: []string{"/summarize"}, Handler: handleCompact},
-		"memory":   {Name: "memory", Description: "Memory management", Aliases: []string{"/mem"}, Handler: handleMemory},
-		"search":   {Name: "search", Description: "Search project files", Aliases: []string{"/find"}, Handler: handleSearch},
-		"project":  {Name: "project", Description: "Show project information", Handler: handleProject},
-		"sync":     {Name: "sync", Description: "Sync with cloud", Handler: handleSync},
-		"cost":     {Name: "cost", Description: "Show cost breakdown", Aliases: []string{"/billing"}, Handler: handleCost},
-		"clear":    {Name: "clear", Description: "Clear terminal screen", Aliases: []string{"/cls"}, Handler: handleClear},
-		"rescue":   {Name: "rescue", Description: "Rescue and portability tools", Handler: handleRescue},
-		"agents":   {Name: "agents", Description: "Agent management", Handler: handleAgents},
-		"doctor":   {Name: "doctor", Description: "Run diagnostics", Handler: handleDoctor},
-		"login":    {Name: "login", Description: "Authenticate with LayerFlow Cloud", Handler: handleLogin},
-		"logout":   {Name: "logout", Description: "Sign out", Handler: handleLogout},
-		"undo":     {Name: "undo", Description: "Undo last file edit", Aliases: []string{"/revert"}, Handler: handleUndo},
-		"git":      {Name: "git", Description: "Git operations", Handler: handleGit},
+		"help":        {Name: "help", Description: "Show available commands", Handler: handleHelp},
+		"model":       {Name: "model", Description: "Switch LLM model", Handler: handleModel},
+		"provider":    {Name: "provider", Description: "Switch LLM provider", Handler: handleProvider},
+		"status":      {Name: "status", Description: "Show current status", Handler: handleStatus},
+		"new":         {Name: "new", Description: "Create a new session", Aliases: []string{"/reset"}, Handler: handleNew},
+		"sessions":    {Name: "sessions", Description: "List all sessions", Aliases: []string{"/ls"}, Handler: handleSessions},
+		"use":         {Name: "use", Description: "Switch to a session", Handler: handleUse},
+		"compact":     {Name: "compact", Description: "Compact conversation history", Aliases: []string{"/summarize"}, Handler: handleCompact},
+		"memory":      {Name: "memory", Description: "Memory management", Aliases: []string{"/mem"}, Handler: handleMemory},
+		"search":      {Name: "search", Description: "Search project files", Aliases: []string{"/find"}, Handler: handleSearch},
+		"project":     {Name: "project", Description: "Show project information", Handler: handleProject},
+		"sync":        {Name: "sync", Description: "Sync with cloud", Handler: handleSync},
+		"cost":        {Name: "cost", Description: "Show cost breakdown", Aliases: []string{"/billing"}, Handler: handleCost},
+		"clear":       {Name: "clear", Description: "Clear terminal screen", Aliases: []string{"/cls"}, Handler: handleClear},
+		"rescue":      {Name: "rescue", Description: "Rescue and portability tools", Handler: handleRescue},
+		"agents":      {Name: "agents", Description: "Agent management", Handler: handleAgents},
+		"doctor":      {Name: "doctor", Description: "Run diagnostics", Handler: handleDoctor},
+		"login":       {Name: "login", Description: "Authenticate with LayerFlow Cloud", Handler: handleLogin},
+		"logout":      {Name: "logout", Description: "Sign out", Handler: handleLogout},
+		"undo":        {Name: "undo", Description: "Undo last file edit", Aliases: []string{"/revert"}, Handler: handleUndo},
+		"git":         {Name: "git", Description: "Git operations", Handler: handleGit},
+		"permissions": {Name: "permissions", Description: "Manage tool permissions", Aliases: []string{"/perms", "/perm"}, Handler: handlePermissions},
 	}
 }
 
@@ -496,5 +498,72 @@ func handleGit(ctx *CmdContext, args []string) error {
 	if err != nil {
 		return fmt.Errorf("git %s: %w", sub, err)
 	}
+	return nil
+}
+
+// handlePermissions lists and edits the per-tool approval policy. It reads
+// and persists to the user config so decisions survive restarts.
+//
+//	/permissions                      list all tools + their policy
+//	/permissions <tool> <policy>      set a policy (allow|ask|deny|default)
+//	/permissions all <policy>         set a global policy for every tool
+//	/permissions reset                restore risk-based defaults
+func handlePermissions(ctx *CmdContext, args []string) error {
+	policy := toolsPkg.PolicyFromConfig(ctx.Config.Permissions)
+
+	// List-only form.
+	if len(args) == 0 {
+		fmt.Println("Tool Permissions")
+		fmt.Println("─────────────────")
+		fmt.Printf("  %-16s %-9s %-10s %s\n", "TOOL", "RISK", "POLICY", "SCOPE")
+		for _, l := range toolsPkg.Describe(policy) {
+			fmt.Printf("  %-16s %-9s %-10s %s\n", l.Name, l.Risk, l.Policy, l.Scope)
+		}
+		if g, ok := ctx.Config.Permissions["all"]; ok {
+			fmt.Printf("\n  global default: /permissions all %s\n", g)
+		}
+		fmt.Println("\n  Usage: /permissions <tool|all> <allow|ask|deny|default>   or   /permissions reset")
+		return nil
+	}
+
+	// Reset form.
+	if args[0] == "reset" {
+		delete(ctx.Config.Permissions, "all")
+		clear(ctx.Config.Permissions)
+		if err := ctx.Config.Save(); err != nil {
+			return err
+		}
+		fmt.Println("Permissions reset to risk-based defaults.")
+		return nil
+	}
+
+	if len(args) < 2 {
+		return fmt.Errorf("usage: /permissions <tool|all> <allow|ask|deny|default>")
+	}
+
+	name := args[0]
+	val := toolsPkg.ParsePolicy(args[1])
+
+	if name != "all" {
+		if _, err := toolsPkg.Get(name); err != nil {
+			return fmt.Errorf("unknown tool %q — run /permissions to list tools", name)
+		}
+	}
+
+	if ctx.Config.Permissions == nil {
+		ctx.Config.Permissions = map[string]string{}
+	}
+
+	if val == toolsPkg.PolicyDefault {
+		delete(ctx.Config.Permissions, name)
+	} else {
+		ctx.Config.Permissions[name] = val.String()
+	}
+
+	if err := ctx.Config.Save(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Saved policy %q for %s.\n", val.String(), name)
 	return nil
 }
