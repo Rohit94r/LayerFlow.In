@@ -22,17 +22,25 @@ type slashItem struct {
 // "/" (or presses Ctrl+P). Fuzzy filtered, arrow-navigated, Esc to close.
 type slashPopup struct {
 	app      *App
-	filter   string
+	filter   *lineEditor
 	items    []slashItem
 	selected int
 }
 
 // openSlashPopup shows the command palette.
 func (a *App) openSlashPopup() {
-	p := &slashPopup{app: a}
+	p := &slashPopup{app: a, filter: newLineEditor("")}
 	p.items = p.buildItems()
 	a.slash = p
 	a.overlay = overlaySlash
+}
+
+// filterValue returns the current palette filter text.
+func (p *slashPopup) filterValue() string {
+	if p.filter == nil {
+		return ""
+	}
+	return p.filter.Value()
 }
 
 // buildItems assembles the palette entries: product actions first, then the
@@ -140,7 +148,7 @@ func fuzzyScore(name, desc, needle string) int {
 }
 
 func (p *slashPopup) filtered() []slashItem {
-	if p.filter == "" {
+	if p.filterValue() == "" {
 		return p.items
 	}
 	type scored struct {
@@ -150,8 +158,8 @@ func (p *slashPopup) filtered() []slashItem {
 	var out []scored
 	for _, it := range p.items {
 		hay := it.name + " " + it.description
-		if fuzzyMatch(hay, p.filter) {
-			out = append(out, scored{item: it, score: fuzzyScore(it.name, it.description, p.filter)})
+		if fuzzyMatch(hay, p.filterValue()) {
+			out = append(out, scored{item: it, score: fuzzyScore(it.name, it.description, p.filterValue())})
 		}
 	}
 	// Stable sort by descending score (ties keep the original order).
@@ -230,7 +238,7 @@ func (p *slashPopup) renderBox(content string, withFooter bool, count int) strin
 	var body []string
 	body = append(body, lipgloss.JoinHorizontal(lipgloss.Left,
 		styleDim.Render("/"),
-		lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(p.filter+"▍"),
+		lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(showCaretTail(p.filter, p.maxRowWidth())),
 	))
 	body = append(body, lipgloss.NewStyle().Foreground(ColorBorder).Render(strings.Repeat("─", p.maxRowWidth()+4)))
 	body = append(body, content)
@@ -284,21 +292,20 @@ func (p *slashPopup) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Autocomplete the filter to the selected command's name.
 			items := p.filtered()
 			if len(items) > 0 && p.selected >= 0 && p.selected < len(items) {
-				p.filter = strings.TrimPrefix(items[p.selected].name, "/")
+				p.filter.SetValue(strings.TrimPrefix(items[p.selected].name, "/"))
 				p.selected = 0
 			}
 			return p.app, nil
 		case key.String() == "backspace":
-			if len(p.filter) > 0 {
-				p.filter = p.filter[:len(p.filter)-1]
-				p.selected = 0
-			} else {
+			if p.filter.Empty() {
 				p.close()
+				return p.app, nil
 			}
+			p.filter.backspace()
+			p.selected = 0
 			return p.app, nil
 		default:
-			if len(key.String()) == 1 {
-				p.filter += key.String()
+			if p.filter.handleKey(key) {
 				p.selected = 0
 			}
 			return p.app, nil

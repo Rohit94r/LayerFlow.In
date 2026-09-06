@@ -460,6 +460,14 @@ func (a *App) renderChatInputBox(w int) string {
 				styleDim.Render("   Ctrl+C to cancel"),
 			),
 		)
+	} else if a.chatFocused && strings.TrimSpace(a.chatInput.Value()) != "" {
+		// Quiet send affordance once the user has typed — matches the welcome
+		// chip so the composer reads as the primary send surface.
+		box = lipgloss.JoinVertical(lipgloss.Left, box,
+			lipgloss.NewStyle().Align(lipgloss.Right).Width(n).Render(
+				styleDim.Render("enter send · shift+enter newline"),
+			),
+		)
 	}
 	return box
 }

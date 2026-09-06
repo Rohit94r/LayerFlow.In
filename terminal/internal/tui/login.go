@@ -7,15 +7,14 @@ import (
 
 // loginModel is the sign-in overlay (platform key paste).
 type loginModel struct {
-	app    *App
-	input  string
-	buffer string
-	busy   bool
+	app   *App
+	input *lineEditor
+	busy  bool
 }
 
 // openLogin shows the login overlay.
 func (a *App) openLogin() {
-	a.login = &loginModel{app: a}
+	a.login = &loginModel{app: a, input: newLineEditor("")}
 	a.overlay = overlayLogin
 }
 
@@ -31,14 +30,14 @@ func (l *loginModel) View() string {
 	body = append(body, styleMuted.Render("Paste your platform key (lf_live_…). It is stored in your OS keyring."))
 	body = append(body, "")
 
-	visible := l.input
+	visible := showCaretTail(l.input, 42)
 	box := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).
 		BorderForeground(ColorAccent).
 		Padding(0, 1).
 		Width(50).
 		Render(lipgloss.JoinHorizontal(lipgloss.Left,
 			styleDim.Render("key "),
-			lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(visible+"▍"),
+			lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(visible),
 		))
 
 	body = append(body, box)
@@ -66,25 +65,16 @@ func (l *loginModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			l.app.closeOverlay()
 			return l.app, nil
 		case "enter":
-			if l.input == "" || l.busy {
+			if l.input.Empty() || l.busy {
 				return l.app, nil
 			}
 			l.busy = true
-			key := l.input
+			key := l.input.Value()
 			return l.app, func() tea.Msg {
 				return loginResultMsg{err: performTuiLogin(key)}
 			}
-		case "backspace":
-			if len(l.input) > 0 {
-				l.input = l.input[:len(l.input)-1]
-			}
-			return l.app, nil
-		case "ctrl+v", "shift+insert":
-			return l.app, nil
 		default:
-			if len(key.String()) == 1 {
-				l.input += key.String()
-			}
+			l.input.handleKey(key)
 			return l.app, nil
 		}
 	case loginResultMsg:

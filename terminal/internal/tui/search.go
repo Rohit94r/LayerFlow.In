@@ -33,16 +33,24 @@ func searchGroupTitle(s search.Source) string {
 // searchModel is the global search overlay with grouped results.
 type searchModel struct {
 	app       *App
-	query     string
+	query     *lineEditor
 	hits      []search.Hit
 	selected  int
 	searching bool
 	searched  bool
 }
 
+// queryValue returns the current search text.
+func (s *searchModel) queryValue() string {
+	if s.query == nil {
+		return ""
+	}
+	return s.query.Value()
+}
+
 // openSearch shows the search overlay.
 func (a *App) openSearch() {
-	a.search = &searchModel{app: a}
+	a.search = &searchModel{app: a, query: newLineEditor("")}
 	a.overlay = overlaySearch
 }
 
@@ -50,7 +58,7 @@ func (s *searchModel) run() tea.Cmd {
 	s.searching = true
 	s.searched = false
 	return func() tea.Msg {
-		query := s.query
+		query := s.queryValue()
 		hits, err := s.app.st.Search.Search(context.Background(), query, search.Opts{Limit: 30, Project: s.app.st.Project})
 		return searchResultsMsg{query: query, hits: hits, err: err}
 	}
@@ -61,7 +69,7 @@ func (s *searchModel) View() string {
 	searchLine := lipgloss.JoinHorizontal(lipgloss.Left,
 		styleDim.Render("🔍"),
 		" ",
-		lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(s.query+"▍"),
+		lipgloss.NewStyle().Foreground(ColorAccent).Bold(true).Render(showCaretTail(s.query, s.rowWidth())),
 	)
 
 	var body []string
@@ -72,7 +80,7 @@ func (s *searchModel) View() string {
 		body = append(body, "", styleDim.Render("  searching…"))
 	} else if s.searched {
 		if len(s.hits) == 0 {
-			body = append(body, "", styleMuted.Render("  No results for “"+s.query+"”."))
+			body = append(body, "", styleMuted.Render("  No results for “"+s.queryValue()+"”."))
 		} else {
 			groups := s.grouped()
 			for _, g := range groups {
@@ -156,7 +164,7 @@ func (s *searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.app.closeOverlay()
 			return s.app, nil
 		case "enter":
-			if s.query != "" {
+			if s.queryValue() != "" {
 				return s.app, s.run()
 			}
 			return s.app, nil
@@ -170,15 +178,8 @@ func (s *searchModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.selected++
 			}
 			return s.app, nil
-		case "backspace":
-			if len(s.query) > 0 {
-				s.query = s.query[:len(s.query)-1]
-				s.searched = false
-			}
-			return s.app, nil
 		default:
-			if len(key.String()) == 1 {
-				s.query += key.String()
+			if s.query.handleKey(key) {
 				s.searched = false
 			}
 			return s.app, nil
