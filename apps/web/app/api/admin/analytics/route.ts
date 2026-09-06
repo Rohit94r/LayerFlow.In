@@ -48,10 +48,10 @@ async function proxyToHono(request: Request) {
 
 async function handleSameOrigin(request: Request) {
   ensureVercelAuthEnv();
-  const { auth } = await import("../../../../apps/api/src/auth/index");
-  const { isAdminEmail } = await import("../../../../apps/api/src/config/admin");
+  const { auth } = await import("@layerflow/api/src/auth/index");
+  const { isAdminEmail } = await import("@layerflow/api/src/config/admin");
   const { getAdminAnalytics } = await import(
-    "../../../../apps/api/src/services/admin/analytics"
+    "@layerflow/api/src/services/admin/analytics"
   );
 
   const session = await auth.api.getSession({ headers: request.headers });

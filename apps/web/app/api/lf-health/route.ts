@@ -48,7 +48,7 @@ async function probeSameOriginAuth(webUrl: string) {
   }
 
   try {
-    const { db } = await import("../../../apps/api/src/db/client");
+    const { db } = await import("@layerflow/api/src/db/client");
     await db.execute(sql`select 1`);
     return {
       ok: true as const,
