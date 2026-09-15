@@ -325,7 +325,7 @@ export const corpusF: BlogPost[] = [
   {
     "slug": "best-api-key-management-tools",
     "title": "Best LLM API Key Management Tools: Vaults, Rotation, and Budgets",
-    "metaTitle": "Best LLM API Key Management Tools in 2026 | Vaults & Rotation",
+    "metaTitle": "Best LLM API Key Management Tools",
     "description": "The best LLM API key management tools for 2026: secret vaults, automated key rotation, per-project keys, usage budgets, and how to stop key leaks from burning your bill.",
     "publishedAt": "2026-08-22",
     "category": "AI gateway",

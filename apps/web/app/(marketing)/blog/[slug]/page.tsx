@@ -9,6 +9,7 @@ import {
   getPublishedPostBySlug,
   getRelatedPosts,
   getCategorySlug,
+  buildMetaTitle,
   SITE_URL,
 } from "@/lib/blog";
 import { doodleForSlug } from "@/lib/doodles";
@@ -33,8 +34,9 @@ export async function generateMetadata({
   if (!post) return { robots: { index: false, follow: false } };
 
   const url = `/blog/${post.slug}`;
+  const pageTitle = buildMetaTitle(post.metaTitle, post.primaryKeyword);
   return {
-    title: post.metaTitle,
+    title: pageTitle,
     description: post.description,
     keywords: [post.primaryKeyword, ...post.secondaryKeywords, ...post.tags],
     authors: [{ name: post.author }],
@@ -42,7 +44,7 @@ export async function generateMetadata({
     openGraph: {
       type: "article",
       url,
-      title: post.metaTitle,
+      title: pageTitle,
       description: post.description,
       images: [{ url: `${SITE_URL}${doodleForSlug(post.slug)}` }],
       publishedTime: post.publishedAt,
@@ -52,7 +54,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.metaTitle,
+      title: pageTitle,
       description: post.description,
       images: [`${SITE_URL}${doodleForSlug(post.slug)}`],
     },

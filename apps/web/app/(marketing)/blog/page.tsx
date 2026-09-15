@@ -15,14 +15,13 @@ import {
 export const revalidate = 3600;
 
 export const metadata: Metadata = {
-  title:
-    "Blog — AI Prompts, LLM Cost Control & Model Comparison | LayerFlow",
+  title: "Blog — AI Prompts, LLM Cost & Model Comparison",
   description:
     "Guides on AI prompt management, LLM cost control, multi-model comparison, BYOK, and OpenAI-compatible gateways from LayerFlow.",
   alternates: { canonical: "/blog" },
   openGraph: {
     url: "/blog",
-    title: "LayerFlow Blog — Prompts, Models, and Cost",
+    title: "Blog — AI Prompts, LLM Cost & Model Comparison | LayerFlow",
     description:
       "Practical guides for prompt workspaces, budgets, compare, and AI gateways.",
   },

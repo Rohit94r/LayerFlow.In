@@ -354,7 +354,7 @@ export const corpusI: BlogPost[] = [
   {
     "slug": "ai-sentiment-analysis-guide",
     "title": "AI Sentiment Analysis: Models, Methods, and Accuracy in 2026",
-    "metaTitle": "AI Sentiment Analysis Guide | Models & Accuracy (2026)",
+    "metaTitle": "AI Sentiment Analysis Guide (2026)",
     "description": "AI sentiment analysis explained: LLM-based vs classifier approaches, labeling scales, accuracy limits, and the cost per thousand reviews analyzed.",
     "publishedAt": "2026-08-28",
     "category": "Use cases",

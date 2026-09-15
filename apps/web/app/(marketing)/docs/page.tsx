@@ -15,7 +15,7 @@ import { Reveal } from "@/components/ui/reveal";
 import { CodeBlock } from "@/components/marketing/CodeBlock";
 
 export const metadata: Metadata = {
-  title: "Docs",
+  title: "Docs & Guides — AI CLI, Agents & Cost Control",
   description:
     "LayerFlow docs — install the CLI, code from the terminal, run agents in the browser, and keep every bit of AI context.",
   alternates: { canonical: "/docs" },

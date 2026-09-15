@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: "LayerFlow — Code with AI in your browser or terminal",
-    template: "%s · LayerFlow",
+    template: "%s | LayerFlow",
   },
   description:
     "The AI coding platform. Write plain English, click Improve, and run working prompts — or use the browser terminal with multiple coding agents. Rescue dead AI chats, compress context, and control AI costs.",

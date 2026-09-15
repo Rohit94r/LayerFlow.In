@@ -8,6 +8,7 @@ import {
   getCategorySlug,
   getPublishedPosts,
   categoryMeta,
+  buildMetaTitle,
   SITE_URL,
 } from "@/lib/blog";
 
@@ -29,13 +30,15 @@ export async function generateMetadata({
   const meta = getCategoryBySlug(category);
   if (!meta) return { robots: { index: false, follow: false } };
 
+  const pageTitle = buildMetaTitle(meta.title);
+
   return {
-    title: meta.title,
+    title: pageTitle,
     description: meta.description,
     alternates: { canonical: `/blog/category/${meta.slug}` },
     openGraph: {
       url: `/blog/category/${meta.slug}`,
-      title: meta.title,
+      title: pageTitle,
       description: meta.description,
       type: "website",
     },

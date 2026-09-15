@@ -4,7 +4,7 @@ export const corpusA1: BlogPost[] = [
   {
     "slug": "model-context-protocol-mcp-guide",
     "title": "Model Context Protocol (MCP): What It Is and Why It Matters",
-    "metaTitle": "Model Context Protocol (MCP) Explained | 2026 Guide",
+    "metaTitle": "Model Context Protocol (MCP) Explained",
     "description": "Model Context Protocol (MCP) explained: how it standardizes LLM tool access, how MCP servers work, and when to use it in 2026.",
     "publishedAt": "2026-08-09",
     "category": "AI gateway",

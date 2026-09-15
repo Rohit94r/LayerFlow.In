@@ -57,7 +57,7 @@ export const corpusG: BlogPost[] = [
   {
     "slug": "ai-for-customer-research",
     "title": "Using AI for Customer Research: Interviews, Surveys, and Personas",
-    "metaTitle": "AI for Customer Research | Interviews, Surveys & Personas",
+    "metaTitle": "AI for Customer Research: Interviews & Personas",
     "description": "How to use AI for customer research: synthesizing interviews, analyzing surveys, building personas, and doing it all without a huge budget.",
     "publishedAt": "2026-08-23",
     "category": "Use cases",

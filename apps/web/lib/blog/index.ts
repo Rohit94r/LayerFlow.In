@@ -212,6 +212,36 @@ export function slugifyHeading(text: string): string {
 export const SITE_URL = "https://layerflow.dev";
 export const BLOG_AUTHOR = "LayerFlow Team";
 
+/** Max characters a page keyword/title can use before " | LayerFlow" is appended (60 - 12). */
+export const TITLE_BUDGET = 48;
+export const BRAND_SUFFIX = " | LayerFlow";
+
+/**
+ * Build a `<title>` that stays ≤60 chars after the brand suffix is applied:
+ *  - full metaTitle when it fits within the budget,
+ *  - otherwise the primary keyword (always ≤ budget), so the keyword stays first,
+ *  - else a hard word-boundary cut as a final guard.
+ */
+export function buildMetaTitle(metaTitle: string, primaryKeyword?: string): string {
+  if (metaTitle.length <= TITLE_BUDGET) return metaTitle;
+  if (primaryKeyword && primaryKeyword.length > 0 && primaryKeyword.length <= TITLE_BUDGET) {
+    const titleCase = (s: string) =>
+      s
+        .split(" ")
+        .map((w, i) => {
+          const up = w.toUpperCase();
+          if (/^(AI|LLM|API|MCP|RAG|GPT|BYOK|JSON|SQL|SaaS|SEO|SDK|CLI|HTML|CSS|IDE|CoT|SLM|INR)$/i.test(w)) return up;
+          if (/^(to|of|the|and|or|for|in|on|vs|with|a|an|by|is)$/i.test(w) && i > 0) return w;
+          return w.charAt(0).toUpperCase() + w.slice(1);
+        })
+        .join(" ");
+    const cap = titleCase(primaryKeyword);
+    return cap.length <= TITLE_BUDGET ? cap : primaryKeyword;
+  }
+  const cut = metaTitle.slice(0, TITLE_BUDGET).replace(/\s+\S*$/, "").trim();
+  return cut.length > 0 ? cut : metaTitle.slice(0, TITLE_BUDGET).trim();
+}
+
 /** Category → SEO metadata + URL slug for pillar pages (/blog/category/[slug]) */
 export interface CategoryMeta {
   slug: string;
@@ -223,49 +253,49 @@ export interface CategoryMeta {
 export const categoryMeta: Record<string, CategoryMeta> = {
   "Prompt engineering": {
     slug: "prompt-engineering",
-    title: "Prompt Engineering Guides | LayerFlow Blog",
+    title: "Prompt Engineering Guides & Best Practices",
     h1: "Prompt engineering and prompt organization guides",
     description:
       "How to organize AI prompts, build prompt libraries, use layered prompts, and manage prompt versions — prompt engineering best practices for teams in 2026.",
   },
   "Cost control": {
     slug: "cost-control",
-    title: "LLM Cost Control Guides | LayerFlow Blog",
+    title: "LLM Cost Control & Budget Guides",
     h1: "LLM cost control and AI budget guides",
     description:
       "Cut LLM costs with model routing, hard budget limits, spend analytics, token optimization, and semantic caching — without sacrificing output quality.",
   },
   "Model comparison": {
     slug: "model-comparison",
-    title: "Model Comparison Guides | LayerFlow Blog",
+    title: "LLM Comparison & Model Selection Guides",
     h1: "LLM comparison and model selection guides",
     description:
       "Compare GPT vs Claude vs Gemini vs DeepSeek side by side, read model benchmarks, run LLM evals, and pick the best model per task for your workload.",
   },
   "AI gateway": {
     slug: "ai-gateway",
-    title: "AI Gateway & BYOK Guides | LayerFlow Blog",
+    title: "AI Gateway & BYOK Guides",
     h1: "AI gateway, BYOK, and API key guides",
     description:
       "LLM gateway architecture, bring-your-own-key (BYOK) setup, API key management and rotation, and data privacy for AI tools — security without the ops burden.",
   },
   Productivity: {
     slug: "productivity",
-    title: "AI Productivity Guides | LayerFlow Blog",
+    title: "AI Productivity Guides & Workflows",
     h1: "AI productivity and workspace guides",
     description:
       "AI workspaces, prompt libraries, and freelancer or team workflows that cut overhead — practical productivity guides for working with LLMs.",
   },
   "Getting started": {
     slug: "getting-started",
-    title: "Getting Started with AI | LayerFlow Blog",
+    title: "Getting Started with AI Guides",
     h1: "Getting started with AI workspaces and prompts",
     description:
       "New to AI workspaces, BYOK, or prompt management? Start here: setup guides, tutorials, and first workflows for developers and non-developers.",
   },
   "Use cases": {
     slug: "use-cases",
-    title: "AI Use Cases Guides | LayerFlow Blog",
+    title: "AI Use Cases & Workflow Guides",
     h1: "AI use cases by audience",
     description:
       "AI for students, freelancers, agencies, and marketing teams — practical use cases and workflows for getting real work done with LLMs.",
