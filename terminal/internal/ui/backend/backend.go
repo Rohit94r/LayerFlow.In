@@ -65,7 +65,7 @@ func NewApp(st *State) *uiapp.App {
 		messages:    msgA,
 		permissions: perms,
 		client:      st.Client,
-		cfg:         st.Cfg,
+		cfg:         cfg,
 		project:     st.Project,
 		lspClients:  lspClients,
 		prog:        nil, // set after program created

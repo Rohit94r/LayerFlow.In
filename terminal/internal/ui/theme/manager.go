@@ -40,8 +40,14 @@ func RegisterTheme(name string, theme Theme) {
 
 	globalManager.themes[name] = theme
 
-	// If this is the first theme, make it the default
-	if globalManager.currentName == "" {
+	// The LayerFlow brand theme is the default. It wins even when another
+	// file happens to register first (registration order follows the order
+	// files are presented to the compiler, which is not guaranteed to be
+	// alphabetical).
+	switch {
+	case name == "layerflow":
+		globalManager.currentName = "layerflow"
+	case globalManager.currentName == "":
 		globalManager.currentName = name
 	}
 }
@@ -92,9 +98,14 @@ func AvailableThemes() []string {
 		names = append(names, name)
 	}
 	slices.SortFunc(names, func(a, b string) int {
-		if a == "opencode" {
+		switch {
+		case a == "layerflow":
 			return -1
-		} else if b == "opencode" {
+		case b == "layerflow":
+			return 1
+		case a == "opencode":
+			return -1
+		case b == "opencode":
 			return 1
 		}
 		return strings.Compare(a, b)

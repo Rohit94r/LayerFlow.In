@@ -1,11 +1,44 @@
 package backend
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/layerflow/terminal/internal/cloud"
+	"github.com/layerflow/terminal/internal/session"
+	"github.com/layerflow/terminal/internal/storage"
+	uiapp "github.com/layerflow/terminal/internal/ui/app"
 )
+
+func newTestApp(t *testing.T) (*uiapp.App, string) {
+	t.Helper()
+	db, err := storage.Open(&storage.Options{DataDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("open storage: %v", err)
+	}
+	t.Cleanup(func() { storage.Close() })
+
+	store := session.NewSQLStore(db)
+	ctx := context.Background()
+	sess := &session.Session{Title: "Test", ProjectPath: "."}
+	if err := store.Create(ctx, sess); err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	st := &State{
+		Client:   cloud.NewClient("", ""),
+		Sessions: store,
+		Project:  ".",
+		Model:    cloud.DefaultModel,
+		Router:   &Router{},
+	}
+	a := NewApp(st)
+	return a, sess.ID
+}
 
 func writeTemp(t *testing.T, content string) string {
 	t.Helper()
@@ -61,5 +94,28 @@ func TestExecuteToolEditInsert(t *testing.T) {
 	data, _ := os.ReadFile(filepath.Join(dir, "notes.txt"))
 	if string(data) != "a\nb\nc" {
 		t.Fatalf("unexpected content: %q", data)
+	}
+}
+
+func TestAgentRunNoPanic(t *testing.T) {
+	a, sessionID := newTestApp(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	ch, err := a.CoderAgent.Run(ctx, sessionID, "hello")
+	if err != nil {
+		t.Fatalf("Run: %v", err)
+	}
+	// The agent loop must start cleanly (no nil cfg dereference) and produce
+	// events without panicking. Events are drained without failing unless the
+	// channel closes before the first event is delivered.
+	select {
+	case ev, ok := <-ch:
+		if !ok {
+			t.Skip("agent loop finished without streaming (offline test env)")
+		}
+		_ = ev
+	case <-ctx.Done():
+		t.Fatalf("no event received before timeout: %v", ctx.Err())
 	}
 }

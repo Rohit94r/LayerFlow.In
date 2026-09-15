@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,15 +18,17 @@ import (
 	"github.com/layerflow/terminal/internal/ui/logging"
 	"github.com/layerflow/terminal/internal/ui/pubsub"
 	"github.com/layerflow/terminal/internal/ui/theme"
+	"github.com/layerflow/terminal/internal/ui/version"
 )
 
 // Run is the entry point called by cmd/lf. It initialises the LayerFlow
 // backend (SQLite sessions, cloud client, config) and then launches the
 // ported opencode UI on top.
-func Run(version string) error {
+func Run(version_ string) error {
+	version.Version = version_
 	// Reuse the existing LF bootstrap — opens storage, loads config,
 	// creates cloud client, detects git state, etc.
-	lfState, err := tui.NewState(version)
+	lfState, err := tui.NewState(version_)
 	if err != nil {
 		return fmt.Errorf("init layerflow state: %w", err)
 	}
@@ -55,10 +58,19 @@ func Run(version string) error {
 		return os.WriteFile(filepath.Join(themeDir, "ui-theme"), []byte(name), 0o644)
 	})
 
-	// Load persisted theme name (if any)
+	// Load persisted theme name (if any); otherwise default to the LayerFlow
+	// brand theme.
+	themeApplied := false
 	if themeDir != "" {
 		if data, err := os.ReadFile(filepath.Join(themeDir, "ui-theme")); err == nil {
-			_ = theme.SetTheme(string(data))
+			if err := theme.SetTheme(strings.TrimSpace(string(data))); err == nil {
+				themeApplied = true
+			}
+		}
+	}
+	if !themeApplied {
+		if err := theme.SetTheme("layerflow"); err != nil {
+			_ = theme.SetTheme("opencode") // always registered — last resort
 		}
 	}
 
