@@ -10,6 +10,7 @@ import { corpusF } from "@/content/blog/trending/corpus-f";
 import { corpusG } from "@/content/blog/trending/corpus-g";
 import { corpusH } from "@/content/blog/trending/corpus-h";
 import { corpusI } from "@/content/blog/trending/corpus-i";
+import { corpusIndia } from "@/content/blog/trending/corpus-india";
 import { corpusSC1 } from "@/content/blog/searchconsole/corpus-1";
 import { corpusSC2 } from "@/content/blog/searchconsole/corpus-2";
 import { corpusSC3 } from "@/content/blog/searchconsole/corpus-3";
@@ -85,6 +86,7 @@ const posts: BlogPost[] = [
   ...corpusG,
   ...corpusH,
   ...corpusI,
+  ...corpusIndia,
   ...corpusSC1,
   ...corpusSC2,
   ...corpusSC3,
