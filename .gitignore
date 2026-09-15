@@ -66,3 +66,6 @@ terminal/lf
 
 # scratch / status notes
 COMPLETE
+
+# opencode reference checkout (used for TUI port, not part of the product)
+opencode/

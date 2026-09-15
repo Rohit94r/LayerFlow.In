@@ -518,9 +518,9 @@ func materializeOp(ctx context.Context, localMatch *Operation, remote *Operation
 	switch remote.Entity {
 	case "session":
 		sess := &session.Session{
-			ID:      remote.EntityID,
-			Title:   stringOr(payload, "title"),
-			Model:   stringOr(payload, "model"),
+			ID:        remote.EntityID,
+			Title:     stringOr(payload, "title"),
+			Model:     stringOr(payload, "model"),
 			CreatedAt: int64Or(payload, "created_at"),
 			UpdatedAt: int64Or(payload, "updated_at"),
 			SyncState: "synced",

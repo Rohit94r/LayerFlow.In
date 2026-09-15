@@ -61,10 +61,10 @@ func PickAvailableModel(ctx context.Context, c *Client, preferred string) string
 
 // Message is a single chat message in gateway format.
 type Message struct {
-	Role         string           `json:"role"`
-	Content      string           `json:"content"`
-	ToolCallID   string           `json:"tool_call_id,omitempty"`
-	ToolCalls    []ToolCall       `json:"tool_calls,omitempty"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCallID string     `json:"tool_call_id,omitempty"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
 }
 
 // ToolCall is an OpenAI-shaped function invocation.
@@ -291,7 +291,7 @@ func (c *Client) ChatStreamFull(ctx context.Context, opts ChatOptions, h StreamH
 		var chunk struct {
 			Choices []struct {
 				Delta struct {
-					Content   string     `json:"content"`
+					Content   string `json:"content"`
 					ToolCalls []struct {
 						Index    int    `json:"index"`
 						ID       string `json:"id"`
