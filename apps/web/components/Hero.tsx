@@ -50,7 +50,7 @@ export default function Hero() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 rv-now rv-d3">
           <a
             className="cta-pill cta-lg"
-            href="https://layerflow.dev"
+            href="/sign-in"
             style={{
               background: "var(--accent)",
               boxShadow: "0 4px 18px rgba(249, 115, 22, 0.4)",

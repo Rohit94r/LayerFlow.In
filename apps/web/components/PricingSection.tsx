@@ -37,7 +37,7 @@ export default function PricingSection() {
               <li>10 Chat Rescues / month</li>
             </ul>
             <a
-              href="https://layerflow.dev/sign-in"
+              href="/sign-in"
               className="cta-pill"
             >
               Start Free
@@ -68,7 +68,7 @@ export default function PricingSection() {
               <li>Hard budget limits &amp; killswitches</li>
             </ul>
             <a
-              href="https://layerflow.dev/pricing"
+              href="/pricing"
               className="cta-pill"
               style={{
                 backgroundColor: "#f97316",
@@ -95,7 +95,7 @@ export default function PricingSection() {
               <li>Priority support &amp; private Discord</li>
             </ul>
             <a
-              href="https://layerflow.dev/pricing"
+              href="/pricing"
               className="cta-pill"
             >
               Upgrade Team
@@ -108,7 +108,7 @@ export default function PricingSection() {
           Questions?{" "}
           <a
             style={{ color: "#ea580c", fontWeight: 600 }}
-            href="https://layerflow.dev/docs"
+            href="/docs"
             target="_blank"
             rel="noopener noreferrer"
           >

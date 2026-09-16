@@ -43,7 +43,7 @@ export default function Navbar() {
         <a
           className="group ml-2 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] bg-accent py-2 pl-4 pr-2.5 text-[13px] text-white no-underline shadow-[0_2px_10px_rgba(249,115,22,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] transition-all hover:-translate-y-px hover:bg-accent-deep hover:shadow-[0_6px_22px_rgba(249,115,22,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           style={{ fontWeight: "var(--font-weight-medium)" }}
-          href="https://layerflow.dev"
+          href="/sign-in"
         >
           Start Coding
           <span

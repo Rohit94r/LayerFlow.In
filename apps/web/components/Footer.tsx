@@ -56,7 +56,7 @@ export default function Footer() {
             </span>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="https://layerflow.dev"
+              href="/sign-in"
             >
               Web Workspace
             </a>
@@ -96,25 +96,19 @@ export default function Footer() {
             </span>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="https://layerflow.dev/docs"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/docs"
             >
               Documentation
             </a>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="https://layerflow.dev/agents"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/agents"
             >
               Agent Library
             </a>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="https://layerflow.dev/blog"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/blog"
             >
               Blog
             </a>
@@ -150,7 +144,7 @@ export default function Footer() {
             </a>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="https://layerflow.dev/docs"
+              href="/docs"
             >
               BYOK Security Model
             </a>

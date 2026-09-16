@@ -35,7 +35,7 @@ export default function ProblemSection() {
 
         <a
           className="cta-pill cta-lg rv"
-          href="https://layerflow.dev"
+          href="/sign-in"
           style={{
             background: "var(--accent)",
             boxShadow: "0 4px 18px rgba(249, 115, 22, 0.4)",

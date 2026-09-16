@@ -45,21 +45,21 @@ export default function PublicBand() {
 
         <div className="public-links rv">
           <a
-            href="https://layerflow.dev/docs"
+            href="/docs"
             target="_blank"
             rel="noopener noreferrer"
           >
             Read the documentation &amp; CLI setup →
           </a>
           <a
-            href="https://layerflow.dev/agents"
+            href="/agents"
             target="_blank"
             rel="noopener noreferrer"
           >
             Explore agent templates &amp; workflows →
           </a>
           <a
-            href="https://layerflow.dev/pricing"
+            href="/pricing"
             target="_blank"
             rel="noopener noreferrer"
           >
