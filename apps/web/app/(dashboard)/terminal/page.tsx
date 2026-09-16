@@ -16,6 +16,7 @@ import { formatMoney, timeAgo } from "@/lib/data/providers";
 import { runsService } from "@/lib/services/runs";
 import { syncService } from "@/lib/services/sync";
 import type { SyncOperation } from "@/lib/services/sync";
+import { TerminalRepl } from "@/components/features/terminal/terminal-repl";
 import { cn } from "@/lib/utils";
 
 const RUN_STATUS: Record<Run["status"], { label: string; tone: "neutral" | "amber" | "mint" | "rose" | "red" }> = {
@@ -103,6 +104,8 @@ export default function TerminalPage() {
         </div>
       ) : (
         <>
+          <TerminalRepl />
+
           <section className="space-y-3">
             <h2 className="text-base font-semibold tracking-tight text-ink">CLI Sync Activity</h2>
             {ops.length === 0 ? (
