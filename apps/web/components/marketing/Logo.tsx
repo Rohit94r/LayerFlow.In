@@ -7,10 +7,17 @@ export default function Logo({
 }) {
   return (
     <span
-      className={`nav-logo font-sans text-[1.35rem] font-medium tracking-[-0.02em] ${
+      className={`nav-logo inline-flex items-center gap-2 font-sans text-[1.35rem] font-medium tracking-[-0.02em] ${
         variant === "hero" ? "text-white" : "text-ink"
       } ${className ?? ""}`}
     >
+      <img
+        src="/logo.png"
+        alt="LayerFlow"
+        width={32}
+        height={32}
+        className="rounded"
+      />
       layerflow
     </span>
   );
