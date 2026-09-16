@@ -95,7 +95,7 @@ export const similarHitSchema = z.object({
   memoryId: idSchema,
   title: z.string(),
   body: z.string(),
-  sourceType: z.enum(["prompt", "session", "run", "manual", "chat"]),
+  sourceType: z.enum(["prompt", "session", "run", "manual", "chat", "file"]),
   /** For sourceType "prompt" this is the prompt ID to link back to. */
   sourceId: idSchema.nullish(),
   /** Cosine similarity, 1 = identical direction, 0 = unrelated. */

@@ -1,0 +1,61 @@
+=== SCRIPT commit1 args ===
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+LOG="$(git rev-parse --show-toplevel)/batch-14.log"
+: > "$LOG"
+
+commit() {
+  local msg="$1"; shift
+  local want="" got="" line=""
+  git add -- "$@"
+  # Assert staged-set == requested set (no strays, all present)
+  want=$(printf '%s\n' "$@" | sort)
+  got=$(git diff --cached --name-only | sort)
+  if [ "$got" != "$want" ]; then
+    echo "MISMATCH on: $msg" | tee -a "$LOG"
+    echo "  want:" | tee -a "$LOG"; echo "$want" | sed 's/^/    /' | tee -a "$LOG"
+    echo "  got :" | tee -a "$LOG"; echo "$got" | sed 's/^/    /' | tee -a "$LOG"
+    exit 1
+  fi
+  git commit -q -m "$msg"
+=== porcelain ===
+ M apps/api/src/config/env.ts
+ M apps/api/src/db/schema/agents.ts
+ M apps/api/src/db/schema/cost.ts
+ M apps/api/src/db/schema/memory.ts
+ M apps/api/src/jobs/processors/agent.ts
+ M apps/api/src/middleware/auth-rate-limit.ts
+ M apps/api/src/middleware/rate-limit.ts
+ M apps/api/src/routes/agents/builder.ts
+ M apps/api/src/routes/files/files.ts
+ M apps/api/src/routes/ws/ws.ts
+ M apps/api/src/services/agents/builder.ts
+ M apps/api/src/services/agents/ssrf.ts
+ M apps/api/src/services/agents/tools.ts
+ M apps/api/src/services/ai/providers/keys.ts
+ M apps/api/src/services/chat/router.ts
+ M apps/api/src/services/files/storage.ts
+ M apps/api/src/services/runs/budget-hook.ts
+ M apps/web/app/(dashboard)/agents/new/page.tsx
+ M apps/web/components/features/terminal/terminal-repl.tsx
+ M packages/contracts/src/memory.ts
+ M packages/contracts/src/search.ts
+ M terminal/cmd/lf/chat.go
+ M terminal/cmd/lf/root.go
+ M terminal/cmd/lf/sync.go
+ M terminal/internal/app/app.go
+ M terminal/internal/config/config.go
+ M terminal/internal/sync/sync.go
+?? .tmp-batch-14.sh
+?? .tmp-dbg-1.txt
+?? apps/api/src/routes/ws/ws.test.ts
+?? apps/api/src/services/files/ingest.ts
+?? docs/FULL_PRODUCTION_AUDIT.md
+?? docs/PRODUCTION_FIX_PLAN.md
+?? docs/REMAINING_WORK.md
+?? docs/plans/anylyse.md
+?? scripts/REMAINING_WORK/
+?? scripts/batch-14.sh
+?? scripts/git-commits.sh
+?? terminal/internal/sync/sync_test.go

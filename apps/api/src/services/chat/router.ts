@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { computeCostMicro, getModel, type Provider } from "@layerflow/model-registry";
 import type { ChatMessageRecord } from "@layerflow/contracts";
 import { db } from "../../db/client";
@@ -292,9 +292,30 @@ export async function runChatMessage(input: {
   });
   if (!session) throw new AppError(404, "not_found", "Chat session not found");
 
+  // Retry dedupe: if this is an exact re-send of the last user message whose
+  // assistant turn failed (error row) or never produced output (empty draft),
+  // reuse that assistant row instead of stacking a duplicate user + assistant
+  // pair. Prevents the UI "retry" path from duplicating rows in the thread.
+  const tail = await db.query.aiChatMessages.findMany({
+    where: eq(aiChatMessages.sessionId, sessionId),
+    orderBy: [desc(aiChatMessages.createdAt)],
+    limit: 2,
+  });
+  const [last, prev] = tail;
+  const isExactRetry =
+    last?.role === "user" &&
+    last.content.trim() === content.trim() &&
+    prev?.role === "assistant" &&
+    (prev.errorCode !== null || prev.content === "");
+
+  let reusedAssistantId: string | null = null;
+  if (isExactRetry && prev) reusedAssistantId = prev.id;
+
   // The user turn lands immediately so the UI can render it while the model works.
   const count = await countSessionMessages(sessionId);
-  await insertChatMessage({ sessionId, role: "user", content });
+  if (!isExactRetry) {
+    await insertChatMessage({ sessionId, role: "user", content });
+  }
   await touchChatSession(sessionId, {
     title: count === 0 ? content.slice(0, 48) : undefined,
   });
@@ -338,7 +359,15 @@ export async function runChatMessage(input: {
   const estimateCost = computeCostMicro(chosenModel, estInput, MAX_CHAT_OUTPUT_TOKENS) ?? 50_000;
 
   // Stable row for the streaming reply; updated in place when a call succeeds.
-  const assistantMessage = await insertChatMessage({ sessionId, role: "assistant", content: "" });
+  // On an exact retry, the previously-failed assistant row is reused and its
+  // error state cleared so no duplicate rows accumulate in the thread.
+  const assistantMessage = reusedAssistantId
+    ? await updateChatMessage(reusedAssistantId, {
+        content: "",
+        errorCode: undefined,
+        errorMessage: undefined,
+      })
+    : await insertChatMessage({ sessionId, role: "assistant", content: "" });
 
   const reservation = await budgetReserve({
     workspaceId,
@@ -530,6 +559,29 @@ export async function runChatMessage(input: {
           code: err instanceof AppError ? err.code : "provider_error",
           message: err instanceof Error ? err.message : "Provider call failed",
         };
+
+        // The client aborted mid-call (stop button / closed tab). Stop the
+        // failover chain immediately: do not try other providers and do not
+        // settle the reservation — the user left; charging them for a reply
+        // they never saw would be wrong.
+        if (lastError.code === "client_closed" || input.signal?.aborted) {
+          await updateChatMessage(assistantMessage.id, {
+            errorCode: "cancelled",
+            errorMessage: "Cancelled by user",
+          });
+          try {
+            await budgetRelease({
+              workspaceId,
+              reservationId: reservation.reservationId,
+              runId: assistantMessage.id,
+            });
+          } catch {
+            // reservation TTL will expire it
+          }
+          await input.onEvent({ type: "error", code: "cancelled", message: "Cancelled by user" });
+          return;
+        }
+
         // Only surface network-level failures as error events; key-health
         // failures are expected during failover and will be explained by the
         // switch notice if a fallback succeeds.

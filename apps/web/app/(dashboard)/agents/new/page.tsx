@@ -323,7 +323,7 @@ export default function NewAgentPage() {
         systemPrompt,
         modelId: null,
         temperature: 0.3,
-        tools: ["safe_browser", "resume_parser", "cover_letter_writer", "approval_gate", "agent_memory"],
+        tools: ["search", "read_file", "write_file", "fetch_url", "shell"],
         schedule: selectedTemplate.defaultSchedule,
         expectedActivity: selectedTemplate.expectedOutcome,
         estimatedUsage: selectedTemplate.estimatedCost,

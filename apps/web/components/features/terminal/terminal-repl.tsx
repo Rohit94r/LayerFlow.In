@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { ChatEvent } from "@layerflow/contracts";
 import { Loader2, Plus, Sparkles } from "@/components/ui/icons";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export function TerminalRepl() {
   const [prompt, setPrompt] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [socketOpen, setSocketOpen] = useState(false);
+  const [lastPrompt, setLastPrompt] = useState<string | null>(null);
 
   const sessionRef = useRef<string | null>(null);
   const contentRef = useRef("");
@@ -85,10 +87,11 @@ export function TerminalRepl() {
     }
   }
 
-  async function send() {
-    const text = prompt.trim();
+  async function send(input?: string) {
+    const text = (input ?? prompt).trim();
     if (!text || streaming) return;
 
+    setLastPrompt(text);
     setPrompt("");
     contentRef.current = "";
     appendEntry({ id: `p-${Date.now()}`, kind: "prompt", text });
@@ -181,11 +184,17 @@ export function TerminalRepl() {
     }
   }
 
+  function retry() {
+    if (!lastPrompt || streaming) return;
+    void send(lastPrompt);
+  }
+
   function reset() {
     abortRef.current?.abort();
     abortRef.current = null;
     contentRef.current = "";
     placeholderRef.current = null;
+    setLastPrompt(null);
     sessionRef.current = null;
     setSessionId(null);
     setEntries([]);
@@ -249,6 +258,14 @@ export function TerminalRepl() {
                         .
                       </span>
                     ) : null}
+                    <button
+                      type="button"
+                      onClick={retry}
+                      disabled={!lastPrompt || streaming}
+                      className="ml-2 inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 text-[11px] text-muted transition-colors hover:border-brand/40 hover:text-brand disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      retry ↵
+                    </button>
                   </div>
                 );
               }
@@ -312,9 +329,9 @@ export function TerminalRepl() {
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           Runs through the same chat router as the Chat workspace — if Grok is missing a key or rate-limits, the
           request automatically falls back to the next available provider. Responses and cost appear in{" "}
-          <a className="text-brand hover:underline" href="/chat">
+          <Link className="text-brand hover:underline" href="/chat">
             Chat
-          </a>
+          </Link>
           .
         </p>
       </div>

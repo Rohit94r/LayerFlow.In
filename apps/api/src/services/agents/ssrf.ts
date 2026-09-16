@@ -60,14 +60,45 @@ PRIVATE_RANGES.push({
   test: (ip) => isIpInRange(ip, "169.254.0.0", 16),
 });
 
+// 0.0.0.0/8 (current network)
+PRIVATE_RANGES.push({
+  label: "0.x.x.x",
+  test: (ip) => isIpInRange(ip, "0.0.0.0", 8),
+});
+
+// ── IPv6 private / reserved range checkers ─────────────────────
+
+function isPrivateIPv6(ip: string): boolean {
+  // Normalize: strip zone ID, handle ::ffff: prefix (IPv4-mapped)
+  const clean = ip.toLowerCase().replace(/%\w+$/, "");
+  // IPv4-mapped IPv6: ::ffff:127.0.0.1 → check inner IPv4
+  const v4Mapped = clean.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (v4Mapped) return isPrivateIp(v4Mapped[1]);
+
+  // Loopback ::1
+  if (clean === "::1" || clean === "0:0:0:0:0:0:0:1") return true;
+  // Unspecified ::
+  if (clean === "::" || clean === "0:0:0:0:0:0:0:0") return true;
+  // Unique Local fc00::/7
+  if (/^f[cd]/.test(clean)) return true;
+  // Link-local fe80::/10
+  if (/^fe[89ab]/.test(clean)) return true;
+
+  return false;
+}
+
+// Maximum hops for SSRF redirect validation
+const MAX_SSRF_REDIRECTS = 5;
+
 /**
  * Check whether an IP address string is a known private / reserved address
  * that should never be reached by an agent tool. Supports IPv4 private ranges
  * and the IPv6 loopback address.
  */
 export function isPrivateIp(ip: string): boolean {
-  if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") return true;
   if (ip === "0.0.0.0") return true;
+  // IPv6 checks first
+  if (/[:]/.test(ip)) return isPrivateIPv6(ip);
   return PRIVATE_RANGES.some((r) => r.test(ip));
 }
 
@@ -100,7 +131,8 @@ export async function validateUrl(urlString: string): Promise<
   const hostnameRaw = url.hostname;
   // Strip IPv6 brackets (Node.js URL returns "[::1]" for literal IPv6 addresses)
   const hostname = hostnameRaw.replace(/^\[|\]$/g, "");
-  const isIpLiteral = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname === "::1";
+  const isIpLiteral = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) ||
+    /^[0-9a-f:]+$/i.test(hostname);
 
   let resolvedIp: string;
 
@@ -115,24 +147,26 @@ export async function validateUrl(urlString: string): Promise<
     return { ok: true, ip: resolvedIp, hostname, url };
   }
 
-  // Resolve DNS (A-record lookup)
+  // Resolve DNS using lookup (returns both IPv4/IPv6 mapped addresses) and
+  // reject if ANY resolved address is private — DNS rebinding defense.
   try {
     const dns = await import("node:dns/promises");
-    const addresses = await dns.resolve4(hostname);
+    const lookupResult = await dns.lookup(hostname, { all: true, family: 0 });
+    const addresses = lookupResult.map((r) => r.address);
     if (addresses.length === 0) {
       return { ok: false, error: `DNS resolution returned no records for: ${hostname}` };
+    }
+    const privateAddrs = addresses.filter((addr) => isPrivateIp(addr));
+    if (privateAddrs.length > 0) {
+      return {
+        ok: false,
+        error: `Blocked request to private IP range: ${privateAddrs.join(", ")} (resolved from ${hostname})`,
+      };
     }
     resolvedIp = addresses[0];
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return { ok: false, error: `DNS resolution failed for ${hostname}: ${message}` };
-  }
-
-  if (isPrivateIp(resolvedIp)) {
-    return {
-      ok: false,
-      error: `Blocked request to private IP range: ${resolvedIp} (resolved from ${hostname})`,
-    };
   }
 
   return { ok: true, ip: resolvedIp, hostname, url };
@@ -150,68 +184,98 @@ export async function safeFetch(
   if (!validated.ok) return validated;
 
   const { timeoutMs = 15_000, maxBytes = 2 * 1024 * 1024 } = options;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  try {
-    const response = await fetch(validated.url, {
-      signal: controller.signal,
-      headers: { "User-Agent": "LayerFlow-Agent/1.0" },
-    });
-
-    if (!response.ok) {
-      return {
-        ok: false,
-        error: `HTTP ${response.status} ${response.statusText}`,
-      };
+  let currentUrl = validated.url;
+  for (let hop = 0; hop <= MAX_SSRF_REDIRECTS; hop++) {
+    // Validate every hop — a public URL redirecting to an internal IP is SSRF.
+    if (hop > 0) {
+      const hopValidated = await validateUrl(currentUrl.toString());
+      if (!hopValidated.ok) {
+        return { ok: false, error: `Redirect rejected: ${hopValidated.error}` };
+      }
     }
 
-    const contentType = response.headers.get("content-type") ?? "application/octet-stream";
-    const contentLength = response.headers.get("content-length");
-    if (contentLength && Number(contentLength) > maxBytes) {
-      return {
-        ok: false,
-        error: `Response too large: ${contentLength} bytes (max ${maxBytes})`,
-      };
-    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    const reader = response.body?.getReader();
-    if (!reader) {
-      return { ok: false, error: "Response body is not readable" };
-    }
+    try {
+      const response = await fetch(currentUrl, {
+        signal: controller.signal,
+        redirect: "manual",
+        headers: { "User-Agent": "LayerFlow-Agent/1.0" },
+      });
 
-    const decoder = new TextDecoder();
-    let body = "";
-    let total = 0;
+      // Manually follow redirects so each hop gets SSRF-validated.
+      if (
+        (response.status === 301 || response.status === 302 ||
+          response.status === 303 || response.status === 307 || response.status === 308) &&
+        response.headers.has("location")
+      ) {
+        const location = response.headers.get("location")!;
+        const nextUrl = new URL(location, currentUrl);
+        // Drain + close the redirect body so we never leak a socket.
+        await response.body?.cancel();
+        currentUrl = nextUrl;
+        continue;
+      }
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.length;
-      if (total > maxBytes) {
-        reader.cancel();
+      if (!response.ok) {
         return {
           ok: false,
-          error: `Response exceeded ${maxBytes} bytes after reading ${total} bytes`,
+          error: `HTTP ${response.status} ${response.statusText}`,
         };
       }
-      body += decoder.decode(value, { stream: true });
-    }
-    body += decoder.decode(); // flush
 
-    logger.info(
-      { url: validated.hostname, bytes: total, contentType },
-      "safeFetch completed",
-    );
+      const contentType = response.headers.get("content-type") ?? "application/octet-stream";
+      const contentLength = response.headers.get("content-length");
+      if (contentLength && Number(contentLength) > maxBytes) {
+        await response.body?.cancel();
+        return {
+          ok: false,
+          error: `Response too large: ${contentLength} bytes (max ${maxBytes})`,
+        };
+      }
 
-    return { ok: true, body, contentType };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    if (err instanceof DOMException && err.name === "AbortError") {
-      return { ok: false, error: `Request timed out after ${timeoutMs}ms` };
+      const reader = response.body?.getReader();
+      if (!reader) {
+        return { ok: false, error: "Response body is not readable" };
+      }
+
+      const decoder = new TextDecoder();
+      let body = "";
+      let total = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.length;
+        if (total > maxBytes) {
+          await reader.cancel();
+          return {
+            ok: false,
+            error: `Response exceeded ${maxBytes} bytes after reading ${total} bytes`,
+          };
+        }
+        body += decoder.decode(value, { stream: true });
+      }
+      body += decoder.decode(); // flush
+
+      logger.info(
+        { url: currentUrl.hostname, bytes: total, contentType },
+        "safeFetch completed",
+      );
+
+      return { ok: true, body, contentType };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return { ok: false, error: `Request timed out after ${timeoutMs}ms` };
+      }
+      return { ok: false, error: message };
+    } finally {
+      clearTimeout(timer);
     }
-    return { ok: false, error: message };
-  } finally {
-    clearTimeout(timer);
   }
+
+  return { ok: false, error: `Too many redirects (max ${MAX_SSRF_REDIRECTS})` };
 }

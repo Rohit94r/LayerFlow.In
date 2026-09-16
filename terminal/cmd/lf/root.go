@@ -17,6 +17,7 @@ import (
 	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/config"
 	"github.com/layerflow/terminal/internal/daemon"
+	"github.com/layerflow/terminal/internal/mcp"
 	"github.com/layerflow/terminal/internal/session"
 	"github.com/layerflow/terminal/internal/storage"
 	ui "github.com/layerflow/terminal/internal/ui"
@@ -404,11 +405,6 @@ func stubNotice(what string) {
 }
 
 func listSessions(open bool, id string, delete bool) error {
-	if open {
-		stubNotice("Interactive session open")
-		return nil
-	}
-
 	db, err := storage.Open(&storage.Options{})
 	if err != nil {
 		return fmt.Errorf("open storage: %w", err)
@@ -417,6 +413,38 @@ func listSessions(open bool, id string, delete bool) error {
 
 	store := session.NewSQLStore(db)
 	ctx := context.Background()
+
+	if open {
+		if id == "" {
+			// List sessions and prompt for selection.
+			dir, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+			sessions, err := store.List(ctx, dir, 50)
+			if err != nil {
+				return fmt.Errorf("list sessions: %w", err)
+			}
+			if len(sessions) == 0 {
+				return fmt.Errorf("no sessions found for the current project")
+			}
+			fmt.Println("Sessions (type a number to open):")
+			for i, s := range sessions {
+				title := s.Title
+				if title == "" {
+					title = "(untitled)"
+				}
+				fmt.Printf("  %d) %s  %-32s  %s/%s\n", i+1, s.ID, title, s.Provider, s.Model)
+			}
+			fmt.Print("\n  > ")
+			var choice int
+			if _, err := fmt.Scanln(&choice); err != nil || choice < 1 || choice > len(sessions) {
+				return fmt.Errorf("invalid selection")
+			}
+			id = sessions[choice-1].ID
+		}
+		return runInteractive("", "", "", id)
+	}
 
 	if delete {
 		if id == "" {
@@ -723,17 +751,89 @@ func listMCPServers() error {
 }
 
 func addMCPServer(name, serverType, ref string) error {
-	stubNotice("MCP add")
+	if strings.TrimSpace(name) == "" || strings.TrimSpace(ref) == "" {
+		return errors.New("mcp add requires <name> <type> <ref>")
+	}
+
+	var kind string
+	switch serverType {
+	case "stdio", "http", "sse", "streamable-http":
+		kind = serverType
+	default:
+		return fmt.Errorf("unsupported MCP type %q (use stdio, http, or sse)", serverType)
+	}
+
+	cfg, err := config.Load("")
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+	if cfg.MCPServers == nil {
+		cfg.MCPServers = map[string]config.MCPServerConfig{}
+	}
+	if _, exists := cfg.MCPServers[name]; exists {
+		return fmt.Errorf("MCP server %q already configured", name)
+	}
+
+	// For stdio servers ref is the binary command; for HTTP transports it is
+	// the base URL. Preserve the transport in the command env so health checks
+	// and the runtime know how to connect.
+	cfg.MCPServers[name] = config.MCPServerConfig{
+		Command: ref,
+		Env:     map[string]string{"LF_MCP_TYPE": kind},
+	}
+	if err := cfg.Save(); err != nil {
+		return fmt.Errorf("save config: %w", err)
+	}
+	fmt.Printf("Added MCP server %q (%s)\n", name, kind)
 	return nil
 }
 
 func removeMCPServer(name string) error {
-	stubNotice("MCP remove")
+	if strings.TrimSpace(name) == "" {
+		return errors.New("mcp remove requires <name>")
+	}
+	if err := config.RemoveMCPServer(name); err != nil {
+		return err
+	}
+	fmt.Printf("Removed MCP server %q\n", name)
 	return nil
 }
 
 func checkMCPHealth(name string) error {
-	stubNotice("MCP health")
+	ctx := context.Background()
+
+	cfg, err := config.Load("")
+	if err != nil {
+		return fmt.Errorf("load config: %w", err)
+	}
+
+	spec, ok := cfg.MCPServers[name]
+	if !ok {
+		return fmt.Errorf("MCP server %q not configured", name)
+	}
+
+	kind := spec.Env["LF_MCP_TYPE"]
+	switch kind {
+	case "stdio":
+	case "http", "sse", "streamable-http":
+		// config stores http/sse servers by URL in the command field.
+	default:
+		return fmt.Errorf("MCP server %q has unknown transport type", name)
+	}
+
+	registry := mcp.NewRegistry()
+	if err := registry.Add(ctx, &mcp.Server{Name: name, Kind: kind, Ref: spec.Command}); err != nil {
+		return fmt.Errorf("register server: %w", err)
+	}
+
+	health, err := registry.Health(ctx, name)
+	if err != nil {
+		return fmt.Errorf("health check: %w", err)
+	}
+	fmt.Printf("%s: status=%s latency=%dms\n", name, health.Status, health.Latency)
+	if health.Status != "ok" {
+		return fmt.Errorf("MCP server %q is unhealthy: %s", name, health.Status)
+	}
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -102,6 +103,7 @@ type Syncer struct {
 	journal  Journal
 	merger   Merger
 	deviceID string
+	db       *sql.DB // optional: used to materialize pulled ops into local stores
 	mu       sync.Mutex
 	clock    LamportClock
 }
@@ -145,12 +147,14 @@ func (c *LamportClock) Now() int64 {
 }
 
 // NewSyncer creates a Syncer with the given dependencies.
-func NewSyncer(client Client, journal Journal, merger Merger, deviceID string) *Syncer {
+// Pass db to enable materializing pulled ops into local session/message stores.
+func NewSyncer(client Client, journal Journal, merger Merger, deviceID string, db *sql.DB) *Syncer {
 	return &Syncer{
 		client:   client,
 		journal:  journal,
 		merger:   merger,
 		deviceID: deviceID,
+		db:       db,
 		clock:    *NewLamportClock(deviceID),
 	}
 }
@@ -220,7 +224,7 @@ func (s *Syncer) Sync(ctx context.Context, lastWatermark int64) (*SyncResult, er
 			if err := s.journal.Append(ctx, remote); err != nil {
 				return nil, fmt.Errorf("append remote op: %w", err)
 			}
-			if err := materializeOp(ctx, nil, &remote); err != nil {
+			if err := materializeOp(ctx, nil, &remote, s.db); err != nil {
 				slog.Warn("sync: materialize remote op failed", "entity", remote.Entity, "entity_id", remote.EntityID, "err", err)
 			}
 			continue
@@ -242,7 +246,7 @@ func (s *Syncer) Sync(ctx context.Context, lastWatermark int64) (*SyncResult, er
 		}
 
 		// Materialize the resolved operation into local stores
-		if err := materializeOp(ctx, localMatch, &resolved); err != nil {
+		if err := materializeOp(ctx, localMatch, &resolved, s.db); err != nil {
 			slog.Warn("sync: materialize resolved op failed", "entity", resolved.Entity, "entity_id", resolved.EntityID, "err", err)
 		}
 
@@ -505,9 +509,12 @@ func generateOpID() string {
 // materializeOp writes a pulled or resolved sync operation into the local
 // SQLite session/message stores so the data is immediately available in the
 // terminal — not just in the sync journal. Supports "session" and "message"
-// entity types.
-func materializeOp(ctx context.Context, localMatch *Operation, remote *Operation) error {
-	store := session.NewSQLStore(nil) // caller should inject the db; for now we skip if no db handle
+// entity types. Skips silently when no local DB handle is available.
+func materializeOp(ctx context.Context, localMatch *Operation, remote *Operation, db *sql.DB) error {
+	if db == nil {
+		return nil // no local store available; skip materialization
+	}
+	store := session.NewSQLStore(db)
 
 	// Remote payload is expected to be a map with entity-specific fields.
 	payload, ok := remote.Payload.(map[string]any)

@@ -7,7 +7,7 @@
  * Tool results are recorded as agent steps for auditability.
  */
 import { logger } from "../../config/logger";
-import { resolve, normalize, relative } from "node:path";
+import { resolve, normalize, relative, dirname } from "node:path";
 
 
 
@@ -87,20 +87,10 @@ export async function executeToolChain(
 registerTool("read_file", "Read the contents of a file", async (ctx, args) => {
   const path = String(args.path ?? "");
   if (!path) return { ok: false, output: "", error: "Missing 'path' argument" };
-  // Security: ensure path is within the allowed workspace directory
-  try {
-    const resolved = resolve(ctx.cwd ?? process.cwd(), path);
-    const normalized = normalize(resolved);
-    const allowed = normalize(ctx.cwd ?? process.cwd());
-    if (!normalized.startsWith(allowed)) {
-      return { ok: false, output: "", error: "Path is outside the allowed workspace directory" };
-    }
-  } catch {
-    return { ok: false, output: "", error: "Invalid path" };
-  }
   const fs = await import("fs/promises");
   try {
-    const content = await fs.readFile(path, "utf-8");
+    const normalized = await resolvePath(ctx.cwd ?? process.cwd(), path);
+    const content = await fs.readFile(normalized, "utf-8");
     return { ok: true, output: content.slice(0, 100_000) };
   } catch (err) {
     const message = err instanceof Error ? err.message : "read failed";
@@ -117,11 +107,10 @@ registerTool("search", "Search for a pattern in files", async (ctx, args) => {
   // Security: use spawnSync with array args to prevent shell injection
   const { spawnSync } = await import("child_process");
   try {
-    // Validate the path stays within allowed workspace
     const cwd = ctx.cwd ?? process.cwd();
-    const normalized = normalize(resolve(cwd, searchPath));
+    const normalized = await resolvePath(cwd, searchPath);
     const allowed = normalize(cwd);
-    if (!normalized.startsWith(allowed)) {
+    if (relative(allowed, normalized).startsWith("..")) {
       return { ok: false, output: "", error: "Search path outside allowed workspace" };
     }
     
@@ -158,21 +147,11 @@ registerTool("write_file", "Write content to a file", async (ctx, args) => {
   const path = String(args.path ?? "");
   const content = String(args.content ?? "");
   if (!path) return { ok: false, output: "", error: "Missing 'path' argument" };
-  // Security: ensure path is within the allowed workspace directory
-  try {
-    const cwd = ctx.cwd ?? process.cwd();
-    const resolved = resolve(cwd, path);
-    const normalized = normalize(resolved);
-    const allowed = normalize(cwd);
-    if (!normalized.startsWith(allowed)) {
-      return { ok: false, output: "", error: "Path is outside the allowed workspace directory" };
-    }
-  } catch {
-    return { ok: false, output: "", error: "Invalid path" };
-  }
   const fs = await import("fs/promises");
   try {
-    await fs.writeFile(path, content, "utf-8");
+    const normalized = await resolvePath(ctx.cwd ?? process.cwd(), path);
+    await fs.mkdir(dirname(normalized), { recursive: true });
+    await fs.writeFile(normalized, content, "utf-8");
     return { ok: true, output: `Wrote ${content.length} bytes to ${path}` };
   } catch (err) {
     const message = err instanceof Error ? err.message : "write failed";
@@ -186,26 +165,15 @@ registerTool("edit_file", "Edit a file by replacing text", async (ctx, args) => 
   const oldText = String(args.old_text ?? "");
   const newText = String(args.new_text ?? "");
   if (!path || !oldText) return { ok: false, output: "", error: "Missing 'path' or 'old_text' argument" };
-  // Security: ensure path is within the allowed workspace directory
-  try {
-    const cwd = ctx.cwd ?? process.cwd();
-    const resolved = resolve(cwd, path);
-    const normalized = normalize(resolved);
-    const allowed = normalize(cwd);
-    if (!normalized.startsWith(allowed)) {
-      return { ok: false, output: "", error: "Path is outside the allowed workspace directory" };
-    }
-  } catch {
-    return { ok: false, output: "", error: "Invalid path" };
-  }
   const fs = await import("fs/promises");
   try {
-    const content = await fs.readFile(path, "utf-8");
+    const normalized = await resolvePath(ctx.cwd ?? process.cwd(), path);
+    const content = await fs.readFile(normalized, "utf-8");
     if (!content.includes(oldText)) {
       return { ok: false, output: "", error: "old_text not found in file" };
     }
     const updated = content.replace(oldText, newText);
-    await fs.writeFile(path, updated, "utf-8");
+    await fs.writeFile(normalized, updated, "utf-8");
     return { ok: true, output: `Replaced in ${path} (${content.length} → ${updated.length} bytes)` };
   } catch (err) {
     const message = err instanceof Error ? err.message : "edit failed";
@@ -253,19 +221,42 @@ registerTool("shell", "Run a shell command (read-only by default, dangerous comm
 
 /**
  * Resolve a path within the allowed workspace directory.
- * Prevents path traversal attacks by resolving symlinks and checking that the
- * result is still within the allowed base directory.
+ * Uses realpath on the deepest existing ancestor to prevent symlink escapes:
+ * a symlink inside the workspace pointing outside will be caught.
  */
-export function resolvePath(baseDir: string, userPath: string): string {
+export async function resolvePath(baseDir: string, userPath: string): Promise<string> {
+  const fs = await import("fs/promises");
   const base = resolve(baseDir);
   const target = resolve(base, normalize(userPath));
   const rel = relative(base, target);
 
-  // If the resolved path starts with "..", it's outside the workspace.
   if (rel.startsWith("..") || rel.startsWith("/") || rel === "") {
     throw new Error(
       `Path traversal blocked: "${userPath}" resolves to "${target}" which is outside the allowed workspace "${base}"`,
     );
+  }
+
+  // Walk upward to the deepest existing ancestor, then realpath it to catch symlinks.
+  let check = target;
+  while (check !== base) {
+    try {
+      await fs.access(check);
+      break; // exists — realpath will reveal if it's a symlink
+    } catch {
+      check = dirname(check);
+    }
+  }
+  try {
+    const real = await fs.realpath(check);
+    const relReal = relative(base, real);
+    if (relReal.startsWith("..") || relReal.startsWith("/")) {
+      throw new Error(
+        `Path traversal blocked: "${userPath}" resolves through symlink to "${real}" which is outside the workspace`,
+      );
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.startsWith("Path traversal")) throw err;
+    // Non-existent path is fine (will be created by write)
   }
 
   return target;
@@ -311,20 +302,29 @@ export const DANGEROUS_COMMANDS = [
   /\bscp\b/i,
 
   // Environment/secret dumping
-  /\bexport\b.*\b=\b/i,
   /\benv\b/i,
   /\bprintenv\b/i,
 
   // Process manipulation
   /\bkill\b/i,
   /\bpkill\b/i,
-  /\bsudo\b/i,
-  /\bsu\b/i,
   /\bchmod\b.*\b777\b/i,
   /\bchown\b/i,
 
   // Fork bomb
   /:\s*\(\)\s*\{[^}]*:\s*:\s*&\s*:\s*;\s*\}/i,
+
+  // Command substitution — block nested eval / subshell escape hatches.
+  // $() form
+  /\$\(/i,
+  // Backtick form
+  /`/,
+
+  // Sub-shell launchers (bash -c, sh -c, zsh -c)
+  /\b(bash|sh|zsh|csh|fish)\s+-c\b/i,
+
+  // env -i / env manipulation used to clear ambient vars
+  /\benv\s+-[ie]+\b/i,
 ];
 
 /**
@@ -341,7 +341,7 @@ export function isDangerousCommand(command: string): { dangerous: boolean; reaso
   const blockedCommands = [
     "sudo", "su", "chown", "chmod", "mkfs", "dd", "fdisk",
     "parted", "ssh", "scp", "rsync", "kill", "pkill", "killall",
-    "nohup", "disown",
+    "nohup", "disown", "bash", "zsh", "csh", "fish", "env",
   ];
   if (blockedCommands.includes(cmdName)) {
     return { dangerous: true, reason: `command "${cmdName}" is blocked for security reasons` };
@@ -374,10 +374,9 @@ if (originalShell) {
     // Verify working directory is allowed.
     const cwd = _ctx.cwd ?? process.cwd();
     if (_ctx.workspaceId) {
-      const allowedBase = process.cwd(); // In real impl, resolve from workspace config
-      // resolvePath is used to validate directory containment
+      const allowedBase = process.cwd();
       try {
-        resolvePath(allowedBase, cwd);
+        await resolvePath(allowedBase, cwd);
       } catch {
         return { ok: false, output: "", error: "Working directory outside allowed workspace" };
       }

@@ -1,4 +1,6 @@
 import type { MiddlewareHandler } from "hono";
+import { getRedisDownMode } from "../config/env";
+import { logger } from "../config/logger";
 import { redis } from "../redis/client";
 import type { AppEnv } from "../types";
 import { AppError } from "./app-error";
@@ -53,7 +55,13 @@ export function rateLimit(options: RateLimitOptions): MiddlewareHandler<AppEnv> 
       }
     } catch (err) {
       if (err instanceof AppError) throw err;
-      // Fail open on Redis errors for rate limiting (budgets remain fail-closed).
+      // Fail-closed in production when Redis is down: block the request so an
+      // outage cannot silently bypass all rate limits. In dev/test the default
+      // is "allow" so local CI without Redis still exercises the code path.
+      if (getRedisDownMode() === "deny") {
+        logger.error({ err: err instanceof Error ? err.message : err }, "redis down — fail-closed rate limit");
+        throw new AppError(503, "rate_limiter_unavailable", "Rate limiter unavailable (Redis down)");
+      }
     }
 
     await next();

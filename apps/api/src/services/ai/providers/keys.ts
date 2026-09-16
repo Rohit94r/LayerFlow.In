@@ -29,6 +29,10 @@ function platformProviderKey(provider: Provider): string | undefined {
       return env.XAI_API_KEY;
     case "openrouter":
       return env.OPENROUTER_API_KEY;
+    case "anthropic":
+      return env.ANTHROPIC_API_KEY;
+    case "opencode":
+      return env.OPENCODE_API_KEY;
     default:
       return undefined;
   }

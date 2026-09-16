@@ -7,6 +7,7 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createdAtOnly, idColumn, microDollars, timestamps } from "./_helpers";
 import { workspaces } from "./tenancy";
 import { projects } from "./workspace";
@@ -99,5 +100,16 @@ export const usageRollups = pgTable(
     costMicro: microDollars("cost_micro").notNull().default(0),
     ...timestamps,
   },
-  (t) => [index("usage_rollups_workspace_day_idx").on(t.workspaceId, t.day)],
+  (t) => [
+    index("usage_rollups_workspace_day_idx").on(t.workspaceId, t.day),
+    // UNIQUE conflict target for the atomic rollup: dimension keys use COALESCE
+    // so NULL dims (project/model/key) dedupe correctly (NULL <> NULL in PG).
+    uniqueIndex("usage_rollups_dim_uq").on(
+      t.workspaceId,
+      t.day,
+      sql`COALESCE(${t.projectId}, '')`,
+      sql`COALESCE(${t.model}, '')`,
+      sql`COALESCE(${t.apiKeyId}, '')`,
+    ),
+  ],
 );

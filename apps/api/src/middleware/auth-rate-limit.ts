@@ -1,4 +1,6 @@
 import type { MiddlewareHandler } from "hono";
+import { getRedisDownMode } from "../config/env";
+import { logger } from "../config/logger";
 import { redis } from "../redis/client";
 import type { AppEnv } from "../types";
 import { AppError } from "./app-error";
@@ -22,11 +24,13 @@ export function authRateLimit(
   requestsPerMinute = 20,
 ): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
+    // Trust the right-most IP from X-Forwarded-For (the one appended by the
+    // last trusted proxy) rather than the left-most (client-spoofable).
     const forwarded = c.req.header("x-forwarded-for");
-    const ip =
-      forwarded?.split(",")[0]?.trim() ||
-      c.req.header("x-real-ip") ||
-      "unknown";
+    const parts = forwarded?.split(",").map((p) => p.trim()).filter(Boolean) ?? [];
+    const ip = parts.length > 0
+      ? parts[parts.length - 1]
+      : c.req.header("x-real-ip") || "unknown";
     const minute = Math.floor(Date.now() / 60_000);
     const key = `ratelimit:auth:${ip}:${minute}`;
 
@@ -46,8 +50,13 @@ export function authRateLimit(
       }
     } catch (err) {
       if (err instanceof AppError) throw err;
-      // Fail open on Redis errors — we must never lock users out because Redis
-      // hiccuped; the session + SameSite cookie protections still apply.
+      // Fail-closed in production: brute-force/credential-stuffing protection
+      // is critical; an outage must not silently disable auth rate limiting.
+      if (getRedisDownMode() === "deny") {
+        logger.error({ err: err instanceof Error ? err.message : err }, "redis down — fail-closed auth rate limit");
+        throw new AppError(503, "rate_limiter_unavailable", "Auth rate limiter unavailable (Redis down)");
+      }
+      // Fail open in dev/test — session + SameSite cookie protections still apply.
     }
 
     await next();

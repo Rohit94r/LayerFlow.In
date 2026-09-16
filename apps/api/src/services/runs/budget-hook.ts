@@ -6,6 +6,7 @@
  *   apps/api/src/budgets/enforce.ts — reserveBudget / settleBudget / releaseBudget
  */
 
+import { getRedisDownMode } from "../../config/env";
 import { AppError } from "../../middleware/app-error";
 import {
   releaseBudget,
@@ -59,9 +60,14 @@ export async function budgetReserve(args: BudgetReserveArgs): Promise<BudgetRese
     if (err instanceof AppError && err.code === "budget_exceeded") {
       return { reservationId: null, blocked: true, reason: err.message };
     }
-    // Soft fallback when Redis is unavailable (503): allow the run so local
-    // CI without Redis still exercises the provider path. Gateway hard-blocks.
+    // In "deny" mode (production default): hard-budget reservations block when
+    // Redis is unavailable — this prevents unlimited spend during an outage.
+    // In "allow" mode (dev/test): soft fallback so local CI without Redis still
+    // exercises the provider path.
     if (err instanceof AppError && err.code === "budget_unavailable") {
+      if (getRedisDownMode() === "deny") {
+        return { reservationId: null, blocked: true, reason: `Budget unavailable: ${err.message}` };
+      }
       return { reservationId: null, blocked: false, reason: err.message };
     }
     throw err;

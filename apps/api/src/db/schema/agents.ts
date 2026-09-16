@@ -422,3 +422,74 @@ export type AgentApprovalRow = typeof agentApprovals.$inferSelect;
 export type AgentMemoryRow = typeof agentMemories.$inferSelect;
 export type AgentDocumentRow = typeof agentDocuments.$inferSelect;
 export type ApplicationRecordRow = typeof applicationRecords.$inferSelect;
+
+export type BuilderStep =
+  | "goal"
+  | "ai_generate"
+  | "review_tools"
+  | "select_model"
+  | "define_permissions"
+  | "set_limits"
+  | "save"
+  | "deploy";
+
+export interface BuilderDraft {
+  name: string;
+  description: string;
+  role: string;
+  systemPrompt: string;
+  tools: string[];
+  model: {
+    modelId: string | null;
+    provider: string | null;
+    temperature: number;
+    maxTokens: number;
+    autoSwitch: boolean;
+  };
+  permissions: Record<string, string>;
+  maxIterations: number;
+  timeoutMs: number;
+}
+
+/**
+ * Persisted agent builder sessions. Replaces the in-memory Map so drafts
+ * survive server restarts and are workspace-scoped.
+ */
+export const agentBuilderSessions = pgTable(
+  "agent_builder_sessions",
+  {
+    id: idColumn("bld"),
+    workspaceId: text("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    step: text("step").$type<BuilderStep>().notNull().default("goal"),
+    goal: text("goal").notNull().default(""),
+    draft: jsonb("draft").$type<BuilderDraft>().notNull().default({
+      name: "",
+      description: "",
+      role: "custom",
+      systemPrompt: "",
+      tools: [],
+      model: {
+        modelId: null,
+        provider: null,
+        temperature: 0.7,
+        maxTokens: 2048,
+        autoSwitch: true,
+      },
+      permissions: {},
+      maxIterations: 25,
+      timeoutMs: 300_000,
+    }),
+    ...timestamps,
+  },
+  (t) => [
+    index("agent_builder_sessions_workspace_id_idx").on(t.workspaceId),
+    index("agent_builder_sessions_user_id_idx").on(t.userId),
+  ],
+);
+
+export type AgentBuilderSessionRow = typeof agentBuilderSessions.$inferSelect;

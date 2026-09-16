@@ -81,7 +81,7 @@ func runTask(task string, maxSteps int, model, provider string) error {
 		return fmt.Errorf("create session: %w", err)
 	}
 
-	runner := &chatRunner{db: db, store: store, client: client, model: m, cwd: dir, policy: toolsPkg.PolicyFromConfig(cfg.Permissions)}
+	runner := &chatRunner{db: db, store: store, client: client, model: m, cwd: dir, policy: toolsPkg.PolicyFromConfig(cfg.Permissions), maxToolRounds: maxSteps}
 
 	fmt.Printf("Running task with %s (max %d steps, single-shot)\n", m, maxSteps)
 
@@ -122,6 +122,8 @@ type chatRunner struct {
 	// ToolsEnabled turns on function calling + local tool execution for the
 	// interactive agent loop.
 	ToolsEnabled bool
+	// maxToolRounds caps the agent tool loop (default 12; honors --max-steps).
+	maxToolRounds int
 	// policy holds the per-tool approval policy resolved from config.
 	policy toolsPkg.PolicyMap
 	// interactive enables stdin prompting for permission decisions.
@@ -252,7 +254,10 @@ func (r *chatRunner) exchange(ctx context.Context, sess *session.Session, text s
 	}
 	approver := r.policy.ApprovalFunc(approve)
 
-	maxToolRounds := 12
+	maxToolRounds := r.maxToolRounds
+	if maxToolRounds <= 0 {
+		maxToolRounds = 12
+	}
 	for round := 0; round < maxToolRounds; round++ {
 		fmt.Print("\n")
 		var out strings.Builder

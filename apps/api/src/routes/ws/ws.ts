@@ -19,11 +19,13 @@ import type { IncomingMessage } from "node:http";
 import type { Duplex } from "node:stream";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { auth } from "../../auth";
 import { db } from "../../db/client";
 import { aiChatSessions } from "../../db/schema/chat";
 import { logger } from "../../config/logger";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
+import { onboardNewUser } from "../../services/onboarding";
 import type { AppEnv } from "../../types";
 import type { LayerFlowEvent } from "@layerflow/contracts";
 
@@ -33,7 +35,7 @@ import type { LayerFlowEvent } from "@layerflow/contracts";
  * The WebSocket accept key must be combined with the magic GUID (RFC 6455)
  * and SHA-1 hashed, then base64-encoded.
  */
-const WS_MAGIC_GUID = "258EAFA5-E914-47DA-95CA-5AB9BDA0FA0DB6";
+const WS_MAGIC_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
 /**
  * Compute the proper Sec-WebSocket-Accept response header value.
@@ -63,6 +65,43 @@ type WsConnMeta = {
   workspaceId: string;
   sessionId: string | null;
 };
+
+/**
+ * Resolve { userId, workspaceId } for an incoming WebSocket upgrade request by
+ * validating the session (cookie or bearer token) exactly like `requireAuth`.
+ * Returns null when there is no valid session — callers must reject the
+ * connection. Never trusts query params for identity.
+ */
+export async function resolveWsIdentity(
+  request: IncomingMessage,
+): Promise<{ userId: string; workspaceId: string } | null> {
+  const headers = new Headers();
+  for (const [key, value] of Object.entries(request.headers)) {
+    if (value === undefined) continue;
+    headers.set(key, Array.isArray(value) ? value.join(", ") : String(value));
+  }
+
+  const session = await auth.api.getSession({ headers });
+  if (!session) return null;
+
+  const requestedWorkspace = request.headers["x-lf-workspace"];
+  const membership = requestedWorkspace
+    ? await db.query.workspaceMembers.findFirst({
+        where: (m, { and, eq }) =>
+          and(
+            eq(m.userId, session.user.id),
+            eq(m.workspaceId, String(requestedWorkspace)),
+          ),
+      })
+    : await db.query.workspaceMembers.findFirst({
+        where: (m, { eq }) => eq(m.userId, session.user.id),
+        orderBy: (m, { asc }) => [asc(m.createdAt)],
+      });
+
+  const workspaceId = membership?.workspaceId ?? (await onboardNewUser(session.user));
+
+  return { userId: session.user.id, workspaceId };
+}
 
 const clients = new Map<string, WsClient>();
 
@@ -203,7 +242,86 @@ export function setupWsServer(server: {
       return;
     }
 
-    const accept = computeWsAcceptKey(key as string);
+    // Authenticate BEFORE upgrading. Identity must never come from the query
+    // string — it is resolved from the session cookie/bearer token exactly like
+    // requireAuth. Unauthenticated upgrades are rejected with 401.
+    resolveWsIdentity(request).then((identity) => {
+      if (!identity) {
+        socket.write(
+          "HTTP/1.1 401 Unauthorized\r\n" +
+          "Content-Type: text/plain\r\n" +
+          "Content-Length: 21\r\n" +
+          "Connection: close\r\n" +
+          "\r\n" +
+          "Sign in required",
+        );
+        socket.destroy();
+        return;
+      }
+
+      const sessionId = url.searchParams.get("sessionId");
+      if (sessionId) {
+        db.query.aiChatSessions
+          .findFirst({
+            where: and(
+              eq(aiChatSessions.id, sessionId),
+              eq(aiChatSessions.workspaceId, identity.workspaceId),
+            ),
+          })
+          .then((session) => {
+            if (!session) {
+              socket.write(
+                "HTTP/1.1 404 Not Found\r\n" +
+                "Content-Type: text/plain\r\n" +
+                "Content-Length: 30\r\n" +
+                "Connection: close\r\n" +
+                "\r\n" +
+                "Chat session not found",
+              );
+              socket.destroy();
+              return;
+            }
+            beginWsSession(
+              request,
+              socket,
+              key as string,
+              { ...identity, sessionId },
+            );
+          })
+          .catch((err) => {
+            logger.warn({ err }, "ws session lookup failed");
+            socket.destroy();
+          });
+        return;
+      }
+
+      beginWsSession(request, socket, key as string, { ...identity, sessionId: null });
+    }).catch((err) => {
+      logger.warn({ err }, "ws identity resolution failed");
+      try {
+        socket.write(
+          "HTTP/1.1 500 Internal Server Error\r\n" +
+          "Content-Type: text/plain\r\n" +
+          "Content-Length: 21\r\n" +
+          "Connection: close\r\n" +
+          "\r\n" +
+          "Internal Server Error",
+        );
+      } catch {
+        // socket may already be destroyed
+      }
+      socket.destroy();
+    });
+  });
+}
+
+function beginWsSession(
+  request: IncomingMessage,
+  socket: Duplex,
+  key: string,
+  meta: WsConnMeta,
+): void {
+    const accept = computeWsAcceptKey(key);
     const responseHeaders = [
       "HTTP/1.1 101 Switching Protocols",
       "Upgrade: websocket",
@@ -218,7 +336,6 @@ export function setupWsServer(server: {
     // The socket is now upgraded; parse WebSocket frames.
     let closed = false;
     const clientId = crypto.randomUUID();
-    const meta: WsConnMeta = { userId: "", workspaceId: "", sessionId: null };
 
     // Send frames as proper WebSocket data frames.
     const send = (event: LayerFlowEvent) => {
@@ -317,7 +434,6 @@ export function setupWsServer(server: {
       closed = true;
       unregisterClient(clientId);
     });
-  });
 }
 
 export function sendToClient(clientId: string, event: LayerFlowEvent): boolean {

@@ -22,7 +22,7 @@ import {
   definePermissions,
   setLimits,
   saveAgentFromBuilder,
-  type BuilderSession,
+  type AgentBuilderSessionRow,
 } from "../../services/agents/builder";
 
 export const builderRouter = new Hono<AppEnv>();
@@ -33,7 +33,7 @@ builderRouter.post("/", async (c) => {
   const workspaceId = c.get("workspaceId");
   const userId = c.get("userId");
 
-  const session = createBuilderSession(workspaceId, userId);
+  const session = await createBuilderSession(workspaceId, userId);
   return c.json({
     sessionId: session.id,
     step: session.step,
@@ -46,7 +46,8 @@ builderRouter.post("/", async (c) => {
 // GET /api/agents/builder/:sessionId — get current builder state
 builderRouter.get("/:sessionId", async (c) => {
   const sessionId = c.req.param("sessionId");
-  const session = getBuilderSession(sessionId);
+  const workspaceId = c.get("workspaceId");
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) {
     throw new AppError(404, "not_found", "Builder session not found");
   }
@@ -64,16 +65,11 @@ builderRouter.get("/:sessionId", async (c) => {
 builderRouter.post("/:sessionId/step", async (c) => {
   const sessionId = c.req.param("sessionId");
 
-  // First, validate the session exists and belongs to this user
-  const session = getBuilderSession(sessionId);
+  // First, validate the session exists and belongs to this workspace
+  const workspaceId = c.get("workspaceId");
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) {
     throw new AppError(404, "not_found", "Builder session not found");
-  }
-
-  // Validate workspace ownership: sessions are scoped to the current user's workspace
-  const workspaceId = c.get("workspaceId");
-  if (session.workspaceId !== workspaceId) {
-    throw new AppError(403, "forbidden", "This builder session belongs to another workspace");
   }
 
   // Validate request body with Zod schema
@@ -82,7 +78,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
     data: z.record(z.string(), z.unknown()).optional().default({}),
   });
 
-  const parsed = stepSchema.parse(await c.req.json());
+      const parsed = await stepSchema.parse(await c.req.json());
   const { step, data } = parsed as { step: string; data: Record<string, unknown> };
 
   switch (step) {
@@ -90,7 +86,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
       if (!data?.goal) {
         throw new AppError(400, "validation", "goal is required");
       }
-      const updated = updateBuilderGoal(sessionId, String(data.goal));
+      const updated = await updateBuilderGoal(sessionId, String(data.goal));
       if (!updated) throw new AppError(500, "internal", "Failed to update goal");
       return c.json({
         sessionId: updated.id,
@@ -101,7 +97,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
     }
 
     case "ai_generate": {
-      const generated = await generateAgentDraft(sessionId);
+      const generated = await generateAgentDraft(sessionId, workspaceId);
       if (!generated) throw new AppError(400, "validation", "Set a goal before generating a draft");
       return c.json({
         sessionId: generated.id,
@@ -115,7 +111,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
       if (!data?.tools) {
         throw new AppError(400, "validation", "tools array is required");
       }
-      const updated = selectTools(sessionId, data.tools as string[]);
+      const updated = await selectTools(sessionId, workspaceId, data.tools as string[]);
       if (!updated) throw new AppError(500, "internal", "Failed to update tools");
       return c.json({
         sessionId: updated.id,
@@ -129,7 +125,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
       if (!data?.model) {
         throw new AppError(400, "validation", "model configuration is required");
       }
-      const updated = selectModel(sessionId, data.model as { modelId: string; provider: string; temperature: number; maxTokens: number; autoSwitch: boolean });
+      const updated = await selectModel(sessionId, workspaceId, data.model as { modelId: string; provider: string; temperature: number; maxTokens: number; autoSwitch: boolean });
       if (!updated) throw new AppError(500, "internal", "Failed to select model");
       return c.json({
         sessionId: updated.id,
@@ -143,7 +139,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
       if (!data?.permissions) {
         throw new AppError(400, "validation", "permissions object is required");
       }
-      const updated = definePermissions(sessionId, data.permissions as Record<string, string>);
+      const updated = await definePermissions(sessionId, workspaceId, data.permissions as Record<string, string>);
       if (!updated) throw new AppError(500, "internal", "Failed to set permissions");
       return c.json({
         sessionId: updated.id,
@@ -154,7 +150,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
     }
 
     case "set_limits": {
-      const updated = setLimits(sessionId, Number(data?.maxIterations ?? 25), Number(data?.timeoutMs ?? 300_000));
+      const updated = await setLimits(sessionId, workspaceId, Number(data?.maxIterations ?? 25), Number(data?.timeoutMs ?? 300_000));
       if (!updated) throw new AppError(500, "internal", "Failed to set limits");
       return c.json({
         sessionId: updated.id,
@@ -168,8 +164,7 @@ builderRouter.post("/:sessionId/step", async (c) => {
     }
 
     case "save": {
-      const userId = c.get("userId");
-      const result = await saveAgentFromBuilder(sessionId, userId);
+      const result = await saveAgentFromBuilder(sessionId, workspaceId);
       if (!result) throw new AppError(400, "validation", "Cannot save in current step. Complete all steps first.");
       return c.json({
         agent: result.agent,
@@ -182,4 +177,4 @@ builderRouter.post("/:sessionId/step", async (c) => {
   }
 });
 
-export type BuilderRouteSession = BuilderSession;
+export type BuilderRouteSession = AgentBuilderSessionRow;

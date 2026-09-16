@@ -30,6 +30,7 @@ import {
   r2ObjectExists,
   saveLocalFile,
 } from "../../services/files/storage";
+import { scheduleFileIngestion } from "../../services/files/ingest";
 import type { AppEnv } from "../../types";
 
 /**
@@ -184,6 +185,14 @@ filesRouter.post("/complete", async (c) => {
 
   if (body.promptId) {
     await attachToPrompt(workspaceId, body.promptId, file.id);
+  }
+
+  // Best-effort RAG: turn uploaded text files into searchable memories. A
+  // failure here must not fail the upload (the object is already committed).
+  try {
+    await scheduleFileIngestion(workspaceId, file.id, c.get("userId"));
+  } catch (err) {
+    logger.warn({ err, fileId: file.id }, "file RAG ingestion failed; upload intact");
   }
 
   const response: CompleteUploadResponse = {

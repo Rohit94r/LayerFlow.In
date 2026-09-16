@@ -16,100 +16,100 @@ import { db } from "../../db/client";
 import {
   agents,
   agentPermissions,
+  agentBuilderSessions,
   type AgentRow,
+  type BuilderDraft,
+  type BuilderStep,
+  type AgentBuilderSessionRow,
 } from "../../db/schema/agents";
 import { createId } from "../../db/schema/_helpers";
 import { logger } from "../../config/logger";
 import { AppError } from "../../middleware/app-error";
-import type { AgentSpec, ModelPolicy, ToolPolicy } from "./spec";
+import type { ModelPolicy } from "./spec";
 import { defaultSpecForRole } from "./spec";
 import type { AgentRole } from "@layerflow/contracts";
+import { eq, and } from "drizzle-orm";
 
-// -- Builder Steps -----------------------------------------------------------
+// -- DB-backed Builder Sessions -----------------------------------------------
 
-export type BuilderStep =
-  | "goal"
-  | "ai_generate"
-  | "review_tools"
-  | "select_model"
-  | "define_permissions"
-  | "set_limits"
-  | "save"
-  | "deploy";
+export type { BuilderDraft, BuilderStep, AgentBuilderSessionRow };
 
-export interface BuilderSession {
-  id: string;
-  workspaceId: string;
-  userId: string;
-  step: BuilderStep;
-  goal: string;
-  draft: {
-    name: string;
-    description: string;
-    role: AgentRole;
-    systemPrompt: string;
-    tools: string[];
-    model: ModelPolicy;
-    permissions: Record<string, string>;
-    maxIterations: number;
-    timeoutMs: number;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// -- In-memory builder sessions (not persisted -- ephemeral per web session) --
-
-const builderSessions = new Map<string, BuilderSession>();
-
-export function createBuilderSession(
+export async function createBuilderSession(
   workspaceId: string,
   userId: string,
-): BuilderSession {
-  const id = createId("bld");
-  const session: BuilderSession = {
-    id,
-    workspaceId,
-    userId,
-    step: "goal",
-    goal: "",
-    draft: {
-      name: "",
-      description: "",
-      role: "custom",
-      systemPrompt: "",
-      tools: [],
-      model: {
-        modelId: null,
-        provider: null,
-        temperature: 0.7,
-        maxTokens: 2048,
-        autoSwitch: true,
+): Promise<AgentBuilderSessionRow> {
+  const [row] = await db
+    .insert(agentBuilderSessions)
+    .values({
+      workspaceId,
+      userId,
+      step: "goal",
+      goal: "",
+      draft: {
+        name: "",
+        description: "",
+        role: "custom",
+        systemPrompt: "",
+        tools: [],
+        model: {
+          modelId: null,
+          provider: null,
+          temperature: 0.7,
+          maxTokens: 2048,
+          autoSwitch: true,
+        },
+        permissions: {},
+        maxIterations: 25,
+        timeoutMs: 300_000,
       },
-      permissions: {},
-      maxIterations: 25,
-      timeoutMs: 300_000,
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-  builderSessions.set(id, session);
-  return session;
+    })
+    .returning();
+
+  logger.info({ sessionId: row.id, workspaceId }, "builder session created");
+  return row;
 }
 
-export function getBuilderSession(id: string): BuilderSession | null {
-  return builderSessions.get(id) ?? null;
+export async function getBuilderSession(
+  id: string,
+  workspaceId: string,
+): Promise<AgentBuilderSessionRow | null> {
+  const row = await db.query.agentBuilderSessions.findFirst({
+    where: and(
+      eq(agentBuilderSessions.id, id),
+      eq(agentBuilderSessions.workspaceId, workspaceId),
+    ),
+  });
+  return row ?? null;
 }
 
-export function updateBuilderGoal(
+async function updateBuilderSession(
+  id: string,
+  patch: { goal?: string; step?: BuilderStep; draft?: BuilderDraft },
+): Promise<AgentBuilderSessionRow> {
+  const [row] = await db
+    .update(agentBuilderSessions)
+    .set({
+      ...(patch.goal !== undefined ? { goal: patch.goal } : {}),
+      ...(patch.step !== undefined ? { step: patch.step } : {}),
+      ...(patch.draft !== undefined ? { draft: patch.draft } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(agentBuilderSessions.id, id))
+    .returning();
+
+  if (!row) throw new AppError(404, "not_found", "Builder session not found");
+  return row;
+}
+
+export async function updateBuilderGoal(
   sessionId: string,
   goal: string,
-): BuilderSession | null {
-  const session = builderSessions.get(sessionId);
-  if (!session) return null;
-  session.goal = goal;
-  session.updatedAt = new Date();
-  return session;
+): Promise<AgentBuilderSessionRow | null> {
+  try {
+    return await updateBuilderSession(sessionId, { goal });
+  } catch {
+    return null;
+  }
 }
 
 // -- AI Draft Generation ----------------------------------------------------
@@ -120,13 +120,11 @@ export function updateBuilderGoal(
  */
 export async function generateAgentDraft(
   sessionId: string,
-): Promise<BuilderSession | null> {
-  const session = builderSessions.get(sessionId);
+  workspaceId: string,
+): Promise<AgentBuilderSessionRow | null> {
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session || !session.goal) return null;
 
-  // In production, this would call an LLM with a structured output prompt.
-  // The LLM would analyze the goal and produce a draft config.
-  // For now, we generate a reasonable default based on goal keywords.
   const goal = session.goal.toLowerCase();
 
   let role: AgentRole = "custom";
@@ -142,101 +140,99 @@ export async function generateAgentDraft(
     role = "job_apply";
   }
 
-  const defaultSpec = defaultSpecForRole(role, session.workspaceId, generateName(goal));
+  const defaultSpec = defaultSpecForRole(role, workspaceId, generateName(goal));
 
-  session.draft = {
+  const draft: BuilderDraft = {
     name: defaultSpec.name || generateName(goal),
     description: generateDescription(goal),
     role,
     systemPrompt: generateSystemPrompt(goal, role),
     tools: defaultSpec.tools.enabledTools,
-    model: defaultSpec.model,
+    model: {
+      modelId: defaultSpec.model.modelId,
+      provider: defaultSpec.model.provider,
+      temperature: defaultSpec.model.temperature ?? 0.7,
+      maxTokens: defaultSpec.model.maxTokens,
+      autoSwitch: defaultSpec.model.autoSwitch,
+    },
     permissions: defaultSpec.tools.permissions as Record<string, string>,
     maxIterations: defaultSpec.maxIterations,
     timeoutMs: defaultSpec.timeoutMs,
   };
-  session.step = "review_tools";
-  session.updatedAt = new Date();
 
-  logger.info({ sessionId, role }, "agent draft generated");
-  return session;
+  return updateBuilderSession(sessionId, { draft, step: "review_tools" });
 }
 
 // -- Tool Selection ----------------------------------------------------------
 
-export function selectTools(
+export async function selectTools(
   sessionId: string,
+  workspaceId: string,
   tools: string[],
-): BuilderSession | null {
-  const session = builderSessions.get(sessionId);
+): Promise<AgentBuilderSessionRow | null> {
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) return null;
-  session.draft.tools = tools;
-  session.step = "select_model";
-  session.updatedAt = new Date();
-  return session;
+  const draft = { ...session.draft, tools } as BuilderDraft;
+  return updateBuilderSession(sessionId, { draft, step: "select_model" });
 }
 
 // -- Model Selection ---------------------------------------------------------
 
-export function selectModel(
+export async function selectModel(
   sessionId: string,
+  workspaceId: string,
   model: ModelPolicy,
-): BuilderSession | null {
-  const session = builderSessions.get(sessionId);
+): Promise<AgentBuilderSessionRow | null> {
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) return null;
-  session.draft.model = model;
-  session.step = "define_permissions";
-  session.updatedAt = new Date();
-  return session;
+  const draft = { ...session.draft, model } as BuilderDraft;
+  return updateBuilderSession(sessionId, { draft, step: "define_permissions" });
 }
 
 // -- Permission Definition ---------------------------------------------------
 
-export function definePermissions(
+export async function definePermissions(
   sessionId: string,
+  workspaceId: string,
   permissions: Record<string, string>,
-): BuilderSession | null {
-  const session = builderSessions.get(sessionId);
+): Promise<AgentBuilderSessionRow | null> {
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) return null;
-  session.draft.permissions = permissions;
-  session.step = "set_limits";
-  session.updatedAt = new Date();
-  return session;
+  const draft = { ...session.draft, permissions } as BuilderDraft;
+  return updateBuilderSession(sessionId, { draft, step: "set_limits" });
 }
 
 // -- Limit Setting ----------------------------------------------------------
 
-export function setLimits(
+export async function setLimits(
   sessionId: string,
+  workspaceId: string,
   maxIterations: number,
   timeoutMs: number,
-): BuilderSession | null {
-  const session = builderSessions.get(sessionId);
+): Promise<AgentBuilderSessionRow | null> {
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session) return null;
-  session.draft.maxIterations = maxIterations;
-  session.draft.timeoutMs = timeoutMs;
-  session.step = "save";
-  session.updatedAt = new Date();
-  return session;
+  const draft = { ...session.draft, maxIterations, timeoutMs } as BuilderDraft;
+  return updateBuilderSession(sessionId, { draft, step: "save" });
 }
 
 // -- Save & Deploy ----------------------------------------------------------
 
 export async function saveAgentFromBuilder(
   sessionId: string,
-  userId: string,
+  workspaceId: string,
 ): Promise<{ agent: AgentRow } | null> {
-  const session = builderSessions.get(sessionId);
+  const session = await getBuilderSession(sessionId, workspaceId);
   if (!session || session.step !== "save") return null;
 
-  const { draft } = session;
+  const draft = session.draft as BuilderDraft;
 
   const [agent] = await db
     .insert(agents)
     .values({
-      workspaceId: session.workspaceId,
+      workspaceId,
       name: draft.name || "Unnamed agent",
-      role: draft.role,
+      role: draft.role as AgentRole,
       goal: session.goal,
       systemPrompt: draft.systemPrompt,
       modelId: draft.model.modelId,
@@ -249,24 +245,24 @@ export async function saveAgentFromBuilder(
 
   // Save per-tool permissions.
   for (const [toolKey, mode] of Object.entries(draft.permissions)) {
-    await db.insert(agentPermissions).values({
-      agentId: agent.id,
-      workspaceId: session.workspaceId,
-      key: toolKey,
-      mode: mode as "allow_always" | "allow_once" | "deny",
-      label: toolKey,
-      description: "",
-      category: "custom",
-    }).onConflictDoNothing();
+    await db
+      .insert(agentPermissions)
+      .values({
+        agentId: agent.id,
+        workspaceId,
+        key: toolKey,
+        mode: mode as "allow_always" | "allow_once" | "deny",
+        label: toolKey,
+        description: "",
+        category: "custom",
+      })
+      .onConflictDoNothing();
   }
 
-  session.step = "deploy";
-  session.updatedAt = new Date();
+  // Mark as deployed.
+  await updateBuilderSession(sessionId, { step: "deploy" });
 
   logger.info({ agentId: agent.id, sessionId }, "agent created from builder");
-
-  // Cleanup builder session.
-  builderSessions.delete(sessionId);
 
   return { agent };
 }
@@ -274,7 +270,6 @@ export async function saveAgentFromBuilder(
 // -- Helpers -----------------------------------------------------------------
 
 function generateName(goal: string): string {
-  // Extract key words from the goal to create a short name.
   const words = goal.split(/\s+/).filter((w) => w.length > 3).slice(0, 3);
   if (words.length === 0) return "Custom Agent";
   return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");

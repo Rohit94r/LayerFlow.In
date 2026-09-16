@@ -151,6 +151,19 @@ export async function r2ObjectExists(objectKey: string): Promise<boolean> {
   }
 }
 
+/** Read a full object's bytes from R2 (used by RAG file ingestion). */
+export async function readR2ObjectBytes(objectKey: string): Promise<Buffer> {
+  const env = getEnv();
+  const { Body } = await getR2Client().send(
+    new GetObjectCommand({
+      Bucket: env.R2_BUCKET!,
+      Key: objectKey,
+    }),
+  );
+  if (!Body) throw new Error(`R2 object has no body: ${objectKey}`);
+  return Buffer.from(await Body.transformToByteArray());
+}
+
 export async function deleteR2Object(objectKey: string): Promise<void> {
   const env = getEnv();
   await getR2Client().send(

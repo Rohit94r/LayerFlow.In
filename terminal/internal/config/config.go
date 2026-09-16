@@ -236,6 +236,41 @@ func applyOverride(base, override *Config) {
 	}
 }
 
+// RemoveMCPServer deletes an MCP server from the user config file.
+func RemoveMCPServer(name string) error {
+	path, err := userConfigPath()
+	if err != nil {
+		return err
+	}
+
+	existing := &Config{}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read config: %w", err)
+	}
+	if err := yaml.Unmarshal(data, existing); err != nil {
+		return fmt.Errorf("parse config: %w", err)
+	}
+
+	if existing.MCPServers == nil {
+		return fmt.Errorf("MCP server %q not configured", name)
+	}
+	if _, ok := existing.MCPServers[name]; !ok {
+		return fmt.Errorf("MCP server %q not configured", name)
+	}
+	delete(existing.MCPServers, name)
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	out, err := yaml.Marshal(existing)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, out, 0o600)
+}
+
+// userConfigPath returns the path to the user-level config file.
 func userConfigPath() (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {

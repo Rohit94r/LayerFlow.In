@@ -111,7 +111,7 @@ func New(projectDir string) (*App, error) {
 	if key, keyErr := cloud.ResolveAPIKey(cfg); keyErr == nil && key != "" {
 		syncClient = sync.NewHTTPClientWithKey(cloud.ResolveBaseURL(cfg), key)
 	}
-	a.Sync = sync.NewSyncer(syncClient, journal, sync.DefaultMerger{}, deviceID)
+	a.Sync = sync.NewSyncer(syncClient, journal, sync.DefaultMerger{}, deviceID, db)
 
 	// Initialize MCP registry
 	a.MCP = mcp.NewRegistry()

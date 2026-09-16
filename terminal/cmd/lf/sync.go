@@ -72,7 +72,7 @@ func performSync(dryRun bool, resolve string) error {
 	}
 
 	client := sync.NewHTTPClientWithKey(baseURL, key)
-	syncer := sync.NewSyncer(client, journal, sync.DefaultMerger{}, deviceID)
+	syncer := sync.NewSyncer(client, journal, sync.DefaultMerger{}, deviceID, db)
 
 	result, err := syncer.Sync(ctx, watermark)
 	if err != nil {

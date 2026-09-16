@@ -58,6 +58,10 @@ export const envSchema = z.object({
   XAI_MODEL: z.string().optional(),
   /** OpenRouter — OpenAI-compatible router for many vendors. */
   OPENROUTER_API_KEY: z.string().optional(),
+  /** Anthropic (Claude) platform key. */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** OpenCode (opencode.ai zen) platform key. */
+  OPENCODE_API_KEY: z.string().optional(),
   /** ElevenLabs — reserved for future audio / sound-effect features. */
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(),
@@ -89,6 +93,12 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   /** Override trace sampling (0..1). Defaults: 0.1 in production, 0 elsewhere. */
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+  /**
+   * Redis fail-closed policy for rate limiters and budget reservations.
+   * "deny" (production default): requests blocked (503) when Redis unreachable.
+   * "allow": fail open so local CI without Redis still exercises providers.
+   */
+  REDIS_DOWN_MODE: z.enum(["allow", "deny"]).optional(),
   /**
    * Cookie domain for cross-subdomain sessions in production
    * (e.g. `.layerflow.dev` so layerflow.dev and api.layerflow.dev share auth).
@@ -139,4 +149,15 @@ let cached: Env | undefined;
 export function getEnv(): Env {
   if (!cached) cached = parseEnv(process.env);
   return cached;
+}
+
+/**
+ * Resolve the effective REDIS_DOWN_MODE based on env + NODE_ENV.
+ * Production defaults to "deny" (fail-closed for rate limits and budgets).
+ * Test/development defaults to "allow" so local CI without Redis still works.
+ */
+export function getRedisDownMode(): "allow" | "deny" {
+  const env = getEnv();
+  if (env.REDIS_DOWN_MODE) return env.REDIS_DOWN_MODE;
+  return env.NODE_ENV === "production" ? "deny" : "allow";
 }

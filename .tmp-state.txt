@@ -1,0 +1,5 @@
+2261e95 chore(db): hand-written rollup-unique + builder-sessions migrations
+0ae780f fix(web): import BuildAgentSection so the page compiles (was: ReferenceError)
+f750e40 feat(web): navbar Blog+Docs links, build-your-own-agent section
+9a0ef66 feat(web): interactive AI terminal on /terminal — Grok default with auto-fallback
+13

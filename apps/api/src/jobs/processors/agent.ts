@@ -36,6 +36,7 @@ import {
   agentFailedEvent,
 } from "../../services/agents/state-machine";
 import { broadcastEvent } from "../../routes/ws/ws";
+import { checkToolPermission } from "../../services/agents/permissions";
 
 export interface AgentJobPayload {
   agentRunId: string;
@@ -613,7 +614,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
   // Broadcast agent.started event
   try {
-    broadcastEvent(agentStartedEvent(agentId, agentRunId, workspaceId, run.input) as any);
+    broadcastEvent(agentStartedEvent(agentId, agentRunId, workspaceId, run.input) as any, { workspaceId });
   } catch { /* best-effort */ }
 
   await recordAgentStep({
@@ -636,6 +637,10 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
   const MAX_ITERATIONS = 10;
   let iterationCount = 0;
   let finalOutput = "";
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCostMicro = 0;
+  let lastProvider: string | null = null;
   const conversationHistory: { role: string; content: string }[] = [
     { role: "system", content: agent.systemPrompt },
     { role: "user", content: run.input },
@@ -666,6 +671,11 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
         routingReason: "agent",
         allowRouting: false,
       });
+
+      totalInputTokens += executed.inputTokens ?? 0;
+      totalOutputTokens += executed.outputTokens ?? 0;
+      totalCostMicro += executed.costMicro ?? 0;
+      lastProvider = executed.provider ?? lastProvider;
 
       if (executed.status !== "succeeded" || !executed.output) {
         throw new Error(executed.errorMessage ?? "Agent run did not produce output");
@@ -698,6 +708,22 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
       // --- ACT (tools) phase ---
       for (const toolInput of toolCalls) {
+        const perm = await checkToolPermission(toolCtx.agentId, toolCtx.workspaceId, toolInput.name);
+        if (!perm.allowed) {
+          const deniedMsg = `Tool "${toolInput.name}" requires approval (${perm.level}). ${perm.reason ?? ""}`;
+          conversationHistory.push({ role: "tool", content: deniedMsg });
+          await recordAgentStep({
+            agentId, workspaceId, agentRunId,
+            type: "tool.denied",
+            title: `Tool ${toolInput.name} blocked by permission policy`,
+            description: deniedMsg.slice(0, 240),
+            status: "failed",
+            severity: "warning",
+            data: { tool: toolInput.name, permission: perm.level, reason: perm.reason },
+          });
+          continue;
+        }
+
         await recordAgentStep({
           agentId, workspaceId, agentRunId,
           type: "tool.call",
@@ -744,11 +770,11 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       .set({
         status: "succeeded",
         output: finalOutput,
-        provider: null,
+        provider: lastProvider,
         model,
-        inputTokens: 0,
-        outputTokens: 0,
-        costMicro: 0,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+        costMicro: totalCostMicro,
         runLatencyMs: 0,
         errorMessage: null,
         completedAt: new Date(),
@@ -762,7 +788,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
     // Broadcast agent.completed event
     try {
-      broadcastEvent(agentCompletedEvent(agentId, agentRunId, true, finalOutput.slice(0, 240)) as any);
+      broadcastEvent(agentCompletedEvent(agentId, agentRunId, true, finalOutput.slice(0, 240)) as any, { workspaceId });
     } catch { /* best-effort */ }
 
     await recordActivity({
@@ -791,7 +817,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
     // Broadcast agent.failed event
     try {
-      broadcastEvent(agentFailedEvent(agentId, agentRunId, message) as any);
+      broadcastEvent(agentFailedEvent(agentId, agentRunId, message) as any, { workspaceId });
     } catch { /* best-effort */ }
 
     await db
