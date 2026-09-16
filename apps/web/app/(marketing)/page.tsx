@@ -127,6 +127,7 @@ export default function Home() {
           <ProblemSection />
           <HowItWorks />
           <ScenesSection />
+          <BuildAgentSection />
           <ComparisonSection />
           <PublicBand />
           <PricingSection />

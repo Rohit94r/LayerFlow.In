@@ -34,10 +34,16 @@ export default function Navbar() {
             Pricing
           </a>
           <a
-            href="#faq"
+            href="/docs"
             className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
           >
-            FAQ
+            Docs
+          </a>
+          <a
+            href="/blog"
+            className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
+          >
+            Blog
           </a>
         </div>
         <a
