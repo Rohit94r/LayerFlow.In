@@ -5,6 +5,7 @@ import ProblemSection from "@/components/ProblemSection";
 import HowItWorks from "@/components/HowItWorks";
 import ScenesSection from "@/components/ScenesSection";
 import ComparisonSection from "@/components/ComparisonSection";
+import BuildAgentSection from "@/components/BuildAgentSection";
 import PublicBand from "@/components/PublicBand";
 import PricingSection from "@/components/PricingSection";
 import FaqSection from "@/components/FaqSection";
