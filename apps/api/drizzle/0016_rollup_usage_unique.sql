@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "usage_rollups_dim_uq" ON "usage_rollups" USING btree ("workspace_id","day",COALESCE(project_id, ''),COALESCE(model, ''),COALESCE(api_key_id, ''));--> statement-breakpoint
