@@ -617,13 +617,13 @@ func (a *agentService) Run(ctx context.Context, sessionID, prompt string, attach
 		defer a.active.Delete(sessionID)
 		defer a.busy.Store(false)
 
-		a.runLoop(runCtx, sessionID, assistantMsg, ch)
+		a.runLoop(runCtx, sessionID, &assistantMsg, ch)
 	}()
 
 	return ch, nil
 }
 
-func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantMsg uimsg.Message, out chan<- uiagent.AgentEvent) {
+func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantMsg *uimsg.Message, out chan<- uiagent.AgentEvent) {
 	modelID := string(assistantMsg.Model)
 	if modelID == "" {
 		modelID = cloud.DefaultModel
@@ -632,7 +632,7 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 	const maxRounds = 10
 	for round := 0; round < maxRounds; round++ {
 		if ctx.Err() != nil {
-			a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonCanceled, out)
+			a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonCanceled, out)
 			return
 		}
 
@@ -642,10 +642,10 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 		var lastResponse *cloud.ChatResponse
 		var lastErr error
 
-		a.messages.Update(ctx, assistantMsg) // clear for new delta stream
+		a.messages.Update(ctx, *assistantMsg) // clear for new delta stream
 		assistantMsg.Parts = []uimsg.ContentPart{}
 		assistantMsg.AppendContent("")
-		a.messages.Update(ctx, assistantMsg)
+		a.messages.Update(ctx, *assistantMsg)
 
 		go func() {
 			defer close(done)
@@ -655,7 +655,7 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 			}, cloud.StreamHandlers{
 				OnDelta: func(delta string) {
 					assistantMsg.AppendContent(delta)
-					a.messages.Update(ctx, assistantMsg)
+					a.messages.Update(ctx, *assistantMsg)
 				},
 				OnToolCall: func(tc cloud.ToolCall) {
 					assistantMsg.AddToolCall(uimsg.ToolCall{
@@ -664,7 +664,7 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 						Input: tc.Function.Arguments,
 						Type:  "function",
 					})
-					a.messages.Update(ctx, assistantMsg)
+					a.messages.Update(ctx, *assistantMsg)
 				},
 			})
 			lastResponse = resp
@@ -674,7 +674,7 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 
 		<-done
 		assistantMsg.AddFinish(uimsg.FinishReasonEndTurn)
-		a.messages.Update(ctx, assistantMsg)
+		a.messages.Update(ctx, *assistantMsg)
 
 		// Extract token counts from response
 		if lastResponse != nil {
@@ -683,24 +683,26 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 
 		if lastErr != nil {
 			if ctx.Err() != nil {
-				a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonCanceled, out)
+				a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonCanceled, out)
 				return
 			}
 			slog.Error("agent stream error", "error", lastErr)
-			a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonError, out)
+			assistantMsg.Parts = append(assistantMsg.Parts, a.friendlyStreamError(lastErr))
+			a.messages.Update(ctx, *assistantMsg)
+			a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonError, out)
 			return
 		}
 
 		toolCalls := assistantMsg.ToolCalls()
 		if len(toolCalls) == 0 {
-			a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonEndTurn, out)
+			a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonEndTurn, out)
 			return
 		}
 
 		// Execute each tool and append results
 		for _, tc := range toolCalls {
 			if ctx.Err() != nil {
-				a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonCanceled, out)
+				a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonCanceled, out)
 				return
 			}
 			result := executeTool(ctx, a.project, tc)
@@ -709,7 +711,7 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 				Name:       tc.Name,
 				Content:    result,
 			})
-			a.messages.Update(ctx, assistantMsg)
+			a.messages.Update(ctx, *assistantMsg)
 		}
 
 		// Persist tool results as separate message
@@ -722,7 +724,27 @@ func (a *agentService) runLoop(ctx context.Context, sessionID string, assistantM
 		}
 	}
 
-	a.publishFinish(ctx, sessionID, assistantMsg, uimsg.FinishReasonMaxTokens, out)
+	a.publishFinish(ctx, sessionID, *assistantMsg, uimsg.FinishReasonMaxTokens, out)
+}
+
+// friendlyStreamError maps a stream failure to a user-facing, actionable
+// message. The raw error is preserved for diagnostics.
+func (a *agentService) friendlyStreamError(err error) uimsg.ErrorPart {
+	raw := err.Error()
+	msg := "Unable to generate a response. Please try again."
+
+	switch {
+	case strings.Contains(raw, "invalid LayerFlow API key"):
+		msg = "No valid API key for this workspace. Run `lf login` or set LF_API_KEY."
+	case strings.Contains(raw, "no API key configured"):
+		msg = "No API key configured for this workspace. Run `lf login` or set LF_API_KEY."
+	case strings.Contains(raw, "provider_key_missing") || strings.Contains(raw, "key_missing"):
+		msg = "A provider key for this model is not configured. Add the provider key or switch models."
+	case strings.Contains(raw, "not configured"):
+		msg = "A required model/provider is not fully configured. Check the LayerFlow dashboard or your config."
+	}
+
+	return uimsg.ErrorPart{Message: msg, RawError: raw}
 }
 
 func (a *agentService) publishFinish(ctx context.Context, sessionID string, msg uimsg.Message, reason uimsg.FinishReason, out chan<- uiagent.AgentEvent) {

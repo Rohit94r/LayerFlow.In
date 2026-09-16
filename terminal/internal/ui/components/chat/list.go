@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -36,6 +37,8 @@ type messagesCmp struct {
 	spinner       spinner.Model
 	rendering     bool
 	attachments   viewport.Model
+	follow        bool
+	newOutput     bool
 }
 type renderFinishedMsg struct{}
 
@@ -44,6 +47,7 @@ type MessageKeys struct {
 	PageUp       key.Binding
 	HalfPageUp   key.Binding
 	HalfPageDown key.Binding
+	JumpBottom   key.Binding
 }
 
 var messageKeys = MessageKeys{
@@ -62,6 +66,10 @@ var messageKeys = MessageKeys{
 	HalfPageDown: key.NewBinding(
 		key.WithKeys("ctrl+d", "ctrl+d"),
 		key.WithHelp("ctrl+d", "½ page down"),
+	),
+	JumpBottom: key.NewBinding(
+		key.WithKeys("end"),
+		key.WithHelp("end", "jump to bottom"),
 	),
 }
 
@@ -86,18 +94,32 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.messages = make([]message.Message, 0)
 		m.currentMsgID = ""
 		m.rendering = false
+		m.follow = true
+		m.newOutput = false
 		return m, nil
 
 	case tea.KeyMsg:
 		if key.Matches(msg, messageKeys.PageUp) || key.Matches(msg, messageKeys.PageDown) ||
-			key.Matches(msg, messageKeys.HalfPageUp) || key.Matches(msg, messageKeys.HalfPageDown) {
+			key.Matches(msg, messageKeys.HalfPageUp) || key.Matches(msg, messageKeys.HalfPageDown) ||
+			key.Matches(msg, messageKeys.JumpBottom) {
 			u, cmd := m.viewport.Update(msg)
 			m.viewport = u
+			if key.Matches(msg, messageKeys.JumpBottom) {
+				m.viewport.GotoBottom()
+			}
+			if m.atBottom() {
+				m.follow = true
+				m.newOutput = false
+			} else {
+				m.follow = false
+			}
 			cmds = append(cmds, cmd)
 		}
 
 	case renderFinishedMsg:
 		m.rendering = false
+		m.follow = true
+		m.newOutput = false
 		m.viewport.GotoBottom()
 	case pubsub.Event[session.Session]:
 		if msg.Type == pubsub.UpdatedEvent && msg.Payload.ID == m.session.ID {
@@ -111,7 +133,6 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		needsRerender := false
 		if msg.Type == pubsub.CreatedEvent {
 			if msg.Payload.SessionID == m.session.ID {
-
 				messageExists := false
 				for _, v := range m.messages {
 					if v.ID == msg.Payload.ID {
@@ -119,20 +140,18 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						break
 					}
 				}
-
 				if !messageExists {
 					if len(m.messages) > 0 {
 						lastMsgID := m.messages[len(m.messages)-1].ID
 						delete(m.cachedContent, lastMsgID)
 					}
-
 					m.messages = append(m.messages, msg.Payload)
 					delete(m.cachedContent, m.currentMsgID)
 					m.currentMsgID = msg.Payload.ID
 					needsRerender = true
 				}
 			}
-			// There are tool calls from the child task
+			// Tools emitted output for the current session
 			for _, v := range m.messages {
 				for _, c := range v.ToolCalls() {
 					if c.ID == msg.Payload.SessionID {
@@ -154,18 +173,46 @@ func (m *messagesCmp) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if needsRerender {
 			m.renderView()
 			if len(m.messages) > 0 {
+				lastID := m.messages[len(m.messages)-1].ID
 				if (msg.Type == pubsub.CreatedEvent) ||
-					(msg.Type == pubsub.UpdatedEvent && msg.Payload.ID == m.messages[len(m.messages)-1].ID) {
-					m.viewport.GotoBottom()
+					(msg.Type == pubsub.UpdatedEvent && msg.Payload.ID == lastID) {
+					if m.follow {
+						m.viewport.GotoBottom()
+					} else {
+						m.newOutput = true
+					}
 				}
 			}
 		}
 	}
-
 	spinner, cmd := m.spinner.Update(msg)
 	m.spinner = spinner
 	cmds = append(cmds, cmd)
 	return m, tea.Batch(cmds...)
+}
+
+func (m *messagesCmp) atBottom() bool {
+	return m.viewport.AtBottom()
+}
+
+func (m *messagesCmp) newOutputNotice() string {
+	if !m.newOutput || m.follow {
+		return ""
+	}
+	t := theme.CurrentTheme()
+	pill := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(t.Primary()).
+		Render(" \u2193 New output \u2014 press ")
+	pill += lipgloss.NewStyle().
+		Bold(true).
+		Foreground(t.Text()).
+		Render("end")
+	pill += lipgloss.NewStyle().
+		Bold(true).
+		Foreground(t.Primary()).
+		Render(" \u2193 to jump ")
+	return pill
 }
 
 func (m *messagesCmp) IsAgentWorking() bool {
@@ -297,12 +344,58 @@ func (m *messagesCmp) View() string {
 			)
 	}
 
+	if m.rendering {
+		return baseStyle.
+			Width(m.width).
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					"Loading...",
+					m.working(),
+					m.help(),
+				),
+			)
+	}
+	if len(m.messages) == 0 {
+		content := baseStyle.
+			Width(m.width).
+			Height(m.height - 1).
+			Render(
+				m.initialScreen(),
+			)
+
+		return baseStyle.
+			Width(m.width).
+			Render(
+				lipgloss.JoinVertical(
+					lipgloss.Top,
+					content,
+					"",
+					m.help(),
+				),
+			)
+	}
+
+	messageView := m.viewport.View()
+	if m.newOutput && !m.follow {
+		if pill := m.newOutputNotice(); pill != "" {
+			lines := strings.Split(messageView, "\n")
+			if len(lines) > 0 && lines[0] != "" {
+				lines[0] = lipgloss.NewStyle().
+					MaxWidth(m.width).
+					MaxHeight(1).
+					Render(pill)
+				messageView = strings.Join(lines, "\n")
+			}
+		}
+	}
+
 	return baseStyle.
 		Width(m.width).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Top,
-				m.viewport.View(),
+				messageView,
 				m.working(),
 				m.help(),
 			),
@@ -401,15 +494,23 @@ func (m *messagesCmp) help() string {
 }
 
 func (m *messagesCmp) initialScreen() string {
-	baseStyle := styles.BaseStyle()
+	t := theme.CurrentTheme()
 
-	return baseStyle.Width(m.width).Render(
-		lipgloss.JoinVertical(
-			lipgloss.Top,
-			header(m.width),
-			"",
-			lspsConfigured(m.width),
-		),
+	block := lipgloss.JoinVertical(
+		lipgloss.Center,
+		lipgloss.NewStyle().Bold(true).Foreground(t.Primary()).Render("LayerFlow"),
+		"",
+		lipgloss.NewStyle().Foreground(t.TextMuted()).Render("agentic coding workspace"),
+		"",
+		lipgloss.NewStyle().Foreground(t.TextMuted()).Render("press enter to start a conversation"),
+	)
+
+	return lipgloss.Place(
+		max(0, m.width),
+		max(0, m.height-1),
+		lipgloss.Center,
+		lipgloss.Center,
+		block,
 	)
 }
 

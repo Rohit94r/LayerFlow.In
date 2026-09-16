@@ -120,6 +120,16 @@ type Finish struct {
 
 func (Finish) isPart() {}
 
+// ErrorPart carries a user-facing friendly error explaining why an assistant
+// response could not be produced. The raw underlying error is preserved (when
+// available) for diagnostics.
+type ErrorPart struct {
+	Message  string `json:"message"`
+	RawError string `json:"raw_error,omitempty"`
+}
+
+func (ErrorPart) isPart() {}
+
 type Message struct {
 	ID        string
 	Role      MessageRole
@@ -186,6 +196,16 @@ func (m *Message) ToolResults() []ToolResult {
 		}
 	}
 	return toolResults
+}
+
+func (m *Message) Errors() []ErrorPart {
+	errorParts := make([]ErrorPart, 0)
+	for _, part := range m.Parts {
+		if c, ok := part.(ErrorPart); ok {
+			errorParts = append(errorParts, c)
+		}
+	}
+	return errorParts
 }
 
 func (m *Message) IsFinished() bool {
@@ -364,6 +384,7 @@ const (
 	toolCallType   partType = "tool_call"
 	toolResultType partType = "tool_result"
 	finishType     partType = "finish"
+	errorType      partType = "error"
 )
 
 type partWrapper struct {
@@ -392,6 +413,8 @@ func MarshallParts(parts []ContentPart) ([]byte, error) {
 			typ = toolResultType
 		case Finish:
 			typ = finishType
+		case ErrorPart:
+			typ = errorType
 		default:
 			return nil, fmt.Errorf("unknown part type: %T", part)
 		}
@@ -462,6 +485,12 @@ func UnmarshallParts(data []byte) ([]ContentPart, error) {
 			parts = append(parts, part)
 		case finishType:
 			part := Finish{}
+			if err := json.Unmarshal(wrapper.Data, &part); err != nil {
+				return nil, err
+			}
+			parts = append(parts, part)
+		case errorType:
+			part := ErrorPart{}
 			if err := json.Unmarshal(wrapper.Data, &part); err != nil {
 				return nil, err
 			}

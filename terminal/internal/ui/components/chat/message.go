@@ -188,6 +188,19 @@ func renderAssistantMessage(
 		content = renderMessage(thinkingContent, false, msg.ID == focusedUIMessageId, width)
 	}
 
+	if errs := msg.Errors(); len(errs) > 0 {
+		errorContent := renderErrorMessage(errs, width)
+		messages = append(messages, uiMessage{
+			ID:          msg.ID,
+			messageType: assistantMessageType,
+			position:    position,
+			height:      lipgloss.Height(errorContent),
+			content:     errorContent,
+		})
+		position += messages[len(messages)-1].height
+		position++
+	}
+
 	for i, toolCall := range msg.ToolCalls() {
 		toolCallContent := renderToolMessage(
 			toolCall,
@@ -203,6 +216,42 @@ func renderAssistantMessage(
 		position++ // for the space
 	}
 	return messages
+}
+
+// renderErrorMessage renders a friendly, actionable error block for assistant
+// messages that failed to produce a response.
+func renderErrorMessage(errs []message.ErrorPart, width int) string {
+	t := theme.CurrentTheme()
+	first := errs[0]
+
+	blockStyle := styles.BaseStyle().
+		Width(max(0, width-1)).
+		Padding(1, 2).
+		Border(lipgloss.ThickBorder(), false, false, false, true).
+		BorderLeftForeground(t.Error())
+
+	lines := []string{
+		lipgloss.NewStyle().Bold(true).Foreground(t.Error()).Render("Unable to generate a response"),
+	}
+	if first.Message != "" {
+		lines = append(lines, lipgloss.NewStyle().Foreground(t.Text()).Render(first.Message))
+	}
+	if first.RawError != "" && first.RawError != first.Message {
+		lines = append(lines, lipgloss.NewStyle().Foreground(t.TextMuted()).Render("Details: "+truncateErrorLine(first.RawError)))
+	}
+
+	return blockStyle.Render(lipgloss.JoinVertical(lipgloss.Left, lines...))
+}
+
+// truncateErrorLine condenses multi-line/very long raw errors to a single
+// display line so the error block never overflows its width.
+func truncateErrorLine(s string) string {
+	s = strings.TrimSpace(strings.ReplaceAll(s, "\n", " · "))
+	const maxLen = 160
+	if len(s) > maxLen {
+		return s[:maxLen] + "..."
+	}
+	return s
 }
 
 func findToolResponse(toolCallID string, futureMessages []message.Message) *message.ToolResult {
