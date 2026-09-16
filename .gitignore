@@ -69,3 +69,13 @@ COMPLETE
 
 # opencode reference checkout (used for TUI port, not part of the product)
 opencode/
+
+# local scratch (never commit)
+.tmp-*
+.tmp-state.txt
+.tmp-dbg-*.txt
+.tmp-batch-*.sh
+.clean-check.txt
+batch-14.log
+.mv1.log
+mv1.log
