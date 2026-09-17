@@ -46,7 +46,7 @@ export async function generateMetadata({
       url,
       title: pageTitle,
       description: post.description,
-      images: [{ url: `${SITE_URL}${coverImageFor(post)}` }],
+      images: [{ url: coverImageFor(post) }],
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author],
@@ -56,7 +56,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: pageTitle,
       description: post.description,
-      images: [`${SITE_URL}${coverImageFor(post)}`],
+      images: [coverImageFor(post)],
     },
   };
 }
@@ -88,9 +88,10 @@ export default async function BlogPostPage({ params }: { params: Params }) {
 
   const articleJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
     description: post.description,
+    image: coverImageFor(post),
     datePublished: post.publishedAt,
     dateModified: post.updatedAt ?? post.publishedAt,
     author: {

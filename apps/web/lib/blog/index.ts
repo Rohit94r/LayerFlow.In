@@ -223,11 +223,13 @@ export function slugifyHeading(text: string): string {
  * that URL is used (e.g. a free stock/random image generator). Otherwise we
  * fall back to the local doodle SVG so every card + hero stays visual.
  */
+export const SITE_URL = "https://layerflow.dev";
+
 export function coverImageFor(post: BlogPost): string {
-  return post.coverImage ?? doodleForSlug(post.slug);
+  const image = post.coverImage ?? doodleForSlug(post.slug);
+  return image.startsWith("http") ? image : `${SITE_URL}${image}`;
 }
 
-export const SITE_URL = "https://layerflow.dev";
 export const BLOG_AUTHOR = "LayerFlow Team";
 
 /** Max characters a page keyword/title can use before " | LayerFlow" is appended (60 - 12). */
