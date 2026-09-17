@@ -353,9 +353,9 @@ export const corpusI: BlogPost[] = [
   },
   {
     "slug": "ai-sentiment-analysis-guide",
-    "title": "AI Sentiment Analysis: Models, Methods, and Accuracy in 2026",
-    "metaTitle": "AI Sentiment Analysis Guide (2026)",
-    "description": "AI sentiment analysis explained: LLM-based vs classifier approaches, labeling scales, accuracy limits, and the cost per thousand reviews analyzed.",
+    "title": "How Accurate Is AI Sentiment Analysis? Methods, Limits & Calculating Accuracy",
+    "metaTitle": "How Accurate Is AI Sentiment Analysis? (2026)",
+    "description": "How accurate is AI sentiment analysis, and how do you calculate it? LLM-based vs classifier approaches, labeling scales, accuracy limits, and cost per thousand reviews.",
     "publishedAt": "2026-08-28",
     "category": "Use cases",
     "tags": ["sentiment analysis", "NLP", "classification"],

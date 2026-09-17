@@ -173,9 +173,9 @@ export const corpusSC2: BlogPost[] = [
   },
   {
     "slug": "context-compression-techniques",
-    "title": "Context Compression: 7 Techniques That Cut Tokens Without Losing Signal",
-    "metaTitle": "Context Compression: 7 Token-Saving Techniques",
-    "description": "Context compression cuts token costs 60-80%. Seven techniques for compressing LLM context without losing the signal that drives quality.",
+    "title": "Context Compression Techniques: 7 Ways to Cut Tokens, Not Quality",
+    "metaTitle": "Context Compression Techniques: 7 Token-Saving Methods",
+    "description": "Context compression cuts token costs 60-80%. These 7 context compression techniques compress LLM context without losing the signal that drives quality.",
     "publishedAt": "2026-08-12",
     "category": "Cost control",
     "tags": ["context compression", "token savings", "LLM cost", "context management"],

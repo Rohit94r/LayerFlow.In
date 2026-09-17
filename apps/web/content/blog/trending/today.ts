@@ -3,9 +3,9 @@ import type { BlogPost } from "@/lib/blog/types";
 export const todayPosts: BlogPost[] = [
   {
     "slug": "layered-ai-prompts-practical-guide",
-    "title": "Layered AI Prompts: The Practical System, Context, Task Guide",
-    "metaTitle": "Layered AI Prompts | System, Context, Task Guide (2026)",
-    "description": "Learn the layered AI prompts method — system, context, task — with copy-paste templates and examples that get better results from GPT, Claude, Gemini, and DeepSeek.",
+    "title": "Layered Prompting: The Practical System, Context, Task Guide",
+    "metaTitle": "Layered AI Prompts & Layered Prompting Guide (2026)",
+    "description": "Learn the layered prompting method for layered AI prompts — system, context, task — with copy-paste templates and examples that get better results from GPT, Claude, Gemini, and DeepSeek.",
     "publishedAt": "2026-08-07",
     "category": "Prompt engineering",
     "tags": [
@@ -424,9 +424,9 @@ export const todayPosts: BlogPost[] = [
   },
   {
     "slug": "llm-routing-formula-explained",
-    "title": "The LLM Routing Formula: Cost × Latency × Quality, Explained",
-    "metaTitle": "LLM Routing Formula | Cost Latency Quality Explained",
-    "description": "The LLM routing formula balances cost, latency, and quality. Learn how to pick the right model per request with a simple scoring system that saves money.",
+    "title": "LLM Routing Cost Latency Quality Formula, Explained",
+    "metaTitle": "LLM Routing Cost Latency Quality Formula",
+    "description": "The LLM routing cost latency quality formula: how to score models by cost, latency, and quality per request — with a scoring system that cuts spend 40-60%.",
     "publishedAt": "2026-08-07",
     "category": "Cost control",
     "tags": [

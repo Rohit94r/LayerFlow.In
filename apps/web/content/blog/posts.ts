@@ -868,9 +868,9 @@ export const posts = [
   },
   {
     "slug": "ai-cost-control-hard-budget-limits",
-    "title": "AI Cost Control: How to Set Hard Budget Limits for LLMs",
-    "metaTitle": "AI Cost Control & Hard Budget Limits for LLMs",
-    "description": "Set hard monthly budget limits that block LLM requests when you hit the cap. Stop surprise AI bills with real spend control.",
+    "title": "LLM Budget Control: How to Set Hard Budget Limits for AI",
+    "metaTitle": "LLM Budget Control & Hard Budget Limits for AI",
+    "description": "LLM budget control that works: set hard monthly budget limits that block LLM requests when you hit the cap. Stop surprise AI bills with real spend control.",
     "publishedAt": "2026-07-08",
     "category": "Cost control",
     "tags": [
@@ -1995,9 +1995,9 @@ export const posts = [
   },
   {
     "slug": "how-to-compare-llm-outputs-side-by-side",
-    "title": "How to Compare LLM Outputs Side by Side",
-    "metaTitle": "Compare LLM Outputs Side by Side | Guide",
-    "description": "A practical workflow to run the same prompt across models, score outputs, and save the winning version with cost and latency.",
+    "title": "Best LLM Output Comparison Solutions: Compare Outputs Side by Side",
+    "metaTitle": "Best LLM Output Comparison Solutions",
+    "description": "The best LLM output comparison solutions: run the same prompt across models, score outputs, and save the winning version with cost and latency.",
     "publishedAt": "2026-06-26",
     "category": "Model comparison",
     "tags": [
@@ -7165,10 +7165,10 @@ export const posts = [
     ]
   },
 {
-  "slug": "ai-prompt-organizer-tools-2026",
-  "title": "AI Prompt Organizer: 7 Ways to Fix Prompt Chaos in 2026",
-  "metaTitle": "Best AI Prompt Organizer Tools & Methods (2026)",
-  "description": "Stop losing prompts in ChatGPT history. See the 7 best ways to organize AI prompts: folders, tags, version timelines, and workspaces — and the tools that make them painless.",
+"slug": "ai-prompt-organizer-tools-2026",
+    "title": "AI Prompt Organizer Tools: 7 Ways to Organize Prompts in 2026",
+    "metaTitle": "Best AI Prompt Organizer Tools & Methods (2026)",
+    "description": "Stop losing prompts in ChatGPT history. See the 7 best tools to organize AI prompts: folders, tags, version timelines, and workspaces.",
   "publishedAt": "2026-08-08",
   "category": "Productivity",
   "tags": [
@@ -7429,10 +7429,10 @@ export const posts = [
   ]
 },
 {
-  "slug": "ai-api-token-management-guide",
-  "title": "AI API Token Management: Track, Budget, and Cut Token Waste Across Every Provider",
-  "metaTitle": "AI API Token Management Guide: Track Usage & Budget (2026)",
-  "description": "Token waste is silent spend. Learn AI API token management — tracking usage by project and key, setting hard budgets, and cutting waste across GPT, Claude, Gemini, and DeepSeek.",
+"slug": "ai-api-token-management-guide",
+    "title": "AI API Token Management: Track, Budget, and Cut Token Waste",
+    "metaTitle": "AI API Token Management: Track Usage & Set Budgets",
+    "description": "Token waste is silent spend. Learn AI API token management — tracking usage by project and key, setting hard budgets, and cutting waste across GPT, Claude, Gemini, and DeepSeek.",
   "publishedAt": "2026-08-10",
   "category": "Cost control",
   "tags": [

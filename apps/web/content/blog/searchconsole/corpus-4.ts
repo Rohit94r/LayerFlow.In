@@ -6,9 +6,9 @@ import type { BlogPost } from "@/lib/blog/types";
 export const corpusSC4: BlogPost[] = [
   {
     "slug": "byok-for-beginners-guide",
-    "title": "BYOK Explained: Bring Your Own Key for AI Tools, Plain and Simple",
-    "metaTitle": "BYOK Explained for Beginners (2026)",
-    "description": "BYOK (bring your own key) explained simply: what it is, how it works, what it costs, and whether it is right for you in 2026.",
+    "title": "BYOK Meaning Explained: Bring Your Own Key for AI Tools, Plain and Simple",
+    "metaTitle": "BYOK Meaning: What Does BYOK Mean? (2026)",
+    "description": "BYOK meaning explained for beginners: what BYOK means, how bring-your-own-key works, what it costs, and whether it is right for you in 2026.",
     "publishedAt": "2026-08-14",
     "category": "AI gateway",
     "tags": ["BYOK", "bring your own key", "API key", "AI tool pricing"],

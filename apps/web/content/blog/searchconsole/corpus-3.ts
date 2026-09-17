@@ -6,9 +6,9 @@ import type { BlogPost } from "@/lib/blog/types";
 export const corpusSC3: BlogPost[] = [
   {
     "slug": "llm-routing-implementation-guide",
-    "title": "LLM Routing in Production: Implementation Guide for Dev Teams",
-    "metaTitle": "LLM Routing in Production (2026 Guide)",
-    "description": "Implement LLM routing in production: classification tiers, decision trees, fallbacks, and the metrics that prove routing is working.",
+    "title": "LLM Routing & Fallback in Production: Implementation Guide for Dev Teams",
+    "metaTitle": "LLM Routing & Fallback Implementation (2026 Guide)",
+    "description": "Implement LLM routing and fallback in production: classification tiers, decision trees, fallbacks, and the metrics that prove routing is working.",
     "publishedAt": "2026-08-13",
     "category": "AI gateway",
     "tags": ["LLM routing", "model routing", "AI gateway", "cost optimization"],

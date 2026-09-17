@@ -208,8 +208,8 @@ export const corpusH: BlogPost[] = [
   },
   {
     "slug": "ai-document-processing-guide",
-    "title": "AI Document Processing: OCR, Extraction, Classification, and Cost",
-    "metaTitle": "AI Document Processing Guide | OCR & Extraction Pipelines",
+    "title": "AI Document Processing: OCR, Extraction, and Classification That Works",
+    "metaTitle": "AI Document Processing: OCR & Extraction Pipelines",
     "description": "Build an AI document processing pipeline: when to OCR, how to extract fields with schemas, classification for routing, and what it all costs.",
     "publishedAt": "2026-08-25",
     "category": "Use cases",
@@ -355,9 +355,9 @@ export const corpusH: BlogPost[] = [
   },
   {
     "slug": "llm-context-window-upgrade-costs",
-    "title": "What Upgrading Your LLM Context Window Actually Costs",
+    "title": "LLM Context Window Upgrade: How Much a Bigger Context Window Costs",
     "metaTitle": "LLM Context Window Upgrade Cost | When It Pays Off",
-    "description": "The real cost of bigger LLM context windows: price brackets, premium multipliers, when the upgrade pays off, and cheaper alternatives like compression and caching.",
+    "description": "The real cost of a bigger LLM context window upgrade: price brackets, premium multipliers, when the upgrade pays off, and cheaper alternatives like compression and caching.",
     "publishedAt": "2026-08-26",
     "category": "Cost control",
     "tags": ["context window", "LLM cost", "long context"],
@@ -406,8 +406,8 @@ export const corpusH: BlogPost[] = [
   },
   {
     "slug": "ai-customer-onboarding-chatbots",
-    "title": "AI Onboarding Chatbots: Guided Setup, Q&A, and Fewer Support Tickets",
-    "metaTitle": "AI Onboarding Chatbots Guide | Reduce Support Load 2026",
+    "title": "AI Customer Onboarding Chatbots: Guided Setup and Fewer Support Tickets",
+    "metaTitle": "AI Customer Onboarding Chatbot Guide (2026)",
     "description": "Build an AI customer onboarding chatbot: guided setup flows, documentation-grounded Q&A, escalation with context, and measurable support deflection.",
     "publishedAt": "2026-08-26",
     "category": "Use cases",

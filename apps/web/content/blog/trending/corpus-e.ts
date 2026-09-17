@@ -157,9 +157,9 @@ export const corpusE: BlogPost[] = [
   },
   {
     "slug": "llm-latency-optimization",
-    "title": "How to Reduce LLM Latency: Streaming, Caching, and Model Choice",
-    "metaTitle": "LLM Latency Optimization | Reduce Response Times in 2026",
-    "description": "Reduce LLM latency with streaming, smaller models, prompt caching, request batching, and geographic routing — with real-world numbers and trade-offs.",
+    "title": "How to Reduce LLM Latency: Dynamic Model Switching, Caching, and Chatbot Best Practices",
+    "metaTitle": "LLM Latency Optimization | Reduce Chatbot Response Times 2026",
+    "description": "Reduce LLM latency and response times in your AI chatbot: streaming, dynamic model switching based on cost and latency, host API placement, caching, and real-world numbers.",
     "publishedAt": "2026-08-19",
     "category": "AI gateway",
     "tags": ["LLM latency", "streaming", "performance optimization"],
