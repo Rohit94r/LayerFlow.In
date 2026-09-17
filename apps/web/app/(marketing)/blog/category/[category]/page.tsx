@@ -137,9 +137,11 @@ export default async function BlogCategoryPage({
             </Link>
           </p>
         ) : (
-          categoryPosts.map((post) => (
-            <BlogPostRow key={post.slug} post={post} />
-          ))
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {categoryPosts.map((post) => (
+              <BlogPostRow key={post.slug} post={post} />
+            ))}
+          </div>
         )}
         <div className="mt-12 rounded-2xl border border-border bg-surface/50 p-8 text-center">
           <p className="font-mono text-sm text-brand">LayerFlow</p>

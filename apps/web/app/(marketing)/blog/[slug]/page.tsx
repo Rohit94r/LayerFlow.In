@@ -10,9 +10,9 @@ import {
   getRelatedPosts,
   getCategorySlug,
   buildMetaTitle,
+  coverImageFor,
   SITE_URL,
 } from "@/lib/blog";
-import { doodleForSlug } from "@/lib/doodles";
 
 type Params = Promise<{ slug: string }>;
 
@@ -46,7 +46,7 @@ export async function generateMetadata({
       url,
       title: pageTitle,
       description: post.description,
-      images: [{ url: `${SITE_URL}${doodleForSlug(post.slug)}` }],
+      images: [{ url: `${SITE_URL}${coverImageFor(post)}` }],
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author],
@@ -56,7 +56,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: pageTitle,
       description: post.description,
-      images: [`${SITE_URL}${doodleForSlug(post.slug)}`],
+      images: [`${SITE_URL}${coverImageFor(post)}`],
     },
   };
 }
@@ -207,7 +207,7 @@ export default async function BlogPostPage({ params }: { params: Params }) {
         <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-2xl border border-border bg-surface/50">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={doodleForSlug(post.slug)}
+            src={coverImageFor(post)}
             alt={`${post.title} — LayerFlow blog illustration`}
             className="h-52 w-full object-cover sm:h-72"
           />

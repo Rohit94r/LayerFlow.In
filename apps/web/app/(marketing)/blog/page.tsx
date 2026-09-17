@@ -115,9 +115,9 @@ export default async function BlogIndexPage({
           <BlogFilters categories={categories} tags={tags} />
         </Suspense>
 
-        <div className="mt-4">
+        <div className="mt-4 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {posts.length === 0 ? (
-            <p className="py-16 text-muted">
+            <p className="py-16 text-muted lg:col-span-3">
               No posts match this filter.{" "}
               <Link href="/blog" className="text-brand hover:underline">
                 View all

@@ -35,6 +35,8 @@ export type BlogPost = {
   secondaryKeywords: string[];
   readingTime: string;
   author: string;
+  /** Optional image URL shown on the blog card + hero + OG image (falls back to doodle). */
+  coverImage?: string;
   relatedSlugs: string[];
   blocks: BlogBlock[];
 };

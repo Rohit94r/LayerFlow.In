@@ -1,5 +1,6 @@
 import type { BlogPost, BlogPostMeta, BlogPublishStatus } from "./types";
 import { posts as rawPosts } from "@/content/blog/posts";
+import { doodleForSlug } from "@/lib/doodles";
 import { todayPosts } from "@/content/blog/trending/today";
 import { corpusA1 } from "@/content/blog/trending/corpus-a";
 import { corpusB } from "@/content/blog/trending/corpus-b";
@@ -207,6 +208,15 @@ export function slugifyHeading(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Deterministic cover image for a post. When a post opts in with coverImage,
+ * that URL is used (e.g. a free stock/random image generator). Otherwise we
+ * fall back to the local doodle SVG so every card + hero stays visual.
+ */
+export function coverImageFor(post: BlogPost): string {
+  return post.coverImage ?? doodleForSlug(post.slug);
 }
 
 export const SITE_URL = "https://layerflow.dev";

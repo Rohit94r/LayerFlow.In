@@ -24,7 +24,7 @@ export default function BlogHero() {
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
           Practical, SEO-ready guides on organizing AI prompts, comparing
           LLMs side by side, routing models for cost and quality, BYOK key
-          management, and building AI workspaces.
+          management, LLM gateways, and building AI workspaces.
         </p>
         <nav aria-label="Blog topics" className="mt-6 flex flex-wrap gap-2">
           {[
@@ -32,6 +32,7 @@ export default function BlogHero() {
             { label: "Cost control", href: "/blog/category/cost-control" },
             { label: "Model comparison", href: "/blog/category/model-comparison" },
             { label: "AI gateway", href: "/blog/category/ai-gateway" },
+            { label: "Productivity", href: "/blog/category/productivity" },
             { label: "Getting started", href: "/blog/category/getting-started" },
           ].map((topic) => (
             <Link
