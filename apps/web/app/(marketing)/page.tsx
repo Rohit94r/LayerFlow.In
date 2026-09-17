@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import ProblemSection from "@/components/ProblemSection";
-import HowItWorks from "@/components/HowItWorks";
-import ScenesSection from "@/components/ScenesSection";
 import ComparisonSection from "@/components/ComparisonSection";
-import BuildAgentSection from "@/components/BuildAgentSection";
 import PublicBand from "@/components/PublicBand";
 import PricingSection from "@/components/PricingSection";
 import FaqSection from "@/components/FaqSection";
@@ -126,9 +123,6 @@ export default function Home() {
         <main className="flex flex-1 flex-col bg-bg">
           <Hero />
           <ProblemSection />
-          <HowItWorks />
-          <ScenesSection />
-          <BuildAgentSection />
           <ComparisonSection />
           <PublicBand />
           <PricingSection />
