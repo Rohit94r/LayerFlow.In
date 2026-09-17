@@ -62,6 +62,18 @@ export default function Footer() {
             </a>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
+              href="#terminal"
+            >
+              Terminal CLI
+            </a>
+            <a
+              className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
+              href="#features"
+            >
+              Chat Rescue
+            </a>
+            <a
+              className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
               href="#how"
             >
               How it works

@@ -16,6 +16,18 @@ export default function Navbar() {
             How it works
           </a>
           <a
+            href="#terminal"
+            className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
+          >
+            Terminal
+          </a>
+          <a
+            href="#features"
+            className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
+          >
+            Features
+          </a>
+          <a
             href="#pricing"
             className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
           >
