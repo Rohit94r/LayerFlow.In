@@ -17,6 +17,10 @@ import { corpusSC2 } from "@/content/blog/searchconsole/corpus-2";
 import { corpusSC3 } from "@/content/blog/searchconsole/corpus-3";
 import { corpusSC4 } from "@/content/blog/searchconsole/corpus-4";
 import { corpusSC5 } from "@/content/blog/searchconsole/corpus-5";
+import { growthPosts1 } from "@/content/blog/growth/corpus-growth-1";
+import { growthPosts2 } from "@/content/blog/growth/corpus-growth-2";
+import { growthPosts3 } from "@/content/blog/growth/corpus-growth-3";
+import { growthPosts4 } from "@/content/blog/growth/corpus-growth-4";
 import {
   scheduledPublishDate,
   toBlogDateString,
@@ -93,6 +97,10 @@ const posts: BlogPost[] = [
   ...corpusSC3,
   ...corpusSC4,
   ...corpusSC5,
+  ...growthPosts1,
+  ...growthPosts2,
+  ...growthPosts3,
+  ...growthPosts4,
 ].map(applySchedule);
 
 const bySlug = new Map(posts.map((p) => [p.slug, p]));
