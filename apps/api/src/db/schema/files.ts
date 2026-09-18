@@ -22,5 +22,9 @@ export const files = pgTable(
     scope: text("scope").$type<"workspace" | "public">().notNull().default("workspace"),
     ...createdAtOnly,
   },
-  (t) => [index("files_workspace_id_idx").on(t.workspaceId)],
+  (t) => [
+    index("files_workspace_id_idx").on(t.workspaceId),
+    // Content-hash lookups (dedupe: "have I seen these bytes before?").
+    index("files_checksum_idx").on(t.checksum),
+  ],
 );

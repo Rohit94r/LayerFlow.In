@@ -51,6 +51,15 @@ export const listMemoriesResponseSchema = z.object({
 });
 export type ListMemoriesResponse = z.infer<typeof listMemoriesResponseSchema>;
 
+/** GET /api/memory query filters — let clients zoom into one file's chunks. */
+export const listMemoriesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  sourceType: memorySourceTypeSchema.optional(),
+  sourceId: idSchema.optional(),
+});
+export type ListMemoriesQuery = z.infer<typeof listMemoriesQuerySchema>;
+
 /** How a memory search hit matched the query. */
 export const memoryMatchTypeSchema = z.enum(["keyword", "semantic", "both"]);
 export type MemoryMatchType = z.infer<typeof memoryMatchTypeSchema>;

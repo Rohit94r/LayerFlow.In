@@ -1,6 +1,7 @@
 import { and, desc, eq, ilike, or } from "drizzle-orm";
 import type {
   CreateMemoryRequest,
+  ListMemoriesQuery,
   Memory,
   MemorySearchHit,
   UpdateMemoryRequest,
@@ -30,9 +31,15 @@ export function toMemoryDto(row: typeof memories.$inferSelect): Memory {
   };
 }
 
-export async function listMemories(workspaceId: string, limit = 50, offset = 0) {
+export async function listMemories(workspaceId: string, query: Partial<ListMemoriesQuery> = {}) {
+  const { limit = 50, offset = 0, sourceType, sourceId } = query;
   const rows = await db.query.memories.findMany({
-    where: (m, { eq }) => eq(m.workspaceId, workspaceId),
+    where: (m, { and, eq }) =>
+      and(
+        eq(m.workspaceId, workspaceId),
+        sourceType ? eq(m.sourceType, sourceType) : undefined,
+        sourceId ? eq(m.sourceId, sourceId) : undefined,
+      ),
     orderBy: (m, { desc }) => [desc(m.updatedAt)],
     limit,
     offset,

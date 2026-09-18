@@ -22,7 +22,14 @@ export const memories = pgTable(
     meta: jsonb("meta"),
     ...timestamps,
   },
-  (t) => [index("memories_workspace_id_idx").on(t.workspaceId)],
+  (t) => [
+    index("memories_workspace_id_idx").on(t.workspaceId),
+    // File/RAG scoped lookups: ingestion idempotency + per-file memory listing
+    // filter on (workspaceId, sourceType, sourceId).
+    index("memories_workspace_source_idx").on(t.workspaceId, t.sourceType, t.sourceId),
+    // listMemories orders by (workspaceId, updatedAt desc).
+    index("memories_workspace_updated_idx").on(t.workspaceId, t.updatedAt),
+  ],
 );
 
 export const memoryEmbeddings = pgTable(
@@ -42,6 +49,7 @@ export const memoryEmbeddings = pgTable(
   },
   (t) => [
     index("memory_embeddings_workspace_id_idx").on(t.workspaceId),
+    index("memory_embeddings_memory_id_idx").on(t.memoryId),
     index("memory_embeddings_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
   ],
 );

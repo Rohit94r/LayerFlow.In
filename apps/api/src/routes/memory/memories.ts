@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import {
   createMemoryRequestSchema,
-  paginationQuerySchema,
+  listMemoriesQuerySchema,
   updateMemoryRequestSchema,
   type ListMemoriesResponse,
   type MemoryResponse,
@@ -48,8 +48,8 @@ memoryRouter.get("/search", async (c) => {
 // GET /api/memory
 memoryRouter.get("/", async (c) => {
   const workspaceId = c.get("workspaceId");
-  const { limit, offset } = paginationQuerySchema.parse(c.req.query());
-  const memories = await listMemories(workspaceId, limit, offset);
+  const query = listMemoriesQuerySchema.parse(c.req.query());
+  const memories = await listMemories(workspaceId, query);
   const response: ListMemoriesResponse = { memories };
   return c.json(response);
 });

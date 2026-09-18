@@ -18,6 +18,7 @@ import {
   Settings,
   TerminalSquare,
   Brain,
+  FileCode2,
   Users,
 } from "@/components/ui/icons";
 import type { LucideIcon } from "@/components/ui/icons";
@@ -56,6 +57,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/models", label: "Models", description: "Models, routing and BYOK", icon: Cpu },
       { href: "/history", label: "History", description: "Every run, one timeline", icon: History },
       { href: "/memory", label: "Memory", description: "What LayerFlow remembered", icon: Brain },
+      { href: "/files", label: "Files", description: "Uploaded knowledge + RAG", icon: FileCode2 },
       { href: "/search", label: "Search", description: "Search all your context", icon: Search },
       { href: "/costs", label: "Costs", description: "Spend, savings and budgets", icon: BarChart3 },
     ],

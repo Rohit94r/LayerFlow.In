@@ -1,8 +1,8 @@
-import { and, asc, eq, ne } from "drizzle-orm";
+import { and, asc, eq, isNull, ne } from "drizzle-orm";
 import { cosineDistance } from "drizzle-orm/sql/functions/vector";
 import { logger } from "../../config/logger";
 import { db } from "../../db/client";
-import { memoryEmbeddings } from "../../db/schema/memory";
+import { memories, memoryEmbeddings } from "../../db/schema/memory";
 import { enqueue } from "../../jobs/queues";
 import { embedText } from "../search/embeddings";
 
@@ -141,4 +141,43 @@ export async function memoriesByIds(ids: string[]) {
   });
   const byId = new Map(rows.map((r) => [r.id, r]));
   return ids.map((id) => byId.get(id)).filter((r): r is NonNullable<typeof r> => Boolean(r));
+}
+
+/**
+ * Reconciliation for the embedding retry-queue:
+ *
+ * BullMQ already retries a failed `embeddings` job (`attempts: 3`, exponential
+ * backoff). This is the *second* half of the retry story — a DB-side sweep for
+ * memories that have no embedding row at all (e.g. enqueue never ran because
+ * Redis was down, or a job was purged after final failure). It's entirely
+ * Postgres-verifiable, so it works identically with or without Redis.
+ *
+ * Returns memory rows (id + workspaceId) that have zero memory_embeddings rows.
+ */
+export async function findUnembeddedMemories(limit = 500): Promise<Array<{ id: string; workspaceId: string }>> {
+  const rows = await db
+    .select({ id: memories.id, workspaceId: memories.workspaceId })
+    .from(memories)
+    .leftJoin(memoryEmbeddings, eq(memoryEmbeddings.memoryId, memories.id))
+    .where(isNull(memoryEmbeddings.memoryId))
+    .limit(limit);
+  return rows;
+}
+
+/**
+ * Re-schedule embeddings for every memory currently missing one. Returns the
+ * number of memories requeued. Safe to call any time — idempotent per memory
+ * (embedMemory replaces the vector rather than stacking rows).
+ */
+export async function requeueUnembeddedMemories(limit = 500): Promise<number> {
+  const unembedded = await findUnembeddedMemories(limit);
+  let requeued = 0;
+  for (const memory of unembedded) {
+    await scheduleMemoryEmbedding(memory.id, memory.workspaceId);
+    requeued += 1;
+  }
+  if (requeued > 0) {
+    logger.info({ requeued, limit }, "requeued embeddings for unembedded memories");
+  }
+  return requeued;
 }

@@ -23,7 +23,8 @@ export type JobName =
   | "rescue"
   | "agent"
   | "agent-maintenance"
-  | "agent-scheduled";
+  | "agent-scheduled"
+  | "embeddings-backfill";
 
 let queue: Queue | undefined;
 
@@ -70,6 +71,10 @@ export async function registerScheduledJobs(): Promise<void> {
   });
   await q.upsertJobScheduler("agent-maintenance-hourly", { pattern: "25 * * * *" }, {
     name: "agent-maintenance",
+    data: {},
+  });
+  await q.upsertJobScheduler("embeddings-backfill-daily", { pattern: "0 2 * * *" }, {
+    name: "embeddings-backfill",
     data: {},
   });
 }

@@ -20,8 +20,9 @@
  */
 
 import { db } from "../../db/client";
-import { and, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import { files } from "../../db/schema/files";
+import { memories } from "../../db/schema/memory";
 import { createMemory } from "../memory/memory";
 import { scheduleMemoryEmbedding } from "../memory/embed";
 import { logger } from "../../config/logger";
@@ -125,11 +126,16 @@ export function chunkText(text: string): string[] {
 /**
  * Ingest one file into the memory/RAG store.
  * Returns "ingested" | "skipped" | "unsupported" | "missing".
+ *
+ * `force` clears any existing file-sourced memories for the file first, so
+ * the re-index UI always rebuilds from the current bytes (chunking/parse may
+ * have changed or a previous run was partial).
  */
 export async function ingestFileForRag(
   workspaceId: string,
   fileId: string,
   userId: string,
+  opts: { force?: boolean } = {},
 ): Promise<"ingested" | "skipped" | "unsupported" | "missing"> {
   const file = await db.query.files.findFirst({
     where: (f, { and, eq }) => and(eq(f.id, fileId), eq(f.workspaceId, workspaceId)),
@@ -145,7 +151,22 @@ export async function ingestFileForRag(
     where: (m, { and, eq }) =>
       and(eq(m.workspaceId, workspaceId), eq(m.sourceType, "file"), eq(m.sourceId, fileId)),
   });
-  if (existing) return "skipped";
+  if (existing && !opts.force) return "skipped";
+
+  // Force mode: drop the old chunks (cascades memory_embeddings) so the
+  // rebuild starts clean — no stale/partial vectors can linger.
+  if (opts.force && existing) {
+    await db
+      .delete(memories)
+      .where(
+        and(
+          eq(memories.workspaceId, workspaceId),
+          eq(memories.sourceType, "file"),
+          eq(memories.sourceId, fileId),
+        ),
+      );
+    logger.info({ fileId, workspaceId }, "cleared file memories for re-index");
+  }
 
   const bytes = await readFileBytes(workspaceId, fileId);
   if (!bytes || bytes.length === 0) return "skipped";
@@ -195,4 +216,54 @@ export async function scheduleFileIngestion(
     logger.warn({ err, fileId }, "file ingestion failed");
     throw new AppError(500, "internal", "File ingestion failed");
   }
+}
+
+/** Per-file RAG status + chunk count, for the Files list / re-index UI. */
+export interface FileRagStatus {
+  ragStatus: "indexed" | "pending" | "unsupported" | "unindexed";
+  chunkCount: number;
+}
+
+/**
+ * Compute RAG status for a file: indexed (chunks exist), unsupported
+ * (non-extractable mime), pending (extractable but no chunks yet — e.g. the
+ * complete callback hasn't run), or unindexed.
+ */
+export async function fileRagStatus(workspaceId: string, fileId: string): Promise<FileRagStatus> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(memories)
+    .where(
+      and(
+        eq(memories.workspaceId, workspaceId),
+        eq(memories.sourceType, "file"),
+        eq(memories.sourceId, fileId),
+      ),
+    );
+  const chunkCount = Number(row?.n ?? 0);
+  if (chunkCount > 0) return { ragStatus: "indexed", chunkCount };
+
+  const file = await db.query.files.findFirst({
+    where: (f, { and, eq }) => and(eq(f.id, fileId), eq(f.workspaceId, workspaceId)),
+  });
+  if (!file) return { ragStatus: "unindexed", chunkCount: 0 };
+  return isTextExtractable(file.mimeType)
+    ? { ragStatus: "pending", chunkCount: 0 }
+    : { ragStatus: "unsupported", chunkCount: 0 };
+}
+
+/** Delete all file-sourced memories for a file (called on file delete). */
+export async function deleteFileMemories(workspaceId: string, fileId: string): Promise<number> {
+  const [row] = await db
+    .delete(memories)
+    .where(
+      and(
+        eq(memories.workspaceId, workspaceId),
+        eq(memories.sourceType, "file"),
+        eq(memories.sourceId, fileId),
+      ),
+    )
+    .returning({ id: memories.id });
+  if (row) return 1;
+  return 0;
 }

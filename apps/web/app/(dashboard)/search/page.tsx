@@ -17,7 +17,7 @@ const GROUPS = [
   { key: "prompts", label: "Prompts", icon: Library, href: (id: string) => `/prompts/${id}` },
   { key: "sessions", label: "Sessions", icon: BookUser, href: (id: string) => `/chat/${id}` },
   { key: "memories", label: "Memories", icon: Brain, href: (id: string) => `/memory?id=${id}` },
-  { key: "files", label: "Files", icon: Code2, href: (id: string) => `/files/${id}` },
+  { key: "files", label: "Files", icon: Code2, href: () => "/files" },
   { key: "agentRuns", label: "Agent Runs", icon: Bot, href: (id: string) => `/agents/runs/${id}` },
 ] as const;
 

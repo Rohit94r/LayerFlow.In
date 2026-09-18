@@ -4,6 +4,7 @@ Date: 2026-09-16
 Commit: 9a0ef66 (`feat(web): interactive AI terminal on /terminal — Grok default with auto-fallback`)
 Repository version: LayerFlow monorepo @ main
 Re-audit: 2026-09-16 (post-fix verification) — see status markers RESOLVED / OPEN / UNVERIFIED below.
+Re-check: 2026-09-18 (RAG re-index UI + index migration 0018 + embedding backfill) — see 2026-09-18 markers.
 
 ## Overall Score
 
@@ -19,7 +20,7 @@ BEFORE: 58 / 100 → AFTER: 65 / 100
 | Database | 7 / 10 | 7 / 10 | Drizzle + Neon, mostly workspace-scoped; rollup atomicity mitigated via unique index |
 | AI / Models | 7 / 10 | 7 / 10 | Real providers incl. Grok/xAI, streaming, cost math; anthropic/opencode keys added |
 | Agents | 3 / 10 | 5 / 10 | Permission gate live, real cost/tokens persisted; job_applying still mocked, builder heuristics |
-| RAG / Memory | 6 / 10 | 6 / 10 | Real pgvector RAG + memory; files not in RAG; no source-doc re-index UI |
+| RAG / Memory | 6 / 10 | 6 / 10 | Real pgvector RAG + memory; files now in RAG with re-index UI (2026-09-18) |
 | Terminal / CLI | 6 / 10 | 8 / 10 | `lf sync` safety + MCP mgmt + sessions-open + max-steps wired; upgrade stub remains |
 | Security | 4 / 10 | 8 / 10 | P0 WS + Redis fail-closed + shell hardening + SSRF + XFF + symlink all resolved |
 | Production / DX | 5 / 10 | 6 / 10 | Tests/lint/build pass incl. new WS/sync regression tests; no verified live deployment |
@@ -64,7 +65,7 @@ Issues:
 - **P1 — `lf sync` nil `*sql.DB` panic** (Go): `terminal/cmd/lf/sync.go` calls `materializeOp` with a nil DB when API sync path fails, crashing the CLI.
 - **P1 — unsafe raw-SQL in CLI sync** (`sync.go`) interpolates op `id` + `targetType` into raw strings (low-risk because ids are generated, but still a shell/SQL-integration smell).
 - **P2 — `upsertRollup` race** (see Backend) — mitigated by unique index 0016, not fully atomic.
-- **P2 — missing indexes** on `media_id`/content hash lookups; pgvector queries rely on HNSW only.
+- **P2 — missing indexes** on `media_id`/content hash lookups; pgvector queries rely on HNSW only. **RESOLVED** — migration `0018_rag_indexes` adds `files(checksum)`, `memories(workspace, source_type, source_id)`, `memories(workspace, updated_at)`, `memory_embeddings(memory_id)`, `usage_ledger(created_at)`, `usage_rollups(day)` (verified via `db:verify` on PGlite; Neon apply pending).
 - **P3 — no `ON DELETE` handling** for workspace teardown; soft-delete gaps.
 
 ## Redis
@@ -119,8 +120,8 @@ Sessions + messages persisted (ai_chat_messages). Streaming via SSE to web + ter
 Real pipeline: upload (storage) → `text/plain`, `.md`, `.txt`, `.pdf`, `.docx` extraction (pdf-parse, mammoth) → chunking → embeddings (`text-embedding-3-small`, 1536d) via `services/intelligence/embeddings` with FNV-1a hash fallback when OpenAI key missing → pgvector store (`db/schema/memory.ts` HNSW) → hybrid retrieval + rerank-lite → injected into chat context (`services/chat/context.ts:371-384`). Workspace-scoped. Deleting + re-indexing exists.
 
 Gaps:
-- **Uploaded files are NOT in RAG** — file storage + download only; chat knowledge comes from workspace memory embeddings keyed by kind=memory. Users uploading "knowledge" expect retrieval; nothing indexes those files. P1 product gap.
-- Embedding failure → ingestion marked failed without retry queue (P2).
+- **Uploaded files are NOT in RAG** — file storage + download only; chat knowledge comes from workspace memory embeddings keyed by kind=memory. Users uploading "knowledge" expect retrieval; nothing indexes those files. P1 product gap. **RESOLVED** — files ingest into memory (`sourceType:"file"`), including a **re-index UI**: `GET /api/files` (with `ragStatus`/`chunkCount`), `POST /api/files/:id/reindex` (force rebuild), file-delete now cleans the file's RAG chunks, `GET /api/memory?sourceType=&sourceId=` filter, and a web `/files` page.
+- Embedding failure → ingestion marked failed without retry queue (P2). **PARTIAL** — BullMQ retries the `embeddings` job (3× + exponential backoff); a DB-side backfill sweep (`embeddings-backfill` daily) now reconciles any memory with no embedding row (`findUnembeddedMemories`/`requeueUnembeddedMemories`), verified in `rag-reindex.test.ts`. Live-Redis BNP observation still pending.
 - No vector-scored filter on `fileId` for file-scoped retrieval (P3).
 
 ## Memory
@@ -206,7 +207,7 @@ Count: 2 found → 2 RESOLVED → 0 OPEN.
 5. (Security/Redis) Rate limiter + budget fail-open on Redis outage — **RESOLVED** — `REDIS_DOWN_MODE` deny (prod) / allow (dev/test).
 6. (Backend/Security) Builder GET `/:sessionId` missing workspace guard — **RESOLVED** — 404 on workspace mismatch.
 7. (Security) Shell blacklist bypassable (RCE surface) — **RESOLVED** — metachar/interpreter/env patterns blocked.
-8. (RAG product gap) Uploaded knowledge files not in RAG — **OPEN**.
+8. (RAG product gap) Uploaded knowledge files not in RAG — **RESOLVED** — file ingestion + re-index UI shipped.
 
 Count: 8 found → 7 RESOLVED → 1 OPEN.
 
@@ -216,8 +217,8 @@ Count: 8 found → 7 RESOLVED → 1 OPEN.
 2. Builder "AI-generate" step is keyword heuristics on ephemeral in-memory map — OPEN.
 3. Retry in chat can duplicate assistant rows — **RESOLVED** — exact-retry reuses prior failed assistant row; terminal retry button added.
 4. write/edit path traversal relies on prefix checks only (symlink escape) — **RESOLVED** — async symlink-safe `resolvePath`.
-5. Embedding failures not queued for retry; partial ingestion not marked — OPEN.
-6. Missing indexes on some lookups — OPEN.
+5. Embedding failures not queued for retry; partial ingestion not marked — **PARTIAL** — DB-side backfill sweep added (`embeddings-backfill` + `.findUnembeddedMemories`), verified by test; live-Redis BNP observation pending.
+6. Missing indexes on some lookups — **RESOLVED** — migration `0018_rag_indexes` (memories source/updated, embeddings memory_id, files checksum, ledger created, rollups day); `db:verify` passes.
 
 ## P3 Issues
 
@@ -236,7 +237,6 @@ Count: 8 found → 7 RESOLVED → 1 OPEN.
 - Billing/subscriptions/webhooks.
 - Separate worker process/deployment.
 - Request-type model routing (coding/reasoning/cheap classification).
-- RAG ingestion of uploaded files.
 - Cancellation path for running agent jobs (BulMQ job-level).
 - E2E tests; WS/security tests.
 
@@ -262,6 +262,6 @@ Count: 8 found → 7 RESOLVED → 1 OPEN.
 7. ~~`lf sync` nil-DB panic (P1 terminal).~~ **RESOLVED**.
 8. ~~Redis fail-open policy (P1).~~ **RESOLVED**.
 9. ~~Shell blacklist hardening (P1).~~ **RESOLVED**.
-10. ~~RAG file ingestion (P1 product gap).~~ **RESOLVED** — `services/files/ingest.ts` (text-extractable only: `text/*`, markdown, JSON/XML/JS, CSV; PDF/DOCX return `unsupported`, never faked bytes) chunks paragraphs (~3.8k chars) → `memories` rows `sourceType:"file"` + `sourceId:fileId` → inline/queued embedding → surfaces in `retrieveMemoryContext` (no sourceType filter). Wired best-effort into `POST /api/files/complete`; idempotent via `sourceType:file`+`sourceId`.
-11. P2 batch (rollup, builder persistence, chat retry dedupe, path traversal, embedding retry) — chat retry + path traversal + **builder persistence** RESOLVED; rollup mitigated; embedding retry + indexes remain.
+10. ~~RAG file ingestion (P1 product gap).~~ **RESOLVED** — `services/files/ingest.ts` (text-extractable only: `text/*`, markdown, JSON/XML/JS, CSV; PDF/DOCX return `unsupported`, never faked bytes) chunks paragraphs (~3.8k chars) → `memories` rows `sourceType:"file"` + `sourceId:fileId` → inline/queued embedding → surfaces in `retrieveMemoryContext` (no sourceType filter). Wired best-effort into `POST /api/files/complete`; idempotent via `sourceType:file`+`sourceId`. **Re-index UI added** — `GET /api/files`, `POST /api/files/:id/reindex`, memory `sourceId` filter, file-delete chunk cleanup, web `/files` page.
+11. P2 batch (rollup, builder persistence, chat retry dedupe, path traversal, embedding retry) — chat retry + path traversal + **builder persistence** RESOLVED; rollup mitigated; **embedding retry DB-side RESOLVED (`embeddings-backfill`), indexes RESOLVED (`0018_rag_indexes`)**.
 12. ~~P3 batch (keys cases, CLI stubs, SSRF, terminal cosmetic).~~ Mostly RESOLVED — `lf upgrade` + broader error-patterning remain.

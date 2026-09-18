@@ -1,14 +1,17 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import {
   completeUploadRequestSchema,
   createUploadUrlRequestSchema,
+  listFilesResponseSchema,
   MAX_FILE_SIZE_BYTES,
   type CompleteUploadResponse,
   type CreateUploadUrlResponse,
   type DownloadUrlResponse,
   type FileDto,
+  type FileWithRagStatus,
+  type ReindexFileResponse,
 } from "@layerflow/contracts";
 import { getEnv } from "../../config/env";
 import { logger } from "../../config/logger";
@@ -30,7 +33,12 @@ import {
   r2ObjectExists,
   saveLocalFile,
 } from "../../services/files/storage";
-import { scheduleFileIngestion } from "../../services/files/ingest";
+import {
+  scheduleFileIngestion,
+  ingestFileForRag,
+  fileRagStatus,
+  deleteFileMemories,
+} from "../../services/files/ingest";
 import type { AppEnv } from "../../types";
 
 /**
@@ -249,12 +257,54 @@ filesRouter.get("/:id/content", async (c) => {
   });
 });
 
-// DELETE /api/files/:id — removes metadata, attachments (cascade), and bytes.
+// GET /api/files — workspace files with RAG status (Files / re-index UI).
+filesRouter.get("/", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const rows = await db.query.files.findMany({
+    where: (f, { eq }) => eq(f.workspaceId, workspaceId),
+    orderBy: (f, { desc }) => [desc(f.createdAt)],
+  });
+
+  const withStatus: FileWithRagStatus[] = await Promise.all(
+    rows.map(async (row) => {
+      const status = await fileRagStatus(workspaceId, row.id);
+      return {
+        ...toFileDto(row),
+        ragStatus: status.ragStatus,
+        chunkCount: status.chunkCount,
+      };
+    }),
+  );
+
+  const response = listFilesResponseSchema.parse({ files: withStatus });
+  return c.json(response);
+});
+
+// POST /api/files/:id/reindex — clear + rebuild this file's RAG chunks.
+// Supports: text-extractable files that were uploaded when ingestion was
+// missing/pending, or whose chunking rules changed.
+filesRouter.post("/:id/reindex", async (c) => {
+  const workspaceId = c.get("workspaceId");
+  const userId = c.get("userId");
+  const file = await getOwnedFile(workspaceId, c.req.param("id"));
+
+  const result = await ingestFileForRag(workspaceId, file.id, userId, { force: true });
+
+  const status = await fileRagStatus(workspaceId, file.id);
+  const body: ReindexFileResponse = {
+    file: { ...toFileDto(file), ragStatus: status.ragStatus, chunkCount: status.chunkCount },
+    result: result === "missing" ? "skipped" : result,
+  };
+  return c.json(body);
+});
+
+// DELETE /api/files/:id — removes metadata, attachments (cascade), bytes, and any RAG chunks.
 filesRouter.delete("/:id", async (c) => {
   const workspaceId = c.get("workspaceId");
   const file = await getOwnedFile(workspaceId, c.req.param("id"));
 
   await db.delete(files).where(and(eq(files.id, file.id), eq(files.workspaceId, workspaceId)));
+  await deleteFileMemories(workspaceId, file.id);
 
   try {
     if (isR2Configured()) {

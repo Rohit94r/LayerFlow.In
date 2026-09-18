@@ -6,6 +6,7 @@ import { processAgentScheduled } from "./agent-scheduled";
 import { processBudgetAlerts } from "./budget-alerts";
 import { processCompare } from "./compare";
 import { processEmbeddings } from "./embed";
+import { processEmbeddingsBackfill } from "./embed-backfill";
 import { processExample } from "./example";
 import { processMemoryExtract } from "./memory-extract";
 import { processRescue } from "./rescue";
@@ -27,4 +28,5 @@ export const processors: Partial<Record<JobName, JobProcessor>> = {
   agent: processAgent,
   "agent-maintenance": processAgentMaintenance,
   "agent-scheduled": processAgentScheduled,
+  "embeddings-backfill": processEmbeddingsBackfill,
 };

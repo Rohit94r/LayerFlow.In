@@ -13,6 +13,7 @@ const SOURCE_LABEL: Record<string, string> = {
   run: "Run",
   manual: "Manual",
   chat: "Chat",
+  file: "File",
 };
 
 export default async function MemoryPage() {

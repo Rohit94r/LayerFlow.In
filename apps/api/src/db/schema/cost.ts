@@ -79,7 +79,11 @@ export const usageLedger = pgTable(
     costMicro: microDollars("cost_micro").notNull(),
     ...createdAtOnly,
   },
-  (t) => [index("usage_ledger_workspace_created_idx").on(t.workspaceId, t.createdAt)],
+  (t) => [
+    index("usage_ledger_workspace_created_idx").on(t.workspaceId, t.createdAt),
+    // rollupUsageForDay scans the ledger by created-at range only (no workspace filter).
+    index("usage_ledger_created_idx").on(t.createdAt),
+  ],
 );
 
 /** Pre-aggregated usage per day/dimension, maintained by the rollup worker. */
@@ -102,6 +106,8 @@ export const usageRollups = pgTable(
   },
   (t) => [
     index("usage_rollups_workspace_day_idx").on(t.workspaceId, t.day),
+    // Rollup worker deletes/inserts by day alone (see rollupUsageForDay).
+    index("usage_rollups_day_idx").on(t.day),
     // UNIQUE conflict target for the atomic rollup: dimension keys use COALESCE
     // so NULL dims (project/model/key) dedupe correctly (NULL <> NULL in PG).
     uniqueIndex("usage_rollups_dim_uq").on(

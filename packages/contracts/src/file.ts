@@ -61,3 +61,31 @@ export const downloadUrlResponseSchema = z.object({
 });
 
 export type DownloadUrlResponse = z.infer<typeof downloadUrlResponseSchema>;
+
+/** RAG ingestion state for a file (what users see in the Files list). */
+export const fileRagStatusSchema = z.enum(["indexed", "pending", "unsupported", "unindexed"]);
+export type FileRagStatus = z.infer<typeof fileRagStatusSchema>;
+
+/** File list row — file metadata + how deeply it's indexed into RAG. */
+export const fileWithRagStatusSchema = fileSchema.extend({
+  ragStatus: fileRagStatusSchema,
+  /** Number of memory chunks this file produced (0 when not indexed). */
+  chunkCount: z.number().int().nonnegative(),
+});
+
+export type FileWithRagStatus = z.infer<typeof fileWithRagStatusSchema>;
+
+/** GET /api/files (workspace-scoped). */
+export const listFilesResponseSchema = z.object({
+  files: z.array(fileWithRagStatusSchema),
+});
+
+export type ListFilesResponse = z.infer<typeof listFilesResponseSchema>;
+
+/** POST /api/files/:id/reindex */
+export const reindexFileResponseSchema = z.object({
+  file: fileWithRagStatusSchema,
+  result: z.enum(["ingested", "skipped", "unsupported"]),
+});
+
+export type ReindexFileResponse = z.infer<typeof reindexFileResponseSchema>;
