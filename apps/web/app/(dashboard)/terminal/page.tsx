@@ -19,6 +19,7 @@ import { syncService } from "@/lib/services/sync";
 import type { SyncOperation } from "@/lib/services/sync";
 import { chatService } from "@/lib/services/chat";
 import { TerminalRepl } from "@/components/features/terminal/terminal-repl";
+import { RemoteControlPanel } from "@/components/features/terminal/remote-control-panel";
 import { cn } from "@/lib/utils";
 
 const RUN_STATUS: Record<Run["status"], { label: string; tone: "neutral" | "amber" | "mint" | "rose" | "red" }> = {
@@ -191,6 +192,8 @@ export default function TerminalPage() {
       ) : (
         <>
           <TerminalRepl />
+
+          <RemoteControlPanel />
 
           <section className="space-y-3">
             <h2 className="text-base font-semibold tracking-tight text-ink">CLI Sync Activity</h2>

@@ -22,10 +22,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/config"
 	"github.com/layerflow/terminal/internal/memory"
+	"github.com/layerflow/terminal/internal/remote"
 	"github.com/layerflow/terminal/internal/search"
 	"github.com/layerflow/terminal/internal/storage"
+	lfsync "github.com/layerflow/terminal/internal/sync"
 	"github.com/layerflow/terminal/internal/watcher"
 )
 
@@ -44,6 +47,11 @@ type Daemon struct {
 	mu      sync.Mutex
 	running bool
 	stopCh  chan struct{}
+
+	// Remote control ("driver / car") — polls the LayerFlow API for commands
+	// issued from the web dashboard and runs them on this machine.
+	remoteWorker *remote.Worker
+	remoteCancel context.CancelFunc
 }
 
 // Status represents the daemon's current state.
@@ -176,6 +184,7 @@ func Start(cfg *config.Config) error {
 
 	// Start background loops
 	go d.watchLoop()
+	d.startRemoteControl()
 
 	// Write PID
 	if err := writePID(os.Getpid()); err != nil {
@@ -317,6 +326,29 @@ func (d *Daemon) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 // ─── Background loops ────────────────────────────────────────────────────────
 
+// startRemoteControl spins up the remote-control worker when a workspace API
+// key is configured. Without auth it logs once and stays disabled — the
+// daemon still runs watcher/sync locally.
+func (d *Daemon) startRemoteControl() {
+	apiKey, err := cloud.ResolveAPIKey(d.config)
+	if err != nil {
+		slog.Info("daemon: remote control disabled", "reason", "no API key — run `lf login` or set LF_API_KEY")
+		return
+	}
+
+	deviceID, err := lfsync.GetDeviceID(context.Background(), d.db)
+	if err != nil {
+		slog.Warn("daemon: remote control disabled", "err", err)
+		return
+	}
+
+	client := remote.NewClient(cloud.ResolveBaseURL(d.config), apiKey)
+	ctx, cancel := context.WithCancel(context.Background())
+	d.remoteWorker = remote.NewWorker(client, deviceID)
+	d.remoteCancel = cancel
+	go d.remoteWorker.Run(ctx)
+}
+
 func (d *Daemon) watchLoop() {
 	if d.watcher == nil {
 		return
@@ -346,6 +378,11 @@ func (d *Daemon) waitForSignal() {
 	d.mu.Lock()
 	d.running = false
 	d.mu.Unlock()
+
+	// Stop the remote-control loop
+	if d.remoteCancel != nil {
+		d.remoteCancel()
+	}
 
 	// Close watchers
 	if d.watcher != nil {

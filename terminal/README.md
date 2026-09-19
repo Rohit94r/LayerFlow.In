@@ -12,6 +12,7 @@ A local-first AI terminal workspace with streaming, tools, memory, and cloud syn
 - **Hybrid search** (filename + content + git + embeddings + memory)
 - **MCP**, **LSP**, **Git**, and **OpenAI-compatible providers**
 - **Background daemon** for sync, indexing, and notifications
+- **Remote control** — the dashboard can send shell commands to a logged-in daemon and stream the output back
 - **Offline-first** with bidirectional sync
 
 ## Installation

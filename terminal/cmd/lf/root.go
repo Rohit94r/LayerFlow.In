@@ -323,7 +323,7 @@ func newDaemonCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "daemon",
 		Short: "Background daemon lifecycle",
-		Long:  `Manage the background daemon. The daemon runs a long-running process with a file watcher and an IPC socket; full sync-queue draining and indexing are being wired — for now use 'lf sync' to push/pull manually.`,
+		Long:  `Manage the background daemon. The daemon runs a long-running process with a file watcher, an IPC socket, and remote control: when logged in, it polls the LayerFlow dashboard for shell commands and runs them on this machine with live output.`,
 	}
 
 	cmd.AddCommand(

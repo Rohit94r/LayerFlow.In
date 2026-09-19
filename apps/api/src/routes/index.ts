@@ -35,6 +35,7 @@ import { foldersRouter } from "./workspace/folders";
 import { projectsRouter } from "./workspace/projects";
 import { workspacesRouter } from "./workspace/workspaces";
 import { syncRouter } from "./sync/sync";
+import { terminalRouter } from "./terminal/terminal";
 import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
 import { wsRouter } from "./ws/ws";
@@ -70,6 +71,7 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/provider-keys", providerKeysRouter);
   app.route("/v1", gatewayRouter);
   app.route("/api/v1/sync", syncRouter);
+  app.route("/api/v1/terminal", terminalRouter);
   app.route("/api/v1/auth", deviceAuthRouter);
   app.route("/api/memory", memoryRouter);
   app.route("/api/search", searchRouter);
