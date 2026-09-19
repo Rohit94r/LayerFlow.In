@@ -65,8 +65,9 @@ const PROVIDER_BY_PREFIX: [string, string][] = [
 ];
 
 /** Group a model id under its provider slug (backend has no provider dimension). */
-function providerForModel(model: string): string {
-  const m = model.toLowerCase().trim();
+function providerForModel(model: string | null | undefined): string {
+  const m = (model ?? "").toLowerCase().trim();
+  if (!m) return "Unknown";
   if (PROVIDER_LABELS[m]) return PROVIDER_LABELS[m];
   for (const [prefix, slug] of PROVIDER_BY_PREFIX) {
     if (m.startsWith(prefix) || m.endsWith(`/${prefix}`) || m.endsWith(`:${prefix}`)) {

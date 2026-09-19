@@ -103,8 +103,8 @@ export async function getPickerModels(): Promise<PickerModel[]> {
 /**
  * Classify a model into cheap/balanced/flagship based on its ID and context window.
  */
-function classifyModel(modelId: string, contextWindow: number): "cheap" | "balanced" | "flagship" {
-  const id = modelId.toLowerCase();
+function classifyModel(modelId: string | null | undefined, contextWindow: number): "cheap" | "balanced" | "flagship" {
+  const id = (modelId ?? "").toLowerCase();
 
   // Flagship models
   if (

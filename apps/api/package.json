@@ -13,6 +13,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "db:verify": "tsx scripts/verify-migrations.ts",
+    "db:migrate:prod": "tsx scripts/migrate-prod.ts",
+    "e2e:terminal": "tsx scripts/e2e-terminal.ts",
     "usage:rollup": "tsx scripts/usage-rollup.ts",
     "usage:reconcile": "tsx scripts/reconcile.ts",
     "smoke": "tsx scripts/smoke.ts",
