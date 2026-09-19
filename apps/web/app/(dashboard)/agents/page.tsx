@@ -12,6 +12,7 @@ import {
   Clock,
   FileCode2,
   GraduationCap,
+  Layers,
   Loader2,
   Minus,
   Play,
@@ -27,17 +28,21 @@ import { agentsService } from "@/lib/services/agents";
 import { cn } from "@/lib/utils";
 
 const TEMPLATE_ICONS: Record<string, typeof Bot> = {
+  common_assistant: Sparkles,
+  freelancer_pipeline: Briefcase,
+  job_finder: Briefcase,
+  product_finder: Layers,
+  content_creator: FileCode2,
+  startup_research: Sparkles,
   job_applying: Briefcase,
   internship_hunter: GraduationCap,
   linkedin_outreach: Users,
   research: Brain,
   scholarship_finder: GraduationCap,
-  startup_research: Sparkles,
   content_repurposing: FileCode2,
   meeting_followup: Clock,
   teacher_assistant: GraduationCap,
   student_study: GraduationCap,
-  freelancer_pipeline: Briefcase,
   research_paper: Brain,
   sales_outreach: Users,
 };
@@ -61,7 +66,7 @@ export default function AgentsPage() {
   const [templates, setTemplates] = useState<AgentTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [pausing, setPausing] = useState<string | null>(null);
-  const [goal, setGoal] = useState("I want a Job Applying Agent.");
+  const [goal, setGoal] = useState("I need help finding freelance clients and drafting client proposals.");
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -88,6 +93,13 @@ export default function AgentsPage() {
     () => agents.reduce((sum, agent) => sum + agent.metrics.pendingApprovals, 0),
     [agents],
   );
+
+  const queuedCount = useMemo(
+    () => agents.filter((a) => a.lastRunStatus === "queued" || a.lastRunStatus === "running").length,
+    [agents],
+  );
+
+  const queued = useMemo(() => agents.filter((a) => a.lastRunStatus === "queued" || a.lastRunStatus === "running"), [agents]);
 
   async function togglePause(agent: AgentWithUsage) {
     if (pausing) return;
@@ -134,10 +146,10 @@ export default function AgentsPage() {
               />
               <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="px-1 text-[11px] font-medium text-muted">
-                  Try: “I want a Freelancer Pipeline Agent” or “Student Study Agent”
+                  Try: “Find me freelance writing gigs” or “Compare smart-home products”
                 </span>
                 <Button
-                  onClick={() => router.push(encodeNewAgentUrl("job_applying", goal))}
+                  onClick={() => router.push(encodeNewAgentUrl("common_assistant", goal))}
                   icon={<Sparkles className="h-3.5 w-3.5" />}
                   size="sm"
                 >
@@ -153,8 +165,8 @@ export default function AgentsPage() {
               {[
                 ["Agents", agents.length],
                 ["Pending approvals", totalPendingApprovals],
-                ["Jobs found", agents.reduce((sum, agent) => sum + agent.metrics.jobsFound, 0)],
-                ["Applications", agents.reduce((sum, agent) => sum + agent.metrics.jobsApplied, 0)],
+                ["Collected", agents.reduce((sum, agent) => sum + agent.metrics.jobsFound + agent.metrics.jobsApplied, 0)],
+                ["Queued", queuedCount],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-xl border border-border bg-glass-bg p-4">
                   <p className="text-2xl font-semibold tracking-tight">{value}</p>
@@ -194,7 +206,7 @@ export default function AgentsPage() {
               return (
                 <Link
                   key={template.key}
-                  href={encodeNewAgentUrl(template.key, template.key === "job_applying" ? goal : undefined)}
+                  href={encodeNewAgentUrl(template.key, template.key === "common_assistant" ? goal : "")}
                   className="group flex min-h-56 flex-col rounded-2xl border border-border bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-2"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -223,6 +235,51 @@ export default function AgentsPage() {
 
       <section className="space-y-3">
         <div>
+          <h2 className="text-base font-semibold tracking-tight text-ink">Run queue</h2>
+          <p className="text-xs text-muted">Agents with a job queued or running right now.</p>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center rounded-2xl border border-border bg-surface py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-faint" />
+          </div>
+        ) : queued.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-surface p-8 text-center">
+            <Clock className="mx-auto h-6 w-6 text-faint" />
+            <p className="mt-2 text-sm text-muted">Queue is empty — start a run from an agent card and it shows up here.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {queued.map((agent) => {
+              const runStatus = agent.lastRunStatus ? RUN_STATUS[agent.lastRunStatus] : null;
+              const Icon = TEMPLATE_ICONS[agent.templateKey ?? ""] ?? Bot;
+              return (
+                <Link
+                  key={agent.id}
+                  href={`/agents/${agent.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3 transition hover:bg-surface-2"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-brand">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{agent.name}</p>
+                    {agent.goal ? <p className="mt-0.5 line-clamp-1 text-[11px] text-faint">{agent.goal}</p> : null}
+                  </div>
+                  {runStatus ? (
+                    <span className={cn("rounded-full px-2.5 py-1 text-[10px] font-semibold", runStatus.className)}>
+                      {runStatus.label}
+                    </span>
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div>
           <h2 className="text-base font-semibold tracking-tight text-ink">Active agents</h2>
           <p className="text-xs text-muted">Live workers, approval queues, and durable progress.</p>
         </div>
@@ -235,7 +292,7 @@ export default function AgentsPage() {
           <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
             <Bot className="mx-auto h-7 w-7 text-faint" />
             <h3 className="mt-3 text-sm font-semibold text-ink">No agents hired yet</h3>
-            <p className="mt-1 text-xs text-muted">Start with any template — Job Applying, Student Study, Freelancer Pipeline, Teacher Assistant, and more.</p>
+            <p className="mt-1 text-xs text-muted">Start with any template — Common Assistant, Freelance Prospector, Job Finder, Product Finder, and more.</p>
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

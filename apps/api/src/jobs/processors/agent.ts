@@ -2,6 +2,7 @@ import type { Job } from "bullmq";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { getModel } from "@layerflow/model-registry";
 import { logger } from "../../config/logger";
+import { getEnv } from "../../config/env";
 import { db } from "../../db/client";
 import {
   agentApprovals,
@@ -21,6 +22,8 @@ import { hasUsableProviderKey } from "../../services/chat/health";
 import { recordActivity } from "../../services/workspace/activity";
 import { createNotification } from "../../services/notifications/notifications";
 import { workspaces } from "../../db/schema/tenancy";
+import { sendAgentRunSummaryEmail } from "../../services/email/gmail";
+import { users } from "../../db/schema/auth";
 import { createId } from "../../db/schema/_helpers";
 import {
   executeTool,
@@ -84,6 +87,56 @@ async function notifyRunFinished(input: {
     logger.warn(
       { agentRunId: input.runId, err: err instanceof Error ? err.message : String(err) },
       "notification creation failed",
+    );
+  }
+}
+
+/**
+ * Best-effort run summary email to the requesting user / workspace owner.
+ * Missing Gmail config or an unknown recipient just logs a warning — the
+ * email must never fail the underlying run job.
+ */
+async function emailRunSummary(input: {
+  runId: string;
+  agentId: string;
+  agentName: string;
+  workspaceId: string;
+  userId?: string;
+  status: "succeeded" | "failed";
+  summary: string;
+  model?: string | null;
+  costMicro?: number;
+}): Promise<void> {
+  try {
+    const workspace = await db.query.workspaces.findFirst({
+      where: eq(workspaces.id, input.workspaceId),
+      columns: { ownerUserId: true },
+    });
+    const recipientId = input.userId ?? workspace?.ownerUserId ?? null;
+    if (!recipientId) return;
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, recipientId),
+      columns: { email: true, name: true },
+    });
+    if (!user?.email) return;
+
+    const webUrl = process.env.WEB_URL ?? getEnv().WEB_URL;
+    const detailsUrl = `${webUrl.replace(/\/$/, "")}/agents/${input.agentId}`;
+
+    await sendAgentRunSummaryEmail({
+      to: user.email,
+      userName: user.name || input.agentName,
+      agentName: input.agentName,
+      status: input.status,
+      summary: input.summary.slice(0, 4000) || "No summary captured for this run.",
+      model: input.model,
+      costUsd: typeof input.costMicro === "number" ? input.costMicro / 1_000_000 : undefined,
+      detailsUrl,
+    });
+  } catch (err) {
+    logger.warn(
+      { agentRunId: input.runId, err: err instanceof Error ? err.message : String(err) },
+      "agent run summary email skipped",
     );
   }
 }
@@ -396,6 +449,17 @@ async function processJobApplyingAgent(input: {
       status: "agent_run_completed",
       message: summary,
     });
+    await emailRunSummary({
+      runId: run.id,
+      agentId: agent.id,
+      agentName: agent.name,
+      workspaceId,
+      userId,
+      status: "succeeded",
+      summary,
+      model: executed?.model,
+      costMicro: executed?.costMicro ?? 0,
+    });
     return;
   }
 
@@ -544,6 +608,22 @@ async function processJobApplyingAgent(input: {
     userId,
     status: "agent_run_completed",
     message: `Found ${candidates.length} matching roles. Top match: ${top.company} (${top.resumeScore ?? 0}%).`,
+  });
+
+  await emailRunSummary({
+    runId: run.id,
+    agentId: agent.id,
+    agentName: agent.name,
+    workspaceId,
+    userId,
+    status: "succeeded",
+    summary: [
+      summary,
+      `Found ${candidates.length} matching roles; ${top.company} ${top.roleTitle} is the top match (${top.resumeScore ?? 0}% resume score).`,
+      candidates.length > 1 ? `${candidates.length - 1} more shortlisted roles are logged for review.` : "A cover letter was drafted and the application is paused for your approval.",
+    ].join("\n\n"),
+    model: executed?.model,
+    costMicro: executed?.costMicro ?? 0,
   });
 
   await recordActivity({
@@ -810,6 +890,18 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       message: finalOutput.slice(0, 240),
     });
 
+    await emailRunSummary({
+      runId: agentRunId,
+      agentId,
+      agentName: agent.name,
+      workspaceId,
+      userId,
+      status: "succeeded",
+      summary: finalOutput.slice(0, 4000),
+      model,
+      costMicro: totalCostMicro,
+    });
+
     logger.info({ agentRunId, agentId, model, iterations: iterationCount }, "agent run completed");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Agent run failed";
@@ -843,6 +935,16 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
       userId,
       status: "agent_run_failed",
       message,
+    });
+
+    await emailRunSummary({
+      runId: agentRunId,
+      agentId,
+      agentName: agent.name,
+      workspaceId,
+      userId,
+      status: "failed",
+      summary: message.slice(0, 4000),
     });
 
     logger.warn({ agentRunId, err: message }, "agent run failed");

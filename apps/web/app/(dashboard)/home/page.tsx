@@ -18,6 +18,7 @@ import { promptService } from "@/lib/services/prompts";
 import { agentsService } from "@/lib/services/agents";
 import { chatService } from "@/lib/services/chat";
 import { memoryService } from "@/lib/services/memory";
+import { syncService } from "@/lib/services/sync";
 import { notificationsService } from "@/lib/services/notifications";
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
 import { listRunsResponseSchema, type Run } from "@layerflow/contracts";
@@ -53,7 +54,7 @@ const today = new Date().toLocaleDateString("en-US", {
 });
 
 export default async function HomePage() {
-  const [timeline, costs, reports, prompts, agents, sessions, memories, notifications, runs] = await Promise.all([
+  const [timeline, costs, reports, prompts, agents, sessions, memories, notifications, runs, syncOps] = await Promise.all([
     workspaceService.listTimeline().catch(() => null),
     workspaceService.getCostAnalytics().catch(() => null),
     rescueService.listRescueReports().catch(() => null),
@@ -63,7 +64,10 @@ export default async function HomePage() {
     memoryService.list({ limit: 3 }).catch(() => null),
     notificationsService.listServer({ limit: 10 }).catch(() => null),
     listRecentRuns(5),
+    syncService.operationsServer({ limit: 6 }).catch(() => null),
   ]);
+
+  const ops = syncOps?.operations ?? null;
 
   const chatSessions = sessions?.sessions ?? [];
   const latest = chatSessions[0] ?? null;
@@ -202,7 +206,7 @@ export default async function HomePage() {
       </div>
 
       {/* ── Terminal Activity ────────────────────────────── */}
-      <TerminalActivity runs={runs} />
+      <TerminalActivity runs={runs} ops={ops} />
 
       {/* ── Secondary row ────────────────────────────────── */}
       <div className="grid gap-4 lg:grid-cols-3">
@@ -294,10 +298,10 @@ export default async function HomePage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel className="lg:col-span-1">
           <PanelHeader
-            title="Recent Prompts"
+            title="Saved Prompts"
             action={
-              <Link href="/prompts" className="text-xs font-medium text-brand hover:underline">
-                Library
+              <Link href="/history" className="text-xs font-medium text-brand hover:underline">
+                Open
               </Link>
             }
           />
@@ -305,18 +309,18 @@ export default async function HomePage() {
             {(prompts ?? []).slice(0, 4).map((p) => (
               <Link
                 key={p.id}
-                href={`/prompts/${p.id}`}
+                href="/history"
                 className="block px-5 py-3 transition-colors hover:bg-surface-2/50"
               >
                 <p className="truncate text-[13px] font-medium text-ink">{p.title}</p>
                 <p className="mt-0.5 flex items-center justify-between text-[11px] text-faint">
-                  <span>Score {p.score}</span>
+                  <span>{p.source === "improve" ? "Improved" : "Saved"}</span>
                   <span>{timeAgo(p.updatedAt)}</span>
                 </p>
               </Link>
             ))}
             {!prompts?.length ? (
-              <p className="px-5 py-6 text-center text-xs text-faint">Share prompts with your team and they show up here.</p>
+              <p className="px-5 py-6 text-center text-xs text-faint">Save prompts from History and they show up here.</p>
             ) : null}
           </PanelBody>
         </Panel>

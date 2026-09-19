@@ -6,7 +6,6 @@
 import {
   LayoutGrid,
   AiChat,
-  Library,
   Bot,
   Cpu,
   History,
@@ -48,7 +47,6 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Build",
     items: [
       { href: "/autosubmit", label: "AutoSubmit", description: "1-Click auto form filler & mailer", icon: ClipboardList },
-      { href: "/prompts", label: "Prompts", description: "Save and improve prompts", icon: Library },
       { href: "/agents", label: "Agents", description: "Build and run your own agents", icon: Bot },
       { href: "/terminal", label: "Terminal", description: "Sessions synced from lf", icon: TerminalSquare },
     ],
@@ -57,7 +55,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Learn",
     items: [
       { href: "/models", label: "Models", description: "Models, routing and BYOK", icon: Cpu },
-      { href: "/history", label: "History", description: "Every run, one timeline", icon: History },
+      { href: "/history", label: "History", description: "Activity, saved prompts + memory", icon: History },
       { href: "/memory", label: "Memory", description: "What LayerFlow remembered", icon: Brain },
       { href: "/files", label: "Files", description: "Uploaded knowledge + RAG", icon: FileCode2 },
       { href: "/search", label: "Search", description: "Search all your context", icon: Search },

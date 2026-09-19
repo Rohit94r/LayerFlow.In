@@ -14,7 +14,7 @@ import { timeAgo } from "@/lib/data/providers";
 const EMPTY: SearchResults = { prompts: [], sessions: [], memories: [], files: [], agentRuns: [], total: 0 };
 
 const GROUPS = [
-  { key: "prompts", label: "Prompts", icon: Library, href: (id: string) => `/prompts/${id}` },
+  { key: "prompts", label: "Prompts", icon: Library, href: (id: string) => `/history?prompt=${id}` },
   { key: "sessions", label: "Sessions", icon: BookUser, href: (id: string) => `/chat/${id}` },
   { key: "memories", label: "Memories", icon: Brain, href: (id: string) => `/memory?id=${id}` },
   { key: "files", label: "Files", icon: Code2, href: () => "/files" },

@@ -15,6 +15,8 @@ export interface PromptLibraryService {
   listPrompts(): Promise<Prompt[]>;
   getPrompt(id: string): Promise<Prompt | null>;
   search(query: string): Promise<Prompt[]>;
+  create(input: { title: string; body: string; description?: string; tags?: string[] }): Promise<Prompt>;
+  remove(id: string): Promise<void>;
 }
 
 async function authedFetch<T>(path: string, schema?: z.ZodType<T>): Promise<T> {
@@ -57,5 +59,19 @@ export const promptService: PromptLibraryService = {
     if (!q) return this.listPrompts();
     const res = await authedFetch(`/api/prompts?q=${encodeURIComponent(q)}&limit=100`, listPromptsResponseSchema);
     return res.prompts.map((p) => mapPromptDto(p));
+  },
+
+  async create(input) {
+    const headers = await getServerCookieHeader();
+    const res = await apiFetch(
+      "/api/prompts",
+      { method: "POST", body: input, ...(headers.Cookie ? { headers } : {}) },
+      promptResponseSchema,
+    );
+    return mapPromptDto(res.prompt, res.currentVersion?.body ?? "");
+  },
+
+  async remove(id) {
+    await apiFetch(`/api/prompts/${id}`, { method: "DELETE" });
   },
 };

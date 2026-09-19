@@ -28,17 +28,21 @@ export const agentRoleSchema = z.enum([
 export type AgentRole = z.infer<typeof agentRoleSchema>;
 
 export const agentTemplateKeySchema = z.enum([
+  "common_assistant",
+  "freelancer_pipeline",
+  "job_finder",
+  "product_finder",
+  "content_creator",
+  "startup_research",
   "job_applying",
   "internship_hunter",
   "linkedin_outreach",
   "research",
   "scholarship_finder",
-  "startup_research",
   "content_repurposing",
   "meeting_followup",
   "teacher_assistant",
   "student_study",
-  "freelancer_pipeline",
   "research_paper",
   "sales_outreach",
 ]);

@@ -72,6 +72,11 @@ export const agents = pgTable(
       | "startup_research"
       | "content_repurposing"
       | "meeting_followup"
+      | "common_assistant"
+      | "freelancer_pipeline"
+      | "job_finder"
+      | "product_finder"
+      | "content_creator"
       | null
     >(),
     goal: text("goal"),

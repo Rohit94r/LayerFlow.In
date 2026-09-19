@@ -3,19 +3,22 @@ import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { EmptyState } from "@/components/ui/empty-state";
 import { History } from "@/components/ui/icons";
 import { Timeline } from "@/components/features/history/timeline";
+import { SavedPromptsPanel } from "@/components/features/history/saved-prompts";
 import { workspaceService } from "@/lib/services/workspace";
+import { promptService } from "@/lib/services/prompts";
 
 export default async function HistoryPage() {
-  const [events, learnings] = await Promise.all([
+  const [events, learnings, prompts] = await Promise.all([
     workspaceService.listTimeline(),
     workspaceService.listLearnings(),
+    promptService.listPrompts().catch(() => []),
   ]);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Work Ledger"
-        description="Every rescue, prompt, learning, decision and cost — one time-ordered record of your AI work."
+        description="Every session, saved prompt, learning, decision and cost — one time-ordered record of your AI work."
       />
 
       <div className="grid gap-5 lg:grid-cols-3">
@@ -28,7 +31,7 @@ export default async function HistoryPage() {
               <EmptyState
                 icon={<History className="h-5 w-5" />}
                 title="No activity yet"
-                description="Rescue a chat or run a prompt and it will show up here."
+                description="Start a chat or run a prompt and it will show up here."
               />
             )}
           </PanelBody>
@@ -52,6 +55,13 @@ export default async function HistoryPage() {
           </PanelBody>
         </Panel>
       </div>
+
+      <Panel>
+        <PanelHeader title="Saved Prompts" description="Your reusable prompt library" />
+        <PanelBody>
+          <SavedPromptsPanel initial={prompts} />
+        </PanelBody>
+      </Panel>
     </div>
   );
 }
