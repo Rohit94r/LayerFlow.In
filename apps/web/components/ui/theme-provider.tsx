@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { applyTheme, readStoredTheme, resolveInitialTheme, THEME_EVENT } from "@/lib/theme";
+import { applyTheme, resolveInitialTheme, THEME_EVENT } from "@/lib/theme";
 
 /**
  * Client-side theme provider. Reads the persisted theme on mount,

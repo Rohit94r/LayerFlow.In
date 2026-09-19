@@ -343,8 +343,6 @@ export async function runChatMessage(input: {
     return;
   }
 
-  const chosenProvider = getModel(chosenModel)!.provider;
-
   // Provider isolation: rebuild a clean message array from stored rows for the
   // selected model — provider system prompt + last 8 messages + summarized
   // older history, token-budgeted, with provider metadata stripped.
@@ -431,6 +429,22 @@ export async function runChatMessage(input: {
           signal: input.signal,
           onDelta: (text) => input.onEvent({ type: "delta", text }),
         });
+
+        // A provider that answers 200 with an empty body (or a stream that
+        // fires no deltas) is a silent failure, not a success: without this
+        // the user sees a blank reply and the chain stops. Treat it like a
+        // provider error so failover moves to the next candidate/provider.
+        if (!result.content?.trim() && !result.tool_calls?.length) {
+          logger.warn(
+            { traceId, workspaceId, model: choice.model, provider: choice.provider },
+            "provider returned empty completion — failing over",
+          );
+          throw new AppError(
+            502,
+            "provider_empty_output",
+            `${choice.model} returned an empty response`,
+          );
+        }
 
         // ── Provider call succeeded. Bookkeeping below is intentionally
         // best-effort and OUTSIDE the failover catch: if settle/persist
@@ -595,8 +609,10 @@ export async function runChatMessage(input: {
   // Every provider/key failed.
   const finalCode = lastError?.code ?? "no_key_usable";
   const finalMessage =
-    lastError?.message ??
-    "All providers failed — no usable key could answer this message.";
+    finalCode === "provider_empty_output"
+      ? "The configured providers returned empty replies — check provider keys and usage limits under /keys, then try again."
+      : (lastError?.message ??
+        "All providers failed — no usable key could answer this message.");
   await updateChatMessage(assistantMessage.id, {
     errorCode: finalCode,
     errorMessage: finalMessage,

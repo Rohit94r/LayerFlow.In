@@ -94,24 +94,24 @@ export default function Footer() {
             >
               Resources
             </span>
-            <a
+            <Link
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
               href="/docs"
             >
               Documentation
-            </a>
-            <a
+            </Link>
+            <Link
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
               href="/agents"
             >
               Agent Library
-            </a>
-            <a
+            </Link>
+            <Link
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
               href="/blog"
             >
               Blog
-            </a>
+            </Link>
             <a
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
               href="https://x.com/layerflow"

@@ -1,7 +1,9 @@
+import Image from "next/image";
+
 export default function Logo({ size = 26 }: { size?: number }) {
   return (
     <div className="flex items-center gap-[8px]">
-      <img
+      <Image
         src="/logo.png"
         alt="LayerFlow"
         width={size}

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Pencil, Plus, Library, Brain, LifeBuoy } from "@/components/ui/icons";
+import { ArrowLeft, Plus, Library, Brain, LifeBuoy } from "@/components/ui/icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Stat } from "@/components/shared/stat";

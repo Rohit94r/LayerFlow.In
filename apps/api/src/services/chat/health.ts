@@ -209,13 +209,25 @@ export async function listKeyHealth(workspaceId: string): Promise<ProviderKeyHea
 /**
  * A key is usable when it is not dead/expired and not inside a cooldown
  * window. Keys with no recorded health row count as usable (unknown = try).
+ *
+ * `dead`/`expired` keys are NOT blocked forever: after a grace window they
+ * are re-probed once. Otherwise a top-up or key rotation would never be seen —
+ * the key stays excluded forever because it is never tried again.
  */
 export function isKeyUsable(row: ProviderKeyHealthRow | undefined, now = new Date()): boolean {
   if (!row) return true;
-  if (row.status === "dead" || row.status === "expired") return false;
+  if (row.status === "dead" || row.status === "expired") {
+    if (!row.lastErrorAt) return false;
+    const staleMs = now.getTime() - row.lastErrorAt.getTime();
+    if (staleMs > KEY_REPROBE_GRACE_MS) return true;
+    return false;
+  }
   if (row.cooldownUntil && row.cooldownUntil > now) return false;
   return true;
 }
+
+/** Re-probe dead/expired keys after this window so restored keys can recover. */
+export const KEY_REPROBE_GRACE_MS = 6 * 60 * 60 * 1000; // 6h
 
 /** Stable health identity for a platform env key. */
 export function platformKeyIdentity(

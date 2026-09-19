@@ -10,14 +10,13 @@ import {
   Zap,
   Award,
   DollarSign,
-  Trash2,
 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { Panel, PanelBody, PanelHeader } from "@/components/ui/panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
-import { MODELS, formatMoney } from "@/lib/data/providers";
+import { MODELS } from "@/lib/data/providers";
 import { modelService } from "@/lib/services/models";
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
 import { recommendResponseSchema } from "@layerflow/contracts";

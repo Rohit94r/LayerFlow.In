@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function Logo({
   className,
   variant = "default",
@@ -11,7 +13,7 @@ export default function Logo({
         variant === "hero" ? "text-white" : "text-ink"
       } ${className ?? ""}`}
     >
-      <img
+      <Image
         src="/logo.png"
         alt="LayerFlow"
         width={32}

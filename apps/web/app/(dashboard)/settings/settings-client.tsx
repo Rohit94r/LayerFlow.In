@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { User, Bell, Shield, KeyRound, Palette, CreditCard, Check, Loader2 } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";

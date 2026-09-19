@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import type { Run } from "@layerflow/contracts";
 import {
   AlertTriangle,
@@ -16,6 +17,7 @@ import { formatMoney, timeAgo } from "@/lib/data/providers";
 import { runsService } from "@/lib/services/runs";
 import { syncService } from "@/lib/services/sync";
 import type { SyncOperation } from "@/lib/services/sync";
+import { chatService } from "@/lib/services/chat";
 import { TerminalRepl } from "@/components/features/terminal/terminal-repl";
 import { cn } from "@/lib/utils";
 
@@ -35,18 +37,29 @@ function nameModel(model: string): string {
 export default function TerminalPage() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [ops, setOps] = useState<SyncOperation[]>([]);
+  const [sessionCount, setSessionCount] = useState<number | null>(null);
+  const [usableProviders, setUsableProviders] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const [runsRes, opsRes] = await Promise.allSettled([
+      const [runsRes, opsRes, sessionsRes, keysRes] = await Promise.allSettled([
         runsService.list({ limit: 50 }),
         syncService.operations({ limit: 30 }),
+        chatService.list({ limit: 1 }),
+        chatService.keysHealth(),
       ]);
       if (runsRes.status === "fulfilled") setRuns(runsRes.value.runs);
       if (opsRes.status === "fulfilled") setOps(opsRes.value.operations);
+      if (sessionsRes.status === "fulfilled") setSessionCount(sessionsRes.value.sessions.length);
+      if (keysRes.status === "fulfilled") {
+        const usable = keysRes.value.providers.filter(
+          (p) => p.status === "healthy" || p.status === "degrading",
+        ).length;
+        setUsableProviders(usable);
+      }
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load terminal data.");
@@ -57,8 +70,40 @@ export default function TerminalPage() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let ignore = false;
+    void (async () => {
+      try {
+        const [runsRes, opsRes, sessionsRes, keysRes] = await Promise.allSettled([
+          runsService.list({ limit: 50 }),
+          syncService.operations({ limit: 30 }),
+          chatService.list({ limit: 1 }),
+          chatService.keysHealth(),
+        ]);
+        if (ignore) return;
+        if (runsRes.status === "fulfilled") setRuns(runsRes.value.runs);
+        if (opsRes.status === "fulfilled") setOps(opsRes.value.operations);
+        if (sessionsRes.status === "fulfilled") setSessionCount(sessionsRes.value.sessions.length);
+        if (keysRes.status === "fulfilled") {
+          setUsableProviders(
+            keysRes.value.providers.filter(
+              (p) => p.status === "healthy" || p.status === "degrading",
+            ).length,
+          );
+        }
+        setError(null);
+      } catch (err) {
+        if (ignore) return;
+        setError(err instanceof Error ? err.message : "Could not load terminal data.");
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   async function refresh() {
     setRefreshing(true);
@@ -89,6 +134,47 @@ export default function TerminalPage() {
           </Button>
         </div>
       </section>
+
+      {/* Quick-access helpers */}
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { href: "/docs", label: "Docs" },
+          { href: "/keys", label: "API Keys", hint: "manage providers" },
+          { href: "/cost", label: "Usage", hint: "tokens & spend" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs text-ink transition-colors hover:border-brand/50 hover:bg-brand/5 hover:text-brand"
+          >
+            <span className="font-semibold text-brand">{item.href === "/docs" ? "›" : "→"}</span>
+            <span>{item.label}</span>
+            {item.hint && <span className="text-faint">· {item.hint}</span>}
+          </Link>
+        ))}
+      </div>
+
+      {/* Session / provider stats strip */}
+      {!loading && !error && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: "Chat sessions", value: sessionCount?.toLocaleString() ?? "—" },
+            { label: "Providers ready", value: `${usableProviders ?? "—"}/8` },
+            { label: "Recent runs", value: runs.length.toLocaleString() },
+            { label: "Sync operations", value: ops.length.toLocaleString() },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-border bg-surface p-4 text-center shadow-sm"
+            >
+              <p className="text-lg font-semibold tracking-tight text-ink">{stat.value}</p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-faint">
+                {stat.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error ? (
         <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-5 text-center">

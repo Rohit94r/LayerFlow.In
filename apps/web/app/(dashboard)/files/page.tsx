@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { CloudUpload, FileText, RefreshCw, Trash2 } from "@/components/ui/icons";
 import { IconButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/page-header";
@@ -37,22 +37,25 @@ export default function FilesPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [retryKey, setRetryKey] = useState(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await filesService.list();
-      setFiles(res.files);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load files.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void load();
-  }, [load, retryKey]);
+    let ignore = false;
+    void (async () => {
+      try {
+        const res = await filesService.list();
+        if (!ignore) {
+          setFiles(res.files);
+          setError(null);
+        }
+      } catch (err) {
+        if (!ignore) setError(err instanceof Error ? err.message : "Could not load files.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, [retryKey]);
 
   async function reindex(file: FileWithRagStatus) {
     setBusyId(file.id);

@@ -60,6 +60,7 @@ apps/api/.data/
 # local runtime artifacts
 dump.rdb
 terminal/bin/
+terminal/dist/
 
 # built terminal binary (local build output)
 terminal/lf
@@ -79,3 +80,6 @@ opencode/
 batch-14.log
 .mv1.log
 mv1.log
+
+# macOS
+.DS_Store

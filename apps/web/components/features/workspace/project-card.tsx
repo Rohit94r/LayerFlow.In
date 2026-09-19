@@ -76,7 +76,7 @@ export function ProjectCard({ project }: { project: Project }) {
               {project.stage}
             </Badge>
             <DropdownMenu
-              trigger={(open) => (
+              trigger={() => (
                 <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-faint transition-colors hover:bg-surface-2 hover:text-ink">
                   <MoreHorizontal className="h-4 w-4" />
                 </span>

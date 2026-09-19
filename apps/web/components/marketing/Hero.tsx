@@ -3,7 +3,7 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { Copy, Check } from "@/components/ui/icons";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, startTransition } from "react";
 import { site, heroBadges } from "@/lib/marketing-content";
 const container = {
   hidden: {},
@@ -25,9 +25,10 @@ export default function Hero() {
 
   useEffect(() => {
     const ua = navigator.userAgent;
-    if (/Windows/i.test(ua)) setOs("windows");
-    else if (/Mac/i.test(ua)) setOs("mac");
-    else setOs("other");
+    const detected = /Windows/i.test(ua) ? "windows" : /Mac/i.test(ua) ? "mac" : "other";
+    startTransition(() => {
+      setOs(detected);
+    });
   }, []);
 
   const installCommand =

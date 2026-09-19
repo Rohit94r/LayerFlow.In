@@ -79,7 +79,7 @@ export default function BuildAgentSection() {
         </div>
 
         <div className="cta-wrap">
-          <a
+          <Link
             className="cta-pill cta-lg rv"
             href="/docs"
             style={{
@@ -88,7 +88,7 @@ export default function BuildAgentSection() {
             }}
           >
             Build yours — Start Coding <span className="arrow">→</span>
-          </a>
+          </Link>
           <p className="cta-sub">
             Start free with your own keys or a local model. No credit card, no lock-in.
           </p>

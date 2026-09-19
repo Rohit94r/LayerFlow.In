@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 export function Logo({
@@ -8,7 +9,7 @@ export function Logo({
   size?: number;
 }) {
   return (
-    <img
+    <Image
       src="/logo.png"
       alt="LayerFlow"
       width={size}

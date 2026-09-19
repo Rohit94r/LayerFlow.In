@@ -9,56 +9,7 @@ import { billingService } from "@/lib/services/billing";
 import { CheckoutButton } from "@/components/billing/checkout-button";
 import { cn } from "@/lib/utils";
 
-const PLANS = [
-  {
-    id: "free",
-    name: "Free",
-    price: "$0",
-    period: "/forever",
-    description: "For trying LayerFlow on one project.",
-    features: ["3 Rescue Reports / month", "10 saved prompts", "Work Ledger", "Community support"],
-    cta: "Current plan",
-    current: true,
-  },
-  {
-    id: "starter",
-    name: "Starter",
-    price: "$5",
-    period: "/month",
-    description: "For solo builders working across AI tools.",
-    features: [
-      "Unlimited Rescue Reports",
-      "Prompt Improver + scoring",
-      "Cost Check",
-      "BYOK Vault",
-      "3 workspaces",
-    ],
-    cta: "Upgrade",
-    current: false,
-    highlighted: true,
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "$14",
-    period: "/month",
-    description: "For teams and heavy AI workflows.",
-    features: [
-      "Everything in Starter",
-      "Agent mesh sessions",
-      "Smart routing + model budgets",
-      "Outcome feedback loop",
-      "10 seats · priority support",
-    ],
-    cta: "Go Pro",
-    current: false,
-  },
-];
 
-const INVOICES = [
-  { id: "INV-2026-001", date: "Jul 1, 2026", amount: "$0.00", status: "paid" },
-  { id: "INV-2026-002", date: "Jun 1, 2026", amount: "$0.00", status: "paid" },
-];
 
 export default async function BillingPage() {
   const { plans, subscription, invoices } = await billingService.getStatus();

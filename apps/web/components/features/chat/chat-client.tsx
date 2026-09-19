@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type {
   ChatEvent,
@@ -192,20 +192,40 @@ export function ChatClient() {
   }, []);
 
   useEffect(() => {
-    refreshSessions();
-    chatService.keysHealth().then((res) => setHealth(res.providers)).catch(() => undefined);
-  }, [refreshSessions]);
+    let ignore = false;
+    void (async () => {
+      try {
+        const res = await chatService.list({ limit: 50 });
+        if (!ignore) setSessions(res.sessions);
+      } catch {
+        /* keep stale list */
+      }
+      try {
+        const healthRes = await chatService.keysHealth();
+        if (!ignore) setHealth(healthRes.providers);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   // Load the active session whenever the route id changes.
   useEffect(() => {
     if (!sessionId) {
-      setActive(null);
-      setMessages([]);
-      setLoading(false);
+      startTransition(() => {
+        setActive(null);
+        setMessages([]);
+        setLoading(false);
+      });
       return;
     }
     let cancelled = false;
-    setLoading(true);
+    startTransition(() => {
+      setLoading(true);
+    });
     chatService
       .get(sessionId)
       .then((res) => {
@@ -238,7 +258,7 @@ export function ChatClient() {
     if (nearBottomRef.current) {
       el.scrollTo({ top: el.scrollHeight, behavior: messages.length > 4 && stream ? "smooth" : "auto" });
     }
-  }, [messages, stream?.content]);
+  }, [messages, stream]);
 
   // When a stream finishes, the TypingIndicator unmounts and the final message
   // bubble re-renders, which shifts scrollHeight and can leave the viewport a

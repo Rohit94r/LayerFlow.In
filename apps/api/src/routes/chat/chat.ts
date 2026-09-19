@@ -186,6 +186,14 @@ chatRouter.post("/:id/messages", async (c) => {
         }
       };
 
+      // Send initial connect frame immediately so proxies flush response headers
+      // and the client connection transitions to active without buffering delay.
+      try {
+        controller.enqueue(encoder.encode(": connect\n\n"));
+      } catch {
+        /* client disconnected immediately */
+      }
+
       // Keep-alive heartbeat so proxies never kill the connection while the
       // context window is being built (the first byte may take seconds).
       const heartbeat = setInterval(() => {

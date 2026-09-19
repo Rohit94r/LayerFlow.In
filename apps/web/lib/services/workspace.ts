@@ -34,7 +34,6 @@ import type {
   CostPoint,
   DashboardStats,
   Learning,
-  ModelSpend,
   Project,
   SavingsSummary,
   TimelineEvent,
@@ -222,20 +221,6 @@ export const workspaceService: WorkspaceService = {
   },
 
   async getDashboardStats() {
-    const fallback: DashboardStats = {
-      todayUsage: 0,
-      todayUsageDelta: 0,
-      moneySaved: 0,
-      moneySavedDelta: 0,
-      contextsSaved: 0,
-      contextsSavedDelta: 0,
-      continuePacks: 0,
-      continuePacksDelta: 0,
-      weeklyUsage: [],
-      weeklySavings: [],
-      modelMix: [],
-    };
-
     const [summary, savings, memories] = await Promise.all([
       authedFetch("/api/usage/summary?groupBy=day", usageSummaryResponseSchema),
       authedFetch("/api/savings", savingsResponseSchema),

@@ -1,4 +1,3 @@
-import { Users } from "@/components/ui/icons";
 import { PageHeader } from "@/components/shared/page-header";
 import { TeamManager } from "@/components/features/team/team-manager";
 import { teamService } from "@/lib/services/team";

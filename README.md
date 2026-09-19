@@ -405,3 +405,128 @@ npm run smoke --workspace @layerflow/api
 - `docs/architecture.md`, `docs/tech-stack.md`, `docs/API.md`, `docs/SECURITY.md`
 - `apps/api/README.md` — full endpoint map, budgets, seeding, conventions
 - `terminal/README.md` — CLI reference
+
+---
+
+## 🚀 Intern & New Contributor Onboarding
+
+Welcome! This section is specifically for anyone joining the LayerFlow team for the first time.
+
+### Quick-start in 5 minutes
+
+```bash
+# 1. Clone and install
+git clone https://github.com/layerflow-ai/layerflow
+npm install
+
+# 2. Start local infra (Postgres + Redis)
+docker compose up -d
+
+# 3. Create your environment file
+cp apps/api/.env.example apps/api/.env
+# Fill in BETTER_AUTH_SECRET, PROVIDER_KEYS_KEK (both: openssl rand -hex 32)
+# Set DATABASE_URL=postgres://layerflow:layerflow@localhost:5432/layerflow
+# Set REDIS_URL=redis://localhost:6379
+
+# 4. Run DB migrations
+npm run db:migrate --workspace @layerflow/api
+
+# 5. Start everything
+npm run dev
+# → Web:    http://localhost:3000
+# → API:    http://localhost:8787
+# → Worker: running in same process
+```
+
+### How to add a new API route (5 minutes)
+
+1. **Create the route file** in `apps/api/src/routes/<area>/`:
+   ```typescript
+   // apps/api/src/routes/myfeature/myfeature.ts
+   // What this does: handles GET/POST for <feature>
+   // Called by: apps/api/src/routes/index.ts
+   import { Hono } from "hono";
+   import { requireAuth } from "../../middleware/auth.js";
+   const app = new Hono();
+   app.get("/", requireAuth, async (c) => { ... });
+   export default app;
+   ```
+2. **Register it** in `apps/api/src/routes/index.ts`:
+   ```typescript
+   import myfeature from "./myfeature/myfeature.js";
+   api.route("/myfeature", myfeature);
+   ```
+3. **Add Zod schema** to `packages/contracts/src/` if frontend needs the type.
+4. **Add service function** in `apps/web/lib/services/myfeature.ts` to call it from the frontend.
+5. **Run checks**: `cd apps/api && npx tsc --noEmit && npx vitest run`
+
+### How to add a new dashboard page (5 minutes)
+
+1. **Create the page** at `apps/web/app/(dashboard)/mypage/page.tsx`
+2. **Add nav link** in `apps/web/components/Sidebar.tsx` (follow existing pattern)
+3. **Add service** in `apps/web/lib/services/mypage.ts` if it needs API data
+4. **Run checks**: `cd apps/web && npx tsc --noEmit && npx eslint .`
+
+### How to add a new Go CLI command (5 minutes)
+
+1. **Add command file** in `terminal/cmd/lf/`:
+   ```go
+   // terminal/cmd/lf/mycommand.go
+   // What this does: implements `lf mycommand`
+   // Called by: terminal/cmd/lf/root.go
+   package main
+   import "github.com/spf13/cobra"
+   var myCmd = &cobra.Command{
+       Use:   "mycommand",
+       Short: "One-line description",
+       RunE:  func(cmd *cobra.Command, args []string) error { ... },
+   }
+   func init() { rootCmd.AddCommand(myCmd) }
+   ```
+2. **Test it**: `cd terminal && go build ./... && ./lf mycommand`
+
+### Code commenting standard
+
+Every exported function should have this 4-line comment block:
+```typescript
+/**
+ * What this does: <one sentence>
+ * Callers: <which files call this>
+ * Expects: <input params / state>
+ * Returns: <what it gives back>
+ */
+```
+
+### Key files to understand first
+
+| File | Why it matters |
+| --- | --- |
+| `apps/api/src/routes/index.ts` | All API routes registered here |
+| `apps/api/src/middleware/auth.ts` | Auth middleware — how sessions work |
+| `apps/api/src/services/chat/router.ts` | Model selection, failover, cost reserve |
+| `apps/web/lib/services/chat.ts` | Frontend chat service (SSE streaming) |
+| `apps/web/components/features/terminal/terminal-repl.tsx` | Web terminal REPL |
+| `packages/contracts/src/index.ts` | Shared types (web ↔ API) |
+| `terminal/internal/tui/` | Go TUI entry points (Bubble Tea) |
+
+### Verify everything works
+
+```bash
+# TypeScript
+cd apps/web && npx tsc --noEmit
+cd apps/api && npx tsc --noEmit
+
+# ESLint
+cd apps/web && npx eslint .
+
+# API tests
+cd apps/api && npx vitest run
+
+# Go build + tests
+cd terminal && go build ./... && go test ./...
+
+# Full Next.js build (takes ~2 min, confirms prod readiness)
+cd apps/web && npm run build
+```
+
+If you hit issues, check [`bugs.md`](./bugs.md) first — it documents all known issues and their resolutions.
