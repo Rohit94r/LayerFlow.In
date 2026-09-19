@@ -243,9 +243,9 @@ export default function AgentsPage() {
               const Icon = TEMPLATE_ICONS[agent.templateKey ?? ""] ?? Bot;
               const runStatus = agent.lastRunStatus ? RUN_STATUS[agent.lastRunStatus] : null;
               return (
-                <div key={agent.id} className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+                <div key={agent.id} className="rounded-2xl border border-border bg-gradient-to-b from-surface to-surface-2 p-4 shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-transform hover:-translate-y-1 hover:border-border-strong">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-glass-bg text-ink border border-glass-border">
                       <Icon className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">

@@ -17,3 +17,4 @@ export * from "./rescue";
 export * from "./chat";
 export * from "./agents";
 export * from "./sync";
+export * from "./autosubmit";

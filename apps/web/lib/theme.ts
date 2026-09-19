@@ -44,6 +44,6 @@ export function emitThemeToggle(): void {
 
 /**
  * Inline bootstrap script — runs before paint.
- * Saved light → light; saved dark → dark; no save → system preference.
+ * Enforces dark mode always to match landing page.
  */
-export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{var k='lf-theme';var t=localStorage.getItem(k);var dark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var theme=t==='light'||t==='dark'?t:(dark?'dark':'light');if(theme==='light'){document.documentElement.classList.add('light');}else{document.documentElement.classList.remove('light');}}catch(e){document.documentElement.classList.add('light');}})();`;
+export const THEME_BOOTSTRAP_SCRIPT = `(function(){try{document.documentElement.classList.remove('light');localStorage.setItem('lf-theme', 'dark');}catch(e){}})();`;

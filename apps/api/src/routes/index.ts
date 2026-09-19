@@ -39,12 +39,14 @@ import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
 import { wsRouter } from "./ws/ws";
 import { deviceAuthRouter } from "./auth/device";
+import { autosubmitRouter } from "./autosubmit/autosubmit";
 
 /**
  * Route registration. Add new feature routers here:
  */
 export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/admin", adminRouter);
+  app.route("/api/autosubmit", autosubmitRouter);
   app.route("/api/workspaces", workspacesRouter);
   app.route("/api/domains", domainsRouter);
   app.route("/api/projects", projectsRouter);

@@ -20,6 +20,7 @@ import {
   Brain,
   FileCode2,
   Users,
+  ClipboardList,
 } from "@/components/ui/icons";
 import type { LucideIcon } from "@/components/ui/icons";
 
@@ -46,6 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Build",
     items: [
+      { href: "/autosubmit", label: "AutoSubmit", description: "1-Click auto form filler & mailer", icon: ClipboardList },
       { href: "/prompts", label: "Prompts", description: "Save and improve prompts", icon: Library },
       { href: "/agents", label: "Agents", description: "Build and run your own agents", icon: Bot },
       { href: "/terminal", label: "Terminal", description: "Sessions synced from lf", icon: TerminalSquare },
