@@ -386,12 +386,39 @@ export async function queueAgentRun(input: {
     })
     .returning();
 
-  await enqueue("agent", {
-    agentRunId: run.id,
-    agentId: input.agentId,
-    workspaceId: input.workspaceId,
-    userId: input.userId,
-  });
+  try {
+    await enqueue("agent", {
+      agentRunId: run.id,
+      agentId: input.agentId,
+      workspaceId: input.workspaceId,
+      userId: input.userId,
+    });
+  } catch {
+    /* Queue unavailable - fallback to direct execution */
+  }
+
+  // Fallback in-process execution trigger after 1.5s if still queued
+  void (async () => {
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const currentRun = await db.query.agentRuns.findFirst({
+        where: eq(agentRuns.id, run.id),
+      });
+      if (currentRun && currentRun.status === "queued") {
+        const { processAgent } = await import("../../jobs/processors/agent");
+        await processAgent({
+          data: {
+            agentRunId: run.id,
+            agentId: input.agentId,
+            workspaceId: input.workspaceId,
+            userId: input.userId,
+          },
+        } as any);
+      }
+    } catch {
+      /* processAgent handles state update */
+    }
+  })();
 
   return run;
 }

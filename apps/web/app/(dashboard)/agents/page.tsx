@@ -86,7 +86,13 @@ export default function AgentsPage() {
 
   useEffect(() => {
     const t = setTimeout(() => void load(), 0);
-    return () => clearTimeout(t);
+    const interval = setInterval(() => {
+      void load();
+    }, 4000);
+    return () => {
+      clearTimeout(t);
+      clearInterval(interval);
+    };
   }, [load]);
 
   const totalPendingApprovals = useMemo(

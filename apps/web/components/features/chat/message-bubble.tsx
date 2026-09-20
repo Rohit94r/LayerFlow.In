@@ -77,9 +77,21 @@ export function MessageBubble({ message }: { message: UiMessage }) {
         {failed ? (
           <div className="space-y-1.5">
             {message.content.length > 0 ? <div>{renderMessage(message.content)}</div> : null}
-            <div className="flex items-start gap-2 text-[13px] text-rose-400">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>{message.error}</span>
+            <div className="flex flex-col gap-2 text-[13px] text-rose-400">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{message.error}</span>
+              </div>
+              {/key|provider|token|credit|quota/i.test(message.error || "") && (
+                <div className="pt-1">
+                  <a
+                    href="/keys"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
+                  >
+                    Manage API Keys →
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         ) : (

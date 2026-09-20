@@ -240,13 +240,23 @@ export default function SignInForm() {
           : next,
       });
       if (result?.error) {
-        setError(friendlyAuthResultError(result.error.message, productionSite));
+        const msg = result.error.message || "";
+        if (/provider|not enabled|configured|client_id/i.test(msg)) {
+          setError("Google sign-in is not configured on this environment yet. Please use email & password above.");
+        } else {
+          setError(friendlyAuthResultError(msg, productionSite));
+        }
         setLoading(false);
         return;
       }
       // Successful redirect — keep loading spinner until navigation.
     } catch (err) {
-      setError(friendlyError(err, productionSite));
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/provider|not enabled|configured|client_id/i.test(msg)) {
+        setError("Google sign-in is not configured on this environment yet. Please use email & password above.");
+      } else {
+        setError(friendlyError(err, productionSite));
+      }
       setLoading(false);
     }
   };

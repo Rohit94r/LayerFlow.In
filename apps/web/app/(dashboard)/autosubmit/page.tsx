@@ -83,23 +83,55 @@ export default function AutoSubmitPage() {
     if (!formUrl.trim()) return;
 
     setSubmitting(true);
-    setMessage(null);
+    setMessage({ type: "success", text: "Initiating automated form submission..." });
     try {
       const res = await autosubmitService.submitForm({ formUrl, prompt });
-      if (res.success) {
-        setFormUrl("");
-        setPrompt("");
-        setMessage({
-          type: "success",
-          text: `Form submitted successfully! A confirmation email has been sent to ${profile.email || "your registered email"}.`,
-        });
-        // Refresh history
-        const historyRes = await autosubmitService.getHistory();
-        setHistory(historyRes.history || []);
+      if (res.success && res.submission?.id) {
+        const subId = res.submission.id;
+        // Poll for completion
+        let attempts = 0;
+        const interval = setInterval(async () => {
+          attempts++;
+          try {
+            const historyRes = await autosubmitService.getHistory();
+            setHistory(historyRes.history || []);
+            const match = (historyRes.history || []).find((h) => h.id === subId);
+            if (match && match.status !== "processing") {
+              clearInterval(interval);
+              setSubmitting(false);
+              if (match.status === "completed") {
+                setFormUrl("");
+                setPrompt("");
+                setMessage({
+                  type: "success",
+                  text: `Form submitted successfully! A confirmation email has been sent to ${profile.email || "your email"}.`,
+                });
+              } else {
+                setMessage({
+                  type: "error",
+                  text: match.resultSummary || "Form submission encountered an issue.",
+                });
+              }
+            } else if (attempts > 6) {
+              clearInterval(interval);
+              setSubmitting(false);
+              setMessage({
+                type: "success",
+                text: `Form submission queued. Confirmation will be sent to ${profile.email || "your email"}.`,
+              });
+            }
+          } catch {
+            if (attempts > 5) {
+              clearInterval(interval);
+              setSubmitting(false);
+            }
+          }
+        }, 1000);
+      } else {
+        setSubmitting(false);
       }
     } catch {
       setMessage({ type: "error", text: "Form submission failed. Please check the URL and try again." });
-    } finally {
       setSubmitting(false);
     }
   }
