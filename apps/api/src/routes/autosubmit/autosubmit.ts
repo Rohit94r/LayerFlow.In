@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, lt } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../../middleware/auth";
 import { db } from "../../db/client";
@@ -7,6 +7,7 @@ import { userProfiles, formSubmissions } from "../../db/schema/autosubmit";
 import { users } from "../../db/schema/auth";
 import { deviceCommands } from "../../db/schema/terminal";
 import { sendAutoSubmitConfirmation } from "../../services/email/gmail";
+import { AppError } from "../../middleware/app-error";
 import type { AppEnv } from "../../types";
 
 export const autosubmitRouter = new Hono<AppEnv>();
@@ -161,16 +162,49 @@ autosubmitRouter.post("/submit", async (c) => {
 });
 
 // GET /api/autosubmit/history - Get past submissions for this user
-autosubmitRouter.get("/history", async (c) => {
+// GET /api/autosubmit/:id - REAL per-submission status (dashboard poll target)
+autosubmitRouter.get("/:id", async (c) => {
+  const userId = c.get("userId");
+  const workspaceId = c.get("workspaceId");
+  const { id } = c.req.param();
+
+  const [sub] = await db
+    .select({ id: formSubmissions.id, formUrl: formSubmissions.formUrl, prompt: formSubmissions.prompt, status: formSubmissions.status, resultSummary: formSubmissions.resultSummary, createdAt: formSubmissions.createdAt, updatedAt: formSubmissions.updatedAt })
+    .from(formSubmissions)
+    .where(and(eq(formSubmissions.id, id), eq(formSubmissions.workspaceId, workspaceId)))
+    .limit(1);
+  if (!sub) throw new AppError(404, "not_found", "Submission not found");
+  return c.json({ submission: sub });
+});
+
+autosubmitRouter.get("/history"
+, async (c) => {
   const userId = c.get("userId");
   const workspaceId = c.get("workspaceId");
 
-  const history = await db
+  const cursor = c.req.query("cursor");
+  const whereCursor = cursor
+    ? and(
+        eq(formSubmissions.workspaceId, workspaceId),
+        eq(formSubmissions.userId, userId),
+        lt(formSubmissions.createdAt, new Date(cursor as string)),
+      )
+    : and(eq(formSubmissions.workspaceId, workspaceId), eq(formSubmissions.userId, userId));
+
+  const rows = await db
     .select()
     .from(formSubmissions)
-    .where(and(eq(formSubmissions.workspaceId, workspaceId), eq(formSubmissions.userId, userId)))
+    .where(whereCursor)
     .orderBy(desc(formSubmissions.createdAt))
-    .limit(50);
+    .limit(51);
 
-  return c.json({ history });
+  const hasMore = rows.length === 51;
+  const history = hasMore ? rows.slice(0, 50) : rows;
+  const nextCursor = hasMore ? history[history.length - 1].createdAt.toISOString() : null;
+
+  return c.json({
+    history,
+    nextCursor,
+    total: history.length,
+  });
 });
