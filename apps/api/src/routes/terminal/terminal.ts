@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../../db/client";
 import { deviceCommands, type DeviceCommandRow } from "../../db/schema/terminal";
+import { formSubmissions } from "../../db/schema/autosubmit";
+import { sendAutoSubmitConfirmation } from "../../services/email/gmail";
 import { syncDevices } from "../../db/schema/sync";
 import { requireSyncAuth } from "../../middleware/auth-sync";
 import { AppError } from "../../middleware/app-error";
@@ -192,6 +194,38 @@ terminalRouter.post("/commands/:id/result", async (c) => {
       .where(and(eq(deviceCommands.id, id), eq(deviceCommands.workspaceId, workspaceId)))
       .returning();
     if (!row) throw new AppError(404, "not_found", "Command not found");
+
+    if (row.status === "succeeded" && row.command.startsWith("LF_FORM_FILL ")) {
+      try {
+        const payload = JSON.parse(row.command.slice("LF_FORM_FILL ".length));
+        const submissionId = payload?.submission_id as string | undefined;
+        if (submissionId) {
+          const profile = payload?.profile as Record<string, unknown> | undefined;
+          // REAL browser success → REAL mark-completed (no fabrication).
+          await db
+            .update(formSubmissions)
+            .set({
+              status: "completed",
+              resultSummary: (row.output ?? "").slice(-2000),
+              updatedAt: new Date(),
+            })
+            .where(eq(formSubmissions.id, submissionId));
+          // REAL Gmail confirmation — sent only now, on REAL success, with the
+          // REAL browser's confirmation output, not a canned summary.
+          await sendAutoSubmitConfirmation({
+            to: (profile?.email as string) || "",
+            userName: (profile?.name as string) || "",
+            formUrl: String(payload?.form_url ?? ""),
+            prompt: String(payload?.prompt ?? ""),
+            submissionSummary: (row.output ?? "").slice(-2000),
+          });
+        }
+      } catch (err) {
+        // A malformed payload must not 500 the result ack; the command row
+        // still reflects the real exit. Locally log, move on honestly.
+        console.error("LF_FORM_FILL reconcile failed:", err);
+      }
+    }
     return c.json({ command: toDto(row) });
   }
 

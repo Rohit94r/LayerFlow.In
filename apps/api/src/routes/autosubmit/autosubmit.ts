@@ -5,11 +5,13 @@ import { requireAuth } from "../../middleware/auth";
 import { db } from "../../db/client";
 import { userProfiles, formSubmissions } from "../../db/schema/autosubmit";
 import { users } from "../../db/schema/auth";
+import { deviceCommands } from "../../db/schema/terminal";
 import { sendAutoSubmitConfirmation } from "../../services/email/gmail";
 import type { AppEnv } from "../../types";
 
 export const autosubmitRouter = new Hono<AppEnv>();
 autosubmitRouter.use(requireAuth);
+const DEVICE_ID = process.env.LF_FORM_FILLER_DEVICE_ID ?? "lf-form-filler";
 
 const saveProfileSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -127,53 +129,38 @@ autosubmitRouter.post("/submit", async (c) => {
     })
     .returning();
 
-  // Simulate automated browser parsing & AI form completion
-  const summaryDetails = `
-- Full Name: ${profileData.fullName}
-- Email: ${profileData.email}
-- College: ${profileData.collegeName || "Not provided"}
-- Roll / ID: ${profileData.rollNumber || "Not provided"}
-- Department: ${profileData.branchDepartment || "Not provided"}
-- Graduation Year: ${profileData.graduationYear || "Not provided"}
-- Additional Feedback: ${prompt || "Positive ratings per saved profile preferences."}
-- Verification: Completed automatically at ${new Date().toLocaleString()}
-`.trim();
-
-  // Update submission record to completed
-  const [completedSub] = await db
-    .update(formSubmissions)
-    .set({
-      status: "completed",
-      resultSummary: summaryDetails,
-      updatedAt: new Date(),
-    })
-    .where(eq(formSubmissions.id, submission.id))
-    .returning();
-
-  // Send Email confirmation using Gmail
-  const emailResult = await sendAutoSubmitConfirmation({
-    to: profileData.email || dbUser?.email || "",
-    userName: profileData.fullName || dbUser?.name || "",
-    formUrl,
-    prompt,
-    submissionSummary: summaryDetails,
+    // NO fabrication. AutoSubmit enqueues a REAL browser-fill job for the
+  // form-filler daemon (Playwright + your logged-in Google profile). The
+  // daemon opens the REAL form, fills the REAL fields from the saved profile,
+  // clicks the REAL submit, and reports back on the REAL confirmation page.
+  // Email is only sent on REAL success via the terminal result handler.
+  await db.insert(deviceCommands).values({
+    workspaceId,
+    userId,
+    deviceId: DEVICE_ID || "lf-form-filler",
+    command: `LF_FORM_FILL ${JSON.stringify({
+      submission_id: submission.id,
+      form_url: formUrl,
+      prompt: prompt ?? "",
+      profile: profileData,
+    })}`,
+    status: "pending",
+    output: "",
   });
-
-  if (emailResult.success) {
-    await db
-      .update(formSubmissions)
-      .set({ emailNotificationSent: true })
-      .where(eq(formSubmissions.id, submission.id));
-  }
 
   return c.json({
     success: true,
-    submission: completedSub,
-    emailSent: emailResult.success,
+    submission: {
+      id: submission.id,
+      formUrl,
+      prompt: prompt ?? "",
+      status: "processing",
+      createdAt: submission.createdAt,
+    },
   });
 });
 
-// GET /api/autosubmit/history - Get past submissions
+// GET /api/autosubmit/history - Get past submissions for this user
 autosubmitRouter.get("/history", async (c) => {
   const userId = c.get("userId");
   const workspaceId = c.get("workspaceId");
