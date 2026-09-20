@@ -162,6 +162,14 @@ export function createApp(): Hono<AppEnv> {
     return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
   });
 
+  // Public endpoint — reveals which social providers are configured.
+  // Used by the frontend to conditionally show/hide Google sign-in button.
+  app.get("/api/auth-config", (c) => {
+    return c.json({
+      googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    });
+  });
+
   registerRoutes(app);
   return app;
 }

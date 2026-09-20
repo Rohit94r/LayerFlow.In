@@ -195,23 +195,7 @@ autosubmitRouter.post("/submit", async (c) => {
 });
 
 // GET /api/autosubmit/history - Get past submissions for this user
-// GET /api/autosubmit/:id - REAL per-submission status (dashboard poll target)
-autosubmitRouter.get("/:id", async (c) => {
-  const userId = c.get("userId");
-  const workspaceId = c.get("workspaceId");
-  const { id } = c.req.param();
-
-  const [sub] = await db
-    .select({ id: formSubmissions.id, formUrl: formSubmissions.formUrl, prompt: formSubmissions.prompt, status: formSubmissions.status, resultSummary: formSubmissions.resultSummary, createdAt: formSubmissions.createdAt, updatedAt: formSubmissions.updatedAt })
-    .from(formSubmissions)
-    .where(and(eq(formSubmissions.id, id), eq(formSubmissions.workspaceId, workspaceId)))
-    .limit(1);
-  if (!sub) throw new AppError(404, "not_found", "Submission not found");
-  return c.json({ submission: sub });
-});
-
-autosubmitRouter.get("/history"
-, async (c) => {
+autosubmitRouter.get("/history", async (c) => {
   const userId = c.get("userId");
   const workspaceId = c.get("workspaceId");
 
@@ -240,4 +224,19 @@ autosubmitRouter.get("/history"
     nextCursor,
     total: history.length,
   });
+});
+
+// GET /api/autosubmit/:id - REAL per-submission status (dashboard poll target)
+autosubmitRouter.get("/:id", async (c) => {
+  const userId = c.get("userId");
+  const workspaceId = c.get("workspaceId");
+  const { id } = c.req.param();
+
+  const [sub] = await db
+    .select({ id: formSubmissions.id, formUrl: formSubmissions.formUrl, prompt: formSubmissions.prompt, status: formSubmissions.status, resultSummary: formSubmissions.resultSummary, createdAt: formSubmissions.createdAt, updatedAt: formSubmissions.updatedAt })
+    .from(formSubmissions)
+    .where(and(eq(formSubmissions.id, id), eq(formSubmissions.workspaceId, workspaceId)))
+    .limit(1);
+  if (!sub) throw new AppError(404, "not_found", "Submission not found");
+  return c.json({ submission: sub });
 });

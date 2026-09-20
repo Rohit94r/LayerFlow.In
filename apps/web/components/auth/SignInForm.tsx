@@ -68,6 +68,7 @@ export default function SignInForm() {
   const [localDev, setLocalDev] = useState(true);
   const [productionSite, setProductionSite] = useState(false);
   const [apiUpstream, setApiUpstream] = useState<string | null>(null);
+  const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(null);
 
   // Email/password form state
   const [name, setName] = useState("");
@@ -89,6 +90,14 @@ export default function SignInForm() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalDev(isLocalWebHost(host));
     setProductionSite(isProductionWebHost(host));
+
+    // Check which social providers are configured on the backend.
+    fetch("/api/auth-config")
+      .then((r) => r.json())
+      .then((data: { googleEnabled?: boolean }) => {
+        setGoogleEnabled(Boolean(data?.googleEnabled));
+      })
+      .catch(() => setGoogleEnabled(false));
 
     const onProd = isProductionWebHost(host);
 
@@ -433,15 +442,22 @@ export default function SignInForm() {
             </div>
 
             {/* Google */}
-            <button
-              type="button"
-              onClick={() => void handleGoogle()}
-              disabled={loading || authBlocked}
-              className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface/80 disabled:opacity-60"
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-              {loading ? "Redirecting to Google…" : "Continue with Google"}
-            </button>
+            {googleEnabled === false ? (
+              <div className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface/50 px-4 py-3 text-sm text-muted opacity-60 cursor-not-allowed select-none">
+                <GoogleIcon />
+                Google sign-in not configured
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleGoogle()}
+                disabled={loading || authBlocked || googleEnabled === null}
+                className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-surface px-4 py-3 text-sm font-medium text-ink transition hover:bg-surface/80 disabled:opacity-60"
+              >
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
+                {loading ? "Redirecting to Google…" : "Continue with Google"}
+              </button>
+            )}
 
             {/* Toggle sign-in / sign-up */}
             <p className="mt-6 text-center text-sm text-muted">

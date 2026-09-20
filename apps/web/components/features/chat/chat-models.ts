@@ -137,7 +137,8 @@ function classifyModel(modelId: string | null | undefined, contextWindow: number
  */
 export const PICKER_MODELS: PickerModel[] = FALLBACK_PICKER_MODELS;
 
-export function providerLabel(provider: string): string {
+export function providerLabel(provider?: string | null): string {
+  if (!provider) return "";
   return PROVIDER_LABELS[provider] ?? provider;
 }
 

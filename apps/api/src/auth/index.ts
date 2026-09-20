@@ -61,13 +61,17 @@ export const auth = betterAuth({
     requireEmailVerification: false,
     autoSignIn: true,
   },
-  // Better Auth option name is `socialProviders` (not socialPlatforms).
+  // Only register Google OAuth when real credentials are configured.
+  // Using "not_configured" as fallback caused 400 errors from Google's OAuth server.
   socialProviders: {
-    google: {
-      clientId: env.GOOGLE_CLIENT_ID || "not_configured",
-      clientSecret: env.GOOGLE_CLIENT_SECRET || "not_configured",
-      enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
-    },
+    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+      ? {
+          google: {
+            clientId: env.GOOGLE_CLIENT_ID,
+            clientSecret: env.GOOGLE_CLIENT_SECRET,
+          },
+        }
+      : {}),
   },
   // Browser origins allowed to call the auth endpoints.
   // In development, also accept private LAN hosts (Next.js "Network" URL).

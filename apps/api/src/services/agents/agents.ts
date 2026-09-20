@@ -325,7 +325,7 @@ export async function agentUsage(workspaceId: string): Promise<
     .select({
       agentId: agentRuns.agentId,
       runCount: sql<number>`count(*)::int`,
-      totalCostMicro: sql<number>`coalesce(sum(cost_micro), 0)`,
+      totalCostMicro: sql<number>`coalesce(sum(cost_micro), 0)::int`,
       lastRunStatus: sql<string | null>`(
         SELECT status FROM ai_agent_runs last_r
         WHERE last_r.agent_id = ai_agent_runs.agent_id
@@ -339,7 +339,14 @@ export async function agentUsage(workspaceId: string): Promise<
     .groupBy(agentRuns.agentId);
 
   return new Map(
-    rows.map((r) => [r.agentId, { ...r, lastRunStatus: r.lastRunStatus ?? null }]),
+    rows.map((r) => [
+      r.agentId,
+      {
+        runCount: Number(r.runCount || 0),
+        totalCostMicro: Number(r.totalCostMicro || 0),
+        lastRunStatus: r.lastRunStatus ?? null,
+      },
+    ]),
   );
 }
 

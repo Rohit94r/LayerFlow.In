@@ -82,6 +82,20 @@ function objectOrEmpty(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function safeAgentMetrics(val: unknown) {
+  const result = agentMetricsSchema.safeParse(val ?? {});
+  if (result.success) return result.data;
+  return {
+    jobsFound: 0,
+    jobsApplied: 0,
+    pendingApprovals: 0,
+    interviewsScheduled: 0,
+    responsesReceived: 0,
+    rejections: 0,
+    successScore: 0,
+  };
+}
+
 function toAgentDto(row: AgentRow): Agent {
   return {
     id: row.id,
@@ -102,7 +116,7 @@ function toAgentDto(row: AgentRow): Agent {
     expectedActivity: row.expectedActivity,
     estimatedUsage: row.estimatedUsage,
     onboarding: objectOrEmpty(row.onboarding),
-    metrics: agentMetricsSchema.parse(row.metrics ?? {}),
+    metrics: safeAgentMetrics(row.metrics),
     isDemo: row.isDemo,
     lastRunAt: iso(row.lastRunAt),
     createdAt: row.createdAt.toISOString(),
