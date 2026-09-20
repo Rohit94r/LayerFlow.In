@@ -62,15 +62,13 @@ export const auth = betterAuth({
     autoSignIn: true,
   },
   // Better Auth option name is `socialProviders` (not socialPlatforms).
-  socialProviders:
-    env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-      ? {
-          google: {
-            clientId: env.GOOGLE_CLIENT_ID,
-            clientSecret: env.GOOGLE_CLIENT_SECRET,
-          },
-        }
-      : undefined,
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID || "not_configured",
+      clientSecret: env.GOOGLE_CLIENT_SECRET || "not_configured",
+      enabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+    },
+  },
   // Browser origins allowed to call the auth endpoints.
   // In development, also accept private LAN hosts (Next.js "Network" URL).
   trustedOrigins: async (request) => {

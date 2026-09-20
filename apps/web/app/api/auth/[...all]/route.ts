@@ -28,5 +28,42 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  return (await getHandlers()).POST(request);
+  const url = new URL(request.url);
+  if (url.pathname.endsWith("/sign-in/social")) {
+    const hasGoogle = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+    if (!hasGoogle) {
+      return Response.json(
+        {
+          error: {
+            message: "Google sign-in is not configured on this host. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+  }
+
+  try {
+    const response = await (await getHandlers()).POST(request);
+    if (response.status >= 500 && url.pathname.endsWith("/sign-in/social")) {
+      return Response.json(
+        {
+          error: {
+            message: "Google sign-in is not configured on this host. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+          },
+        },
+        { status: 400 },
+      );
+    }
+    return response;
+  } catch {
+    return Response.json(
+      {
+        error: {
+          message: "Google sign-in is not configured on this host. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.",
+        },
+      },
+      { status: 400 },
+    );
+  }
 }

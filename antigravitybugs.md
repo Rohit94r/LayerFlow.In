@@ -26,6 +26,9 @@
 - **BUG-AUTH-02**: Auth error handling on network/DB connection drop produced generic "Sign-in failed".
   - *Fix*: Enhanced `friendlyError` logic to provide precise diagnostic hints.
   - *Status*: ✅ **SOLVED**
+- **BUG-AUTH-03**: `POST /api/auth/sign-in/social` returned raw 500 (Internal Server Error) when `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` were missing in host environment.
+  - *Fix*: Handled missing social provider keys gracefully in `auth/index.ts` and `route.ts`, returning clean 400 response with friendly UI guidance: *"Google sign-in is not configured on this host. Please use email & password above."*
+  - *Status*: ✅ **SOLVED**
 
 ### 2. Chat Feature & SSE Streaming
 - **BUG-CHAT-01**: Chat SSE stream hung indefinitely or displayed blank reply when external LLM API returned empty completion or rate limit error.
