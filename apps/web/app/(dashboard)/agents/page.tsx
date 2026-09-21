@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AgentTemplate, AgentWithUsage } from "@layerflow/contracts";
@@ -68,6 +68,7 @@ export default function AgentsPage() {
   const [pausing, setPausing] = useState<string | null>(null);
   const [goal, setGoal] = useState("I need help finding freelance clients and drafting client proposals.");
   const [toast, setToast] = useState<string | null>(null);
+  const consecutiveFailures = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -77,16 +78,24 @@ export default function AgentsPage() {
       ]);
       setAgents(agentRes.agents);
       setTemplates(templateRes.templates);
+      consecutiveFailures.current = 0;
     } catch {
+      consecutiveFailures.current += 1;
       setToast("Could not refresh agents right now.");
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Back off and stop polling after repeated failures so a dead backend
+  // doesn't spam the network/logs every 4s indefinitely.
   useEffect(() => {
     const t = setTimeout(() => void load(), 0);
     const interval = setInterval(() => {
+      if (consecutiveFailures.current >= 4) {
+        clearInterval(interval);
+        return;
+      }
       void load();
     }, 4000);
     return () => {

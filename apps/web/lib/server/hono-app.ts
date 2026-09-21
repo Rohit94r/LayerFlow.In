@@ -9,14 +9,15 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { config as loadEnv } from "dotenv";
+import { coerceAuthBaseUrlToWeb } from "@/lib/server/auth-loader";
 
 type HonoFetchApp = {
   fetch: (request: Request) => Response | Promise<Response>;
 };
 
 function ensureVercelAuthEnv() {
-  if (process.env.VERCEL === "1" && process.env.WEB_URL?.trim()) {
-    process.env.BETTER_AUTH_URL = process.env.WEB_URL.trim();
+  if (process.env.VERCEL === "1") {
+    coerceAuthBaseUrlToWeb();
   }
 }
 

@@ -45,6 +45,11 @@ async function probeSameOriginAuth(webUrl: string) {
 
   if (process.env.VERCEL === "1" && process.env.WEB_URL) {
     process.env.BETTER_AUTH_URL = process.env.WEB_URL;
+  } else if (process.env.NODE_ENV === "production") {
+    // Same-origin hardening: never let a stale BETTER_AUTH_URL (e.g.
+    // https://api.layerflow.dev) drive the Google redirect_uri. The web host
+    // is the auth origin, so the auth base URL must equal WEB_URL.
+    process.env.BETTER_AUTH_URL = process.env.WEB_URL ?? process.env.BETTER_AUTH_URL;
   }
 
   try {

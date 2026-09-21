@@ -71,14 +71,27 @@ on Vercel and Render — sessions and BYOK keys decrypt only with the same value
 
 ---
 
-## 3. Flip the web app to use the new API host
+## 3. Web + auth run same-origin on `layerflow.dev` (do NOT flip to `api.`)
 
-1. Vercel → LayerFlow project → Settings → Environment Variables:
-   - set `NEXT_PUBLIC_API_URL=https://api.layerflow.dev` (Production)
-   - keep everything else (DATABASE_URL, REDIS_URL, secrets all stay)
+The Next.js host mounts Better Auth and the Hono API on the same origin
+(`layerflow.dev/api/auth/*`), so the web project must **not** point at
+`api.layerflow.dev`:
+
+1. Vercel → LayerFlow project → Settings → Environment Variables (Production):
+   - keep `BETTER_AUTH_URL=https://layerflow.dev` — **never** `api.layerflow.dev`
+   - `WEB_URL=https://layerflow.dev`, `API_URL=https://layerflow.dev`
+   - `NEXT_PUBLIC_API_URL` optional (browser always uses the current origin)
 2. **Redeploy Vercel** (env changes apply only to new deployments).
-3. Google Cloud Console → OAuth credentials → add redirect URI
-   `https://api.layerflow.dev/api/auth/callback/google` (keep the Vercel one too).
+3. Google Cloud Console → OAuth credentials (client
+   `928766099149-…apps.googleusercontent.com`) → **Authorized redirect URIs** →
+   add, exactly:
+   `https://layerflow.dev/api/auth/callback/google`
+   (no trailing slash, no `api.` prefix). `api.layerflow.dev` must **not** be
+   registered — it is never used for the browser OAuth flow.
+4. Verify: `curl https://layerflow.dev/api/auth-config` → the JSON must show
+   `"authBaseUrl":"https://layerflow.dev"` and
+   `"googleRedirectUri":"https://layerflow.dev/api/auth/callback/google"`, else
+   the deployed web env still has a stale `BETTER_AUTH_URL`.
 
 ---
 
@@ -171,15 +184,15 @@ Users update with `lf upgrade`. Source stays private.
 
 | Variable | Vercel (web) | Render API | Render Worker | Notes |
 |---|---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | ✅ `https://api.layerflow.dev` | — | — | browser API base; after step 3 |
+| `NEXT_PUBLIC_API_URL` | optional `https://layerflow.dev` | — | — | browser always uses same origin |
 | `DATABASE_URL` | ✅ | ✅ | ✅ | Neon, `?sslmode=require` |
 | `REDIS_URL` | ✅ | ✅ | ✅ | Upstash `rediss://` |
 | `BETTER_AUTH_SECRET` | ✅ | ✅ | ✅ | **identical everywhere** |
-| `BETTER_AUTH_URL` | ✅ `https://layerflow.dev` | ✅ | — | |
-| `WEB_URL` / `API_URL` | ✅ | ✅ | ✅ | |
+| `BETTER_AUTH_URL` | ✅ `https://layerflow.dev` | ✅ | — | **== WEB_URL**; never `api.` |
+| `WEB_URL` / `API_URL` | ✅ `https://layerflow.dev` | `API_URL=https://api.layerflow.dev` | ✅ | |
 | `CORS_ORIGINS` | ✅ | ✅ | ✅ | `https://layerflow.dev` only — never `*` |
 | `PROVIDER_KEYS_KEK` | ✅ | ✅ | ✅ | **identical** — BYOK decryption |
-| `GOOGLE_CLIENT_ID/SECRET` | ✅ | ✅ | — | add `api.*` callback URI |
+| `GOOGLE_CLIENT_ID/SECRET` | ✅ | ✅ | — | redirect URI `https://layerflow.dev/api/auth/callback/google` |
 | `GROQ_API_KEY` / `GROQ_MODEL` | ✅ | ✅ | ✅ | free-tier platform provider |
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | ✅ | ✅ | ✅ | free-tier platform provider |
 | `DEEPSEEK_*` / `KIMI_*` / `XAI_*` | optional | optional | optional | add when ready (step 4) |

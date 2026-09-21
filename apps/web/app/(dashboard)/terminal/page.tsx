@@ -141,7 +141,7 @@ export default function TerminalPage() {
         {[
           { href: "/docs", label: "Docs" },
           { href: "/keys", label: "API Keys", hint: "manage providers" },
-          { href: "/cost", label: "Usage", hint: "tokens & spend" },
+          { href: "/costs", label: "Usage", hint: "tokens & spend" },
         ].map((item) => (
           <Link
             key={item.href}

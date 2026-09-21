@@ -18,7 +18,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "Limit Rescue", href: "/#use-cases" },
       { label: "Cost Check", href: "/#features" },
-      { label: "Improve Prompt", href: "/rescue?mode=prompt" },
+      { label: "Improve Prompt", href: "/chat" },
       { label: "BYOK", href: "/#features" },
     ],
   },

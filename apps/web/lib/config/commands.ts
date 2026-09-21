@@ -21,7 +21,7 @@ export const COMMANDS: CommandItem[] = [
   },
   { id: "home", label: "Home", hint: "G / Work hub", keywords: ["dashboard"], href: "/home" },
   { id: "projects", label: "Projects", hint: "P", keywords: ["workspace", "folders"], href: "/workspace" },
-  { id: "prompts", label: "Prompt Library", hint: "L", keywords: ["prompt"], href: "/prompts" },
+  { id: "prompts", label: "Prompt Library", hint: "L", keywords: ["prompt"], href: "/history" },
   { id: "terminal", label: "Chat", hint: "T", keywords: ["code", "cli", "chat"], href: "/chat" },
   { id: "agents", label: "Agents", hint: "A", keywords: ["runs"], href: "/agents" },
   { id: "models", label: "Model Hub", hint: "M", keywords: ["llm", "provider", "byok"], href: "/models" },

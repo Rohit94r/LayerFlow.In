@@ -38,6 +38,7 @@ import {
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
 import { rateLimit } from "../../middleware/rate-limit";
+import { logger } from "../../config/logger";
 import {
   agentUsage,
   createAgent,
@@ -285,10 +286,16 @@ agentsRouter.get("/templates", async (c) => {
 agentsRouter.get("/", async (c) => {
   const workspaceId = c.get("workspaceId");
   const query = paginationQuerySchema.parse(c.req.query());
-  const [agents, usage] = await Promise.all([
-    listAgents(workspaceId, { limit: query.limit, offset: query.offset }),
-    agentUsage(workspaceId),
-  ]);
+  const agents = await listAgents(workspaceId, { limit: query.limit, offset: query.offset });
+  // The usage summary is a fast-path enrichment, not the core payload. If it
+  // fails (e.g. a schema mismatch on this DB), don't take the whole list down
+  // with a 500 — log it and return the agents with zeroed usage instead.
+  let usage: Awaited<ReturnType<typeof agentUsage>> = new Map();
+  try {
+    usage = await agentUsage(workspaceId);
+  } catch (err) {
+    logger.warn({ err, workspaceId }, "agentUsage failed — returning agents with zeroed usage");
+  }
   const withUsage: AgentWithUsage[] = agents.map((a) => {
     const u = usage.get(a.id);
     return {

@@ -135,7 +135,7 @@ export const featureMenu: FeatureMenuSection[] = [
       {
         title: "Prompt Library",
         description: "Every prompt you've built, versioned and searchable.",
-        href: "/prompts",
+        href: "/history",
         icon: "prompts",
       },
       {

@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatMoney, timeAgo } from "@/lib/data/providers";
 import { agentsService } from "@/lib/services/agents";
+import { ApiClientError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const RUN_STATUS: Record<AgentRun["status"], { label: string; className: string }> = {
@@ -206,6 +207,12 @@ export default function AgentDetailPage() {
       await agentsService.remove(agent.id);
       router.push("/agents");
     } catch (err) {
+      // The row no longer exists (deleted from elsewhere / list refreshed) —
+      // that's a successful delete, not an error.
+      if (err instanceof ApiClientError && err.status === 404) {
+        router.push("/agents");
+        return;
+      }
       setToast(err instanceof Error ? err.message : "Could not delete this agent.");
       setConfirmDelete(false);
     }

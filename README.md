@@ -197,13 +197,16 @@ Required (the API refuses to start without them):
 | `REDIS_URL` | Redis connection (`redis://localhost:6379` locally) |
 | `BETTER_AUTH_SECRET` | `openssl rand -hex 32` |
 | `PROVIDER_KEYS_KEK` | Key-encryption key for BYOK provider keys + API-key HMAC. `openssl rand -hex 32`, must be 64 hex chars |
-| `BETTER_AUTH_URL` | Public URL of the API (`http://localhost:8787` locally) |
-| `WEB_URL` | Frontend origin (`http://localhost:3000`) |
-| `API_URL` | API origin (`http://localhost:8787`) |
+| `BETTER_AUTH_URL` | Auth origin — **must equal `WEB_URL`** (same-origin design). On the web host this is always coerced to `WEB_URL` at runtime. Locally `http://localhost:3000` |
+| `WEB_URL` | Frontend origin (`http://localhost:3000` / `https://layerflow.dev`) |
+| `API_URL` | API origin (`http://localhost:8787` / same-origin on Vercel) |
 | `CORS_ORIGINS` | Comma-separated allowed browser origins |
 
 Optional but commonly used: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`
-(Google OAuth — set the redirect URI to `{BETTER_AUTH_URL}/api/auth/callback/google`),
+(Google OAuth — the redirect URI Google validates is exactly
+`{BETTER_AUTH_URL}/api/auth/callback/google`, so in production it must be
+registered as `https://layerflow.dev/api/auth/callback/google` — no trailing
+slash, no `api.` subdomain),
 `PORT` (default 8787), provider keys so model runs work without BYOK
 (`OPENAI_API_KEY`, `GROQ_API_KEY` + `GROQ_MODEL`, `GEMINI_API_KEY` +
 `GEMINI_MODEL`, `DEEPSEEK_API_KEY` + `DEEPSEEK_MODEL`, `KIMI_API_KEY` +

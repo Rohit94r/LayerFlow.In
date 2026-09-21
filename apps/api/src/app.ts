@@ -162,11 +162,15 @@ export function createApp(): Hono<AppEnv> {
     return c.json({ status: ok ? "ok" : "degraded", checks }, ok ? 200 : 503);
   });
 
-  // Public endpoint — reveals which social providers are configured.
-  // Used by the frontend to conditionally show/hide Google sign-in button.
+  // Public endpoint — reveals which social providers are configured and the
+  // EXACT Google OAuth redirect URI the server will send. This must match a
+  // value registered in Google Cloud Console (Settings → Authorized redirect
+  // URIs), otherwise Google rejects sign-in with 400 redirect_uri_mismatch.
   app.get("/api/auth-config", (c) => {
     return c.json({
       googleEnabled: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
+      authBaseUrl: env.BETTER_AUTH_URL,
+      googleRedirectUri: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
     });
   });
 

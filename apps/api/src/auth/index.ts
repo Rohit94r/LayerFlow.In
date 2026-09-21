@@ -20,7 +20,9 @@ const cookieDomain = deriveCookieDomain(env);
 /**
  * Better Auth instance — email/password + optional Google OAuth, sessions in Postgres.
  * Mounted at /api/auth/* in src/index.ts.
- * Google console redirect URI: {API_URL}/api/auth/callback/google
+ * Google console redirect URI: {BETTER_AUTH_URL}/api/auth/callback/google — the
+ * web host runs auth same-origin, so in production it is exactly
+ * https://layerflow.dev/api/auth/callback/google (never api.layerflow.dev).
  *
  * Session persistence: `expiresIn` + cookie `maxAge` keep users signed in across
  * browser restarts until sign-out or idle expiry (see session block below).

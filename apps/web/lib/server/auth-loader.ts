@@ -14,11 +14,37 @@ import type { Auth } from "@layerflow/api/src/auth";
  */
 let authPromise: Promise<Auth> | null = null;
 
+/**
+ * The Next.js host is the auth origin (same-origin design), so BETTER_AUTH_URL
+ * must equal WEB_URL. Google's OAuth server rejects any other value with
+ * 400 redirect_uri_mismatch, because the redirect_uri it validates is
+ * `${BETTER_AUTH_URL}/api/auth/callback/google` — verbatim, no trailing slash.
+ * If a stale BETTER_AUTH_URL (e.g. https://api.layerflow.dev) survives to
+ * runtime, sign-in breaks, so this override is authoritative and logs loudly.
+ */
+export function coerceAuthBaseUrlToWeb(): void {
+  if (process.env.NODE_ENV === "production" && !process.env.WEB_URL?.trim()) {
+    console.warn(
+      "[auth-loader] WEB_URL is not set in production. Google redirect_uri will be " +
+        `"${process.env.BETTER_AUTH_URL ?? "(unset)"}/api/auth/callback/google" — ` +
+        "register exactly that URI in Google Cloud Console, or set WEB_URL=https://layerflow.dev.",
+    );
+    return;
+  }
+  const web = (process.env.WEB_URL ?? (process.env.NODE_ENV !== "production" ? "http://localhost:3000" : "")).trim();
+  if (!web) return;
+  if (process.env.BETTER_AUTH_URL && process.env.BETTER_AUTH_URL !== web) {
+    console.warn(
+      `[auth-loader] Overriding BETTER_AUTH_URL=${process.env.BETTER_AUTH_URL} → ${web} so ` +
+        "Google OAuth matches WEB_URL. Remove the stale BETTER_AUTH_URL from your env template.",
+    );
+  }
+  process.env.BETTER_AUTH_URL = web;
+}
+
 function ensureAuthEnv(): void {
   if (process.env.VERCEL === "1") {
-    if (process.env.WEB_URL?.trim()) {
-      process.env.BETTER_AUTH_URL = process.env.WEB_URL.trim();
-    }
+    coerceAuthBaseUrlToWeb();
     return;
   }
   if (process.env.LAYERFLOW_API_ENV_LOADED === "1") return;
@@ -32,11 +58,7 @@ function ensureAuthEnv(): void {
   if (envPath) {
     loadEnv({ path: envPath });
   }
-  if (process.env.WEB_URL?.trim()) {
-    process.env.BETTER_AUTH_URL = process.env.WEB_URL.trim();
-  } else if (process.env.NODE_ENV !== "production") {
-    process.env.BETTER_AUTH_URL = "http://localhost:3000";
-  }
+  coerceAuthBaseUrlToWeb();
 }
 
 /** Singleton Better Auth instance (env bootstrapped once). */

@@ -69,6 +69,7 @@ export default function SignInForm() {
   const [productionSite, setProductionSite] = useState(false);
   const [apiUpstream, setApiUpstream] = useState<string | null>(null);
   const [googleEnabled, setGoogleEnabled] = useState<boolean | null>(null);
+  const [googleRedirectUri, setGoogleRedirectUri] = useState<string | null>(null);
 
   // Email/password form state
   const [name, setName] = useState("");
@@ -91,11 +92,17 @@ export default function SignInForm() {
     setLocalDev(isLocalWebHost(host));
     setProductionSite(isProductionWebHost(host));
 
-    // Check which social providers are configured on the backend.
+    // Check which social providers are configured on the backend. The
+    // googleRedirectUri value is the EXACT URI the server will send to Google —
+    // it must be registered in Google Cloud Console, or sign-in fails with
+    // 400 redirect_uri_mismatch. Show it so a mismatch is obvious here.
     fetch("/api/auth-config")
-      .then((r) => r.json())
-      .then((data: { googleEnabled?: boolean }) => {
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data: { googleEnabled?: boolean; googleRedirectUri?: string }) => {
         setGoogleEnabled(Boolean(data?.googleEnabled));
+        if (typeof data?.googleRedirectUri === "string") {
+          setGoogleRedirectUri(data.googleRedirectUri);
+        }
       })
       .catch(() => setGoogleEnabled(false));
 
@@ -328,7 +335,8 @@ export default function SignInForm() {
                       BETTER_AUTH_SECRET, WEB_URL, and GOOGLE_CLIENT_* set.
                       Google redirect:{" "}
                       <code className="font-mono text-[10px]">
-                        https://layerflow.dev/api/auth/callback/google
+                        {googleRedirectUri ??
+                          "https://layerflow.dev/api/auth/callback/google"}
                       </code>
                       .
                     </>
@@ -458,6 +466,13 @@ export default function SignInForm() {
                 {loading ? "Redirecting to Google…" : "Continue with Google"}
               </button>
             )}
+
+            {productionSite && googleRedirectUri ? (
+              <p className="mt-2 text-center text-[10.5px] leading-4 text-faint">
+                Registered Google redirect URI:{" "}
+                <code className="font-mono">{googleRedirectUri}</code>
+              </p>
+            ) : null}
 
             {/* Toggle sign-in / sign-up */}
             <p className="mt-6 text-center text-sm text-muted">

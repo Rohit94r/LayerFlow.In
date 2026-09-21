@@ -56,8 +56,11 @@ Every response carries `x-request-id`, echoed in logs for correlation.
 ## Auth (Better Auth)
 
 All under `/api/auth/*` (Google OAuth, session, user). Handled by
-`better-auth`; see `apps/api/src/auth/`. Callback URL:
-`https://<api-host>/api/auth/callback/google`.
+`better-auth`; see `apps/api/src/auth/`. The Google OAuth redirect URI is
+`{BETTER_AUTH_URL}/api/auth/callback/google` — the web host runs auth
+same-origin, so in production it is exactly
+`https://layerflow.dev/api/auth/callback/google` (never `api.layerflow.dev`).
+Verify the live value at `/api/auth-config` (`googleRedirectUri`).
 
 ## Workspace & org structure
 
