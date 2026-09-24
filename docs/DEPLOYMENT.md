@@ -23,9 +23,7 @@ npm run deploy:api        # sets secrets, builds Docker image, deploys, scales a
 npm run check:prod        # verifies frontend, DNS, API + worker health
 ```
 
-> The Render blueprint and the VPS Docker stack are archived under
-> `scripts/legacy/` — Fly is the production path. Local dev still uses
-> `docker-compose.yml` (Postgres + Redis only).
+Local dev uses `docker-compose.yml` (Postgres + Redis only).
 
 ---
 
@@ -211,7 +209,56 @@ a redeploy. Never commit real values.
 
 ---
 
-## Deploy order (memorize)
+## Everyday commands & troubleshooting
+
+**Local dev (per process):** `npm run dev:web` (:3000) · `npm run dev:api`
+(:8787) · `npm run dev:worker`. Want a clean local DB? `docker compose down -v
+&& docker compose up -d`. Health locally:
+```bash
+curl http://localhost:8787/health/live     # {"status":"ok"}
+curl http://localhost:3000/api/lf-health   # full same-origin check
+```
+
+**Point local dev at Neon + Upstash** (no local Docker needed): set
+`DATABASE_URL=<Neon>` and `REDIS_URL=<Upstash rediss://>` in `apps/api/.env`,
+then `npm run dev`.
+
+**Inspect the database:**
+```bash
+psql "<NEON_DATABASE_URL>" -c "\dt"                                  # tables
+psql "<NEON_DATABASE_URL>" -c "SELECT count(*) FROM users;"          # any query
+psql "<NEON_DATABASE_URL>" -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"   # table count
+```
+
+**Manual Fly operations (the script does these automatically):**
+```bash
+flyctl logs -a layerflow-api                          # API + worker logs
+flyctl scale count app=1 worker=1 -a layerflow-api    # machines per process
+flyctl secrets list -a layerflow-api                  # confirm secrets
+flyctl certs add api.layerflow.dev -a layerflow-api   # custom domain cert
+curl -s https://layerflow-api.fly.dev:9091/health     # worker health
+```
+
+**Terminal (`lf`) quick commands:**
+```bash
+cd terminal
+./lf doctor      # diagnostics — all PASS except config/auth on first run
+./lf login       # paste a platform key (or --browser for device flow)
+./lf models      # list available models
+./lf chat        # ask questions in the terminal
+./lf cost        # token + cost usage
+./lf logout      # revoke + purge credentials
+```
+
+| Symptom | Fix |
+|---|---|
+| `lf login` fails with 500 once | cold-start race — retry; 2nd attempt works |
+| `ECONNREFUSED 5432/6379` locally | `docker compose up -d` or point `.env` at Neon/Upstash |
+| API 500 on a DB route | check migrations applied to Neon (`drizzle-kit migrate`) |
+| Vercel deploy fails | run `npm run build` locally first — it must pass |
+| Need a fresh local DB | `docker compose down -v && docker compose up -d` |
+
+---
 
 **Fly deploy (`npm run deploy:api`) → DNS `api.layerflow.dev` + cert → Vercel
 env flip + redeploy → Google OAuth redirect URI → verify E2E (5 features) →

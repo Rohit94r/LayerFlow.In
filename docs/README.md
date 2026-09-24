@@ -13,9 +13,7 @@ docs. Historical planning notes and one-off audit snapshots live in
 
 ## Sub-folders
 
-- `plans/` — dated planning/execution docs (historical, e.g. `2025-08-31-master-plan.md`).
-- `ops/` — ops runbooks (`docker-commands.md`).
-- `archive/` — superseded one-off audit snapshots (kept for reference).
+- `ops/` — ops runbooks (deployment commands now live in `DEPLOYMENT.md`).
 
 ## Reference
 
@@ -23,10 +21,15 @@ docs. Historical planning notes and one-off audit snapshots live in
 |---|---|
 | [API.md](API.md) | Adding/changing an API route or SSE event |
 | [SECURITY.md](SECURITY.md) | Touching auth, keys, encryption, webhooks |
-| [ROADMAP.md](ROADMAP.md) | What's planned next |
-| [REMAINING_WORK.md](REMAINING_WORK.md) | The current gap list (code vs shipped) |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to commit, test, and ship |
+| [PRODUCT-STATUS.md](PRODUCT-STATUS.md) | The honest feature/score snapshot |
 | [BUG_LOG.md](BUG_LOG.md) | Known bugs and their resolutions |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy + everyday ops commands |
+
+## Forward-looking docs (at the repo root)
+
+- `../context.md` — plain-English product overview (stack, features, status, pricing, future).
+- `../nextplan.md` — the 5-phase plan, split by feature/cleanup/deploy work. Say "do phase N".
+- `./research.md` — the market reality check that drives `nextplan.md`.
 
 ## Per-package READMEs (deeper detail)
 

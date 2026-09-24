@@ -49,12 +49,11 @@ See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for the full "where is what" map.
 ├── apps/api/        Backend — Hono API + BullMQ worker, Postgres/Redis
 ├── packages/        Shared TS packages (contracts, model-registry)
 ├── terminal/        `lf` Go CLI — TUI, agent tools, MCP, daemon
-├── docs/            Product + engineering docs (plans/, ops/, archive/)
+├── docs/            Product + engineering docs (API, DEPLOYMENT, SECURITY, …)
 ├── scripts/         Deploy + ops shell scripts (Fly.io deploys, health checks)
 ├── fly.toml         Fly.io app config — API (`app`) + worker process groups,
 │                    one image from apps/api/Dockerfile
-├── docker-compose.yml   Local Postgres 16 (pgvector) + Redis 7
-└── scripts/legacy/  Archived Render/VPS deploy assets (Fly is the path)
+└── docker-compose.yml   Local Postgres 16 (pgvector) + Redis 7
 ```
 
 ## Status
@@ -77,8 +76,7 @@ commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
   agents / embeddings / usage-rollups actually process in production. Deploy is
   fully scripted: `npm run deploy:api` sets secrets and scales `app=1 worker=1`;
   `npm run check:prod` verifies site, DNS, API + worker health
-- Render blueprint and VPS Docker stack archived under `scripts/legacy/`
-- Deployment docs rewritten: `docs/DEPLOYMENT.md` is the Fly + Docker guide
+- Deployment docs: `docs/DEPLOYMENT.md` is the Fly + Docker guide
 
 **Recent updates (v0.2.15):**
 - Terminal TUI: full premium redesign — title-rule brand hero, accent warm-up
@@ -540,3 +538,16 @@ cd apps/web && npm run build
 ```
 
 If you hit issues, check [`docs/BUG_LOG.md`](./docs/BUG_LOG.md) first — it documents all known issues and their resolutions.
+
+### CI + migration rules (read before your first PR)
+
+- **CI (`.github/workflows/ci.yml`)** runs on every push/PR to `main`, no secrets
+  needed: typecheck (contracts → model-registry → api → web), `db:verify`
+  (replays all migrations on in-memory Postgres), API tests, API bundle build,
+  Next.js production build, plus a Go job (`build`, `vet`, `test`, `test -race`).
+- **Migrations are additive-only.** New columns/tables go in a new numbered
+  Drizzle migration (`npm run db:generate --workspace @layerflow/api`); never
+  edit or renumber an applied migration. Rollback = "deploy the old release",
+  not "revert a migration".
+- **Branch + PR:** `git checkout -b fix/…` (or `feat/…`), add tests next to the
+  change, run the checks above for your area, then open a PR — CI must be green.

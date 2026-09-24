@@ -29,7 +29,7 @@ each phase ends with a **Learned today** block).
 
 ---
 
-## Phase 1 — Clean Slate: delete junk, slim the monorepo, tidy docs
+## Phase 1 — ✅ DONE (clean slate applied)
 
 > **Goal:** the repo is only what the wedge actually needs. Delete first, so
 > everything after is easy to find and fix. No feature code changes here.

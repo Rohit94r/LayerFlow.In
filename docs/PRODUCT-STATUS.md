@@ -262,7 +262,7 @@ These need **you**, not an engineer:
 - No terminal-side BYOK adapters for DeepSeek/Kimi/Qwen — managed mode covers
   them via the gateway; for BYOK-direct add keys in the web dashboard.
 - No E2E test suite (Playwright); no pen-test; PostHog analytics not wired
-  (intentionally not yet — see ROADMAP).
+  (intentionally not yet — see `nextplan.md`).
 
 ---
 
