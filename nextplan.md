@@ -14,6 +14,8 @@
 | "Everything AI platform" (chat + agents + memory + teams + terminal) | **One sharp tool: the "AI spend firewall"** — hard spend caps, per-project cost tracking and alerts for solo devs + freelancers |
 | 29 routes / 28 pages / 24 CLI commands all promoted | Keep the wedge path; **freeze + hide everything else** |
 | Free managed AI for everyone (Groq/Gemini keys) | **BYOK-first** + tiny capped demo mode (stops the money leak) |
+| BYOK only via dashboard paste | **BYOK + Direct keys, opencode/Cline parity** — env-var keys (`OPENAI_API_KEY`…), custom base-URL providers (Ollama / LM Studio / vLLM), no-login direct chat, vault OR no-store key mode |
+| Cost table is internal | **Price accuracy becomes a tested guarantee** — caps/alerts are only trusted if the $ math is pinned right |
 | Billing not launched, no analytics, no E2E | Get to **first paying users**, wire PostHog, add Playwright tests |
 | Deployment scripted but not run | **Make production actually work**, then verify it |
 | Docs sprawl + archived junk | **Delete unneeded files, slim the repo** |
@@ -111,35 +113,69 @@ a budget cap actually blocks over-spend in prod.
 1. **One-sentence positioning** — homepage rewrite: "Stop surprise AI bills. Cap
    spend per project in 2 minutes." (Appendix B of research.md). Remove the
    six-sentence pitch.
-2. **Hide frozen features from nav + pricing** — agents v2, compare, rescue,
-   memory extraction, community/marketplace, audio, learning, autosubmit,
-   team RBAC, "continue in terminal" handoff. Code stays, UI + pricing removed.
+2. **Freeze + hide + set the wedge content boundary** — hide from nav + pricing:
+   agents v2, compare, rescue, memory-extraction, community/marketplace, audio,
+   learning, autosubmit, team RBAC, "continue in terminal" handoff. Keep visible
+   ONLY: API keys, gateway / connect, costs + budgets, usage history, billing.
+   (Usage history intentionally stays — it's part of the spend story.)
 3. **Kill "free managed AI for everyone"** —
    - `services/chat/router.ts` + `services/ai/providers/keys.ts`: managed
      platform keys only for allowed plans; BYOK always free/unlimited.
    - Tiny "demo mode": e.g. 20 messages/day per verified Google account, strict
      global daily cap, so free keys can't be drained.
-4. **Project/client tagging** — accept `x-lf-project: client-acme` header;
-     store + show cost per project.
-5. **Alerts at 50 / 80 / 100%** of a cap — email today (Resend), Slack later;
-     re-enable the weekly cost digest job (it already exists).
-6. **2-minute onboarding** — copy-paste snippets for Node / Python / cURL on the
-     dashboard + a "test request" button.
-7. **Trim `lf` CLI** to the wedge set — `login`, `cost`, `models`, `doctor`,
-   `sync` sanity. Keep code; hide/hold the rest.
-8. **Savings suggestion** — reuse the existing savings headers: "switch model
-   Y→Z to save ~X%".
+4. **BYOK + Direct provider keys — opencode/Cline parity (the feature you asked
+   for).** This is the "change one base URL" promise done properly:
+   - `lf` auto-resolves provider keys from the environment, opencode-style:
+     `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`,
+     `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `GEMINI_API_KEY` — paste into your
+     shell, `lf chat` just works, **no `lf login` required**.
+   - `lf config` provider block, Cline-style: custom **OpenAI-compatible base
+     URL** (Ollama `http://localhost:11434/v1`, LM Studio, vLLM, Groq, any) +
+     custom model id + custom key. `lf models` lists built-in + your custom
+     providers.
+   - Dashboard **quick-add** in the BYOK vault for all the same providers +
+     custom base URL (extends the existing AES-256-GCM vault).
+   - **Two key modes:** (a) *vault mode* — key stored encrypted on LayerFlow,
+     caps enforced server-side (the spend-firewall path); (b) *direct/no-store
+     mode* — key supplied per request / stays on the user's machine, LayerFlow
+     **never stores or logs it**, caps apply on declared costs (the privacy path).
+   - `/v1/models` + `/v1/chat/completions` handle both modes transparently.
+5. **Price-accuracy gate (the trust-keeper for this product)** — a test suite
+   that pins, per provider + model: request → tokens → cost to the 4th decimal,
+   matching the registry against each provider's published price. Models that
+   can be capped MUST have exact cost math, or they're marked "no cap" —
+   never a wrong cap.
+6. **Latency transparency** — the gateway must be invisible: measure first-token
+   time in `check:prod`, stream upstream tokens straight through, keep added
+   latency near zero. A spend firewall users notice = a firewall they remove.
+7. **Project/client tagging** — accept `x-lf-project: client-acme` header;
+   store + show cost per project.
+8. **Alerts at 50 / 80 / 100%** of a cap — email today (Resend), Slack later;
+   re-enable the weekly cost digest job (it already exists).
+9. **2-minute onboarding** — copy-paste snippets for Node / Python / cURL on the
+   dashboard + a "test request" button. With Direct keys it's literally: export
+   `OPENAI_API_KEY=…`, point the base URL at the gateway, done.
+10. **Savings suggestion** — reuse the existing savings headers: "switch model
+    Y→Z to save ~X%".
+11. **Trim `lf` CLI** to the wedge set — `login` (only for platform mode),
+    `cost`, `models`, `doctor`, `sync` sanity. Keep code; hide/hold the rest.
 
 ### Verification
-A fresh user: BYOK key (or capped demo), creates a project, sends a request,
-sees cost per project, gets alerted at 80%, blocked at 100%. Homepage + pricing
-repeat the one sentence. No nav item queues forever.
+- Fresh user with ONLY `OPENAI_API_KEY` exported: `lf chat` works without login;
+  a custom base-URL provider (Ollama/LM Studio) works via `lf config`.
+- No-store mode: key appears nowhere in DB nor logs after a request.
+- Price tests green (cost matches published prices to 4 decimals); a cap blocks
+  exactly at 100%, alerts at 80%.
+- Homepage + pricing repeat the one sentence. No nav item queues forever.
 
 ### 🧠 Learned today (backend)
 - Gateways and proxy middleware; API keys and rate limits.
 - Budgets: reserve/settle/lock in Redis (atomic Lua) — the heart of the product.
 - Enforcing a business rule server-side (plan gating), not just in the UI.
 - Headers as product input (`x-lf-project`).
+- BYOK ergonomics (opencode/Cline): env-var resolution, custom OpenAI-compatible
+  providers (base URL + model id), local-vs-vault key modes, and why no-store
+  keys must never hit logs or DB.
 
 ---
 
@@ -163,7 +199,9 @@ repeat the one sentence. No nav item queues forever.
    requests, caps hit). Free tier.
 6. **Security hardening** — BYOK vault key-rotation + audit-log access; verify
    webhook signature/idempotency (already done — re-verify); add a **fail-open**
-   option in the gateway (if LayerFlow is down, pass through).
+   option in the gateway (if LayerFlow is down, pass through). **Direct/no-store
+   mode audit:** prove provider keys never reach DB, logs, or gateway logs; add
+   a key-scrubber test. Hard cap the demo-mode daily limit.
 7. **Price-comparison SEO pages** — "OpenAI vs Claude vs Gemini price per 1M
    tokens", "how to cap OpenAI spend" (programmatic SEO, free traffic).
 8. **Legal basics** — privacy policy + terms; DPDP-aware prompt/usage logging
@@ -189,7 +227,9 @@ PostHog shows signups + requests.
 
 ### Tasks
 1. **Playwright E2E for the wedge path** — sign-in → create key → send request →
-   see cost → set cap → get blocked → get alert. (First E2E test suite.)
+   see cost → set cap → get blocked → get alert. Also cover **Direct keys**: env-var
+   chat without login, custom base-URL provider, and a no-store key that never
+   persists after the request. (First E2E test suite.)
 2. **Worker job tests** — rollup + budget-alert + digest units run in CI.
 3. **Cut the ~90 lint-warning backlog** in the wedge areas only.
 4. **Ship a release** — tag + publish CLI (Homebrew + installers auto-build),
