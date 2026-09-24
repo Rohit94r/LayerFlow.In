@@ -376,7 +376,7 @@ npm test
 npm test --workspace @layerflow/api
 
 # typecheck everything (contracts, model-registry, api, web) — the CI-equivalent
-npx tsc --noEmit -p tsconfig.json
+npm run typecheck
 npm run typecheck --workspace @layerflow/contracts
 npm run typecheck --workspace @layerflow/model-registry
 npm run typecheck --workspace @layerflow/api

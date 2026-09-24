@@ -14,6 +14,7 @@
 #
 # Usage:  npm run deploy:api          # or: bash scripts/deploy-api-prod.sh
 #         ENV_FILE=fly.env bash scripts/deploy-api-prod.sh   # alternate file
+#         REMOTE_BUILD=1 bash scripts/deploy-api-prod.sh     # build on Fly (no local Docker needed)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -105,7 +106,12 @@ done
 
 # ── Deploy (builds the Docker image, release_command runs DB migrations) ─────
 echo "Deploying $APP_NAME (app + worker)…"
-"$FLYCTL" deploy --app "$APP_NAME"
+DEPLOY_FLAGS=(--app "$APP_NAME")
+if [[ "${REMOTE_BUILD:-0}" == "1" ]]; then
+  echo "Using Fly remote builder (--remote-only — no local Docker required)."
+  DEPLOY_FLAGS+=(--remote-only)
+fi
+"$FLYCTL" deploy "${DEPLOY_FLAGS[@]}"
 
 # ── Ensure both process groups are running ───────────────────────────────────
 echo "Ensuring app=1 worker=1…"

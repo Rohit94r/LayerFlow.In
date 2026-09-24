@@ -103,7 +103,7 @@ if command -v dig >/dev/null 2>&1; then
   DNS_IP=$(dig +short api.layerflow.dev 2>/dev/null || echo "")
   if [[ -n "$IP" && "$IP" == "$DNS_IP" ]]; then
     info "DNS is pointing here! Run SSL setup:"
-    info "  docker compose -f $COMPOSE_FILE run --rm certbot certonly --webroot \"
+    info "  docker compose -f $COMPOSE_FILE run --rm certbot certonly --webroot"
     info "    -w /var/www/certbot -d api.layerflow.dev"
     info "  docker compose -f $COMPOSE_FILE restart nginx"
   else
