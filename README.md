@@ -411,7 +411,8 @@ npm run smoke --workspace @layerflow/api
 - `docs/README.md` — index/map of all docs (start here)
 - `docs/PRODUCT-STATUS.md` — honest snapshot: what's built, what works, what's left
 - `docs/DEPLOYMENT.md` — zero-to-production deployment guide (Fly.io + Docker)
-- `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SECURITY.md`
+- `ARCHITECTURE.md` (root) — the "where is what" code map
+- `docs/API.md`, `docs/SECURITY.md`
 - `apps/api/README.md` — full endpoint map, budgets, seeding, conventions
 - `terminal/README.md` — CLI reference
 
