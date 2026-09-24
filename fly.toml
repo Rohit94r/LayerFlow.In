@@ -1,0 +1,66 @@
+# LayerFlow API + BullMQ worker on Fly.io.
+#
+# ONE app, TWO process groups. Both groups run the SAME image built from
+# apps/api/Dockerfile (which produces both dist/index.js and dist/worker.js):
+#   - app    -> the Hono HTTP API (public, port 8787)
+#   - worker -> the BullMQ job worker (no public ingress; rescue / compare /
+#              agents / embeddings / usage-rollups / budget-alerts depend on it)
+#
+# Local dev is unaffected (docker-compose.yml is for the local Postgres/Redis).
+# Build + deploy:    npm run deploy:api          (reads .vercel.env secrets)
+# First-time scale:  fly scale count app=1 worker=1 --app layerflow-api
+# Custom host:       fly certs add api.layerflow.dev --app layerflow-api
+
+app = "layerflow-api"
+
+primary_region = "iad"     # Virginia — nearest to Neon (us-east-1) and Upstash
+
+kill_signal = "SIGINT"
+kill_timeout = 5
+
+[build]
+  dockerfile = "apps/api/Dockerfile"
+
+[deploy]
+  # Runs once per deploy (before new machines start) on the freshly built
+  # image. drizzle-kit is kept in the runtime image on purpose so migrations
+  # work here without a second image.
+  release_command = "npm run db:migrate --workspace @layerflow/api"
+
+[processes]
+  app    = "node apps/api/dist/index.js"
+  worker = "node apps/api/dist/worker.js"
+
+# Public HTTP service — the API process only.
+[[services]]
+  processes = ["app"]
+  internal_port = 8787
+  protocol = "tcp"
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 500
+    soft_limit = 250
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls"]
+    port = 443
+
+# Worker health endpoint (worker's own Hono app on WORKER_HEALTH_PORT, default
+# 9091) — lets scripts/check-production.sh confirm the worker is actually up.
+[[services]]
+  processes = ["worker"]
+  internal_port = 9091
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 9091
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Quick production readiness check for layerflow.dev sign-in.
+# Quick production readiness check for layerflow.dev sign-in + the Fly API/worker.
 set -euo pipefail
 
 echo "=== layerflow.dev (frontend) ==="
@@ -15,11 +15,15 @@ fi
 
 echo ""
 echo "=== layerflow-api.fly.dev (Fly default host) ==="
-curl -sS -m 8 https://layerflow-api.fly.dev/health 2>&1 || echo "Fly app not deployed or not reachable"
+curl -sS -m 8 https://layerflow-api.fly.dev/health 2>&1 || echo "Fly API not deployed or not reachable"
 
 echo ""
 echo "=== api.layerflow.dev health ==="
 curl -sS -m 8 https://api.layerflow.dev/health 2>&1 || echo "api.layerflow.dev not reachable"
+
+echo ""
+echo "=== Fly worker health (:9091) ==="
+curl -sS -m 8 https://layerflow-api.fly.dev:9091/health 2>&1 || echo "Fly worker not reachable / not scaled (run: fly scale count app=1 worker=1)"
 
 echo ""
 echo "=== Vercel health proxy ==="
