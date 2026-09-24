@@ -42,14 +42,11 @@ Three surfaces, one backend:
 | `packages/contracts/` | Shared TS types + zod schemas for API requests/responses (`@layerflow/contracts`). |
 | `packages/model-registry/` | The model catalog (providers, pricing, capabilities) (`@layerflow/model-registry`). |
 | `terminal/` | **Go CLI** (`lf`) — Cobra commands + Bubble Tea TUI, sessions, MCP, daemon, tools, sync. |
-| `docs/` | Product/engineering docs. Plans in `docs/plans/`, ops runbooks in `docs/ops/`. |
-| `scripts/` | Deployment + ops shell scripts (see `scripts/README.md`). |
-| `Dockerfile` | Production image for the **API** (used by both prod compose files). |
+| `docs/` | Product/engineering docs. Plans in `docs/plans/`, ops runbooks in `docs/ops/`, archived audits in `docs/archive/`. |
+| `scripts/` | Deployment + ops shell scripts (see `scripts/README.md`). Legacy deploy files in `scripts/legacy/`. |
+| `apps/api/Dockerfile` | The production Docker image for the **API + worker** (built from the repo root; Fly build target). |
+| `fly.toml` | Fly.io app config — `app` (API) + `worker` process groups from one image; DB migration runs as the release command. |
 | `docker-compose.yml` | Local dev infra only: Postgres(pgvector) :5432 + Redis :6379. |
-| `docker-compose.prod.yml` | Full VPS stack (nginx + certbot + api + worker + optional local PG/Redis). |
-| `docker-compose.vps.yml` | VPS variant when Caddy on the host already does SSL (port 3100). |
-| `render.yaml` | Render Blueprint (api + worker) — the primary production deploy. |
-| `nginx.conf` | Nginx config used by `docker-compose.prod.yml`. |
 
 ---
 
@@ -157,7 +154,7 @@ Web env lives in `apps/web/.env.local` (NEXT_PUBLIC_*). API env lives in
 ## Production
 
 - **Web** → Vercel (Root Directory: `apps/web`).
-- **API + worker** → Render (`render.yaml`) or VPS Docker
-  (`docker-compose.prod.yml` / `docker-compose.vps.yml`).
+- **API + worker** → Fly.io (`fly.toml` + `apps/api/Dockerfile`; deploy with
+  `npm run deploy:api`, verify with `npm run check:prod`).
 - **CLI releases** → tag `v*` → GoReleaser → public binaries repo.
 - Ops commands: `docs/ops/docker-commands.md`. Old planning docs: `docs/plans/`.

@@ -1,7 +1,11 @@
 # LayerFlow — Commands You Actually Need
 
-Your production setup: **frontend + backend on Vercel, database on Neon, Redis on Upstash.**
-The VPS Docker stack is optional (backup/legacy). Local dev needs Postgres + Redis.
+Your production setup: **backend API + worker on Fly.io (Docker), frontend on
+Vercel, database on Neon, Redis on Upstash.**
+
+> Deploying the backend is scripted: `npm run deploy:api`. Full guide:
+> `docs/DEPLOYMENT.md`. The old VPS Docker stack is archived under
+> `scripts/legacy/`.
 
 ---
 
@@ -72,34 +76,31 @@ psql "<NEON_DATABASE_URL>" -tAc \
 
 ---
 
-## 🌐 PRODUCTION (Vercel + Neon) — verify it's live
+## 🚀 PRODUCTION (Fly.io + Docker + Vercel)
 
 ```bash
-# Frontend + backend health (same-origin API mode)
-curl -s https://layerflow.dev/api/lf-health
-# → {"ok":true,"mode":"same-origin-api","status":"ok"}
+# Deploy API + worker to Fly (builds apps/api/Dockerfile, DB migration runs as
+# the release command, scales app=1 worker=1)
+npm run deploy:api
 
-# Auth session endpoint
-curl -s https://layerflow.dev/api/auth/get-session     # null when signed out
+# Verify everything (site, DNS, API + worker health)
+npm run check:prod
 
-# Terminal login endpoint (device flow)
-curl -s -X POST https://layerflow.dev/api/v1/auth/device \
-  -H 'Content-Type: application/json' -d '{}'
-# → {"device_code":"...","user_code":"ABC123","verification_uri":"..."}
+# Manual Fly operations (alternative to the script)
+flyctl logs -a layerflow-api             # API + worker logs
+flyctl scale count app=1 worker=1 -a layerflow-api   # machines per process
+flyctl secrets list -a layerflow-api     # confirm secrets
+flyctl certs add api.layerflow.dev -a layerflow-api  # custom domain cert
+
+# Worker health endpoint (its own Hono app on :9091)
+curl -s https://layerflow-api.fly.dev:9091/health
 ```
 
-### Deploy a code change
-```bash
-git push            # if Vercel is connected to GitHub it auto-deploys
-# or explicit:
-npx vercel --prod
-```
+### Change env vars for the backend
 
-### Change env vars
-Vercel Dashboard → your project → Settings → Environment Variables.
-Required there: `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET`,
-`BETTER_AUTH_URL`, `WEB_URL`, `API_URL`, `PROVIDER_KEYS_KEK`,
-`NEXT_PUBLIC_API_URL`, plus any provider keys (GROQ/GEMINI/...).
+Edit your local `.vercel.env` (source of truth; `fly.env` is the byte-identical
+copy), then re-run `npm run deploy:api` — it re-pushes secrets. Vercel env
+changes go in the Vercel dashboard and need a redeploy.
 
 ---
 
@@ -108,7 +109,7 @@ Required there: `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET`,
 ```bash
 cd terminal
 ./lf doctor          # diagnostics — all PASS except config/auth on first run
-./lf login           # authenticate (device flow opens layerflow.dev, or paste a platform API key)
+./lf login           # paste a platform API key (or `--browser` for device flow)
 ./lf models          # list available models
 ./lf chat            # ask questions in the terminal
 ./lf sessions        # list/restore previous sessions
@@ -118,24 +119,24 @@ cd terminal
 
 ---
 
-## 🐘 OPTIONAL: VPS Docker stack (only if you use the VPS backend)
+## 🐘 OPTIONAL: Legacy VPS Docker stack (archived — not the production path)
+
+If you ever resurrect the VPS backend, the files live in `scripts/legacy/`
+(`docker-compose.vps.yml`, `deploy-vps.sh`, `vps-migrate.sh`, root `Dockerfile`)
+and the old commands were:
 
 ```bash
 ssh rohit@72.60.99.68                 # password auth
 cd ~/apps/layerflow
-
 git pull                              # get latest code
 docker compose -f docker-compose.vps.yml up -d --build   # build + start all 4 containers
 ./scripts/vps-migrate.sh              # apply DB migrations to the VPS Postgres
-
-docker ps                             # what's running
 docker compose -f docker-compose.vps.yml logs -f api     # API logs
 docker compose -f docker-compose.vps.yml logs -f worker  # worker logs
-docker compose -f docker-compose.vps.yml restart api     # restart API only
-docker compose -f docker-compose.vps.yml down            # stop everything
-docker stats --no-stream              # memory per container
 curl http://localhost:3100/health/ready                  # {"status":"ok",...}
 ```
+
+> Production path today is Fly.io, not the VPS — see `docs/DEPLOYMENT.md`.
 
 ---
 

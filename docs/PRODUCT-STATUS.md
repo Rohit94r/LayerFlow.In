@@ -1,8 +1,9 @@
 # LayerFlow — Product Status
 
-**Last verified: 2026-08-28, by reading the actual code + running the full test
-suites + builds.** This file is the single source of truth — it supersedes all
-older planning docs. Claims here are backed by file paths; verify anything.
+**Last verified: 2026-08-28 (code/tests), refreshed 2026-09-24 (deployment:
+Fly + Docker now fully scripted).** This file is the single source of truth —
+it supersedes all older planning docs. Claims here are backed by file paths;
+verify anything.
 
 > Legend: ✅ DONE · 🟡 BUILT BUT BLOCKED / NOT LAUNCHED · 🔴 NOT DONE · 🔒 SECURITY
 
@@ -11,23 +12,24 @@ older planning docs. Claims here are backed by file paths; verify anything.
 ## TL;DR
 
 LayerFlow is **production-ready in code**, **one deployment away from real**.
-Web + API + terminal all **build clean and pass tests**. The only production
-blocker is infra, not code: the BullMQ worker isn't running in production
-(Vercel can't hold a persistent worker), so five features queue-but-never-run.
-Deploy the worker → they all light up. See `DEPLOYMENT.md`.
+Web + API + terminal all **build clean and pass tests**. The only infra gap was
+the persistent BullMQ worker; it is now fully scripted — `fly.toml` defines the
+`app` + `worker` process groups from one Docker image and `npm run deploy:api`
+puts both on Fly.io. Run the deploy, then the five queued features light up.
+See `DEPLOYMENT.md`.
 
 | Area | Score | Why |
 |---|---:|---|
 | Frontend (web) | 90 | All 40+ routes build; typecheck green; real API calls, no mock layer |
 | API surface | 95 | 24 route groups; plan-limits now enforced; device auth; gateway improve+usage |
-| Worker/jobs | 70 | 11 jobs all wired — but NOT running in prod (the one blocker) |
-| Terminal CLI | 92 | v0.2.15; premium TUI redesign; render cache; `/improve`; device-flow `lf login`; `lf cost` plan bar |
-| Agents v2 | 90 | 13 templates, approvals, scheduling, 604-line processor — blocked only by worker |
+| Worker/jobs | 75 | 11 jobs all wired; shipped in fly.toml — needs the deploy to run |
+| Terminal CLI | 92 | v0.2.15+; premium TUI redesign; render cache; `/improve`; `lf cost` plan bar |
+| Agents v2 | 90 | 13 templates, approvals, scheduling, 604-line processor — blocked only by worker deploy |
 | AI providers | 85 | 9 adapters; BYOK→platform→error chain; chat auto-failover; intelligence router |
 | Billing | 55 | Dodo integrated + webhook verified; not launched; plan enforcement now wired |
 | Security | 80 | AES-256-GCM BYOK; signed webhooks; rate limits; plan gating; no pen-test |
-| Testing | 75 | API 25/25 files (148 tests) green; terminal `go test` green; no E2E |
-| Deployment | 50 | Mode A live; Mode B (worker + api.domain) not executed |
+| Testing | 75 | API 33 files / 197 tests green; terminal `go test` green; web thin; no E2E |
+| Deployment | 65 | Fly + Docker fully scripted (`deploy:api` / `check:prod`); needs executing |
 | **OVERALL** | **~80** | **A complete product one deployment away from being real** |
 
 ---
@@ -47,7 +49,8 @@ Deploy the worker → they all light up. See `DEPLOYMENT.md`.
 6. **`lf` terminal CLI** — publicly installable (`brew install Rohit94r/tap/lf`
    or `curl -fsSL https://layerflow.dev/install | bash`), Windows installer too.
    Chat, run (agent), sessions, sync, models, doctor, rescue, cost, mcp,
-   daemon, upgrade. ~18K lines of Go. Device-flow `lf login` (browser) with
+   daemon, upgrade. ~18K lines of Go. `lf login` (paste platform key by default;
+   `--browser` for the device-code flow) with
    API-key paste fallback.
 7. **Terminal ↔ Cloud sync** — handshake/push/pull, watermark, device registry.
 8. **Billing routes** — Dodo checkout + signature-verified webhook.
@@ -101,7 +104,8 @@ micro-dollar pricing. Key resolution: **BYOK → platform env → error**
 recommends model with savings % (`services/intelligence/`).
 
 ### Managed multi-model (the "free first month" path) — ✅
-A new user installs `lf`, runs `lf login` (browser), and chats immediately with
+A new user installs `lf`, runs `lf login` (paste a platform key, or
+`lf login --browser` for the device flow), and chats immediately with
 **no provider key of their own**. LayerFlow's platform keys (Groq + Gemini free
 tiers configured today; add DeepSeek $10 deposit when ready) cover managed use;
 BYOK is always free and unlimited. **Plan-limits enforcement is now wired**
@@ -144,7 +148,7 @@ community (profiles/collections/clone/social) 🟡 built, soft-launched.
 | `lf sync` | ✅ | Real bidirectional push/pull via `/api/v1/sync/{handshake,push,pull}` with conflict merge + durable SQLite journal |
 | `lf models` | ✅ | Fetches `GET /v1/models` from the gateway (no hardcoded list) |
 | `lf cost` | ✅ | `GET /v1/usage` + local usage; renders budget cap, progress bar, plan status |
-| `lf login` | ✅ | Browser device flow first (my fix), API-key paste fallback, `--api-key` flag |
+| `lf login` | ✅ | Default: paste a platform key (or `LF_API_KEY` env). `--browser` = device-code flow |
 | `lf logout` | ✅ | Keyring purge |
 | `lf sessions` | 🟡 | Real list + delete from SQLite; `--open` interactive restore is an honest stub |
 | `lf rescue` | ✅ | Local SQLite → JSON continue-pack export (portability; not a gateway call) |
@@ -180,10 +184,11 @@ These closed the gaps the older planning docs listed as "remaining":
    - BYOK is never gated. Beta mode (billing unconfigured = free first month) is
      a cheap env check that always allows.
 
-2. **`lf login` now uses the browser device flow** (was API-key paste only).
-   `cmd/lf/login.go` tries the device flow first; on success stores the
-   server-minted `lf_live_` key; falls back to API-key paste if the endpoint is
-   unreachable or `--api-key`/`LF_API_KEY` is set. New `--api-key` flag.
+2. **`lf login` authenticates with a platform key by default** (paste or
+   `LF_API_KEY`); `--browser` triggers the device-code flow.
+   `cmd/lf/login.go` tries the device flow only when `--browser` is passed; on
+   success it stores the server-minted `lf_live_` key. There is no `--api-key`
+   flag — the key comes from paste, `LF_API_KEY`, or the config file.
 
 3. **Terminal brand cleanup**. `internal/tui/brand.go` no longer renders the
    giant pixel-block ASCII art; the home screen uses the clean bold
@@ -222,18 +227,19 @@ managed multi-model · `/improve` + `lf cost` plan bar · premium TUI redesign.
 
 These need **you**, not an engineer:
 
-1. **Deploy API + worker off Vercel** (Render Blueprint or Fly). `render.yaml`
-   is complete (both services). ~30 min of dashboard work. → `DEPLOYMENT.md`.
-2. **Point `api.layerflow.dev` DNS** at the deployed host; set
+1. **Deploy API + worker to Fly** (the one remaining infra step). `npm run
+   deploy:api` (fly.toml) deploys the API + worker from one Docker image and
+   scales `app=1 worker=1`. ~10 min. → `DEPLOYMENT.md`.
+2. **Point `api.layerflow.dev` DNS** at the Fly app + add the cert; set
    `NEXT_PUBLIC_API_URL` on Vercel; redeploy; add the Google OAuth redirect URI.
 3. **Add provider platform keys** (env on the new host): start with Groq +
    Gemini free tiers (already configured); add `DEEPSEEK_API_KEY` ($10 deposit)
    when ready. OpenAI/Anthropic only at Pro-tier, revenue-linked.
 4. **Launch billing**: create Dodo products (Starter $5, Pro $14), set
    `DODO_PRODUCT_*` env, add webhook URL, test-purchase, flip to live.
-5. **Release `lf v0.2.15`** — DONE. Tagged `v0.2.15` with the device-flow
-   login, honest command help, plan-limit enforcement, and the premium TUI
-   redesign → GitHub Action publishes binaries + Homebrew.
+5. **Release `lf v0.2.21`** — current tag (through v0.2.21). The next release
+   should carry the Fly deploy docs + any CLI changes; tags publish binaries +
+   Homebrew via the GitHub Action.
 6. **E2E test suite** (Playwright) and a real pen-test before scaling.
 
 ## Known gaps (non-blocking, prioritized for future work)

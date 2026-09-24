@@ -67,7 +67,9 @@ self-update (it currently checks GitHub and prints the installer).
 lf
 
 # Login — paste a LayerFlow platform key (lf_live_...)
-# from the dashboard: API Keys → Platform keys
+# from the dashboard: API Keys → Platform keys.
+# Alternative: `lf login --browser` for the browser device-code flow
+# (approve the device on layerflow.dev and the CLI receives the key).
 lf login
 
 # Start chatting (interactive streaming session)
@@ -115,7 +117,7 @@ There are two kinds of LayerFlow API keys, managed in the dashboard under
 | `lf chat [query]` | Start or continue a session |
 | `lf run "<task>"` | Non-interactive task agent |
 | `lf sessions` | List/restore/branch/delete sessions |
-| `lf login` | Login with a LayerFlow platform key |
+| `lf login` | Login — default pastes a platform key; `--browser` = device-code flow |
 | `lf logout` | Revoke + purge tokens |
 | `lf sync` | Force push/pull sync |
 | `lf doctor` | Diagnostics |

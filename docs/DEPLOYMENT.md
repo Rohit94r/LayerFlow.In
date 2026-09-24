@@ -1,177 +1,178 @@
-# LayerFlow — Zero-to-Production Deployment
+# LayerFlow — Zero-to-Production Deployment (Fly.io + Docker)
 
-**Goal:** a fully working LayerFlow in production — web + API + worker, with
-rescue / compare / agents / memory / cost-analytics all actually running.
+**Goal:** API + BullMQ worker running on **Fly.io** (built from the Docker
+image), web + auth same-origin on **Vercel**, DB on Neon, Redis on Upstash.
+When the worker is live, rescue / compare / agents / embeddings / rollups /
+alerts all actually run.
 
-**Current state (verified 2026-08-28):** the website + API are live on Vercel
-(same-origin). The **only** thing missing is a long-running **worker**, which
-Vercel serverless can't host. This guide deploys the API + worker to Render
-(the blueprint is already written) and reconnects Vercel to it. ~30–60 min.
+**Deployment model (one image, two processes):**
 
-> New here? Read `docs/README.md` → `docs/PRODUCT-STATUS.md` first.
+| Part | Where | Notes |
+|---|---|---|
+| Web app | Vercel → `layerflow.dev` | Next.js; mounts the shared Hono app same-origin (`/api/*`, `/v1/*`) |
+| API | Fly app `layerflow-api` → process `app` | Hono on `:8787` |
+| Worker | Fly app `layerflow-api` → process `worker` | BullMQ on `:9091` (health) |
+| Postgres | Neon (us-east-1) | `DATABASE_URL` + pgvector |
+| Redis | Upstash | `REDIS_URL` — job queue, exact cache, budgets |
+
+`fly.toml` (repo root) defines both process groups from one image built by
+`apps/api/Dockerfile` (repo root = build context). Deploys are fully scripted:
+
+```bash
+npm run deploy:api        # sets secrets, builds Docker image, deploys, scales app=1 worker=1
+npm run check:prod        # verifies frontend, DNS, API + worker health
+```
+
+> The Render blueprint and the VPS Docker stack are archived under
+> `scripts/legacy/` — Fly is the production path. Local dev still uses
+> `docker-compose.yml` (Postgres + Redis only).
 
 ---
 
-## 0. What you need before starting
+## 0. Prerequisites
 
 | Thing | Where | Notes |
 |---|---|---|
-| Repo | `github.com/Rohit94r/LayerFlow.In` | `render.yaml` is at the repo root |
+| Repo | `github.com/Rohit94r/LayerFlow.In` | |
+| `flyctl` | https://fly.io/docs/hands-on/install-flyctl/ | `flyctl auth login` once |
+| Docker | Docker Desktop / docker CLI | needed for the image build |
 | Neon PostgreSQL (+pgvector) | console.neon.tech | `DATABASE_URL` — add `?sslmode=require` |
-| Upstash Redis | console.upstash.com | `REDIS_URL` — `rediss://...` (TLS) |
-| Your secret values | local gitignored `.vercel.env` / `fly.env` | source of truth for env vars |
-| Google OAuth creds | console.cloud.google.com | same `CLIENT_ID`/`SECRET` as Vercel |
-| Render account | dashboard.render.com | GitHub login |
+| Upstash Redis | console.upstash.com | `REDIS_URL` — `rediss://…` (TLS) |
+| Secrets file | local gitignored `.vercel.env` | source of truth for env vars; `fly.env` is the byte-identical Fly copy |
 
-**Golden rule:** `BETTER_AUTH_SECRET` and `PROVIDER_KEYS_KEK` must be **identical**
-on Vercel and Render — sessions and BYOK keys decrypt only with the same values.
-
----
-
-## 1. Deploy the API + Worker (Render Blueprint)
-
-`render.yaml` defines **two** services that build the same image
-(`apps/api/Dockerfile`, repo-root context so workspace packages bundle):
-- `layerflow-api` (web, port 8787, health-checks `/health`, runs migrations pre-deploy)
-- `layerflow-api-worker` (background worker, `node dist/worker.js`)
-
-### Steps
-1. Render Dashboard → **New → Blueprint** → pick **Rohit94r/LayerFlow.In**.
-   Render reads `render.yaml` and creates both services.
-2. Render prompts for every `sync: false` env var. Paste from your `.vercel.env`:
-   - `DATABASE_URL` (with `?sslmode=require`), `REDIS_URL` (`rediss://…`)
-   - `BETTER_AUTH_SECRET` (**same as Vercel**), `BETTER_AUTH_URL=https://layerflow.dev`
-   - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (same as Vercel)
-   - `PROVIDER_KEYS_KEK` (**same as Vercel**)
-   - `WEB_URL=https://layerflow.dev`, `API_URL=https://api.layerflow.dev`
-   - `CORS_ORIGINS=https://layerflow.dev`
-   - `GROQ_API_KEY` / `GROQ_MODEL` / `GEMINI_API_KEY` / `GEMINI_MODEL` (free tiers — the "free first month")
-   - `RESEND_API_KEY` / `FROM_EMAIL`
-   - `SENTRY_DSN`, `COOKIE_DOMAIN=.layerflow.dev`
-   - Dodo + DeepSeek/Kimi/xAI: leave blank for now (add when launching billing / adding providers)
-3. Region is **Virginia** (blueprint) — same as Neon, keeps latency low.
-4. Plan: **Starter ($7/mo each = $14/mo total)**. Do **not** use free — the free
-   tier sleeps, which kills SSE streams and skips scheduled cron jobs.
-5. Click **Apply**. Build ≈ 5–10 min (Docker build + `db:migrate` + health check).
-6. Verify the API: `curl https://layerflow-api.onrender.com/health` → `{"status":"ok"}`
-7. Verify the worker: Render → `layerflow-api-worker` → Logs, look for
-   `repeatable jobs registered (usage-rollup, budget-alerts, weekly-digest, agent-maintenance)` and `worker started`.
-
-> Prefer Fly.io? `scripts/deploy-api-prod.sh` exists, but the Render blueprint is
-> one-click for **both** services and is recommended.
+**Golden rule:** `BETTER_AUTH_SECRET` and `PROVIDER_KEYS_KEK` must be
+**identical** on Vercel and Fly — sessions and BYOK keys decrypt only with the
+same values. And `BETTER_AUTH_URL` must always **equal** `WEB_URL`
+(`https://layerflow.dev`) — never `api.layerflow.dev`.
 
 ---
+
+## 1. Deploy the API + Worker (Fly)
+
+```bash
+npm run deploy:api
+```
+
+The script (`scripts/deploy-api-prod.sh`):
+1. Creates the `layerflow-api` app if needed.
+2. Sets **required** secrets → fails fast if missing: `DATABASE_URL`,
+   `REDIS_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`,
+   `GOOGLE_CLIENT_SECRET`, `PROVIDER_KEYS_KEK`, `WEB_URL`, `API_URL`,
+   `CORS_ORIGINS`.
+3. Sets **optional** secrets when present: `GROQ_*`, `GEMINI_*`,
+   `DEEPSEEK_*`, `KIMI_*`, `XAI_*`, `ELEVENLABS_*`, `RESEND_API_KEY`,
+   `FROM_EMAIL`, `SENTRY_DSN`, `COOKIE_DOMAIN`, `ADMIN_EMAILS`,
+   `DODO_PAYMENTS_*`, `DODO_PRODUCT_*`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`,
+   `R2_*`.
+4. Runs `flyctl deploy` → builds `apps/api/Dockerfile`, runs the DB migration
+   as the release command, then starts the machines.
+5. Scales **both process groups**: `fly scale count app=1 worker=1`.
+
+First deploy takes ~5–10 min (Docker build + install). Verify:
+
+```bash
+curl -s https://layerflow-api.fly.dev/health            # {"status":"ok",...}
+curl -s https://layerflow-api.fly.dev:9091/health       # worker alive
+# worker log should include: "worker health endpoint started" and
+# smoothWorker startup with registered repeatable jobs.
+```
 
 ## 2. Connect `api.layerflow.dev`
 
-1. Render → `layerflow-api` → Settings → **Add Custom Domain** → `api.layerflow.dev`.
-2. At your DNS registrar: add **CNAME** `api` → `layerflow-api.onrender.com`.
-3. Wait for DNS (2 min–1 hr); Render auto-issues SSL.
-4. Verify: `curl https://api.layerflow.dev/health` → `{"status":"ok"}`
+1. At your registrar: add **CNAME** `api` → `layerflow-api.fly.dev`.
+2. Then:
+   ```bash
+   flyctl certs add api.layerflow.dev --app layerflow-api
+   flyctl certs show api.layerflow.dev --app layerflow-api   # to confirm
+   ```
+3. Verify: `curl https://api.layerflow.dev/health` → `{"status":"ok"}`
 
----
+`api.layerflow.dev` is the API/worker host only — it is **never** used for the
+browser auth session (see below).
 
-## 3. Web + auth run same-origin on `layerflow.dev` (do NOT flip to `api.`)
+## 3. Web + auth run same-origin on `layerflow.dev`
 
-The Next.js host mounts Better Auth and the Hono API on the same origin
+Better Auth + the Hono API are mounted on the Next.js host
 (`layerflow.dev/api/auth/*`), so the web project must **not** point at
 `api.layerflow.dev`:
 
 1. Vercel → LayerFlow project → Settings → Environment Variables (Production):
-   - keep `BETTER_AUTH_URL=https://layerflow.dev` — **never** `api.layerflow.dev`
+   - `BETTER_AUTH_URL=https://layerflow.dev` — **never** `api.layerflow.dev`
    - `WEB_URL=https://layerflow.dev`, `API_URL=https://layerflow.dev`
-   - `NEXT_PUBLIC_API_URL` optional (browser always uses the current origin)
+   - `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET`, `PROVIDER_KEYS_KEK` —
+     **identical** to Fly
+   - `NEXT_PUBLIC_API_URL=https://layerflow.dev` (browser always uses current origin)
 2. **Redeploy Vercel** (env changes apply only to new deployments).
-3. Google Cloud Console → OAuth credentials (client
-   `928766099149-…apps.googleusercontent.com`) → **Authorized redirect URIs** →
-   add, exactly:
-   `https://layerflow.dev/api/auth/callback/google`
-   (no trailing slash, no `api.` prefix). `api.layerflow.dev` must **not** be
-   registered — it is never used for the browser OAuth flow.
-4. Verify: `curl https://layerflow.dev/api/auth-config` → the JSON must show
+3. Google Cloud Console → OAuth credentials
+   (`928766099149-…apps.googleusercontent.com`) → Authorized redirect URIs:
+   ```
+   https://layerflow.dev/api/auth/callback/google
+   ```
+   (exact — no trailing slash, no `api.` prefix). `api.layerflow.dev` must not
+   be registered; it is never used for the browser OAuth flow.
+4. Verify: `curl https://layerflow.dev/api/auth-config` → JSON must show
    `"authBaseUrl":"https://layerflow.dev"` and
-   `"googleRedirectUri":"https://layerflow.dev/api/auth/callback/google"`, else
-   the deployed web env still has a stale `BETTER_AUTH_URL`.
+   `"googleRedirectUri":"https://layerflow.dev/api/auth/callback/google"`.
 
----
+## 4. Provider keys (the "free first month")
 
-## 4. The "free first month" provider setup (no purchases needed)
-
-LayerFlow ships with **Groq + Gemini free-tier** platform keys. A brand-new user
-with **no provider key of their own** can `lf login` (browser) and chat
+Ship `GROQ_*` + `GEMINI_*` platform keys and a brand-new user can
+`lf login` (paste a platform key, or `lf login --browser`) and chat
 immediately — managed use is metered and plan-capped:
 
-- **Free plan** → only `groq` + `google` managed (the free tiers). BYOK always
-  allowed and unlimited.
+- **Free plan** → `groq` + `google` managed only. BYOK always allowed.
 - **Starter $5** → adds `deepseek`, `kimi`, `xai` managed.
 - **Pro $14** → adds `openai`, `anthropic`, `openrouter` managed.
 
-Enforcement is now wired (`services/ai/providers/keys.ts` +
-`services/chat/router.ts` + `services/keys/provider-keys.ts`). While billing is
-**not yet configured** (Dodo unset), the system runs in **beta mode** = all
-platform keys allowed — so the free-first month "just works" with only
-Groq+Gemini set, and you won't accidentally block anyone.
+Add DeepSeek/Kimi/xAI keys to your secrets file and re-run
+`npm run deploy:api` to push them (they are already in the optional list).
+While billing (Dodo) is unconfigured the system runs in **beta mode** = all
+platform keys allowed.
 
-### When ready to add the cheap Chinese providers
-Set on Render (and Vercel if you keep same-origin): `DEEPSEEK_API_KEY` +
-`DEEPSEEK_MODEL=deepseek-chat` ($10 deposit — cheapest strong coding model), and
-`KIMI_API_KEY` + `KIMI_MODEL=kimi-k2` (Moonshot). `render.yaml` already lists
-these keys. OpenAI/Anthropic only at Pro tier, revenue-linked.
+## 5. Post-deploy verification (run ALL — the proof it's real)
 
----
-
-## 5. Post-deploy verification (do ALL — this is the proof it's real)
-
-### API host
 ```bash
-curl https://api.layerflow.dev/health          # {"status":"ok"}
-curl https://api.layerflow.dev/api/lf-health   # auth env complete
+npm run check:prod          # site, DNS, API health, worker health, lf-health
 ```
 
-### The 5 features that just unblocked (worker now running)
-1. Sign in at layerflow.dev → **Rescue** → paste a dead chat → report completes
-   (not stuck on "queued").
-2. **Compare** → run a prompt across 3 models → results + ranking appear.
+Then, manually, the five "worker unblocked" features:
+1. Sign in at `layerflow.dev` → **Rescue** → paste a dead chat → report
+   completes (not stuck on "queued").
+2. **Compare** → run a prompt across models → results + ranking appear.
 3. **Agents** → run a template agent → steps + progress update live.
 4. Set a $1 budget → burn past it → next request is **blocked**.
 5. `lf sync` from the terminal → operations appear in the dashboard → devices
    list shows your CLI.
 
-### Gateway + terminal
+Gateway + terminal:
 ```bash
 curl https://api.layerflow.dev/v1/models -H "Authorization: Bearer lf_live_..."
-lf login          # browser device flow; approve on layerflow.dev/settings/devices
-lf chat "hello"   # streams via the gateway, managed (Groq/Gemini) key
-lf cost           # shows workspace budget cap + progress bar + plan status
+lf login            # paste platform key (or lf login --browser for device flow)
+lf chat "hello"     # streams via the gateway
+lf cost             # workspace budget cap + progress bar + plan status
 ```
-
----
 
 ## 6. Launch billing (Dodo Payments)
 
 1. https://app.dodopayments.com → create products:
    - "LayerFlow Starter" — $5/mo recurring → copy product ID
    - "LayerFlow Pro" — $14/mo recurring → copy product ID
-2. Set env on Render (API + worker) **and** Vercel: `DODO_PRODUCT_STARTER`,
+2. Add to `.vercel.env` + re-run `npm run deploy:api`: `DODO_PRODUCT_STARTER`,
    `DODO_PRODUCT_PRO`, `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`,
-   `DODO_PAYMENTS_ENVIRONMENT=test`.
+   `DODO_PAYMENTS_ENVIRONMENT=live_mode` (Vercel env too).
 3. Dodo dashboard → Webhooks → add `https://api.layerflow.dev/api/billing/webhook`.
 4. Test-purchase in Dodo **test mode** → webhook fires →
    `GET /api/billing/status` shows `starter`.
-5. Flip `DODO_PAYMENTS_ENVIRONMENT=live` + real card.
+5. Flip to live + real card.
 
-Once billing is configured, beta mode ends and plan-limit enforcement is live:
-free users are gated to Groq+Gemini managed; everything else requires BYOK or an
-upgrade.
+Once billing is configured, beta mode ends and plan-limit enforcement is live.
 
----
+## 7. Release the terminal (optional)
 
-## 7. Release the terminal (optional, after deploy)
-
-The device-flow login + brand cleanup need a new public binary:
+Device-flow login + brand cleanup need a new public binary:
 ```bash
 cd terminal
-git tag v0.2.15 && git push origin v0.2.15
+git tag v0.2.21 && git push origin v0.2.21
 # .github/workflows/release.yml → goreleaser publishes binaries + Homebrew formula
 ```
 Users update with `lf upgrade`. Source stays private.
@@ -180,65 +181,53 @@ Users update with `lf upgrade`. Source stays private.
 
 ## Environment variable matrix
 
-`S` = secret, never browser. Source of truth: your local `.vercel.env` + `render.yaml`.
+`S` = secret, never browser. Source of truth: your local `.vercel.env` =
+`fly.env` (byte-identical + `fly secrets import < fly.env` works too).
 
-| Variable | Vercel (web) | Render API | Render Worker | Notes |
-|---|---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | optional `https://layerflow.dev` | — | — | browser always uses same origin |
-| `DATABASE_URL` | ✅ | ✅ | ✅ | Neon, `?sslmode=require` |
-| `REDIS_URL` | ✅ | ✅ | ✅ | Upstash `rediss://` |
-| `BETTER_AUTH_SECRET` | ✅ | ✅ | ✅ | **identical everywhere** |
-| `BETTER_AUTH_URL` | ✅ `https://layerflow.dev` | ✅ | — | **== WEB_URL**; never `api.` |
-| `WEB_URL` / `API_URL` | ✅ `https://layerflow.dev` | `API_URL=https://api.layerflow.dev` | ✅ | |
-| `CORS_ORIGINS` | ✅ | ✅ | ✅ | `https://layerflow.dev` only — never `*` |
-| `PROVIDER_KEYS_KEK` | ✅ | ✅ | ✅ | **identical** — BYOK decryption |
-| `GOOGLE_CLIENT_ID/SECRET` | ✅ | ✅ | — | redirect URI `https://layerflow.dev/api/auth/callback/google` |
-| `GROQ_API_KEY` / `GROQ_MODEL` | ✅ | ✅ | ✅ | free-tier platform provider |
-| `GEMINI_API_KEY` / `GEMINI_MODEL` | ✅ | ✅ | ✅ | free-tier platform provider |
-| `DEEPSEEK_*` / `KIMI_*` / `XAI_*` | optional | optional | optional | add when ready (step 4) |
-| `RESEND_API_KEY` / `FROM_EMAIL` | ✅ | ✅ | ✅ | alerts + digests |
-| `DODO_PAYMENTS_*` / `DODO_PRODUCT_*` | ✅ | ✅ | ✅ | when launching billing (step 6) |
-| `SENTRY_DSN` | ✅ | ✅ | ✅ | |
-| `COOKIE_DOMAIN` | ✅ `.layerflow.dev` | ✅ | — | |
-| `ADMIN_EMAILS` | ✅ | ✅ | — | admin gating |
+| Variable | Vercel (web) | Fly (API/worker) | Notes |
+|---|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `https://layerflow.dev` | — | browser always uses same origin |
+| `DATABASE_URL` | ✅ | ✅ | Neon, `?sslmode=require` |
+| `REDIS_URL` | ✅ | ✅ | Upstash `rediss://` |
+| `BETTER_AUTH_SECRET` | ✅ | ✅ | **identical everywhere** |
+| `BETTER_AUTH_URL` | ✅ `https://layerflow.dev` | ✅ | **== WEB_URL**; never `api.` |
+| `WEB_URL` | ✅ `https://layerflow.dev` | ✅ | |
+| `API_URL` | ✅ `https://layerflow.dev` | ✅ | CLI/links; not for OAuth |
+| `CORS_ORIGINS` | ✅ | ✅ | `https://layerflow.dev` only |
+| `PROVIDER_KEYS_KEK` | ✅ | ✅ | **identical** — BYOK decryption |
+| `GOOGLE_CLIENT_ID/SECRET` | ✅ | ✅ | redirect `https://layerflow.dev/api/auth/callback/google` |
+| `GROQ_*` / `GEMINI_*` | ✅ | ✅ | free-tier platform providers |
+| `DEEPSEEK_*` / `KIMI_*` / `XAI_*` | optional | optional | add when ready |
+| `RESEND_API_KEY` / `FROM_EMAIL` | ✅ | ✅ | alerts + digests |
+| `DODO_PAYMENTS_*` / `DODO_PRODUCT_*` | ✅ | ✅ | when launching billing |
+| `SENTRY_DSN` | ✅ | ✅ | |
+| `COOKIE_DOMAIN` | ✅ `.layerflow.dev` | ✅ | |
+| `ADMIN_EMAILS` | ✅ | ✅ | admin gating |
+| `GMAIL_USER` / `GMAIL_APP_PASSWORD` | — | ✅ | AutoSubmit email |
+| `R2_*` | — | ✅ | file storage |
 
-Only `NEXT_PUBLIC_*` ever reaches the browser. Changing Vercel env vars requires a redeploy. Never commit real values.
-
----
-
-## Deployment order (memorize)
-
-**Render blueprint (API+worker) → DNS api.layerflow.dev → Vercel env flip →
-redeploy → Google OAuth redirect URI → verify E2E (5 features) → billing →
-release terminal**
-
-Never push the terminal marketing before sync + auth are verified on the new host.
+Only `NEXT_PUBLIC_*` ever reaches the browser. Changing Vercel env vars requires
+a redeploy. Never commit real values.
 
 ---
 
-## Bootstrap infrastructure cost
+## Deploy order (memorize)
 
-| Stage | Fixed cost/mo |
-|---|---|
-| Now → 100 users | Vercel $0–20 + Render Starter ×2 $14 + Neon $0–19 + Upstash $0 + Resend $0 ≈ **$14–53** |
-| 100–1,000 users | Render ×2 $50 + Neon $19 + Upstash $5–15 ≈ **$75–95** |
-| 1,000+ | split services + scale ≈ **$300–500** (profitable at 500 paid users) |
-
-**Golden rule: managed inference spend must never exceed 40% of MRR. BYOK is
-unlimited and free — it's the pressure valve.**
-
----
+**Fly deploy (`npm run deploy:api`) → DNS `api.layerflow.dev` + cert → Vercel
+env flip + redeploy → Google OAuth redirect URI → verify E2E (5 features) →
+billing → release terminal**
 
 ## Rollback & backup
 
-- **Deploy rollback:** Render keeps previous images — one-click rollback.
+- **Fly rollback:** each deploy keeps the previous image — `flyctl deploy
+  --image <previous>` or `fly rollback` inside the dashboard.
 - **DB:** Neon PITR on paid plans; snapshot a branch before each migration
   (`neon branches create`).
-- **Migrations:** drizzle generates the down path in git history — review before
-  prod; never hand-edit prod tables.
-- **Secrets:** `.vercel.env` is the only backup — keep a second encrypted copy in
-  a password manager. If lost, rotate everything.
-- **Terminal releases:** immutable binaries; a bad release = ship `v0.2.16`
+- **Migrations:** drizzle generates the down path in git history — review
+  before prod; never hand-edit prod tables.
+- **Secrets:** `.vercel.env` is the only backup — keep a second encrypted copy
+  in a password manager. If lost, rotate everything.
+- **Terminal releases:** immutable binaries; a bad release = ship `v0.2.22`
   (never edit a published tag).
 
 ---
@@ -253,7 +242,5 @@ unlimited and free — it's the pressure valve.**
 | DB down | `/health` 503, sign-in shows offline |
 | Budget exceeded | request blocked **before** the provider call |
 | Dodo webhook replay | idempotent (signed + deduped) |
-
----
 
 *That's the whole deployment. Once the worker is live, LayerFlow is real.*

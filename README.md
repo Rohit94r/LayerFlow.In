@@ -49,9 +49,12 @@ See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for the full "where is what" map.
 ├── apps/api/        Backend — Hono API + BullMQ worker, Postgres/Redis
 ├── packages/        Shared TS packages (contracts, model-registry)
 ├── terminal/        `lf` Go CLI — TUI, agent tools, MCP, daemon
-├── docs/            Product + engineering docs (plans/, ops/)
-├── scripts/         Deploy + ops shell scripts
-└── docker-compose*.yml / render.yaml / Dockerfile — deployment
+├── docs/            Product + engineering docs (plans/, ops/, archive/)
+├── scripts/         Deploy + ops shell scripts (Fly.io deploys, health checks)
+├── fly.toml         Fly.io app config — API (`app`) + worker process groups,
+│                    one image from apps/api/Dockerfile
+├── docker-compose.yml   Local Postgres 16 (pgvector) + Redis 7
+└── scripts/legacy/  Archived Render/VPS deploy assets (Fly is the path)
 ```
 
 ## Status
@@ -68,6 +71,15 @@ streaming chat, palette, sessions, model switcher, activity, help) and wired
 commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
 `doctor`, `rescue`, `cost`, `mcp list`, `daemon`, `upgrade`, `version`.
 
+**Working tree (next release):**
+- API + worker run on **Fly.io** from **one Docker image** — `fly.toml` defines
+  two process groups (`app` on :8787, `worker` on :9091), so rescue / compare /
+  agents / embeddings / usage-rollups actually process in production. Deploy is
+  fully scripted: `npm run deploy:api` sets secrets and scales `app=1 worker=1`;
+  `npm run check:prod` verifies site, DNS, API + worker health
+- Render blueprint and VPS Docker stack archived under `scripts/legacy/`
+- Deployment docs rewritten: `docs/DEPLOYMENT.md` is the Fly + Docker guide
+
 **Recent updates (v0.2.15):**
 - Terminal TUI: full premium redesign — title-rule brand hero, accent warm-up
   hint rows, hairline status-bar separator, role-marked chat messages
@@ -75,15 +87,15 @@ commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
   section labels + single-line rows across sessions, models, search, help,
   login and activity overlays
 - Terminal TUI: sessions list no longer wraps model chips onto a second line
-- CLI: `lf login` browser device-code flow (server-mints `lf_live_` key) with
-  `--api-key` paste fallback (`terminal/cmd/lf/login.go`)
+- CLI: `lf login` accepts a paste/`LF_API_KEY` platform key by default; pass
+  `--browser` for the server-minted device-code flow (`terminal/cmd/lf/login.go`)
 - CLI: honest per-command help text for `run`, `sessions`, `doctor`, `daemon`,
   `upgrade` (`terminal/cmd/lf/root.go`)
 - API: plan-limit enforcement for managed providers wired at all key-resolution
   points — gateway (`loadProviderApiKey`), chat failover (`buildCandidates`),
   and `GET /v1/models` availability (`listConfiguredProviders`) so a free user
   sees the free platform providers as available
-- API: DeepSeek/Kimi/xAI platform key env vars added to the Render Blueprint
+- API: DeepSeek/Kimi/xAI platform key env vars added to the deploy blueprint
 - Terminal: `AccessToken()` returns the device-login key
   (`terminal/internal/auth/auth.go`)
 
@@ -100,11 +112,10 @@ commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
 - API: plan-limit enforcement middleware (managed mode gated by subscription tier)
 - Dashboard: costs page empty state when no spend yet
 
-**Remaining work (deployment only):**
-- Deploy API + worker to a long-running host (VPS/Render/Fly) — the worker
-  cannot run on Vercel serverless, so rescue/compare/agents/embeddings jobs
-  enqueue but don't process in current production
-- Point `api.layerflow.dev` DNS at the deployed host
+**Remaining work (run the deploy — all scripted, no code changes left):**
+- Run `npm run deploy:api` once secrets are in `.vercel.env` (currently Fly
+  secrets set at first deploy; the worker starts together with the API)
+- Point `api.layerflow.dev` DNS at the Fly app + add the cert
 - Create Dodo Payments products and set product IDs in env
 - Configure DeepSeek (and later OpenAI/Anthropic) platform keys in env
 
@@ -153,7 +164,7 @@ commands: `login`, `logout`, `chat`, `run`, `sessions`, `sync`, `models`,
 | `packages/contracts/` | Zod schemas + shared types for API payloads (web ↔ API) |
 | `packages/model-registry/` | Typed catalog of providers, models, pricing (integer micro-dollars), capabilities |
 | `docker-compose.yml` | Local Postgres 16 (pgvector) + Redis 7 for the API |
-| `render.yaml` | Render Blueprint: `layerflow-api` (web) + `layerflow-api-worker` (worker) |
+| `fly.toml` | Fly.io app: API (`app`) + worker process groups, one image from `apps/api/Dockerfile` |
 | `docs/` | Architecture, status, deployment, security — start at `docs/README.md` |
 
 ## Getting started
@@ -222,7 +233,7 @@ and token saver tuning (`TOKEN_SAVER_INPUT_BUDGET`, `TOKEN_SAVER_KEEP_TURNS`,
 Stripe vars (`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`) are legacy in the
 template — billing is Dodo Payments.
 
-Frontend env (repo root, `.env.example` → `.env.local`):
+Frontend env (`apps/web/.env.example` → `apps/web/.env.local`):
 
 | Variable | Notes |
 | --- | --- |
@@ -378,34 +389,29 @@ npm run smoke --workspace @layerflow/api
 
 - **Local infra:** `docker-compose.yml` — Postgres 16 with pgvector and Redis 7,
   matching the `.env.example` defaults.
-- **API + worker:** `render.yaml` is the current production path. It builds
-  both services from the same image (`apps/api/Dockerfile`, repo root as build
-  context — the image serves both `dist/index.js` and `dist/worker.js`):
-  - `layerflow-api` (web, port 8787, health-checked on `/health`; runs
-    `npm run db:migrate --workspace @layerflow/api` as `preDeployCommand`)
-  - `layerflow-api-worker` (worker, `node apps/api/dist/worker.js`)
-  - Production env vars are prompted at deploy time (`sync: false` in
-    `render.yaml`): `DATABASE_URL`, `REDIS_URL`, `BETTER_AUTH_SECRET`,
-    `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-    `PROVIDER_KEYS_KEK`, `WEB_URL`, `API_URL`, `CORS_ORIGINS`,
-    `GROQ_API_KEY`, `GROQ_MODEL`, `GEMINI_API_KEY`, `GEMINI_MODEL`,
-    `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID`,
-    `RESEND_API_KEY`, `DODO_PAYMENTS_API_KEY`, `DODO_PAYMENTS_WEBHOOK_KEY`,
-    `DODO_PAYMENTS_ENVIRONMENT`, `DODO_PRODUCT_STARTER`, `DODO_PRODUCT_PRO`,
-    `SENTRY_DSN`, `COOKIE_DOMAIN`, `FROM_EMAIL`.
-- **Frontend:** deploy the repo root as a Next.js app (e.g. Vercel) with
+- **API + worker (Fly.io + Docker):** `fly.toml` is the production config. One
+  image built from `apps/api/Dockerfile` (repo root as build context) serves
+  two process groups:
+  - `app` — the Hono API on :8787 (public, health-checked on `/health`)
+  - `worker` — the BullMQ worker, health on :9091
+  - `npm run deploy:api` (`scripts/deploy-api-prod.sh`) creates the app, sets
+    required + optional secrets from `.vercel.env`, deploys (release command
+    runs `db:migrate`), and scales `app=1 worker=1`. Full guide:
+    `docs/DEPLOYMENT.md`.
+- **Frontend:** deploy `apps/web` as a Next.js app (e.g. Vercel) with
   `NEXT_PUBLIC_API_URL` set; the shared Hono app handles `/api/*` and `/v1/*`
   same-origin, or point it at the standalone API host.
-- **No `fly.toml` in-repo yet** — deployment is via the Render Blueprint. The
-  gitignored `fly.env` at the repo root is a local-only secret file used to
-  copy values into your host dashboard; it is never tracked or built.
+- **Wiring:** `BETTER_AUTH_URL` must equal `WEB_URL` (`https://layerflow.dev`);
+  Google OAuth redirect is exactly `https://layerflow.dev/api/auth/callback/google`.
+  Gitignored `.vercel.env` (and its byte-identical `fly.env`) hold live secrets —
+  never committed or built.
 
 ## Docs
 
 - `docs/README.md` — index/map of all docs (start here)
 - `docs/PRODUCT-STATUS.md` — honest snapshot: what's built, what works, what's left
-- `docs/DEPLOYMENT.md` — zero-to-production deployment guide
-- `docs/architecture.md`, `docs/tech-stack.md`, `docs/API.md`, `docs/SECURITY.md`
+- `docs/DEPLOYMENT.md` — zero-to-production deployment guide (Fly.io + Docker)
+- `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SECURITY.md`
 - `apps/api/README.md` — full endpoint map, budgets, seeding, conventions
 - `terminal/README.md` — CLI reference
 
@@ -419,7 +425,7 @@ Welcome! This section is specifically for anyone joining the LayerFlow team for 
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/layerflow-ai/layerflow
+git clone https://github.com/Rohit94r/LayerFlow.In
 npm install
 
 # 2. Start local infra (Postgres + Redis)
@@ -532,4 +538,4 @@ cd terminal && go build ./... && go test ./...
 cd apps/web && npm run build
 ```
 
-If you hit issues, check [`bugs.md`](./bugs.md) first — it documents all known issues and their resolutions.
+If you hit issues, check [`docs/BUG_LOG.md`](./docs/BUG_LOG.md) first — it documents all known issues and their resolutions.

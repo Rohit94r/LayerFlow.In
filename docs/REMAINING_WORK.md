@@ -5,7 +5,7 @@ is "done" claim from a passing build; each needs the verifying command run.
 
 ## API — genuinely still open (Redis/Neon-blocked; fail-closed path is the verified seam)
 
-- **Embedding retry-queue** (`FULL_PRODUCTION_AUDIT.md` line 122 "embedding retry"). Real code
+- **Embedding retry-queue** (`archive/FULL_PRODUCTION_AUDIT.md` line 122 "embedding retry"). Real code
   (`scheduleMemoryEmbedding`) falls back to inline+bytes when Redis is absent — verified live via
   vitest (OpenAI 429 → inline embed → 201). The DB-side half of the retry story is now built and
   tested: `findUnembeddedMemories` / `requeueUnembeddedMemories` (`apps/api/src/services/memory/embed.ts`)
@@ -39,12 +39,12 @@ is "done" claim from a passing build; each needs the verifying command run.
 
 ## Docs — real names to reconcile on the next verify pass (these strings exist on disk)
 
-- `FULL_PRODUCTION_AUDIT.md:22` RAG 6/10 score + "no source-doc re-index UI" clause —
+- `archive/FULL_PRODUCTION_AUDIT.md:22` RAG 6/10 score + "no source-doc re-index UI" clause —
   now stale; score should rise with the shipped re-index UI.
-- `FULL_PRODUCTION_AUDIT.md:42` PDF/DOCX "OPEN (processor mock)" — correct as-is (true gap)
-- `FULL_PRODUCTION_AUDIT.md:88` FIX-U2 `lf sync` nil-DB panic (P1) — still open
+- `archive/FULL_PRODUCTION_AUDIT.md:42` PDF/DOCX "OPEN (processor mock)" — correct as-is (true gap)
+- `archive/FULL_PRODUCTION_AUDIT.md:88` FIX-U2 `lf sync` nil-DB panic (P1) — still open
   (SEE: Terminal section; nil-DB panic RESOLVED, raw-SQL interpolation still open)
-- `FULL_PRODUCTION_AUDIT.md:122` RAG file ingestion — pipeline RESOLVED + **re-index UI now
+- `archive/FULL_PRODUCTION_AUDIT.md:122` RAG file ingestion — pipeline RESOLVED + **re-index UI now
   RESOLVED**; retry-queue DB-side resolved, live-Redis BNP observation remains.
 
 ## Acceptance evidence actually produced (real, reproducible)
