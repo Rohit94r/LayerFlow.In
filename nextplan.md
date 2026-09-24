@@ -113,11 +113,11 @@ a budget cap actually blocks over-spend in prod.
 1. **One-sentence positioning** — homepage rewrite: "Stop surprise AI bills. Cap
    spend per project in 2 minutes." (Appendix B of research.md). Remove the
    six-sentence pitch.
-2. **Freeze + hide + set the wedge content boundary** — hide from nav + pricing:
-   agents v2, compare, rescue, memory-extraction, community/marketplace, audio,
-   learning, autosubmit, team RBAC, "continue in terminal" handoff. Keep visible
-   ONLY: API keys, gateway / connect, costs + budgets, usage history, billing.
-   (Usage history intentionally stays — it's part of the spend story.)
+2. **Freeze + hide + set the wedge content boundary** — keep visible ONLY:
+   API keys, gateway / connect, costs + budgets, usage history, billing
+   (usage history stays — it's part of the spend story). Everything else comes
+   out of nav, pricing, and docs (the full keep/remove list is in the FINAL
+   section below).
 3. **Kill "free managed AI for everyone"** —
    - `services/chat/router.ts` + `services/ai/providers/keys.ts`: managed
      platform keys only for allowed plans; BYOK always free/unlimited.
@@ -157,8 +157,11 @@ a budget cap actually blocks over-spend in prod.
    `OPENAI_API_KEY=…`, point the base URL at the gateway, done.
 10. **Savings suggestion** — reuse the existing savings headers: "switch model
     Y→Z to save ~X%".
-11. **Trim `lf` CLI** to the wedge set — `login` (only for platform mode),
-    `cost`, `models`, `doctor`, `sync` sanity. Keep code; hide/hold the rest.
+11. **Trim `lf` CLI to the final wedge set** — see the FINAL section below. The
+    non-wedge commands are **removed from the shipped binary + help** (gone from
+    the terminal, recoverable from git): `run`, `sessions`, `rescue`, `mcp`,
+    `daemon`. This shrinks the binary, removes lint/maintenance surface, and
+    ends honest-stub confusion.
 
 ### Verification
 - Fresh user with ONLY `OPENAI_API_KEY` exported: `lf chat` works without login;
@@ -268,11 +271,55 @@ actually use?" with data.
 | `docs/ops/docker-commands.md` | Folded into DEPLOYMENT.md |
 | `apps/api/src/routes/workspace/NOTES.md` | Stray dev scratch |
 
-## What is frozen, not deleted (Phase 3 — hidden from UI)
+## FINAL — Terminal CLI: keep vs remove
+
+| Command | Decision | Why |
+|---|---|---|
+| `lf chat` | ✅ KEEP | Core — works with Managed, BYOK, AND Direct keys |
+| `lf models` | ✅ KEEP | Lists built-in + custom providers |
+| `lf cost` | ✅ KEEP | The spend-firewall number: cap, progress, plan |
+| `lf login` / `logout` | ✅ KEEP | Platform/managed mode (optional now, not required) |
+| `lf doctor` | ✅ KEEP | Local trust check (config, SQLite, keyring, git) |
+| `lf sync` | ✅ KEEP | Distribution + continuity, works |
+| `lf version` | ✅ KEEP | Build info |
+| `lf config` | 🆕 ADD | Providers: env keys, custom base URL, custom model (opencode/Cline parity) |
+| `lf upgrade` | ✅ KEEP (simplified) | Real check + installer URL; no self-update |
+| `lf run` | ❌ REMOVE | One-shot stub; agent loop frozen |
+| `lf sessions` | ❌ REMOVE | Stub `--open`; not wedge |
+| `lf rescue` | ❌ REMOVE | Rescue frozen |
+| `lf mcp *` | ❌ REMOVE | Stubs today; real MCP server ships server-side in Phase 4 |
+| `lf daemon` | ❌ REMOVE | Sync-queue is a no-op |
+
+## FINAL — Old features: keep vs remove (web + API)
+
+| Old feature | Decision | What happens |
+|---|---|---|
+| Agents v2 + 13 templates | ❌ OUT | Removed from nav, pricing, docs. Code dormant (kept in git, not shipped) |
+| Compare | ❌ OUT | Removed from nav/pricing/docs. Dormant code |
+| Rescue | ❌ OUT | Removed everywhere. Dormant code |
+| Memory / memory-extraction | ❌ OUT | Removed from nav/pricing/docs. Dormant code |
+| AI chat UI (full) | 🟡 SLIM | No standalone "chat" product page; gateway stays as the connect surface |
+| Community / marketplace | ❌ OUT | Removed from nav/pricing/docs. Dormant code |
+| Audio / learning | ❌ OUT | Removed from nav/pricing/docs. Dormant code |
+| Autosubmit (daemon | form-filler) | ❌ OUT | Removed from UI. Dormant code |
+| Team RBAC | ❌ OUT | Removed from nav/pricing/docs. Dormant code |
+| "Continue in Terminal" handoff | ❌ OUT | Removed |
+| Worker: agents/compare/rescue/memory processors | ❌ DISABLED | Stay in code; NOT enabled on the prod worker. Only rollups + budget-alerts + digest run |
+
+**What stays (the whole product now):** API keys · gateway (`/v1/*`) · BYOK
+vault + Direct keys · costs + budgets + alerts + digest · usage history ·
+billing · auth · onboarding/marketing/docs.
+
+## What is frozen, not deleted (Phase 3 — code kept on disk)
 
 Agents v2 · 13 templates · Compare · Rescue · memory extraction · community/
 marketplace · audio · learning · autosubmit · team RBAC · "continue in
 terminal" · SSE→WebSocket · PgBouncer · multi-region · folder refactor.
+
+> Frozen = code stays in `git` history but is **not shipped, not in nav, not in
+> pricing, not advertised**. It costs nothing to keep and everything to delete
+> (career value + future revival). The product the user sees is only the
+> "What stays" list above.
 
 ## What I will NOT build (per research.md)
 
