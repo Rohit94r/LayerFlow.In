@@ -24,8 +24,8 @@ COPY packages/model-registry/package.json ./packages/model-registry/
 # Full install (includes dev deps: tsup, drizzle-kit, tsx) for the build + release step.
 RUN npm ci
 
-# Copy sources needed to build the API bundle.
-COPY tsconfig.json ./
+# Copy sources needed to build the API bundle. tsup resolves the API's own
+# apps/api/tsconfig.json; there is deliberately no repo-root tsconfig.
 COPY packages ./packages
 COPY apps/api ./apps/api
 
