@@ -26,7 +26,9 @@ jobs:
     timeout-minutes: 25
     env:
       REGISTRY: ghcr.io
-      OWNER: ${{ github.repository_owner }}
+      # Lowercase form of the GitHub account — container repo names are case-insensitive
+      # only on the Docker Hub side; ghcr requires all-lowercase repository names.
+      OWNER: rohit94r
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -71,6 +73,6 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ env.OWNER }}/layerflow-lf:latest
-            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/{1}:{2}', env.OWNER, 'layerflow-lf', github.ref_name) || '' }}
+            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/layerflow-lf:{1}', env.OWNER, github.ref_name) || '' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
