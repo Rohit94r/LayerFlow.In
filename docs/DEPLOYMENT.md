@@ -2,8 +2,10 @@
 
 **Goal:** API + BullMQ worker running on **Fly.io** (built from the Docker
 image), web + auth same-origin on **Vercel**, DB on Neon, Redis on Upstash.
-When the worker is live, rescue / compare / agents / embeddings / rollups /
-alerts all actually run.
+
+> **Run it live:** the ordered, copy-paste runbook (auth → preflight → deploy →
+> DNS → Vercel → prove it → uptime monitors) is **`docs/PRODUCTION-GO.md`**.
+> This file is the reference; that file is the checklist.
 
 **Deployment model (one image, two processes):**
 

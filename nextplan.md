@@ -70,10 +70,18 @@ each phase ends with a **Learned today** block).
 
 ---
 
-## Phase 2 — Make production actually work (the #1 gap)
+## Phase 2 — Make production actually work (IN PROGRESS — local + prep done)
 
 > **Goal:** `api.layerflow.dev` is live on Fly, the worker processes the wedge
 > jobs, and the whole flow works in production, not just locally.
+>
+> **Status:** everything that doesn't need your credentials is done & committed —
+> `preflight-prod.sh` (required keys + golden URL rules + Vercel↔Fly parity,
+> wired into `deploy:api`), `npm run preflight:prod`, and the ordered runbook
+> `docs/PRODUCTION-GO.md` (Steps 0–7). The **4 live steps below remain for you**
+> (Fly auth + registrar + Vercel are yours): run `npm run preflight:prod` → then
+> `REMOTE_BUILD=1 npm run deploy:api` → DNS/CNAME + cert → `npm run check:prod`
+> → Vercel env + Google OAuth redirect → prove the gateway path → uptime monitors.
 
 ### Tasks
 1. **Run the real deploy** — `npm run deploy:api` (Fly app `layerflow-api`,

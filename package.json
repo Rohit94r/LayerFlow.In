@@ -19,6 +19,7 @@
     "test": "npm run test --workspace @layerflow/web",
     "test:api": "npm run test --workspace @layerflow/api",
     "check:prod": "bash scripts/check-production.sh",
+    "preflight:prod": "bash scripts/preflight-prod.sh",
     "deploy:api": "bash scripts/deploy-api-prod.sh"
   },
   "devDependencies": {

@@ -43,6 +43,12 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+# Run the production preflight FIRST: required keys, golden URL rules, and
+# Vercel/Fly parity. Aborts on any ✗ so we never push a broken secrets set.
+echo "Running production preflight…"
+bash "$ROOT/scripts/preflight-prod.sh" "$ENV_FILE"
+echo ""
+
 read_secret() {
   local key="$1"
   local val

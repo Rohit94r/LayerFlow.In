@@ -22,6 +22,10 @@ echo "=== api.layerflow.dev health ==="
 curl -sS -m 8 https://api.layerflow.dev/health 2>&1 || echo "api.layerflow.dev not reachable"
 
 echo ""
+echo "=== api.layerflow.dev liveness (/health/live) ==="
+curl -sS -m 8 https://api.layerflow.dev/health/live 2>&1 || echo "liveness FAIL"
+
+echo ""
 echo "=== Fly worker health (:9091) ==="
 curl -sS -m 8 https://layerflow-api.fly.dev:9091/health 2>&1 || echo "Fly worker not reachable / not scaled (run: fly scale count app=1 worker=1)"
 

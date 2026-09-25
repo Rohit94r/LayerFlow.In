@@ -24,6 +24,7 @@ docs. Historical planning notes and one-off audit snapshots live in
 | [PRODUCT-STATUS.md](PRODUCT-STATUS.md) | The honest feature/score snapshot |
 | [BUG_LOG.md](BUG_LOG.md) | Known bugs and their resolutions |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy + everyday ops commands |
+| [PRODUCTION-GO.md](PRODUCTION-GO.md) | The live-deploy runbook (run this in order) |
 
 ## Forward-looking docs (at the repo root)
 
