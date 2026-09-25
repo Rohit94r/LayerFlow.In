@@ -8,6 +8,12 @@ import { startTestDb } from "./helpers/integration-db";
  * data or race migrations.
  */
 
+// The Pro gate (`canExportCostReports`) only fires when billing is configured,
+// i.e. a Dodo API key is present. Set one before any getEnv()/db import so the
+// "blocks a free workspace" assertion is deterministic — locally it comes from
+// apps/api/.env, but CI has no secrets (beta mode would otherwise allow it).
+(process.env as Record<string, string>).DODO_PAYMENTS_API_KEY = "dodo_test_sk_cost_report";
+
 const stopDb = await startTestDb();
 
 describe("cost report export", () => {
