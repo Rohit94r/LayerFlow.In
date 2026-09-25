@@ -8,6 +8,7 @@ import {
 } from "@layerflow/contracts";
 import { requireAuth } from "../../middleware/auth";
 import { buildCurrentBudgetResponse, updateCurrentBudget } from "../../services/budgets/current";
+import { trackEvent } from "../../services/analytics/posthog";
 import { listBudgetScopes, replaceBudgetScopes } from "../../services/budgets/scopes";
 import type { AppEnv } from "../../types";
 
@@ -24,6 +25,16 @@ budgetsRouter.get("/current", async (c) => {
 budgetsRouter.put("/current", async (c) => {
   const body = updateBudgetRequestSchema.parse(await c.req.json());
   const response = await updateCurrentBudget(c.get("workspaceId"), body);
+  trackEvent({
+    distinctId: c.get("userId") || c.get("workspaceId"),
+    workspaceId: c.get("workspaceId"),
+    event: "budget.cap_updated",
+    properties: {
+      monthlyLimitUsd: Number((body.monthlyLimitMicro / 1_000_000).toFixed(6)),
+      hardBlock: body.hardBlock ?? undefined,
+      alertAtPct: body.alertAtPct ?? undefined,
+    },
+  });
   return c.json(response);
 });
 

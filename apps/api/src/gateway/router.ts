@@ -8,7 +8,13 @@ import { MODELS, PROVIDERS, type Provider } from "@layerflow/model-registry";
 import { Hono } from "hono";
 import { z } from "zod";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../cache/exact";
-import { releaseBudget, reserveBudget, settleBudget } from "../services/budgets/enforce";
+import {
+  currentPeriod,
+  releaseBudget,
+  reserveBudget,
+  settleBudget,
+} from "../services/budgets/enforce";
+import { trackEvent } from "../services/analytics/posthog";
 import { db } from "../db/client";
 import { gatewayLogs } from "../db/schema/gateway";
 import { requireApiKey } from "../middleware/api-key-auth";
@@ -51,6 +57,33 @@ gatewayRouter.use("/chat/completions", async (c, next) => {
   }
   await next();
 });
+
+/** Env-gated analytics: one event per completed provider call. */
+function trackGatewayRequest(args: {
+  workspaceId: string;
+  model: string;
+  provider: string;
+  keyMode: string;
+  actualCostMicro: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheHit?: boolean;
+}) {
+  trackEvent({
+    distinctId: args.workspaceId,
+    workspaceId: args.workspaceId,
+    event: "gateway.request",
+    properties: {
+      model: args.model,
+      provider: args.provider,
+      keyMode: args.keyMode,
+      costUsd: Number((args.actualCostMicro / 1_000_000).toFixed(6)),
+      inputTokens: args.inputTokens,
+      outputTokens: args.outputTokens,
+      cacheHit: args.cacheHit ?? false,
+    },
+  });
+}
 
 /** `x-lf-provider` header → a known provider (used with direct/no-store keys). */
 function providerFromHeader(header: string | undefined): Provider | null {
@@ -265,6 +298,16 @@ gatewayRouter.post("/chat/completions", async (c) => {
       cacheHit: true,
       actualCostMicro: 0,
     });
+    trackGatewayRequest({
+      workspaceId,
+      model,
+      provider,
+      keyMode: "cache",
+      actualCostMicro: 0,
+      inputTokens: 0,
+      outputTokens: 0,
+      cacheHit: true,
+    });
     await writeGatewayLog({
       workspaceId,
       apiKeyId,
@@ -300,12 +343,31 @@ gatewayRouter.post("/chat/completions", async (c) => {
     c.header("x-lf-loop-state", runaway.paused ? "paused" : `count:${runaway.count}`);
   }
 
-  const reservation = await reserveBudget({
-    workspaceId,
-    projectId,
-    apiKeyId,
-    estimateMicro,
-  });
+  let reservation;
+  try {
+    reservation = await reserveBudget({
+      workspaceId,
+      projectId,
+      apiKeyId,
+      estimateMicro,
+    });
+  } catch (err) {
+    // A hard budget hit is worth knowing about in analytics.
+    if (err instanceof AppError && err.code === "budget_exceeded") {
+      trackEvent({
+        distinctId: workspaceId,
+        workspaceId,
+        event: "budget.blocked",
+        properties: {
+          model,
+          provider,
+          projectId: projectId ?? null,
+          period: currentPeriod(),
+        },
+      });
+    }
+    throw err;
+  }
 
   const providerReq = {
     model,
@@ -379,6 +441,16 @@ gatewayRouter.post("/chat/completions", async (c) => {
               outputTokens: result.outputTokens,
             });
             settled = true;
+
+            trackGatewayRequest({
+              workspaceId,
+              model,
+              provider,
+              keyMode: keyInfo.source,
+              actualCostMicro: actualMicro,
+              inputTokens: result.inputTokens,
+              outputTokens: result.outputTokens,
+            });
 
             emit(
               makeChunk({}, "stop", {
@@ -470,6 +542,16 @@ gatewayRouter.post("/chat/completions", async (c) => {
       provider,
       model,
       source: "gateway",
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+    });
+
+    trackGatewayRequest({
+      workspaceId,
+      model,
+      provider,
+      keyMode: keyInfo.source,
+      actualCostMicro: actualMicro,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
     });

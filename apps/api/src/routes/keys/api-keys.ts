@@ -11,6 +11,7 @@ import {
   listWorkspaceApiKeys,
   revokeWorkspaceApiKey,
 } from "../../services/keys/api-keys";
+import { trackEvent } from "../../services/analytics/posthog";
 import type { AppEnv } from "../../types";
 
 export const apiKeysRouter = new Hono<AppEnv>();
@@ -20,6 +21,12 @@ apiKeysRouter.use(requireAuth);
 apiKeysRouter.post("/", async (c) => {
   const body = createApiKeyRequestSchema.parse(await c.req.json());
   const { key, secret } = await createWorkspaceApiKey(c.get("workspaceId"), body);
+  trackEvent({
+    distinctId: c.get("userId") || c.get("workspaceId"),
+    workspaceId: c.get("workspaceId"),
+    event: "api_key_created",
+    properties: { name: key.name ?? null, projectId: key.projectId ?? null },
+  });
   const response: CreateApiKeyResponse = { key, secret };
   return c.json(response, 201);
 });

@@ -222,9 +222,10 @@ a budget cap actually blocks over-spend in prod.
 > **Goal:** you can get paid safely, and users have the features that make them
 > stay: reports, loop protection, MCP, analytics.
 
-> **Status:** items 2 (cost reports), 3 (runaway loop detector) and 4 (LayerFlow
-> MCP server) are **implemented + committed**. Remaining: 1 (pricing live, user
-> action), 5 (PostHog), 6 (security hardening), 7 (SEO pages), 8 (legal).
+> **Status:** items 2 (cost reports), 3 (runaway loop detector), 4 (LayerFlow
+> MCP server) and 5 (PostHog — env-gated, server-side capture) are **implemented
+> + committed**. Remaining: 1 (pricing live, user action), 6 (security
+> hardening), 7 (SEO pages), 8 (legal).
 
 ### Tasks
 1. **Simplified pricing live** — Free ₹0 / Pro ~$9/mo (test ₹ pricing too).

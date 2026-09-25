@@ -5,6 +5,7 @@ import { logger } from "../config/logger";
 import { db } from "../db/client";
 import * as schema from "../db/schema";
 import { onboardNewUser } from "../services/onboarding";
+import { trackEvent } from "../services/analytics/posthog";
 import {
   buildTrustedOrigins,
   deriveCookieDomain,
@@ -121,10 +122,30 @@ export const auth = betterAuth({
         after: async (user) => {
           try {
             await onboardNewUser(user);
+            trackEvent({
+              distinctId: user.id,
+              event: "user_signed_up",
+              properties: {
+                name: user.name ?? null,
+                email: user.email ?? null,
+              },
+            });
           } catch (err) {
             // Don't fail the signup; requireAuth also self-heals missing workspaces.
             logger.error({ err, userId: user.id }, "onboarding after signup failed");
           }
+        },
+      },
+    },
+    session: {
+      create: {
+        // Every login (email/password or OAuth) after the sign-up itself.
+        after: async (session) => {
+          trackEvent({
+            distinctId: session.userId,
+            event: "user_signed_in",
+            properties: { authMethod: "password_or_oauth" },
+          });
         },
       },
     },

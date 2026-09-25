@@ -101,6 +101,10 @@ export const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   /** Override trace sampling (0..1). Defaults: 0.1 in production, 0 elsewhere. */
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+  /** PostHog (analytics). Without a key the analytics service is a no-op. */
+  POSTHOG_API_KEY: z.string().optional(),
+  /** PostHog host, e.g. https://us.i.posthog.com (default). */
+  POSTHOG_HOST: z.url().optional(),
   /**
    * Redis fail-closed policy for rate limiters and budget reservations.
    * "deny" (production default): requests blocked (503) when Redis unreachable.
