@@ -17,30 +17,31 @@ import { getEnv } from "../config/env";
 const IV_LENGTH = 12; // GCM standard nonce size
 const AUTH_TAG_LENGTH = 16;
 
-function kek(): Buffer {
-  return Buffer.from(getEnv().PROVIDER_KEYS_KEK, "hex");
+function kek(kekHex?: string): Buffer {
+  return Buffer.from(kekHex ?? getEnv().PROVIDER_KEYS_KEK, "hex");
 }
 
 /**
  * Encrypt a secret. Output format (base64): iv || authTag || ciphertext.
  * A fresh random IV per call means encrypting the same value twice yields
- * different ciphertexts.
+ * different ciphertexts. Pass `kekHex` to encrypt under a specific key
+ * (used by provider-key vault rotation); defaults to the env KEK.
  */
-export function encryptSecret(plaintext: string): string {
+export function encryptSecret(plaintext: string, kekHex?: string): string {
   const iv = randomBytes(IV_LENGTH);
-  const cipher = createCipheriv("aes-256-gcm", kek(), iv);
+  const cipher = createCipheriv("aes-256-gcm", kek(kekHex), iv);
   const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const authTag = cipher.getAuthTag();
   return Buffer.concat([iv, authTag, ciphertext]).toString("base64");
 }
 
 /** Decrypt a value produced by encryptSecret. Throws if tampered or wrong key. */
-export function decryptSecret(encoded: string): string {
+export function decryptSecret(encoded: string, kekHex?: string): string {
   const raw = Buffer.from(encoded, "base64");
   const iv = raw.subarray(0, IV_LENGTH);
   const authTag = raw.subarray(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
   const ciphertext = raw.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
-  const decipher = createDecipheriv("aes-256-gcm", kek(), iv);
+  const decipher = createDecipheriv("aes-256-gcm", kek(kekHex), iv);
   decipher.setAuthTag(authTag);
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
 }

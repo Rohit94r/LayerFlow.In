@@ -8,6 +8,7 @@ import { MODELS, PROVIDERS, type Provider } from "@layerflow/model-registry";
 import { Hono } from "hono";
 import { z } from "zod";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../cache/exact";
+import { getEnv } from "../config/env";
 import {
   currentPeriod,
   releaseBudget,
@@ -352,8 +353,9 @@ gatewayRouter.post("/chat/completions", async (c) => {
       estimateMicro,
     });
   } catch (err) {
+    const hardBlock = err instanceof AppError && err.code === "budget_exceeded";
     // A hard budget hit is worth knowing about in analytics.
-    if (err instanceof AppError && err.code === "budget_exceeded") {
+    if (hardBlock) {
       trackEvent({
         distinctId: workspaceId,
         workspaceId,
@@ -365,8 +367,17 @@ gatewayRouter.post("/chat/completions", async (c) => {
           period: currentPeriod(),
         },
       });
+      throw err;
     }
-    throw err;
+    // Fail-open is OPT-IN and only covers LayerFlow's own availability
+    // (Redis down / 503 budget_unavailable). A real 402 budget_exceeded
+    // always blocks regardless. Pass through unmeasured, marked.
+    if (getEnv().GATEWAY_FAIL_OPEN === "allow") {
+      reservation = null;
+      c.header("x-lf-fail-open", "1");
+    } else {
+      throw err;
+    }
   }
 
   const providerReq = {
@@ -431,15 +442,17 @@ gatewayRouter.post("/chat/completions", async (c) => {
                 ? (computeCostMicro(model, result.inputTokens, result.outputTokens) ??
                   estimateMicro)
                 : estimateMicro;
-            await settleBudget({
-              reservationId: reservation.reservationId,
-              actualMicro,
-              provider,
-              model,
-              source: "gateway",
-              inputTokens: result.inputTokens,
-              outputTokens: result.outputTokens,
-            });
+            if (reservation) {
+              await settleBudget({
+                reservationId: reservation.reservationId,
+                actualMicro,
+                provider,
+                model,
+                source: "gateway",
+                inputTokens: result.inputTokens,
+                outputTokens: result.outputTokens,
+              });
+            }
             settled = true;
 
             trackGatewayRequest({
@@ -478,7 +491,7 @@ gatewayRouter.post("/chat/completions", async (c) => {
               requestId,
             });
           } catch (err) {
-            if (!settled) {
+            if (!settled && reservation) {
               await releaseBudget({ reservationId: reservation.reservationId }).catch(
                 () => undefined,
               );
@@ -536,15 +549,17 @@ gatewayRouter.post("/chat/completions", async (c) => {
     const actualMicro =
       computeCostMicro(model, result.inputTokens, result.outputTokens) ?? estimateMicro;
 
-    await settleBudget({
-      reservationId: reservation.reservationId,
-      actualMicro,
-      provider,
-      model,
-      source: "gateway",
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-    });
+    if (reservation) {
+      await settleBudget({
+        reservationId: reservation.reservationId,
+        actualMicro,
+        provider,
+        model,
+        source: "gateway",
+        inputTokens: result.inputTokens,
+        outputTokens: result.outputTokens,
+      });
+    }
 
     trackGatewayRequest({
       workspaceId,
@@ -605,7 +620,9 @@ gatewayRouter.post("/chat/completions", async (c) => {
     setSavingsHeaders(c, savings);
     return c.json(completion);
   } catch (err) {
-    await releaseBudget({ reservationId: reservation.reservationId });
+    if (reservation) {
+      await releaseBudget({ reservationId: reservation.reservationId });
+    }
     const status = err instanceof AppError ? err.status : 502;
     const code = err instanceof AppError ? err.code : "provider_error";
     await writeGatewayLog({

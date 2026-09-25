@@ -7,6 +7,7 @@ import { providerKeys } from "../../db/schema/gateway";
 import { AppError } from "../../middleware/app-error";
 import { canUseManagedProvider } from "../../middleware/plan-limits";
 import { platformApiKey } from "../ai/providers";
+import { writeAuditLog } from "../audit/log";
 import { decryptSecret, encryptSecret } from "../crypto";
 
 function toProviderKeyDto(row: typeof providerKeys.$inferSelect): ProviderKey {
@@ -103,6 +104,13 @@ export async function createProviderKey(
       baseUrl,
     })
     .returning();
+
+  void writeAuditLog({
+    workspaceId,
+    actorType: "api",
+    action: "provider_key.created",
+    detail: { provider, keyHint: hintFromSecret(body.secret) },
+  });
   return toProviderKeyDto(row);
 }
 
@@ -127,6 +135,13 @@ export async function revokeProviderKey(workspaceId: string, id: string): Promis
     )
     .returning();
   if (!row) throw new AppError(404, "not_found", "Provider key not found");
+
+  void writeAuditLog({
+    workspaceId,
+    actorType: "api",
+    action: "provider_key.revoked",
+    detail: { provider: row.provider, keyHint: row.keyHint, keyId: row.id },
+  });
   return toProviderKeyDto(row);
 }
 
@@ -141,7 +156,54 @@ export async function loadProviderSecret(
     orderBy: (k, { desc }) => [desc(k.createdAt)],
   });
   if (!row) return null;
+
+  void writeAuditLog({
+    workspaceId,
+    actorType: "api",
+    action: "provider_key.decrypted",
+    detail: { provider, keyHint: row.keyHint, keyId: row.id },
+  });
   return decryptSecret(row.ciphertext);
+}
+
+/**
+ * Rotate the vault: re-encrypt every non-revoked provider key under a new KEK
+ * (plaintext stays in memory only; never touches the DB or logs). Audit one
+ * system event for the rotation. The operator swaps PROVIDER_KEYS_KEK to the
+ * new value after this returns — until then, rows are under the NEW key, so
+ * swap env + re-deploy immediately after.
+ */
+export async function rotateProviderKeys(
+  newKekHex: string,
+): Promise<{ rotated: number; failed: number }> {
+  if (!/^[0-9a-fA-F]{64}$/.test(newKekHex)) {
+    throw new AppError(400, "invalid_kek", "newKekHex must be 64 hex chars (use `openssl rand -hex 32`)");
+  }
+  const rows = await db.query.providerKeys.findMany({
+    where: (k, { isNull }) => isNull(k.revokedAt),
+  });
+
+  let rotated = 0;
+  let failed = 0;
+  for (const row of rows) {
+    try {
+      const plaintext = decryptSecret(row.ciphertext);
+      await db
+        .update(providerKeys)
+        .set({ ciphertext: encryptSecret(plaintext, newKekHex) })
+        .where(eq(providerKeys.id, row.id));
+      rotated += 1;
+    } catch {
+      failed += 1;
+    }
+  }
+
+  await writeAuditLog({
+    actorType: "system",
+    action: "provider_keys.vault_rotated",
+    detail: { rotated, failed },
+  });
+  return { rotated, failed };
 }
 
 /**

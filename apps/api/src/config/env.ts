@@ -112,6 +112,16 @@ export const envSchema = z.object({
    */
   REDIS_DOWN_MODE: z.enum(["allow", "deny"]).optional(),
   /**
+   * Budget-enforcement fail-open for /v1/chat/completions.
+   * "deny" (recommended): LayerFlow's own failures surface as 503 so the
+   * caller sees the outage but nothing passes through unmeasured.
+   * "allow": when budget enforcement is UNREACHABLE (Redis down / 503
+   * budget_unavailable, not a real 402 budget_exceeded), the request still
+   * passes through to the provider unmeasured and is marked x-lf-fail-open.
+   * A genuine budget_exceeded (402) ALWAYS blocks regardless of this flag.
+   */
+  GATEWAY_FAIL_OPEN: z.enum(["deny", "allow"]).default("deny"),
+  /**
    * Cookie domain for cross-subdomain sessions in production
    * (e.g. `.layerflow.dev` so layerflow.dev and api.layerflow.dev share auth).
    * Derived from WEB_URL when unset.
@@ -171,6 +181,11 @@ let cached: Env | undefined;
 export function getEnv(): Env {
   if (!cached) cached = parseEnv(process.env);
   return cached;
+}
+
+/** Test seam — clears the memo so the next getEnv() re-validates process.env. */
+export function __resetEnvForTests(): void {
+  cached = undefined;
 }
 
 /**

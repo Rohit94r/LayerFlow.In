@@ -2,6 +2,7 @@ import {
   boolean,
   index,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -86,6 +87,26 @@ export const gatewayLogs = pgTable(
     ...createdAtOnly,
   },
   (t) => [index("gateway_logs_workspace_created_idx").on(t.workspaceId, t.createdAt)],
+);
+
+/**
+ * Security audit log (append-only): vault access, key lifecycle, and rotation
+ * events. Loose workspace reference (no FK) so audit writes never fail.
+ */
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: idColumn("al"),
+    workspaceId: text("workspace_id"),
+    /** "user" | "system" | "api" — who/what triggered the event. */
+    actorType: text("actor_type").$type<"user" | "system" | "api">().notNull(),
+    actorId: text("actor_id"),
+    /** e.g. "provider_key.created", "provider_key.vault_rotated". */
+    action: text("action").notNull(),
+    detail: jsonb("detail").$type<Record<string, unknown>>().notNull().default({}),
+    ...createdAtOnly,
+  },
+  (t) => [index("audit_logs_workspace_created_idx").on(t.workspaceId, t.createdAt)],
 );
 
 export const rateLimitPolicies = pgTable(

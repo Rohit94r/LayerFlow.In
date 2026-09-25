@@ -115,12 +115,20 @@ and the `/v1/models` `available` flag reflects plan-allowed managed providers.
 ### BYOK vault — ✅ 🔒
 AES-256-GCM with KEK from `PROVIDER_KEYS_KEK` (`services/crypto.ts`, tests incl.
 unicode). Keys never returned to browser (only `keyHint`). Per-workspace.
+Now with **KEK rotation** (`POST /api/admin/security/rotate-provider-keys`
+re-encrypts all rows; then swap env + redeploy) and an **append-only
+`audit_logs`** trail of `provider_key.{created,decrypted,revoked}` +
+`provider_keys.vault_rotated` (best-effort writes, reads via
+`GET /api/admin/security/audit`).
 
 ### Gateway (OpenAI-compatible) — ✅ (same-origin)
 `gateway/router.ts`: `requireApiKey` + 60/min rate limit · budget reserve/settle
 (atomic Redis Lua) · exact-match cache · gateway_logs · savings headers ·
-`/v1/improve` · `/v1/usage`. Mounted at `layerflow.dev/v1/*`. Needs own domain +
-SDK conformance test before marketing "OpenAI-compatible".
+`/v1/improve` · `/v1/usage`. **Fail-open policy**: `GATEWAY_FAIL_OPEN` — default
+`deny` (enforcement outages → 503, nothing passes unmeasured); `allow` passes
+through only on `budget_unavailable` (503), marked `x-lf-fail-open: 1`, and a
+real 402 `budget_exceeded` always blocks. Mounted at `layerflow.dev/v1/*`. Needs
+own domain + SDK conformance test before marketing "OpenAI-compatible".
 
 ### Budgets & cost — ✅
 Hard caps with Redis reserve/settle/release · scopes (workspace/project/session)

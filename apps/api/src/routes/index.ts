@@ -40,6 +40,7 @@ import { syncRouter } from "./sync/sync";
 import { terminalRouter } from "./terminal/terminal";
 import { teamRouter } from "./team/team";
 import { adminRouter } from "./admin/analytics";
+import { adminSecurityRouter } from "./admin/security";
 import { wsRouter } from "./ws/ws";
 import { deviceAuthRouter } from "./auth/device";
 import { autosubmitRouter } from "./autosubmit/autosubmit";
@@ -49,6 +50,7 @@ import { autosubmitRouter } from "./autosubmit/autosubmit";
  */
 export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/admin", adminRouter);
+  app.route("/api/admin", adminSecurityRouter);
   app.route("/api/autosubmit", autosubmitRouter);
   app.route("/api/report", reportsRouter);
   app.route("/api/mcp", mcpRouter);
