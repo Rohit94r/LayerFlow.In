@@ -45,6 +45,12 @@ export default function Navbar() {
           >
             Blog
           </Link>
+          <Link
+            href="/pricing/models"
+            className="rounded-[var(--radius-pill)] px-3 py-1.5 text-[13px] text-text-secondary no-underline transition-colors hover:bg-orange-500/10 hover:text-orange-600 motion-reduce:transition-none"
+          >
+            Model prices
+          </Link>
         </div>
         <Link
           className="group ml-2 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-[var(--radius-pill)] bg-accent py-2 pl-4 pr-2.5 text-[13px] text-white no-underline shadow-[0_2px_10px_rgba(249,115,22,0.4),inset_0_1px_0_rgba(255,255,255,0.3)] transition-all hover:-translate-y-px hover:bg-accent-deep hover:shadow-[0_6px_22px_rgba(249,115,22,0.5),inset_0_1px_0_rgba(255,255,255,0.3)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"

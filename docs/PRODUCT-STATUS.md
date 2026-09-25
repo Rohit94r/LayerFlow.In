@@ -37,6 +37,10 @@ See `DEPLOYMENT.md`.
 ## What IS live and working (production, layerflow.dev)
 
 1. **Full website** — marketing, blog, pricing, docs on Vercel; all routes build.
+   Programmatic **model price-comparison SEO pages** (`/pricing/models`,
+   `/pricing/models/compare`, and one SSG page per provider) are rendered from
+   the same model-registry the gateway prices against (single source of truth),
+   linked in the sitemap + navbar.
 2. **Google sign-in** — Better Auth, real sessions.
 3. **Entire API on Vercel** — Hono mounted inside Next at `/api/*` + `/v1/*`
    (same-origin). Auth, chat, prompts, sessions, memory, search, budgets, keys,

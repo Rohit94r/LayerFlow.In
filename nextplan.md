@@ -223,10 +223,10 @@ a budget cap actually blocks over-spend in prod.
 > stay: reports, loop protection, MCP, analytics.
 
 > **Status:** items 2 (cost reports), 3 (runaway loop detector), 4 (LayerFlow
-> MCP server), 5 (PostHog — env-gated, server-side capture) and 6 (security
-> hardening — vault KEK rotation, audit log, fail-open) are **implemented
-> + committed**. Remaining: 1 (pricing live, user action), 7 (SEO pages), 8
-> (legal).
+> MCP server), 5 (PostHog — env-gated, server-side capture), 6 (security
+> hardening — vault KEK rotation, audit log, fail-open) and 7 (price-comparison
+> SEO pages from the model registry) are **implemented + committed**. Remaining:
+> 1 (pricing live, user action), 8 (legal).
 
 ### Tasks
 1. **Simplified pricing live** — Free ₹0 / Pro ~$9/mo (test ₹ pricing too).
