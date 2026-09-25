@@ -1,6 +1,7 @@
 import type { Hono } from "hono";
 import { gatewayRouter } from "../gateway/router";
 import type { AppEnv } from "../types";
+import { mcpRouter } from "../mcp/server";
 import { budgetsRouter } from "./budgets/budgets";
 import { savingsRouter, usageRouter } from "./budgets/usage";
 import { collectionsRouter } from "./community/collections";
@@ -50,6 +51,7 @@ export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/admin", adminRouter);
   app.route("/api/autosubmit", autosubmitRouter);
   app.route("/api/report", reportsRouter);
+  app.route("/api/mcp", mcpRouter);
   app.route("/api/workspaces", workspacesRouter);
   app.route("/api/domains", domainsRouter);
   app.route("/api/projects", projectsRouter);

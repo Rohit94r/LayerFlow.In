@@ -81,12 +81,16 @@ type ProviderConfig struct {
 
 // MCPServerConfig holds an MCP server configuration.
 type MCPServerConfig struct {
-	// Command is the server command.
+	// Command is the server command (stdio servers).
 	Command string `yaml:"command"`
 	// Args are the server command arguments.
 	Args []string `yaml:"args"`
 	// Env holds environment variables for the server process.
 	Env map[string]string `yaml:"env"`
+	// URL is the server URL (http servers).
+	URL string `yaml:"url"`
+	// Headers are extra HTTP headers sent with http requests (e.g. Authorization).
+	Headers map[string]string `yaml:"headers"`
 }
 
 // defaults returns a Config populated with built-in defaults.

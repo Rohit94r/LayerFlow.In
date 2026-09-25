@@ -222,6 +222,10 @@ a budget cap actually blocks over-spend in prod.
 > **Goal:** you can get paid safely, and users have the features that make them
 > stay: reports, loop protection, MCP, analytics.
 
+> **Status:** items 2 (cost reports), 3 (runaway loop detector) and 4 (LayerFlow
+> MCP server) are **implemented + committed**. Remaining: 1 (pricing live, user
+> action), 5 (PostHog), 6 (security hardening), 7 (SEO pages), 8 (legal).
+
 ### Tasks
 1. **Simplified pricing live** — Free ₹0 / Pro ~$9/mo (test ₹ pricing too).
    Update `services/billing/plans.ts` (Dodo product IDs in env), run a **test
@@ -233,17 +237,6 @@ a budget cap actually blocks over-spend in prod.
 4. **LayerFlow MCP server** — a small MCP server so Claude Code/Cursor can ask
    "how much did I spend this week?" and "set a cap on project X". (Builds your
    MCP skill.)
-5. **PostHog analytics** — wire web + API events (signups, keys minted,
-   requests, caps hit). Free tier.
-6. **Security hardening** — BYOK vault key-rotation + audit-log access; verify
-   webhook signature/idempotency (already done — re-verify); add a **fail-open**
-   option in the gateway (if LayerFlow is down, pass through). **Direct/no-store
-   mode audit:** prove provider keys never reach DB, logs, or gateway logs; add
-   a key-scrubber test. Hard cap the demo-mode daily limit.
-7. **Price-comparison SEO pages** — "OpenAI vs Claude vs Gemini price per 1M
-   tokens", "how to cap OpenAI spend" (programmatic SEO, free traffic).
-8. **Legal basics** — privacy policy + terms; DPDP-aware prompt/usage logging
-   ("no-log" option).
 
 ### Verification
 A real test purchase completes and the webhook adds the Pro plan. A runaway loop

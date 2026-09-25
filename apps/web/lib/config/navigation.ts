@@ -13,6 +13,7 @@ import {
   KeyRound,
   CreditCard,
   Settings,
+  Zap,
 } from "@/components/ui/icons";
 import type { LucideIcon } from "@/components/ui/icons";
 
@@ -41,6 +42,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/models", label: "Models", description: "Gateway models + BYOK", icon: Cpu },
       { href: "/keys", label: "Keys", description: "Gateway keys + provider keys", icon: KeyRound },
+      { href: "/integrations/mcp", label: "MCP", description: "Spend tools for agents", icon: Zap },
     ],
   },
   {

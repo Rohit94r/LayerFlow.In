@@ -62,6 +62,7 @@ func init() {
 		newVersionCmd(),
 		newUpgradeCmd(),
 		newContentCmd(),
+		newMcpCmd(),
 	)
 }
 

@@ -25,12 +25,13 @@ const (
 
 // Server describes an MCP server and its available tools.
 type Server struct {
-	Name  string     `json:"name"`
-	Kind  string     `json:"kind"` // stdio, sse, http
-	Ref   string     `json:"ref"`  // binary path or URL
-	Tools []ToolInfo `json:"tools"`
-	state ConnState
-	mu    sync.Mutex
+	Name    string            `json:"name"`
+	Kind    string            `json:"kind"` // stdio, sse, http
+	Ref     string            `json:"ref"`  // binary path or URL
+	Headers map[string]string `json:"headers,omitempty"`
+	Tools   []ToolInfo        `json:"tools"`
+	state   ConnState
+	mu      sync.Mutex
 }
 
 // ToolInfo describes a single tool exposed by an MCP server.
@@ -327,6 +328,9 @@ func callHTTP(ctx context.Context, s *Server, tool string, args any) (*CallResul
 
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Accept", "application/json")
+	for k, v := range s.Headers {
+		httpReq.Header.Set(k, v)
+	}
 
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {
@@ -376,6 +380,9 @@ func healthHTTP(ctx context.Context, s *Server) (Health, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.Ref+"/health", nil)
 	if err != nil {
 		return Health{Status: "error", Latency: time.Since(start).Milliseconds()}, err
+	}
+	for k, v := range s.Headers {
+		req.Header.Set(k, v)
 	}
 
 	resp, err := httpClient.Do(req)

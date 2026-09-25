@@ -154,7 +154,11 @@ community (profiles/collections/clone/social) 🟡 built, soft-launched.
 | `lf rescue` | ✅ | Local SQLite → JSON continue-pack export (portability; not a gateway call) |
 | `lf doctor` | 🟡 | Real local checks (config, SQLite, keyring, git, audit chain); no gateway HTTP probe — use `lf models` for that |
 | `lf mcp list` | ✅ | Lists configured MCP servers from config |
-| `lf mcp add/remove/health` | 🔴 | Honest stubs (`stubNotice`) |
+| `lf mcp layerflow` | ✅ | Registers the hosted LayerFlow MCP server (URL + Bearer key) |
+| `lf mcp add` | ✅ | Registers any HTTP/stdio MCP server (URL + headers or command) |
+| `lf mcp remove` | ✅ | Removes a configured MCP server |
+| `lf mcp health` | ✅ | Reachability check via the CLIENT `/health` (all or one server) |
+| `lf mcp call` | ✅ | Invokes a JSON-RPC 2.0 tool on an HTTP/stdio server |
 | `lf daemon` | 🟡 | Real long-running process + file watcher + IPC socket; sync-queue draining is a no-op (use `lf sync` manually for now) |
 | `lf upgrade` | 🟡 | Real GitHub release check + prints installer URL; atomic self-update not implemented |
 | `lf version` | ✅ | Build info |
@@ -253,7 +257,11 @@ These need **you**, not an engineer:
   and runs in the dashboard once the worker is deployed.
 - `lf upgrade` checks for updates but doesn't self-install (re-run installer).
 - `lf daemon` runs but sync-queue draining is a no-op (use `lf sync` manually).
-- `lf mcp add/remove/health` are honest stubs (`lf mcp list` works).
+- `lf mcp` is fully wired: `layerflow` (register the hosted MCP server with your
+  workspace API key), plus generic `list`/`add`/`remove`/`health`/`call`. Spins a
+  per-command registry from `mcp_servers` in the user config, so no daemon.
+- `lf mcp call` reads the LayerFlow MCP server's `result.content[0].text` and
+  treats `isError: true` as a command failure (exit 1).
 
 **Other:**
 - Terminal fallback (`PickAvailableModel`) picks the first available model, not
