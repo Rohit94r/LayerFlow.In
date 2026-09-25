@@ -11,6 +11,8 @@
 import { db } from "../src/db/client";
 import { createWorkspaceApiKey, revokeWorkspaceApiKey } from "../src/services/keys/api-keys";
 import { pool } from "../src/db/client";
+import { workspaces } from "../src/db/schema/tenancy";
+import { eq } from "drizzle-orm";
 
 const base = process.env.API_URL ?? "http://localhost:8787";
 const failures: string[] = [];
@@ -24,6 +26,22 @@ function check(name: string, cond: boolean, detail?: string) {
   }
 }
 
+interface TerminalCommand {
+  id: string;
+  status: string;
+  device_id?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  output?: string | null;
+  exit_code?: number | null;
+  error_message?: string | null;
+}
+
+interface TerminalCommandResponse {
+  command?: TerminalCommand | null;
+  commands?: TerminalCommand[];
+}
+
 async function call(path: string, secret: string, init?: RequestInit) {
   const res = await fetch(`${base}${path}`, {
     ...init,
@@ -33,9 +51,9 @@ async function call(path: string, secret: string, init?: RequestInit) {
       ...(init?.headers ?? {}),
     },
   });
-  let body: unknown = null;
+  let body: TerminalCommandResponse | null = null;
   try {
-    body = await res.json();
+    body = (await res.json()) as TerminalCommandResponse;
   } catch {
     /* no body */
   }
@@ -43,22 +61,28 @@ async function call(path: string, secret: string, init?: RequestInit) {
 }
 
 async function main() {
-  const ws = await db.query.workspaces.findFirst({ columns: { id: true } });
-  check("workspace exists", !!ws, "no workspace in dev DB");
-  if (!ws) return;
+  const user = await db.query.users.findFirst();
+  check("user exists", !!user, "no users in dev DB");
+  if (!user) return;
+
+  // Throwaway workspace so repeated runs never collide with stale commands or
+  // a shared workspace's data; it (and its commands/keys) cascade away below.
+  const registered = await db
+    .insert(workspaces)
+    .values({
+      ownerUserId: user.id,
+      name: `e2e-terminal ${Date.now()}`,
+      slug: `e2e-terminal-${Date.now()}`,
+    })
+    .returning();
+  const ws = registered[0];
+  console.log("created throwaway workspace", ws.id);
 
   const { key, secret } = await createWorkspaceApiKey(ws.id, { name: "e2e-tmp-smoke" });
   try {
     console.log("created key", key.id, "workspace", ws.id, "secretLen", secret.length);
     const reread = await db.query.apiKeys.findFirst({ where: (k, { eq }) => eq(k.id, key.id) });
     console.log("reread key row:", reread ? { id: reread.id, prefix: reread.keyPrefix, revoked: reread.revokedAt } : "MISSING");
-
-    const raw = await fetch(`${base}/api/v1/terminal/commands`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
-      body: JSON.stringify({ command: "echo apple" }),
-    });
-    console.log("raw create status:", raw.status, "body:", (await raw.text()).slice(0, 300));
 
     // -- create (null device → any device can run) -------------------------
     const c1 = await call("/api/v1/terminal/commands", secret, {
@@ -67,7 +91,7 @@ async function main() {
     });
     check("create any-device command → 201", c1.res.status === 201);
     check("create returns pending", c1.body?.command?.status === "pending");
-    const m1 = c1.body?.command;
+    const m1 = c1.body!.command!;
 
     // -- create (device-scoped) --------------------------------------------
     const c2 = await call("/api/v1/terminal/commands", secret, {
@@ -76,7 +100,7 @@ async function main() {
     });
     check("create device-scoped command → 201", c2.res.status === 201);
     check("create stores device_id", c2.body?.command?.device_id === "e2e-device-a");
-    const m2 = c2.body?.command;
+    const m2 = c2.body!.command!;
 
     // -- claim by a different device → oldest eligible (the any-device one) -
     const p1 = await call("/api/v1/terminal/commands/poll", secret, {
@@ -87,7 +111,7 @@ async function main() {
     check("claim upserts device_id onto command", p1.body?.command?.device_id === "e2e-device-b");
     check("claim marks running", p1.body?.command?.status === "running");
     check("claim sets started_at", !!p1.body?.command?.started_at);
-    const r1 = p1.body?.command;
+    const r1 = p1.body!.command!;
 
     // -- second claim by wrong device → nothing eligible --------------------
     const p2 = await call("/api/v1/terminal/commands/poll", secret, {
@@ -146,7 +170,7 @@ async function main() {
       method: "POST",
       body: JSON.stringify({ command: "sleep 9999" }),
     });
-    const m3 = c3.body?.command;
+    const m3 = c3.body!.command!;
     const cancel = await call(`/api/v1/terminal/commands/${m3.id}/cancel`, secret, {
       method: "POST",
     });
@@ -163,8 +187,7 @@ async function main() {
 
     // -- list reflects all ------------------------------------------------
     const list = await call("/api/v1/terminal/commands?limit=10", secret);
-    const listBody = list.body as { commands?: Array<{ id: string }> } | undefined;
-    const ids = (listBody?.commands ?? []).map((c) => c.id);
+    const ids = (list.body?.commands ?? []).map((c) => c.id);
     check("list shows all commands", [m1.id, m2.id, m3.id].every((id) => ids.includes(id)));
     check("list newest-first", ids[0] === m3.id);
 
@@ -180,7 +203,8 @@ async function main() {
     check("bogus key → 401", badKey.res.status === 401);
   } finally {
     await revokeWorkspaceApiKey(ws.id, key.id);
-    console.log(`\nrevoked test key ${key.keyPrefix}…`);
+    await db.delete(workspaces).where(eq(workspaces.id, ws.id));
+    console.log(`\nrevoked test key ${key.keyPrefix}… and removed throwaway workspace`);
   }
 
   await pool.end();

@@ -187,6 +187,30 @@ explicit fail-open option**.
 ## The numbers, in one line
 
 > **246/246 API tests (41 files), 9/9 web unit tests, 2 E2E green + 1 opt-in,
-> repo lint 0, Go build/vet/test green, 11 Phase-3 tasks, ~15 features frozen,
-> one product: an OpenAI-compatible gateway that refuses to let you blow your AI
-> budget.**
+> terminal E2E 26/26 against the rebuilt `dist` server, repo lint 0, API
+> typecheck 0 errors, Go build/vet/test green, all 28 shipped web routes 200 on
+> `next start`, 11 Phase-3 tasks, ~15 features frozen, one product: an
+> OpenAI-compatible gateway that refuses to let you blow your AI budget.**
+
+## Production audit (2026-09-25)
+
+Re-ran every suite against the built artifacts instead of dev mode. Three real
+finds:
+
+1. **The API typecheck was silently broken** — 33 errors across
+   `src/test/workspace-crud.test.ts` (implicit-any callbacks from the untyped
+   `json: any` helper) and `scripts/e2e-terminal.ts`. The root `npm run
+   typecheck` had never gone green and nobody noticed, because nobody ran it.
+   Lesson: a checks list that isn't wired into an actual gate is a wish, not a
+   guarantee — `npm run typecheck` (all workspaces) is the gate now.
+2. **The terminal E2E was order-sensitive to dirty data.** It picked the first
+   workspace via `findFirst` and a leftover `running` command (or even its own
+   diagnostic `raw` create) meant the device poll claimed the *older* command,
+   breaking two assertions against the production server. Fixed by giving the
+   script its own throwaway workspace (cascades away after) and dropping the
+   diagnostic extra create. Now deterministic every run.
+3. **"All tests pass" and "the app works" are different claims.** The dist build
+   exercised `/health`, smoke, and the full remote-control protocol — the shape
+   CI never ran. Only a negative smoke (no API → skip) existed; the positive
+   path over the real server is the missing link and it's now documented in
+   `docs/PRODUCT-STATUS.md`.

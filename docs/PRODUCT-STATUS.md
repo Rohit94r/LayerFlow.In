@@ -28,7 +28,7 @@ See `DEPLOYMENT.md`.
 | AI providers | 85 | 9 adapters; BYOK→platform→error chain; chat auto-failover; intelligence router |
 | Billing | 55 | Dodo integrated + webhook verified; not launched; plan enforcement now wired |
 | Security | 80 | AES-256-GCM BYOK; signed webhooks; rate limits; plan gating; no pen-test |
-| Testing | 85 | API 41 files / 246 tests green; web 9/9; Playwright E2E 2 passed + 1 opt-in; Go test green; repo lint 0 |
+| Testing | 90 | API 246/246 + typecheck 0; web 9/9; Playwright E2E 2 passed + 1 opt-in; terminal e2e 26/26 vs prod build; Go test -race green; repo lint 0 |
 | Deployment | 65 | Fly + Docker fully scripted (`deploy:api` / `check:prod`); needs executing |
 | **OVERALL** | **~80** | **A complete product one deployment away from being real** |
 
@@ -288,18 +288,27 @@ These need **you**, not an engineer:
 
 ## Test & build status (run today)
 
+Full production audit ran 2026-09-25: every suite re-run to green with the
+rebuilt production artifacts (`next build` + `node dist/index.js`), not just dev.
+
 | Suite | Command | Result |
 |---|---|---|
-| API tests | `npm test --workspace @layerflow/api` | ✅ 25/25 files, 148 passed, 2 skipped |
-| API typecheck | `npm run typecheck --workspace @layerflow/api` | ✅ exit 0 |
+| API tests | `npm run test:api` | ✅ 41 files / 246 tests passed |
+| API typecheck | `npm run typecheck --workspace @layerflow/api` | ✅ exit 0 (was 33 errors; fixed `e2e-terminal.ts` + `workspace-crud.test.ts`) |
 | API build | `npm run build --workspace @layerflow/api` | ✅ tsup success |
-| Terminal build | `cd terminal && go build ./...` | ✅ exit 0 |
-| Terminal vet | `go vet ./...` | ✅ exit 0 |
-| Terminal tests | `go test ./...` | ✅ all packages pass |
+| API smoke vs `dist` | `node scripts/smoke.ts` (API_URL=:8787) | ✅ db + redis healthy |
+| API terminal e2e vs `dist` | `npm run e2e:terminal` | ✅ 26/26 checks (self-isolating throwaway workspace) |
+| Web tests | `npm run test` | ✅ 9/9 |
 | Web typecheck | `npm run typecheck` | ✅ exit 0 |
-| Web build | `npm run build` | ✅ all 40+ routes compile |
+| Web build | `npm run build` | ✅ all routes compile (1 benign NFT trace warning from frozen legacy agents) |
+| Web prod pages | `next start` + curl | ✅ all 28 shipped routes 200 on prod server |
+| Registry tests | `npm test --workspace @layerflow/model-registry` | ✅ 4/4 |
+| Contracts typecheck | `tsc -p packages/contracts` | ✅ exit 0 |
+| Playwright E2E | `npm run test:e2e` | ✅ 2 passed + 1 opt-in skip |
+| Terminal (Go) | `cd terminal && make ci` | ✅ vet, lint, test -race, build |
+| Repo lint | `npx eslint .` | ✅ 0 problems |
 
-> Note: API tests log `redis connection error` (no local Redis) and OpenAI
-> `429 insufficient_quota` during the embeddings test — both are handled
-> gracefully (budgets fail-closed; embeddings fall back to local) and the
-> tests still pass. This is the free-tier resilience path working as designed.
+> `scripts/check-production.sh` (`npm run check:prod`) verifies the LIVE
+> layerflow.dev / Fly / Vercel endpoints and needs deploy credentials + the
+> domains to be in DNS — it cannot run locally. Everything it checks locally
+> (health, budgets, gateway surfaces) is green above.

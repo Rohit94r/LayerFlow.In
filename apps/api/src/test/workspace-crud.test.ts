@@ -101,7 +101,7 @@ describe("workspace CRUD APIs", () => {
 
   it("creates, filters, archives, and deletes projects", async () => {
     const domains = (await api("GET", "/api/domains")).json.domains;
-    const coding = domains.find((d) => d.slug === "coding");
+    const coding = domains.find((d: { slug: string }) => d.slug === "coding");
 
     const created = await api("POST", "/api/projects", {
       domainId: coding.id,
@@ -112,13 +112,13 @@ describe("workspace CRUD APIs", () => {
     const projectId = created.json.project.id;
 
     const filtered = await api("GET", `/api/projects?domainId=${coding.id}`);
-    expect(filtered.json.projects.some((p) => p.id === projectId)).toBe(true);
+    expect(filtered.json.projects.some((p: { id: string }) => p.id === projectId)).toBe(true);
 
     const archived = await api("PATCH", `/api/projects/${projectId}`, { status: "archived" });
     expect(archived.json.project.status).toBe("archived");
 
     const activeOnly = await api("GET", "/api/projects?status=active");
-    expect(activeOnly.json.projects.some((p) => p.id === projectId)).toBe(false);
+    expect(activeOnly.json.projects.some((p: { id: string }) => p.id === projectId)).toBe(false);
 
     const restored = await api("PATCH", `/api/projects/${projectId}`, { status: "active" });
     expect(restored.json.project.status).toBe("active");
@@ -166,7 +166,7 @@ describe("workspace CRUD APIs", () => {
 
   it("creates a prompt with version 1 and supports list filters", async () => {
     const domains = (await api("GET", "/api/domains")).json.domains;
-    const coding = domains.find((d) => d.slug === "coding");
+    const coding = domains.find((d: { slug: string }) => d.slug === "coding");
 
     const created = await api("POST", "/api/prompts", {
       title: "App Sidebar Navigation",
@@ -190,16 +190,16 @@ describe("workspace CRUD APIs", () => {
     expect(byTitle.json.prompts[0].id).toBe(promptId);
 
     const byTag = await api("GET", "/api/prompts?tag=react");
-    expect(byTag.json.prompts.map((p) => p.id)).toContain(promptId);
+    expect(byTag.json.prompts.map((p: { id: string }) => p.id)).toContain(promptId);
 
     const byDomain = await api("GET", `/api/prompts?domainId=${coding.id}`);
-    expect(byDomain.json.prompts.map((p) => p.id)).toContain(promptId);
+    expect(byDomain.json.prompts.map((p: { id: string }) => p.id)).toContain(promptId);
 
     // Favorite it, then filter by favorite.
     const favorited = await api("PATCH", `/api/prompts/${promptId}`, { favorite: true });
     expect(favorited.json.prompt.favorite).toBe(true);
     const favs = await api("GET", "/api/prompts?favorite=true");
-    expect(favs.json.prompts.map((p) => p.id)).toEqual([promptId]);
+    expect(favs.json.prompts.map((p: { id: string }) => p.id)).toEqual([promptId]);
 
     // Archive hides it from the default list; includeArchived shows it.
     await api("PATCH", `/api/prompts/${promptId}`, { archived: true });
@@ -243,7 +243,7 @@ describe("workspace CRUD APIs", () => {
     expect(restored.json.version.note).toBe("Restored from v1");
 
     const timeline = await api("GET", `/api/prompts/${promptId}/versions`);
-    expect(timeline.json.versions.map((v) => v.version)).toEqual([3, 2, 1]);
+    expect(timeline.json.versions.map((v: { version: number }) => v.version)).toEqual([3, 2, 1]);
     expect(timeline.json.versions[2].body).toBe("v1 body");
 
     const deleted = await api("DELETE", `/api/prompts/${promptId}`);
@@ -282,14 +282,14 @@ describe("workspace CRUD APIs", () => {
 
     const detail = await api("GET", `/api/sessions/${sessionId}`);
     expect(detail.status).toBe(200);
-    expect(detail.json.messages.map((m) => m.position)).toEqual([0, 1]);
+    expect(detail.json.messages.map((m: { position: number }) => m.position)).toEqual([0, 1]);
     expect(detail.json.messages[0].promptId).toBe(prompt.prompt.id);
 
     const completed = await api("PATCH", `/api/sessions/${sessionId}`, { status: "completed" });
     expect(completed.json.session.status).toBe("completed");
 
     const list = await api("GET", "/api/sessions?status=completed");
-    expect(list.json.sessions.map((s) => s.id)).toContain(sessionId);
+    expect(list.json.sessions.map((s: { id: string }) => s.id)).toContain(sessionId);
 
     expect((await api("DELETE", `/api/sessions/${sessionId}`)).status).toBe(200);
     expect((await api("GET", `/api/sessions/${sessionId}`)).status).toBe(404);
@@ -348,11 +348,11 @@ describe("workspace CRUD APIs", () => {
     const res = await api("GET", "/api/activity");
     expect(res.status).toBe(200);
     expect(res.json.events.length).toBeGreaterThan(0);
-    const types = res.json.events.map((e) => e.type);
+    const types = res.json.events.map((e: { type: string }) => e.type);
     expect(types).toContain("prompt.created");
     expect(types).toContain("project.created");
     // Newest first.
-    const times = res.json.events.map((e) => new Date(e.createdAt).getTime());
+    const times = res.json.events.map((e: { createdAt: string }) => new Date(e.createdAt).getTime());
     expect([...times].sort((a, b) => b - a)).toEqual(times);
   });
 
@@ -378,7 +378,7 @@ describe("workspace CRUD APIs", () => {
 
     // And their prompt list doesn't include it.
     const list = await api("GET", "/api/prompts", undefined, stranger.cookie);
-    expect(list.json.prompts.map((p) => p.id)).not.toContain(prompt.id);
+    expect(list.json.prompts.map((p: { id: string }) => p.id)).not.toContain(prompt.id);
 
     // Their activity feed is separate from ours.
     const activity = await api("GET", "/api/activity", undefined, stranger.cookie);

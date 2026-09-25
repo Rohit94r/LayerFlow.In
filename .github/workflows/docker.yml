@@ -1,0 +1,73 @@
+# Builds and publishes the LayerFlow images to the GitHub Container Registry
+# (ghcr.io) using the repository's default GITHUB_TOKEN — no Docker daemon or
+# extra secrets required, so it works from GitHub's hosted runners.
+#
+#   ghcr.io/rohit94r/layerflow-api   ← API + BullMQ worker (apps/api/Dockerfile,
+#                                     the same image fly.toml deploys to Fly)
+#   ghcr.io/rohit94r/layerflow-lf    ← terminal CLI (multi-stage Go build)
+#
+# Triggers: every push to main publishes `latest`; version tags (v*) also
+# publish a pinned tag so deploys can reference immutable images.
+name: docker
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    name: Build & publish images to ghcr.io
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      REGISTRY: ghcr.io
+      OWNER: ${{ github.repository_owner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/layerflow-api
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=main-
+
+      - name: Build & push API (+ worker)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push terminal CLI
+        uses: docker/build-push-action@v6
+        with:
+          context: ./terminal
+          file: terminal/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.OWNER }}/layerflow-lf:latest
+            ${{ github.ref_type == 'tag' && format('ghcr.io/{0}/{1}:{2}', env.OWNER, 'layerflow-lf', github.ref_name) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
