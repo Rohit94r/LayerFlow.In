@@ -1,5 +1,6 @@
 import type { Job } from "bullmq";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
+import type { LayerFlowEvent, RunMessage } from "@layerflow/contracts";
 import { getModel } from "@layerflow/model-registry";
 import { logger } from "../../config/logger";
 import { getEnv } from "../../config/env";
@@ -17,29 +18,26 @@ import {
   type AgentRow,
   type AgentRunRow,
 } from "../../db/schema/agents";
-import { executeRun } from "../../services/runs/execute";
+import { executeRun } from "../../services/legacy/runs/execute";
 import { hasUsableProviderKey } from "../../services/chat/health";
 import { recordActivity } from "../../services/workspace/activity";
 import { createNotification } from "../../services/notifications/notifications";
 import { workspaces } from "../../db/schema/tenancy";
 import { sendAgentRunSummaryEmail } from "../../services/email/gmail";
 import { users } from "../../db/schema/auth";
-import { createId } from "../../db/schema/_helpers";
 import {
   executeTool,
-  executeToolChain,
-  getToolSpecs,
   type ToolContext,
   type ToolInput,
-} from "../../services/agents/tools";
+} from "../../services/legacy/agents/tools";
 import {
   AgentStateMachine,
   agentStartedEvent,
   agentCompletedEvent,
   agentFailedEvent,
-} from "../../services/agents/state-machine";
+} from "../../services/legacy/agents/state-machine";
 import { broadcastEvent } from "../../routes/ws/ws";
-import { checkToolPermission } from "../../services/agents/permissions";
+import { checkToolPermission } from "../../services/legacy/agents/permissions";
 
 export interface AgentJobPayload {
   agentRunId: string;
@@ -733,7 +731,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
   // Broadcast agent.started event
   try {
-    broadcastEvent(agentStartedEvent(agentId, agentRunId, workspaceId, run.input) as any, { workspaceId });
+    broadcastEvent(agentStartedEvent(agentId, agentRunId, workspaceId, run.input) as unknown as LayerFlowEvent, { workspaceId });
   } catch { /* best-effort */ }
 
   await recordAgentStep({
@@ -760,7 +758,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
   let totalOutputTokens = 0;
   let totalCostMicro = 0;
   let lastProvider: string | null = null;
-  const conversationHistory: { role: string; content: string }[] = [
+  const conversationHistory: RunMessage[] = [
     { role: "system", content: agent.systemPrompt },
     { role: "user", content: run.input },
   ];
@@ -786,7 +784,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
         userId: userId ?? "system",
         model,
         source: "agent",
-        messages: conversationHistory as any,
+        messages: conversationHistory,
         routingReason: "agent",
         allowRouting: false,
       });
@@ -907,7 +905,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
     // Broadcast agent.completed event
     try {
-      broadcastEvent(agentCompletedEvent(agentId, agentRunId, true, finalOutput.slice(0, 240)) as any, { workspaceId });
+      broadcastEvent(agentCompletedEvent(agentId, agentRunId, true, finalOutput.slice(0, 240)) as unknown as LayerFlowEvent, { workspaceId });
     } catch { /* best-effort */ }
 
     await recordActivity({
@@ -948,7 +946,7 @@ export async function processAgent(job: Job<AgentJobPayload>): Promise<void> {
 
     // Broadcast agent.failed event
     try {
-      broadcastEvent(agentFailedEvent(agentId, agentRunId, message) as any, { workspaceId });
+      broadcastEvent(agentFailedEvent(agentId, agentRunId, message) as unknown as LayerFlowEvent, { workspaceId });
     } catch { /* best-effort */ }
 
     await db

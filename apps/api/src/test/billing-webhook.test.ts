@@ -113,7 +113,7 @@ describe("billing — Dodo checkout + webhooks", () => {
         subscription_id: "sub_test_pro_1",
         customer: { customer_id: "cus_test_1", email: "pro@example.dev", name: "Pro User" },
         status: "active",
-        metadata: { workspace_id: workspaceId, plan: "starter" },
+        metadata: { workspace_id: workspaceId, plan: "pro" },
         next_billing_date: new Date(Date.now() + 30 * 86_400_000).toISOString(),
       },
     });
@@ -123,7 +123,7 @@ describe("billing — Dodo checkout + webhooks", () => {
     let row = await db.query.subscriptions.findFirst({
       where: (s, { eq: eqFn }) => eqFn(s.workspaceId, workspaceId),
     });
-    expect(row).toMatchObject({ plan: "starter", status: "active" });
+    expect(row).toMatchObject({ plan: "pro", status: "active" });
 
     const cancelled = sign({
       type: "subscription.cancelled",
@@ -132,7 +132,7 @@ describe("billing — Dodo checkout + webhooks", () => {
         subscription_id: "sub_test_pro_1",
         customer: { customer_id: "cus_test_1", email: "pro@example.dev", name: "Pro User" },
         status: "cancelled",
-        metadata: { workspace_id: workspaceId, plan: "starter" },
+        metadata: { workspace_id: workspaceId, plan: "pro" },
       },
     });
     const done = await handleWebhook(cancelled.body, cancelled.headers);
@@ -141,6 +141,6 @@ describe("billing — Dodo checkout + webhooks", () => {
     row = await db.query.subscriptions.findFirst({
       where: (s, { eq: eqFn }) => eqFn(s.workspaceId, workspaceId),
     });
-    expect(row).toMatchObject({ plan: "starter", status: "cancelled" });
+    expect(row).toMatchObject({ plan: "pro", status: "cancelled" });
   });
 });

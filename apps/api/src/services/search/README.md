@@ -54,4 +54,4 @@ old memories won't appear in semantic results until re-embedded — re-run the
 (`src/jobs/processors/embed.ts`). The worker embeds the memory's
 `title + body` and replaces its `memory_embeddings` rows. If Redis is down
 (e.g. running without Docker), the API embeds **inline** instead of failing —
-see `services/memory/embed.ts` (`scheduleMemoryEmbedding`).
+see `services/legacy/memory/embed.ts` (`scheduleMemoryEmbedding`).

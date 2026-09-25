@@ -28,7 +28,7 @@ See `DEPLOYMENT.md`.
 | AI providers | 85 | 9 adapters; BYOK→platform→error chain; chat auto-failover; intelligence router |
 | Billing | 55 | Dodo integrated + webhook verified; not launched; plan enforcement now wired |
 | Security | 80 | AES-256-GCM BYOK; signed webhooks; rate limits; plan gating; no pen-test |
-| Testing | 75 | API 33 files / 197 tests green; terminal `go test` green; web thin; no E2E |
+| Testing | 85 | API 41 files / 246 tests green; web 9/9; Playwright E2E 2 passed + 1 opt-in; Go test green; repo lint 0 |
 | Deployment | 65 | Fly + Docker fully scripted (`deploy:api` / `check:prod`); needs executing |
 | **OVERALL** | **~80** | **A complete product one deployment away from being real** |
 

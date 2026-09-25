@@ -16,7 +16,7 @@ describe("memory / search / community integration", () => {
     const { migrate } = await import("drizzle-orm/node-postgres/migrator");
     const { db } = await import("../db/client");
     await migrate(db, { migrationsFolder: "./drizzle" });
-    const { seedLearning } = await import("../services/learning/seed");
+    const { seedLearning } = await import("../services/legacy/learning/seed");
     await seedLearning();
   });
 
@@ -252,7 +252,7 @@ describe("memory / search / community integration", () => {
   it("similar search works with local embeddings (skips if pgvector fails)", async () => {
     const { createApp } = await import("../app");
     const { createTestSession } = await import("./auth");
-    const { embedMemory } = await import("../services/memory/embed");
+    const { embedMemory } = await import("../services/legacy/memory/embed");
     const { db } = await import("../db/client");
     const { memories } = await import("../db/schema/memory");
 

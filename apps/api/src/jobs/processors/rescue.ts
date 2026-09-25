@@ -6,7 +6,7 @@ import type { Provider } from "@layerflow/model-registry";
 import { logger } from "../../config/logger";
 import { db } from "../../db/client";
 import { rescueReports } from "../../db/schema/rescue";
-import { executeRun } from "../../services/runs/execute";
+import { executeRun } from "../../services/legacy/runs/execute";
 import { hasUsableProviderKey } from "../../services/chat/health";
 import { stripJsonFences } from "../../services/improve/improve";
 import { recordActivity } from "../../services/workspace/activity";

@@ -1,6 +1,6 @@
 import type { Job } from "bullmq";
 import { logger } from "../../config/logger";
-import { requeueUnembeddedMemories } from "../../services/memory/embed";
+import { requeueUnembeddedMemories } from "../../services/legacy/memory/embed";
 
 /**
  * `embeddings-backfill` job: DB-side retry sweep for the embedding queue.

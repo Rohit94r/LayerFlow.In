@@ -17,7 +17,7 @@ export function CheckoutButton({
   size = "md",
   className,
 }: {
-  plan: "starter" | "pro" | "team";
+  plan: "pro";
   label?: string;
   variant?: ButtonProps["variant"];
   size?: ButtonProps["size"];

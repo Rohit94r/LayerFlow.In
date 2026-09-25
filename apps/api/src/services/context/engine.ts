@@ -171,7 +171,7 @@ export function createMemoryContextProvider(): ContextProvider {
     priority: 80,
     async fetch(request: ContextRequest): Promise<ContextSource[]> {
       try {
-        const { searchMemories } = await import("../memory/memory");
+        const { searchMemories } = await import("../legacy/memory/memory");
         const { results } = await searchMemories(request.workspaceId, request.query, 10);
         return results.map((hit) => ({
           id: `memory:${hit.memory.id}`,
@@ -206,7 +206,7 @@ export function createSessionHistoryProvider(): ContextProvider {
       try {
         const { db } = await import("../../db/client");
         const { aiChatMessages } = await import("../../db/schema/chat");
-        const { and, eq, asc, desc } = await import("drizzle-orm");
+        const { and, eq, asc } = await import("drizzle-orm");
 
         const rows = await db.query.aiChatMessages.findMany({
           where: and(

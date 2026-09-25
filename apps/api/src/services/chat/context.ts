@@ -12,7 +12,7 @@ import { redis } from "../../redis/client";
 import { isKeyUsable, listKeyHealth, platformKeyHealth } from "./health";
 import { providerSystemPrompt, tokenBudgetForModel } from "./prompts";
 import { cleanupText } from "../savings/compress";
-import { searchMemories } from "../memory/memory";
+import { searchMemories } from "../legacy/memory/memory";
 import type { MemorySearchHit } from "@layerflow/contracts";
 
 /**

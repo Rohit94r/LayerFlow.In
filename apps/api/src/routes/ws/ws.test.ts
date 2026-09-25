@@ -27,7 +27,6 @@ describe("computeWsAcceptKey", () => {
 
 describe("broadcastEvent tenant isolation", () => {
   it("does not deliver workspace-scoped events to clients in another workspace", () => {
-    [null, null] as const;
     const delivered: string[] = [];
     const a = registerClient("client-a", { userId: "u1", workspaceId: "ws-a", sessionId: null }, (e) => delivered.push(e.type), () => {});
     const b = registerClient("client-b", { userId: "u2", workspaceId: "ws-b", sessionId: null }, (e) => delivered.push(e.type), () => {});

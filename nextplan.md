@@ -258,6 +258,13 @@ PostHog shows signups + requests.
 > **Goal:** 90-day validation starts for real: automated tests for the wedge
 > path, a shippable release, and 15 conversations with real users.
 
+> **Status:** 5.1 ✓ (Playwright E2E green: 2 passed + 1 opt-in skip), 5.2 ✓
+> (worker job tests in the 246/246 API suite), 5.3 ✓ (repo lint 0), 5.6 ✓
+> (`docs/DECISION-DASHBOARD.md`), 5.7 ✓ (`docs/LEARNING-JOURNAL.md`). Remain:
+> 5.4 (ship — needs your Fly/Vercel/Homebrew credentials + `npm run check:prod`)
+> and 5.5 (go to users — your posts + 15 conversations, log them in
+> `docs/USER-CONVERSATIONS.md`).
+
 ### Tasks
 1. **Playwright E2E for the wedge path** — sign-in → create key → send request →
    see cost → set cap → get blocked → get alert. Also cover **Direct keys**: env-var
@@ -272,9 +279,11 @@ PostHog shows signups + requests.
      Appendix A), logging exact user words.
 6. **Decision dashboard** — track 5 numbers weekly (research.md Appendix C):
      signups, weekly-active users, conversations, paying customers/MRR, hours
-     spent.
+     spent. ✅ → `docs/DECISION-DASHBOARD.md` (template + per-number data
+     sources: PostHog `user_signed_up`, `gateway.request` for WAU, Dodo +
+     `subscriptions` for MRR) with the 3-week rule.
 7. **Learning journal** — write up what you built + learned per phase (career
-     content + your backend interview story).
+     content + your backend interview story). ✅ → `docs/LEARNING-JOURNAL.md`.
 
 ### Verification
 Playwright suite green in CI. CLI + web + API released and verified. 15

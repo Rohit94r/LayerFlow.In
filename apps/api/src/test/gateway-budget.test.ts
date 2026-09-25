@@ -1,4 +1,11 @@
-import net from "node:net";
+import type {
+  CreateApiKeyResponse,
+  CreateProviderKeyResponse,
+  CurrentBudgetResponse,
+  DeleteApiKeyResponse,
+  ListApiKeysResponse,
+  ListProviderKeysResponse,
+} from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { canConnect, startTestDb } from "./helpers/integration-db";
 
@@ -45,7 +52,7 @@ describe("keys, BYOK, budget, gateway", () => {
       body: JSON.stringify({ name: "CI key" }),
     });
     expect(created.status).toBe(201);
-    const createdBody = (await created.json()) as any;
+    const createdBody = (await created.json()) as CreateApiKeyResponse;
     expect(createdBody.secret).toMatch(/^lf_live_/);
     expect(createdBody.key.keyPrefix).toMatch(/^lf_live_/);
     expect(createdBody.key.name).toBe("CI key");
@@ -54,8 +61,8 @@ describe("keys, BYOK, budget, gateway", () => {
       headers: { cookie: session.cookie },
     });
     expect(listed.status).toBe(200);
-    const listBody = (await listed.json()) as any;
-    expect(listBody.keys.some((k: any) => k.id === createdBody.key.id)).toBe(true);
+    const listBody = (await listed.json()) as ListApiKeysResponse;
+    expect(listBody.keys.some((k) => k.id === createdBody.key.id)).toBe(true);
     expect(JSON.stringify(listBody)).not.toContain(createdBody.secret);
 
     const revoked = await app.request(`/api/keys/${createdBody.key.id}`, {
@@ -63,7 +70,7 @@ describe("keys, BYOK, budget, gateway", () => {
       headers: { cookie: session.cookie },
     });
     expect(revoked.status).toBe(200);
-    expect(((await revoked.json()) as any).revoked).toBe(true);
+    expect((await revoked.json() as DeleteApiKeyResponse).revoked).toBe(true);
   });
 
   it("provider-keys encrypt at rest and never return ciphertext/secret", async () => {
@@ -81,11 +88,11 @@ describe("keys, BYOK, budget, gateway", () => {
       body: JSON.stringify({ provider: "openai", secret, label: "primary" }),
     });
     expect(created.status).toBe(201);
-    const body = (await created.json()) as any;
+    const body = (await created.json()) as CreateProviderKeyResponse;
     expect(body.key.provider).toBe("openai");
     expect(body.key.keyHint).toBe("cdef");
     expect(body.key.label).toBe("primary");
-    expect(body.key.ciphertext).toBeUndefined();
+    expect("ciphertext" in body.key).toBe(false);
     expect(JSON.stringify(body)).not.toContain(secret);
 
     const row = await db.query.providerKeys.findFirst({
@@ -98,7 +105,7 @@ describe("keys, BYOK, budget, gateway", () => {
     const listed = await app.request("/api/provider-keys", {
       headers: { cookie: session.cookie },
     });
-    const listBody = (await listed.json()) as any;
+    const listBody = (await listed.json()) as ListProviderKeysResponse;
     expect(JSON.stringify(listBody)).not.toContain(secret);
     expect(JSON.stringify(listBody)).not.toContain(row!.ciphertext);
 
@@ -119,7 +126,7 @@ describe("keys, BYOK, budget, gateway", () => {
       headers: { cookie: session.cookie },
     });
     expect(get.status).toBe(200);
-    const before = (await get.json()) as any;
+    const before = (await get.json()) as CurrentBudgetResponse;
     expect(before.budget.monthlyLimitMicro).toBeGreaterThan(0);
     expect(before.remainingMicro).toBeDefined();
 
@@ -134,7 +141,7 @@ describe("keys, BYOK, budget, gateway", () => {
       }),
     });
     expect(put.status).toBe(200);
-    const after = (await put.json()) as any;
+    const after = (await put.json()) as CurrentBudgetResponse;
     expect(after.budget.monthlyLimitMicro).toBe(5_000_000);
     expect(after.budget.dailyLimitMicro).toBe(1_000_000);
     expect(after.budget.alertAtPct).toBe(75);
@@ -174,7 +181,7 @@ describe("keys, BYOK, budget, gateway", () => {
       }),
     });
     expect(res.status).toBe(401);
-    expect(((await res.json()) as any).error.code).toBe("unauthorized");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("unauthorized");
   });
 
   it.runIf(redisUp)("releases reservation on provider failure (gateway /v1/chat/completions)", async () => {
@@ -203,7 +210,7 @@ describe("keys, BYOK, budget, gateway", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ name: "gateway test" }),
     });
-    const { secret } = (await keyRes.json()) as any;
+    const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
     // Mock adapter that FAILS
     setAdapterForTests("openai", {
@@ -262,7 +269,7 @@ describe("keys, BYOK, budget, gateway", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ name: "gateway test" }),
     });
-    const { secret } = (await keyRes.json()) as any;
+    const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
     setAdapterForTests("openai", {
       provider: "openai",
@@ -289,7 +296,7 @@ describe("keys, BYOK, budget, gateway", () => {
       }),
     });
     expect(res.status).toBe(200);
-    const body = (await res.json()) as any;
+    const body = (await res.json()) as { choices: { message: { content: string } }[] };
     expect(body.choices[0].message.content).toBe("hello from mock");
     expect(res.headers.get("x-layerflow-cache")).toBe("miss");
   });

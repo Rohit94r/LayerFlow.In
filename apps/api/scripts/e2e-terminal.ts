@@ -39,7 +39,7 @@ async function call(path: string, secret: string, init?: RequestInit) {
   } catch {
     /* no body */
   }
-  return { res, body: body as any };
+  return { res, body };
 }
 
 async function main() {
@@ -163,7 +163,8 @@ async function main() {
 
     // -- list reflects all ------------------------------------------------
     const list = await call("/api/v1/terminal/commands?limit=10", secret);
-    const ids = ((list.body?.commands ?? []) as any[]).map((c) => c.id);
+    const listBody = list.body as { commands?: Array<{ id: string }> } | undefined;
+    const ids = (listBody?.commands ?? []).map((c) => c.id);
     check("list shows all commands", [m1.id, m2.id, m3.id].every((id) => ids.includes(id)));
     check("list newest-first", ids[0] === m3.id);
 

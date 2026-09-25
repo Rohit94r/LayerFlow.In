@@ -176,7 +176,7 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | `GET /api/files/:id/download-url` / `GET /api/files/:id/content` | Download |
 | `DELETE /api/files/:id` | Delete |
 
-### Runs, compare, intelligence (`src/routes/runs/`, `compare/`, `intelligence/`)
+### Runs, compare, intelligence (`src/routes/legacy/runs/`, `compare/`, `intelligence/`) — FROZEN
 
 | Method & path | What it does |
 |---|---|
@@ -210,14 +210,14 @@ API key** in `Authorization: Bearer lf_...` (via `requireApiKey`).
 | `GET /v1/models` | Models from the registry, flagged available per your BYOK keys |
 | `POST /v1/chat/completions` | Chat completion: cache → budget reserve → provider → settle + log. `stream: true` returns OpenAI-style SSE chunks with real usage in the final frame; budget settles on actual usage |
 
-### Audio (`src/routes/audio/`) — optional, platform ElevenLabs key
+### Audio (`src/routes/legacy/audio/`) — FROZEN, optional platform ElevenLabs key
 
 | Method & path | What it does |
 |---|---|
 | `GET /api/audio/status` | `{ enabled }` — whether ELEVENLABS_API_KEY is configured |
 | `POST /api/audio/speech` | Text-to-speech (≤ 2,000 chars) → `audio/mpeg`. Budget-reserved + rate-limited (10/min). 503 `audio_disabled` without a key |
 
-### Memory, search, learning, community
+### Memory, search, learning, community — routes under `src/routes/legacy/` (FROZEN) except `search/`
 
 | Method & path | What it does |
 |---|---|
@@ -322,7 +322,7 @@ Fly deploy. It refuses remote `DATABASE_URL`s (Neon, etc.) unless you set
   the same code path that runs on first Google login
 - sample projects, prompts, versions, and sessions
 - global learning content (paths, lessons, challenges) via
-  `src/services/learning/seed.ts`
+  `src/services/legacy/learning/seed.ts`
 
 Runtime cost estimates use `@layerflow/model-registry` in-process — an empty
 `model_pricing` table in production is fine.

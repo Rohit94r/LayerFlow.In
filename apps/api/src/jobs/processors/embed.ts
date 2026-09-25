@@ -3,7 +3,7 @@ import { logger } from "../../config/logger";
 import {
   embedMemory,
   type EmbedMemoryPayload,
-} from "../../services/memory/embed";
+} from "../../services/legacy/memory/embed";
 
 /**
  * BullMQ processor for the `embeddings` job.

@@ -6,7 +6,7 @@
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
 
 export interface BillingPlanDisplay {
-  id: "starter" | "pro" | "team";
+  id: "pro";
   name: string;
   priceLabel: string;
   description: string;
@@ -16,7 +16,7 @@ export interface BillingPlanDisplay {
 }
 
 export interface SubscriptionStatus {
-  plan: "free" | "starter" | "pro" | "team";
+  plan: "free" | "pro";
   status: string;
   currentPeriodEnd: string | null;
   provider: "dodo" | null;
@@ -63,7 +63,7 @@ export const billingService = {
     };
   },
 
-  async startCheckout(plan: "starter" | "pro" | "team"): Promise<{ checkout_url: string }> {
+  async startCheckout(plan: "pro"): Promise<{ checkout_url: string }> {
     const headers = await getServerCookieHeader();
     return apiFetch<{ checkout_url: string }>(
       "/api/billing/checkout",

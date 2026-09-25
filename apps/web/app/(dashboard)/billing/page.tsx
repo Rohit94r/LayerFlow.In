@@ -21,8 +21,8 @@ export default async function BillingPage() {
         title="Billing"
         description={
           isFree
-            ? "Choose a plan to unlock agents, team workspaces, and billing history."
-            : `You're on the ${subscription.plan === "starter" ? "Starter" : subscription.plan === "pro" ? "Pro" : "Team"} plan.`
+            ? "Choose Pro to unlock unlimited gateway requests, cost exports, and full spend control."
+            : "You're on the Pro plan."
         }
       />
 
@@ -49,7 +49,7 @@ export default async function BillingPage() {
         <Panel>
           <PanelHeader
             title="Billing not configured"
-            description="LayerFlow uses Dodo Payments. An admin needs to set DODO_PRODUCT_STARTER / DODO_PRODUCT_PRO / DODO_PRODUCT_TEAM in the API environment."
+            description="LayerFlow uses Dodo Payments. An admin needs to set DODO_PRODUCT_PRO in the API environment."
           />
           <PanelBody>
             <p className="text-sm text-muted">

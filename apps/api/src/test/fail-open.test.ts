@@ -1,6 +1,6 @@
-import net from "node:net";
+import type { CreateApiKeyResponse } from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { canConnect, startTestDb } from "./helpers/integration-db";
+import { startTestDb } from "./helpers/integration-db";
 
 /**
  * Phase 4.6 — GATEWAY_FAIL_OPEN for /v1/chat/completions.
@@ -23,7 +23,7 @@ vi.mock("../services/budgets/enforce", async (importOriginal) => {
   const { AppError } = await import("../middleware/app-error");
   return {
     ...actual,
-    reserveBudget: vi.fn(async (input: never) => {
+    reserveBudget: vi.fn(async () => {
       if (mockState.mode === "unavailable") {
         throw new AppError(503, "budget_unavailable", "Redis unreachable");
       }
@@ -46,7 +46,7 @@ async function setupRequest() {
     headers: { cookie: session.cookie, "content-type": "application/json" },
     body: JSON.stringify({ name: "fail-open test" }),
   });
-  const { secret } = (await keyRes.json()) as any;
+  const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
   let adapterCalled = false;
   setAdapterForTests("openai", {
@@ -106,7 +106,9 @@ describe("GATEWAY_FAIL_OPEN", () => {
       const res = await request();
       expect(res.status).toBe(200);
       expect(res.headers.get("x-lf-fail-open")).toBe("1");
-      const body = (await res.json()) as any;
+      const body = (await res.json()) as {
+        choices: { message: { content: string } }[];
+      };
       expect(body.choices[0].message.content).toBe("still served");
       expect(adapterCalled()).toBe(true);
     });
@@ -119,7 +121,7 @@ describe("GATEWAY_FAIL_OPEN", () => {
 
       const res = await request();
       expect(res.status).toBe(402);
-      expect(((await res.json()) as any).error.code).toBe("budget_exceeded");
+      expect((await res.json() as { error: { code: string } }).error.code).toBe("budget_exceeded");
       expect(res.headers.get("x-lf-fail-open")).toBeNull();
       expect(adapterCalled()).toBe(false);
     });
@@ -134,7 +136,7 @@ describe("GATEWAY_FAIL_OPEN", () => {
 
       const res = await request();
       expect(res.status).toBe(503);
-      expect(((await res.json()) as any).error.code).toBe("budget_unavailable");
+      expect((await res.json() as { error: { code: string } }).error.code).toBe("budget_unavailable");
       expect(res.headers.get("x-lf-fail-open")).toBeNull();
       expect(adapterCalled()).toBe(false);
     });

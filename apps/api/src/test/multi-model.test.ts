@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { canConnect, startTestDb } from "./helpers/integration-db";
+import { startTestDb } from "./helpers/integration-db";
 
 /**
  * Multi-model test matrix:

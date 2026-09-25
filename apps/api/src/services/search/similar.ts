@@ -5,8 +5,8 @@ import { embedText } from "./embeddings";
 import {
   findSimilarMemories,
   memoriesByIds,
-} from "../memory/embed";
-import { toMemoryDto } from "../memory/memory";
+} from "../legacy/memory/embed";
+import { toMemoryDto } from "../legacy/memory/memory";
 
 /**
  * Semantic similarity over memory_embeddings.

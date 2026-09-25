@@ -10,7 +10,7 @@ import {
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
 import { users } from "../../db/schema/auth";
-import { invitations, workspaceMembers, workspaces } from "../../db/schema/tenancy";
+import { invitations, workspaceMembers } from "../../db/schema/tenancy";
 import { requireAuth } from "../../middleware/auth";
 import { AppError } from "../../middleware/app-error";
 import { inviteEmail } from "../../services/email/templates";

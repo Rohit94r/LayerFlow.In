@@ -21,10 +21,8 @@
 
 import { db } from "../../db/client";
 import { and, count, eq } from "drizzle-orm";
-import { files } from "../../db/schema/files";
 import { memories } from "../../db/schema/memory";
-import { createMemory } from "../memory/memory";
-import { scheduleMemoryEmbedding } from "../memory/embed";
+import { createMemory } from "../legacy/memory/memory";
 import { logger } from "../../config/logger";
 import { AppError } from "../../middleware/app-error";
 import { readLocalFile, localFileExists, r2ObjectExists, readR2ObjectBytes, isR2Configured } from "./storage";

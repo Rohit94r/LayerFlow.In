@@ -1,4 +1,4 @@
-import { integer, jsonb, pgTable, text, timestamp, index } from "drizzle-orm/pg-core";
+import { integer, jsonb, pgTable, text, index } from "drizzle-orm/pg-core";
 import { idColumn, timestamps } from "./_helpers";
 import { workspaces } from "./tenancy";
 import { promptSessions } from "./sessions";

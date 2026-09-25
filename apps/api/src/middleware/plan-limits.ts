@@ -8,9 +8,7 @@ import { isBillingConfigured } from "../services/billing/dodo";
  * determines what they can access:
  *
  *   free    → only free-tier providers (groq, gemini)
- *   starter → free-tier + cheap providers (deepseek, kimi, xai-mini)
  *   pro     → all providers including flagship (openai, anthropic)
- *   team    → all providers
  *
  * If billing is not configured yet, all managed calls are allowed (beta mode).
  * BYOK calls are never gated — the user pays the provider directly.
@@ -18,9 +16,7 @@ import { isBillingConfigured } from "../services/billing/dodo";
 
 const PLAN_PROVIDER_ACCESS: Record<string, Set<string>> = {
   free: new Set(["groq", "google"]),
-  starter: new Set(["groq", "google", "deepseek", "kimi", "xai", "opencode"]),
   pro: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter", "opencode"]),
-  team: new Set(["groq", "google", "deepseek", "kimi", "xai", "openai", "anthropic", "openrouter", "opencode"]),
 };
 
 export function getPlanForWorkspace(workspaceId: string): ReturnType<typeof getCurrentSubscription> {
@@ -28,9 +24,9 @@ export function getPlanForWorkspace(workspaceId: string): ReturnType<typeof getC
 }
 
 /**
- * Cost report export is a Pro feature: free/starter users are denied when
- * billing is configured. In beta mode (billing not configured) everything is
- * allowed, matching the rest of the plan-gated features.
+ * Cost report export is a Pro feature: free users are denied when billing is
+ * configured. In beta mode (billing not configured) everything is allowed,
+ * matching the rest of the plan-gated features.
  */
 export async function canExportCostReports(
   workspaceId: string,
@@ -40,7 +36,7 @@ export async function canExportCostReports(
   }
   const sub = await getCurrentSubscription(workspaceId);
   const plan = sub.active ? sub.plan : "free";
-  if (plan === "pro" || plan === "team") {
+  if (plan === "pro") {
     return { allowed: true, plan };
   }
   return {
@@ -82,7 +78,7 @@ export async function canUseManagedProvider(
 
   return {
     allowed: false,
-    reason: `Your ${plan} plan doesn't include ${provider} managed access. Add your own ${provider} API key (BYOK) or upgrade to ${plan === "free" ? "Starter" : "Pro"}.`,
+    reason: `Your ${plan} plan doesn't include ${provider} managed access. Add your own ${provider} API key (BYOK) ${plan === "free" ? "or upgrade to Pro" : ""} to unlock it.`,
     plan,
   };
 }

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { canConnect, startTestDb } from "./helpers/integration-db";
+import { startTestDb } from "./helpers/integration-db";
 
 /**
  * Production-hardening integration tests: security headers, health endpoints,
@@ -55,10 +55,10 @@ describe("production hardening", () => {
 
       const live = await app.request("/health/live");
       expect(live.status).toBe(200);
-      expect(((await live.json()) as any).status).toBe("ok");
+      expect((await live.json() as { status: string }).status).toBe("ok");
 
       const ready = await app.request("/health/ready");
-      const body = (await ready.json()) as any;
+      const body = (await ready.json()) as { checks: { db: boolean } };
       expect(body.checks.db).toBe(true); // PGlite/docker either way
       expect([200, 503]).toContain(ready.status); // redis may be down locally
     });
@@ -74,7 +74,7 @@ describe("production hardening", () => {
         body: JSON.stringify({ pad: "x".repeat(2 * 1024 * 1024) }),
       });
       expect(res.status).toBe(413);
-      expect(((await res.json()) as any).error.code).toBe("payload_too_large");
+      expect((await res.json() as { error: { code: string } }).error.code).toBe("payload_too_large");
     });
   });
 
@@ -89,7 +89,7 @@ describe("production hardening", () => {
         headers: { cookie: session.cookie },
       });
       expect(status.status).toBe(200);
-      expect(((await status.json()) as any).enabled).toBe(false);
+      expect((await status.json() as { enabled: boolean }).enabled).toBe(false);
 
       const speech = await app.request("/api/audio/speech", {
         method: "POST",
@@ -97,7 +97,7 @@ describe("production hardening", () => {
         body: JSON.stringify({ text: "hello world" }),
       });
       expect(speech.status).toBe(503);
-      expect(((await speech.json()) as any).error.code).toBe("audio_disabled");
+      expect((await speech.json() as { error: { code: string } }).error.code).toBe("audio_disabled");
     });
   });
 

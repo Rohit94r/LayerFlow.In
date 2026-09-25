@@ -1,5 +1,5 @@
-import net from "node:net";
 import { randomUUID } from "node:crypto";
+import type { CreateApiKeyResponse, CreateProviderKeyResponse, ListProviderKeysResponse } from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { canConnect, startTestDb } from "./helpers/integration-db";
 
@@ -59,13 +59,13 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         }),
       });
       expect(created.status).toBe(201);
-      const body = (await created.json()) as any;
+      const body = (await created.json()) as CreateProviderKeyResponse;
       expect(body.key.baseUrl).toBe("https://llm.internal.example.com/v1");
 
       const listed = await app.request("/api/provider-keys", {
         headers: { cookie: session.cookie },
       });
-      const listBody = (await listed.json()) as any;
+      const listBody = (await listed.json()) as ListProviderKeysResponse;
       expect(listBody.keys[0].baseUrl).toBe("https://llm.internal.example.com/v1");
     });
 
@@ -92,7 +92,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
           body: JSON.stringify({ provider: "groq", secret: "sk-test-groq-abcdef1234", baseUrl }),
         });
         expect(res.status).toBe(400);
-        expect(((await res.json()) as any).error.code).toBe(code);
+        expect((await res.json() as { error: { code: string } }).error.code).toBe(code);
       }
     });
   });
@@ -119,12 +119,12 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "gateway direct test" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       const seen: string[] = [];
       setAdapterForTests("openai", {
         provider: "openai",
-        async chatCompletion(req: any) {
+        async chatCompletion(req: { apiKey: string }) {
           seen.push(req.apiKey);
           return { content: "pong", inputTokens: 3, outputTokens: 1, latencyMs: 1, raw: {} };
         },
@@ -144,7 +144,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         }),
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as any;
+      const body = (await res.json()) as { choices: { message: { content: string } }[] };
       expect(body.choices[0].message.content).toBe("pong");
       expect(res.headers.get("x-lf-key-mode")).toBe("direct");
       expect(seen).toEqual([directKey]);
@@ -174,7 +174,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "gateway direct cache" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       let calls = 0;
       setAdapterForTests("openai", {
@@ -221,7 +221,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "gateway direct provider" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       setAdapterForTests("groq", {
         provider: "groq",
@@ -250,7 +250,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         }),
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as any;
+      const body = (await res.json()) as { choices: { message: { content: string } }[] };
       expect(body.choices[0].message.content).toBe("from groq");
       expect(res.headers.get("x-lf-key-mode")).toBe("direct");
     });
@@ -276,7 +276,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "gateway project" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       setAdapterForTests("openai", {
         provider: "openai",
@@ -389,7 +389,7 @@ describe("gateway direct/no-store mode + demo caps + BYOK base URL", () => {
         vi.unstubAllGlobals();
       }
       expect(fetchMock).toHaveBeenCalledOnce();
-      expect((fetchMock.mock.calls[0] as any[])[0]).toBe("https://custom.endpoint.example.com/v1/chat/completions");
+      expect((fetchMock.mock.calls[0] as unknown as [string])[0]).toBe("https://custom.endpoint.example.com/v1/chat/completions");
     });
   });
 });

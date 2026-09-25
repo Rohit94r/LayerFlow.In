@@ -88,12 +88,11 @@ export const envSchema = z.object({
   DODO_PAYMENTS_ENVIRONMENT: z.enum(["test_mode", "live_mode"]).default("test_mode"),
   /** Where to send the customer after the hosted checkout (defaults to WEB_URL/billing). */
   DODO_PAYMENTS_RETURN_URL: z.string().optional(),
-  /** Billing currency for checkout (ISO 4217). Defaults to USD. */
+  /** Billing currency for checkout (ISO 4217). Defaults to USD (Pro ~$9). Test ₹
+  pricing by setting INR + a matching test product. */
   DODO_BILLING_CURRENCY: z.string().default("USD"),
-  /** Dodo product IDs for each plan (create the product in the dashboard). */
-  DODO_PRODUCT_STARTER: z.string().optional(),
+  /** Dodo product ID for the Pro plan (the only paid plan). */
   DODO_PRODUCT_PRO: z.string().optional(),
-  DODO_PRODUCT_TEAM: z.string().optional(),
   /** Resend (transactional email). Without it the email service logs a no-op. */
   RESEND_API_KEY: z.string().optional(),
   /** Sender for all outgoing email, e.g. `LayerFlow <alerts@layerflow.dev>`. */

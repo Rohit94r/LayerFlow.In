@@ -1,4 +1,3 @@
-import net from "node:net";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { canConnect, startTestDb } from "./helpers/integration-db";
 

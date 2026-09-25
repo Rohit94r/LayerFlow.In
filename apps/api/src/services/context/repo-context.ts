@@ -10,7 +10,6 @@
  */
 
 import { logger } from "../../config/logger";
-import { estimateTokens } from "../intelligence/analyze";
 
 // -- Types ------------------------------------------------------------------
 
@@ -145,7 +144,7 @@ export async function selectRelevantFiles(
   } = request;
 
   const fs = await import("fs/promises");
-  const { join, relative } = await import("path");
+  const { join: joinPath } = await import("path");
 
   const candidates: RelevantFile[] = [];
   const excludeSet = new Set(excludePaths.map((p) => p.replace(/^\//, "")));
@@ -164,7 +163,7 @@ export async function selectRelevantFiles(
       if (excludeSet.has(relPath) || EXCLUDE_DIRECTORIES.includes(entry.name)) continue;
       if (entry.name.startsWith(".") && entry.name !== ".env.example") continue;
 
-      const fullPath = join(dir, entry.name);
+      const fullPath = joinPath(dir, entry.name);
 
       if (entry.isDirectory()) {
         await scanDir(fullPath, relPath);

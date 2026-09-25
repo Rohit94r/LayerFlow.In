@@ -2,8 +2,6 @@ import { createHash } from "node:crypto";
 import { getEnv } from "../config/env";
 import { logger } from "../config/logger";
 import { db } from "../db/client";
-import { apiKeys } from "../db/schema/gateway";
-import { workspaces } from "../db/schema/tenancy";
 import { AppError } from "../middleware/app-error";
 import { redis } from "../redis/client";
 import { sendRunawayAlert } from "../services/email/notifications";

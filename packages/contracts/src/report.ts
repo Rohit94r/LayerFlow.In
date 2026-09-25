@@ -27,3 +27,10 @@ export interface CostReportRow {
 }
 
 export type CostReportFormat = "csv" | "json";
+
+/** JSON body shape returned by GET /api/report/costs?format=json. */
+export interface CostReportJsonResponse {
+  from: string;
+  to: string;
+  rows: CostReportRow[];
+}

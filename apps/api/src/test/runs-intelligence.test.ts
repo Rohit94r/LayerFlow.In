@@ -157,8 +157,8 @@ describe("runs + intelligence APIs", () => {
   it("executeRun with mocked adapter persists a succeeded run", async () => {
     // Call the service directly so we can inject the mock without going through
     // the HTTP path's real BYOK+adapter resolution twice.
-    const { executeRun } = await import("../services/runs/execute");
-    const { toRunDetailDto } = await import("../services/runs/dto");
+    const { executeRun } = await import("../services/legacy/runs/execute");
+    const { toRunDetailDto } = await import("../services/legacy/runs/dto");
 
     const { run } = await executeRun({
       workspaceId,

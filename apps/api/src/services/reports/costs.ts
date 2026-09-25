@@ -2,7 +2,6 @@ import type { CostReportQuery, CostReportRow } from "@layerflow/contracts";
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "../../db/client";
 import { usageLedger } from "../../db/schema/cost";
-import { projects } from "../../db/schema/workspace";
 import { AppError } from "../../middleware/app-error";
 
 /** Default report window: the current UTC month, up to today. */

@@ -5,55 +5,42 @@ import { getEnv } from "../../config/env";
  * Paid plans billed through Dodo Payments. The `free` plan is not in this list —
  * there is nothing to charge for it.
  *
- * Each plan maps to a Dodo product id. Products are created in the dashboard
- * (app.dodopayments.com → Products → Add Product) and wired up via env vars so
- * prices / ids are easy to change without deployments.
+ * Pricing is deliberately simple: **Free ₹0 / Pro $9/mo**. One paid plan, one
+ * Dodo product. Prices / ids are wired up via env vars so they can change
+ * without deployments (test ₹ pricing uses a second product set during the
+ * Dodo test-checkout run — flip DODO_BILLING_CURRENCY to test it).
+ *
+ * Each paid plan maps to a Dodo product id. Products are created in the
+ * dashboard (app.dodopayments.com → Products → Add Product).
  */
-export type BillingPlanId = "starter" | "pro" | "team";
+export type BillingPlanId = "pro";
 
 export interface BillingPlan {
   id: BillingPlanId;
   name: string;
   priceLabel: string;
-  /** No card is charged for this many days (requires a Dodo subscription product). */
-  trialPeriodDays?: number;
 }
 
 export const BILLING_PLANS: BillingPlan[] = [
-  { id: "starter", name: "Starter", priceLabel: "$5/mo", trialPeriodDays: 14 },
-  { id: "pro", name: "Pro", priceLabel: "$14/mo" },
-  { id: "team", name: "Team", priceLabel: "Custom" },
+  { id: "pro", name: "Pro", priceLabel: "$9/mo" },
 ];
 
-/** Feature bullets shown on the Billing page for each paid plan. */
+/** Feature bullets shown on the Billing page for the Pro plan. */
 export const PLAN_FEATURES: Record<BillingPlanId, string[]> = {
-  starter: [
-    "Unlimited chat + auto model switching",
-    "BYOK — encrypted provider keys",
-    "AI Memory + context search",
-    "Cost analytics + budgets",
-    "3 workspaces",
-  ],
   pro: [
-    "Everything in Starter",
-    "Autonomous agents + approvals",
-    "Team workspaces (roles + invitations)",
-    "Smart routing + model budgets",
-    "CSV / JSON / PDF exports",
-  ],
-  team: [
-    "Everything in Pro",
-    "Unlimited seats",
-    "Priority processing queue",
-    "Early access: browser companion",
+    "Unlimited gateway requests (no demo cap)",
+    "BYOK vault — provider keys + custom base URLs",
+    "Per-project spend with a single header",
+    "Hard budget caps + email alerts at 50/80/100%",
+    "Usage history + CSV / JSON / PDF cost reports",
+    "lf CLI direct mode + lf config",
+    "Loose-key mode — keys never stored or logged",
   ],
 };
 
-/** Human-friendly description per plan for the Billing page cards. */
+/** Human-friendly blurb per plan for the Billing page cards. */
 export const PLAN_DESCRIPTIONS: Record<BillingPlanId, string> = {
-  starter: "For solo builders who switch models weekly and never want to re-explain work.",
-  pro: "For teams and heavy AI workflows with autonomous agents.",
-  team: "For organizations needing unlimited seats and priority support.",
+  pro: "For solo devs and freelancers who want real AI spend control without markup.",
 };
 
 export function getBillingPlan(id: string): BillingPlan {
@@ -66,9 +53,7 @@ export function getBillingPlan(id: string): BillingPlan {
 export function getPlanProductId(plan: BillingPlanId | string): string {
   const env = getEnv();
   const ids: Record<BillingPlanId, string | undefined> = {
-    starter: env.DODO_PRODUCT_STARTER,
     pro: env.DODO_PRODUCT_PRO,
-    team: env.DODO_PRODUCT_TEAM,
   };
   const productId = ids[plan as BillingPlanId];
   if (!productId) {

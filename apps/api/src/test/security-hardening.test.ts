@@ -1,4 +1,4 @@
-import net from "node:net";
+import type { CreateApiKeyResponse, CreateProviderKeyResponse } from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { canConnect, startTestDb } from "./helpers/integration-db";
 
@@ -117,7 +117,7 @@ describe("security hardening (KEK rotation + audit + key scrubber)", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ provider: "groq", secret: "sk-groq-revoke-1234567890" }),
     });
-    const key = ((await created.json()) as any).key as { id: string };
+    const key = (await created.json() as CreateProviderKeyResponse).key;
     expect(created.status).toBe(201);
 
     const revoked = await app.request(`/api/provider-keys/${key.id}`, {
@@ -153,7 +153,7 @@ describe("security hardening (KEK rotation + audit + key scrubber)", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ name: "scrubber proof" }),
     });
-    const { secret } = (await keyRes.json()) as any;
+    const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
     setAdapterForTests("openai", {
       provider: "openai",
@@ -214,7 +214,7 @@ describe("security hardening (KEK rotation + audit + key scrubber)", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ name: "fail-open safety" }),
     });
-    const { secret } = (await keyRes.json()) as any;
+    const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
     let adapterCalled = false;
     setAdapterForTests("openai", {
@@ -238,7 +238,7 @@ describe("security hardening (KEK rotation + audit + key scrubber)", () => {
       }),
     });
     expect(res.status).toBe(402);
-    expect(((await res.json()) as any).error.code).toBe("budget_exceeded");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("budget_exceeded");
     expect(res.headers.get("x-lf-fail-open")).toBeNull();
     expect(adapterCalled).toBe(false);
   });

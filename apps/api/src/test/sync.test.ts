@@ -1,3 +1,4 @@
+import type { CreateApiKeyResponse } from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestDb } from "./helpers/integration-db";
 
@@ -33,7 +34,7 @@ describe("sync protocol", () => {
       body: JSON.stringify({ device_id: "dev_anon", last_watermark: 0 }),
     });
     expect(res.status).toBe(401);
-    expect(((await res.json()) as any).error.code).toBe("unauthorized");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("unauthorized");
   });
 
   it("rejects invalid API keys", async () => {
@@ -68,7 +69,7 @@ describe("sync protocol", () => {
       body: JSON.stringify({ device_id: "dev_macbook_pro", last_watermark: 0 }),
     });
     expect(hs.status).toBe(200);
-    const hsBody = (await hs.json()) as any;
+    const hsBody = (await hs.json()) as { server_watermark: number };
     expect(hsBody.server_watermark).toBe(0);
 
     const ops = [
@@ -96,7 +97,9 @@ describe("sync protocol", () => {
       body: JSON.stringify({ ops }),
     });
     expect(push.status).toBe(200);
-    const pushBody = (await push.json()) as any;
+    type SyncPushResponse = { accepted: string[]; rejected: unknown[]; server_watermark: number };
+
+    const pushBody = (await push.json()) as SyncPushResponse;
     expect(pushBody.accepted.sort()).toEqual(["op_1_aaaa", "op_2_bbbb"]);
     expect(pushBody.rejected).toHaveLength(0);
     const watermark = pushBody.server_watermark;
@@ -108,7 +111,7 @@ describe("sync protocol", () => {
       headers,
       body: JSON.stringify({ ops }),
     });
-    const replayBody = (await replay.json()) as any;
+    const replayBody = (await replay.json()) as SyncPushResponse;
     expect(replayBody.accepted.sort()).toEqual(["op_1_aaaa", "op_2_bbbb"]);
     expect(replayBody.server_watermark).toBe(watermark);
 
@@ -118,7 +121,7 @@ describe("sync protocol", () => {
       headers,
       body: JSON.stringify({ since: 0 }),
     });
-    const pull0Body = (await pull0.json()) as any;
+    const pull0Body = (await pull0.json()) as { ops: unknown[] };
     expect(pull0Body.ops).toHaveLength(2);
 
     const pullAll = await app.request("/api/v1/sync/pull", {
@@ -126,16 +129,16 @@ describe("sync protocol", () => {
       headers,
       body: JSON.stringify({ since: watermark }),
     });
-    expect(((await pullAll.json()) as any).ops).toHaveLength(0);
+    expect((await pullAll.json() as { ops: unknown[] }).ops).toHaveLength(0);
 
     // Dashboard endpoints
     const list = await app.request("/api/v1/sync/operations", { headers });
-    const listBody = (await list.json()) as any;
+    const listBody = (await list.json()) as { operations: Array<{ entity: string }> };
     expect(listBody.operations).toHaveLength(2);
     expect(listBody.operations[0].entity).toBe("memory");
 
     const devices = await app.request("/api/v1/sync/devices", { headers });
-    const devicesBody = (await devices.json()) as any;
+    const devicesBody = (await devices.json()) as { devices: Array<{ device_id: string }> };
     expect(devicesBody.devices).toHaveLength(1);
     expect(devicesBody.devices[0].device_id).toBe("dev_macbook_pro");
 
@@ -146,7 +149,7 @@ describe("sync protocol", () => {
     });
     expect(del.status).toBe(200);
     const after = await app.request("/api/v1/sync/operations", { headers });
-    expect(((await after.json()) as any).operations).toHaveLength(1);
+    expect((await after.json() as { operations: unknown[] }).operations).toHaveLength(1);
   });
 
   it("rejects oversized payloads and unknown entities", async () => {
@@ -194,7 +197,7 @@ describe("sync protocol", () => {
       headers: { cookie: session.cookie, "content-type": "application/json" },
       body: JSON.stringify({ name: "cli-sync-key" }),
     });
-    const { secret } = (await keyRes.json()) as any;
+    const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
     const res = await app.request("/api/v1/sync/handshake", {
       method: "POST",
@@ -205,6 +208,6 @@ describe("sync protocol", () => {
       body: JSON.stringify({ device_id: "dev_ci", last_watermark: 0 }),
     });
     expect(res.status).toBe(200);
-    expect(((await res.json()) as any).server_watermark).toBe(0);
+    expect((await res.json() as { server_watermark: number }).server_watermark).toBe(0);
   });
 });

@@ -4,8 +4,8 @@ import { logger } from "../../config/logger";
 import { db } from "../../db/client";
 import { promptVersions } from "../../db/schema/prompts";
 import { compareJobs, compareResults, runs } from "../../db/schema/runs";
-import { computeRankHints } from "../../services/compare/rank";
-import { executeRun, RunExecutionError } from "../../services/runs/execute";
+import { computeRankHints } from "../../services/legacy/compare/rank";
+import { executeRun, RunExecutionError } from "../../services/legacy/runs/execute";
 
 export interface CompareJobPayload {
   compareJobId: string;

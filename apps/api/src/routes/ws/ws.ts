@@ -168,7 +168,6 @@ export const wsRouter = new Hono<AppEnv>();
 wsRouter.use(requireAuth);
 
 wsRouter.get("/", async (c) => {
-  const userId = c.get("userId");
   const workspaceId = c.get("workspaceId");
   const sessionId = c.req.query("sessionId") ?? null;
 
@@ -221,7 +220,7 @@ wsRouter.get("/", async (c) => {
 export function setupWsServer(server: {
   on(event: "upgrade", listener: (request: IncomingMessage, socket: Duplex, head: Buffer) => void): void;
 }): void {
-  server.on("upgrade", (request, socket, head) => {
+  server.on("upgrade", (request, socket, _head) => {
     const url = new URL(request.url ?? "/", "http://localhost");
     if (url.pathname !== "/api/ws") {
       socket.destroy();
@@ -374,7 +373,7 @@ function beginWsSession(
       unregisterClient(clientId);
     };
 
-    const registered = registerClient(clientId, meta, send, close);
+    registerClient(clientId, meta, send, close);
 
     // Handle incoming frames (pings, pongs, close, data)
     socket.on("data", (data: Buffer) => {

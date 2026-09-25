@@ -1,3 +1,4 @@
+import type { CreateApiKeyResponse } from "@layerflow/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { startTestDb } from "./helpers/integration-db";
 
@@ -119,7 +120,7 @@ describe("runaway-loop kill switch", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "kill-switch integration" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       setAdapterForTests("openai", {
         provider: "openai",
@@ -152,7 +153,7 @@ describe("runaway-loop kill switch", () => {
 
       const blockedRes = await request();
       expect(blockedRes.status).toBe(429);
-      expect(((await blockedRes.json()) as any).error.code).toBe("runaway_loop_blocked");
+      expect((await blockedRes.json() as { error: { code: string } }).error.code).toBe("runaway_loop_blocked");
     });
 
     it("does not pause for repeated but distinct requests", async () => {
@@ -173,7 +174,7 @@ describe("runaway-loop kill switch", () => {
         headers: { cookie: session.cookie, "content-type": "application/json" },
         body: JSON.stringify({ name: "kill-switch distinct" }),
       });
-      const { secret } = (await keyRes.json()) as any;
+      const { secret } = (await keyRes.json()) as CreateApiKeyResponse;
 
       let calls = 0;
       setAdapterForTests("openai", {

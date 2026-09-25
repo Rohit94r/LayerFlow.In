@@ -15,7 +15,7 @@ export type AiTool =
   | "perplexity"
   | "generic";
 
-export type PlanId = "free" | "starter" | "pro";
+export type PlanId = "free" | "pro";
 
 // ── Rescue Context ───────────────────────────────────────────
 

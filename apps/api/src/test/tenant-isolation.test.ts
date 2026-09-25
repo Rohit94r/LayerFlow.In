@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { canConnect, startTestDb } from "./helpers/integration-db";
+import { startTestDb } from "./helpers/integration-db";
 
 process.env.REDIS_URL = "redis://127.0.0.1:6399";
 process.env.GROQ_API_KEY = "";
@@ -32,7 +32,6 @@ describe("tenant isolation", () => {
     const { createTestSession } = await import("./auth");
     const { db } = await import("../db/client");
     const { aiChatSessions } = await import("../db/schema/chat");
-    const { and, eq } = await import("drizzle-orm");
 
     const sessionA = await createTestSession({ name: "Alice", email: "alice@test.dev" });
     const sessionB = await createTestSession({ name: "Bob", email: "bob@test.dev" });

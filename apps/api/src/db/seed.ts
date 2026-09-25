@@ -6,7 +6,7 @@ import { promptTags, prompts, promptVersions } from "./schema/prompts";
 import { promptSessions, sessionMessages } from "./schema/sessions";
 import { activityEvents, projects } from "./schema/workspace";
 import { onboardNewUser } from "../services/onboarding";
-import { seedLearning } from "../services/learning/seed";
+import { seedLearning } from "../services/legacy/learning/seed";
 import { logger } from "../config/logger";
 import { seedModelPricingIfEmpty } from "./seed-pricing";
 

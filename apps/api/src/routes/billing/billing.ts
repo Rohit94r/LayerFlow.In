@@ -14,7 +14,7 @@ import {
 import type { AppEnv } from "../../types";
 
 const checkoutSchema = z.object({
-  plan: z.enum(["starter", "pro", "team"]),
+  plan: z.enum(["pro"]),
 });
 
 /**

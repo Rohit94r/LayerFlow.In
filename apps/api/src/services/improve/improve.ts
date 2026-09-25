@@ -2,7 +2,7 @@ import { computeCostMicro } from "@layerflow/model-registry";
 import { z } from "zod";
 import { AppError } from "../../middleware/app-error";
 import { logger } from "../../config/logger";
-import { executeRun } from "../runs/execute";
+import { executeRun } from "../legacy/runs/execute";
 import { hasUsableProviderKey } from "../chat/health";
 import { estimateTokens } from "../intelligence/analyze";
 

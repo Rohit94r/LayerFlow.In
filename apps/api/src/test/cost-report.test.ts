@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { CostReportJsonResponse } from "@layerflow/contracts";
 import { startTestDb } from "./helpers/integration-db";
 
 /**
@@ -95,7 +96,6 @@ describe("cost report export", () => {
 
   it("returns the same report as JSON", async () => {
     const { createApp } = await import("../app");
-    const { createTestSession } = await import("./auth");
     const { db } = await import("../db/client");
     const { usageLedger } = await import("../db/schema/cost");
     const app = createApp();
@@ -117,7 +117,7 @@ describe("cost report export", () => {
       { headers: { cookie: session.cookie } },
     );
     expect(res.status).toBe(200);
-    const body = (await res.json()) as any;
+    const body = (await res.json()) as CostReportJsonResponse;
     expect(body.from).toBe("2026-07-01");
     expect(body.to).toBe("2026-07-31");
     expect(body.rows).toEqual([
@@ -137,7 +137,6 @@ describe("cost report export", () => {
 
   it("aggregates repeated calls on the same day/provider/model into one row", async () => {
     const { createApp } = await import("../app");
-    const { createTestSession } = await import("./auth");
     const { db } = await import("../db/client");
     const { usageLedger } = await import("../db/schema/cost");
     const app = createApp();
@@ -170,7 +169,7 @@ describe("cost report export", () => {
       "/api/report/costs?format=json&from=2026-07-01&to=2026-07-31",
       { headers: { cookie: session.cookie } },
     );
-    const body = (await res.json()) as any;
+    const body = (await res.json()) as CostReportJsonResponse;
     expect(body.rows).toHaveLength(1);
     expect(body.rows[0]).toMatchObject({
       requests: 2,
@@ -182,7 +181,6 @@ describe("cost report export", () => {
 
   it("filters to one project and resolves its name", async () => {
     const { createApp } = await import("../app");
-    const { createTestSession } = await import("./auth");
     const { db } = await import("../db/client");
     const { usageLedger } = await import("../db/schema/cost");
     const { domains } = await import("../db/schema/workspace");
@@ -243,7 +241,6 @@ describe("cost report export", () => {
 
   it("rejects a project id from another workspace (404)", async () => {
     const { createApp } = await import("../app");
-    const { createTestSession } = await import("./auth");
     const app = createApp();
     const session = await proSession();
 
@@ -252,12 +249,11 @@ describe("cost report export", () => {
       { headers: { cookie: session.cookie } },
     );
     expect(res.status).toBe(404);
-    expect(((await res.json()) as any).error.code).toBe("project_not_found");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("project_not_found");
   });
 
   it("quotes and escapes CSV cells containing commas and quotes", async () => {
     const { createApp } = await import("../app");
-    const { createTestSession } = await import("./auth");
     const { db } = await import("../db/client");
     const { usageLedger } = await import("../db/schema/cost");
     const { domains } = await import("../db/schema/workspace");
@@ -309,7 +305,7 @@ describe("cost report export", () => {
       headers: { cookie: session.cookie },
     });
     expect(res.status).toBe(402);
-    expect(((await res.json()) as any).error.code).toBe("plan_required");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("plan_required");
   });
 
   it("allows a Pro workspace even with an empty ledger", async () => {
@@ -334,6 +330,6 @@ describe("cost report export", () => {
       headers: { cookie: session.cookie },
     });
     expect(res.status).toBe(400);
-    expect(((await res.json()) as any).error.code).toBe("validation_error");
+    expect((await res.json() as { error: { code: string } }).error.code).toBe("validation_error");
   });
 });

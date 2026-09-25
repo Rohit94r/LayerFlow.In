@@ -33,6 +33,8 @@ describe("device auth (lf terminal)", () => {
     path: string,
     body?: string,
     contentType?: string,
+  /** Deliberate: response JSON is an untyped bag across several endpoints. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<{ status: number; json: any }> {
     const res = app.request(path, {
       method,

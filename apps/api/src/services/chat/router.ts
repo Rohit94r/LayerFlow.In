@@ -23,7 +23,7 @@ import { estimateTokens } from "../intelligence/analyze";
 import { buildMessages } from "./context";
 import { normalizeMarkdown } from "./markdown";
 import { defaultTemperature } from "./prompts";
-import { budgetRelease, budgetReserve, budgetSettle } from "../runs/budget-hook";
+import { budgetRelease, budgetReserve, budgetSettle } from "../legacy/runs/budget-hook";
 import {
   isKeyUsable,
   listKeyHealth,

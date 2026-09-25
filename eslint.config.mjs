@@ -19,6 +19,34 @@ export default defineConfig([
     files: ["apps/**", "packages/**"],
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
+    // Frozen code: the legacy/ directories and the test suites that exercise
+    // frozen (memory/rag/team/mcp/runs) or grand-tour features. Kept in git,
+    // NOT actively shipped — silence the type-hygiene rules there so the live
+    // wedge (gateway, budgets, keys, reports, notifications, billing,
+    // workspace + their tests) is lint-clean while legacy stays tooled.
+    files: [
+      "apps/api/src/routes/legacy/**",
+      "apps/api/src/services/legacy/**",
+      "apps/api/src/test/memory-search.test.ts",
+      "apps/api/src/test/rag-reindex.test.ts",
+      "apps/api/src/test/runs-intelligence.test.ts",
+      "apps/api/src/test/team.test.ts",
+      "apps/api/src/test/mcp.test.ts",
+      "apps/api/src/test/integration.test.ts",
+      "apps/api/src/test/e2e-chat-flow.test.ts",
+      "apps/api/src/test/multi-model.test.ts",
+      "apps/api/scripts/form-filler.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
     },
   },
   globalIgnores([

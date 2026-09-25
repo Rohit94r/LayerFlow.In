@@ -74,7 +74,7 @@ export const subscriptions = pgTable(
     /** Dodo Payments provider IDs (used by the billing service). */
     dodoCustomerId: text("dodo_customer_id"),
     dodoSubscriptionId: text("dodo_subscription_id"),
-    plan: text("plan").$type<"free" | "starter" | "pro" | "team">().notNull().default("free"),
+    plan: text("plan").$type<"free" | "pro">().notNull().default("free"),
     status: text("status").notNull().default("active"),
     currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
     ...timestamps,

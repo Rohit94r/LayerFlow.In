@@ -11,7 +11,6 @@ import {
   PLAN_FEATURES,
   getBillingPlan,
   getPlanProductId,
-  type BillingPlan,
   type BillingPlanId,
 } from "./plans";
 
@@ -107,8 +106,6 @@ export async function createCheckoutSession(
     cancel_url: `${returnUrl}?status=cancelled`,
     billing_currency: env.DODO_BILLING_CURRENCY as CheckoutSessionParams["billing_currency"],
     metadata: { workspace_id: workspaceId, plan: plan.id },
-    subscription_data:
-      plan.trialPeriodDays != null ? { trial_period_days: plan.trialPeriodDays } : undefined,
   };
   const session = await client.checkoutSessions.create(body);
 
@@ -175,8 +172,8 @@ export function getBillingPlansDisplay(): BillingPlanDisplay[] {
     priceLabel: p.priceLabel,
     description: PLAN_DESCRIPTIONS[p.id],
     features: PLAN_FEATURES[p.id],
-    highlighted: i === 0, // Starter is the most popular entry point
-    trialPeriodDays: p.trialPeriodDays,
+    highlighted: i === 0, // Pro is the only paid plan — the entry point
+    trialPeriodDays: undefined,
   }));
 }
 
@@ -207,7 +204,7 @@ export async function getBillingInvoices(workspaceId: string): Promise<BillingIn
           ? payload.amount
           : null;
     if (amountMicro == null) continue;
-    // Dodo amounts are in the minor currency unit (e.g. cents); prices are $5/$14.
+    // Dodo amounts are in the minor currency unit (e.g. cents); Pro is $9.
     const dollars = amountMicro / 100;
     invoices.push({
       id: `INV-${r.processedAt.toISOString().slice(0, 10).replace(/-/g, "")}-${r.eventId.slice(0, 8)}`,
@@ -301,7 +298,7 @@ async function applyWebhookEvent(event: DodoWebhookEvent): Promise<void> {
   const metadata = (data.metadata as Record<string, unknown> | undefined) ?? {};
   const nextBillingDate = (data.next_billing_date as string | undefined) ?? null;
   const plan = (
-    metadata.plan === "starter" || metadata.plan === "pro" || metadata.plan === "team"
+    metadata.plan === "pro"
       ? metadata.plan
       : undefined
   ) as BillingPlanId | undefined;
@@ -380,7 +377,7 @@ async function upsertSubscription(p: UpsertParams): Promise<void> {
   });
   // Never downgrade an existing plan because an event lacked plan metadata —
   // preserve the current plan (or derive from the purchased product).
-  const plan = p.plan ?? derivePlanFromProduct(p.productId ?? null) ?? existing?.plan ?? "starter";
+  const plan = p.plan ?? derivePlanFromProduct(p.productId ?? null) ?? existing?.plan ?? "pro";
   await db
     .insert(subscriptions)
     .values({
@@ -406,8 +403,7 @@ async function upsertSubscription(p: UpsertParams): Promise<void> {
 
 /** Map a purchased product id back to a plan when event metadata is absent. */
 function derivePlanFromProduct(productId: string | null): BillingPlanId | undefined {
-  if (!productId || !getEnv().DODO_PRODUCT_STARTER || !getEnv().DODO_PRODUCT_PRO) return undefined;
-  if (productId === getEnv().DODO_PRODUCT_STARTER) return "starter";
+  if (!productId || !getEnv().DODO_PRODUCT_PRO) return undefined;
   if (productId === getEnv().DODO_PRODUCT_PRO) return "pro";
   return undefined;
 }

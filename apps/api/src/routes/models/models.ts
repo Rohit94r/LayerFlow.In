@@ -1,13 +1,10 @@
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
 import { MODELS, type Provider } from "@layerflow/model-registry";
 import {
-  listModelCatalogResponseSchema,
   type ListModelCatalogResponse,
   type ModelCatalogEntry,
 } from "@layerflow/contracts";
 import { db } from "../../db/client";
-import { providerKeys } from "../../db/schema/gateway";
 import { requireAuth } from "../../middleware/auth";
 import { platformApiKey } from "../../services/ai/providers";
 import { canUseManagedProvider } from "../../middleware/plan-limits";

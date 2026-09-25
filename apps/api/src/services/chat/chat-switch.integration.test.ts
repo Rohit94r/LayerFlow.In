@@ -214,7 +214,7 @@ describe("chat router — multi-model switching (provider isolation)", () => {
   it("buildMessages: injects retrieved workspace memory for the latest user turn", async () => {
     const { sessionId } = await newSession();
     const { memories } = await import("../../db/schema/memory");
-    const { embedMemory } = await import("../memory/embed");
+    const { embedMemory } = await import("../legacy/memory/embed");
 
     const [memory] = await db
       .insert(memories)

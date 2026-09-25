@@ -122,7 +122,6 @@ describe("validateUrl", () => {
 
   it("rejects truly invalid URLs", async () => {
     const result = await validateUrl("not-a-url");
-    expect(result.ok).toBe(false);
-    expect((result as any).error).toMatch(/Invalid URL/i);
+    expect(result).toMatchObject({ ok: false, error: /Invalid URL/i });
   });
 });

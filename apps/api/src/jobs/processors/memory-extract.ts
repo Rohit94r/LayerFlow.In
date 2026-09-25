@@ -6,7 +6,7 @@ import { db } from "../../db/client";
 import { memories } from "../../db/schema/memory";
 import { resolveAdapter } from "../../services/ai/providers";
 import { resolveFirstChatKey } from "../../services/chat/context";
-import { scheduleMemoryEmbedding } from "../../services/memory/embed";
+import { scheduleMemoryEmbedding } from "../../services/legacy/memory/embed";
 
 export interface MemoryExtractPayload {
   workspaceId: string;

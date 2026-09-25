@@ -119,7 +119,7 @@ describe("RAG file ingestion + re-index + embed backfill", () => {
   it("embedding backfill finds memories without an embedding row", async () => {
     const { db } = await import("../db/client");
     const { memories } = await import("../db/schema/memory");
-    const { findUnembeddedMemories } = await import("../services/memory/embed");
+    const { findUnembeddedMemories } = await import("../services/legacy/memory/embed");
     const { createTestSession } = await import("./auth");
     const session = await createTestSession({ name: "Backfill Tester" });
 
@@ -140,7 +140,7 @@ describe("RAG file ingestion + re-index + embed backfill", () => {
     expect(missing.some((m) => m.id === row.id)).toBe(true);
 
     // Re-run the sweep *with* embedding — after that the row is covered.
-    const { requeueUnembeddedMemories } = await import("../services/memory/embed");
+    const { requeueUnembeddedMemories } = await import("../services/legacy/memory/embed");
     await requeueUnembeddedMemories();
 
     const stillMissing = await findUnembeddedMemories();

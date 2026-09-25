@@ -39,7 +39,7 @@ export function dayLabel(date = new Date()): string {
  * Resolve the workspace's demo tier. Free plan or beta mode (billing not
  * configured) → subject to demo caps. Paid plans → not applicable.
  */
-async function demoPlan(workspaceId: string): Promise<"free" | "starter" | "pro" | "team"> {
+async function demoPlan(workspaceId: string): Promise<"free" | "pro"> {
   const sub = await getCurrentSubscription(workspaceId);
   return sub.active ? sub.plan : "free";
 }
@@ -60,7 +60,7 @@ export async function enforceDemoLimit(
     globalLimit?: number;
     /** Tests only — pin the day so counters never cross runs. */
     date?: Date;
-    plan?: "free" | "starter" | "pro" | "team";
+    plan?: "free" | "pro";
   },
 ): Promise<DemoLimitInfo> {
   const env = getEnv();
