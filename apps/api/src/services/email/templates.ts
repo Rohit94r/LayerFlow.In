@@ -103,6 +103,29 @@ export function weeklyDigestEmail(args: {
   return { subject, html, text };
 }
 
+export function runawayAlertEmail(args: {
+  workspaceName: string;
+  keyName: string;
+  model: string;
+  count: number;
+  cooldownSeconds: number;
+}): { subject: string; html: string; text: string } {
+  const minutes = Math.max(1, Math.round(args.cooldownSeconds / 60));
+  const subject = `LayerFlow: auto-paused an API key (${args.count} identical calls)`;
+  const line =
+    `The API key "${args.keyName}" sent ${args.count} identical requests to ${args.model} in a short ` +
+    `window — a classic runaway-loop signature. LayerFlow paused the key for ${minutes} min.`;
+  return {
+    subject,
+    html: layout(
+      "Runaway loop auto-paused",
+      `<p style="margin:0 0 12px;font-size:14px;line-height:1.6">${line}</p>
+       <p style="margin:0;font-size:14px;line-height:1.6">Requests resume automatically after the cooldown. If this is a buggy loop, fix the code — and consider a monthly budget as a hard backstop.</p>`,
+    ),
+    text: line,
+  };
+}
+
 export function inviteEmail(args: {
   workspaceName: string;
   invitedByEmail: string;

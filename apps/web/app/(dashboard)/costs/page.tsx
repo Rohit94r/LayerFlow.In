@@ -53,6 +53,33 @@ function CostStat({
   );
 }
 
+function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
+function slugify(name: string): string {
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 40);
+  return slug || "project";
+}
+
 const PROVIDER_BY_PREFIX: [string, string][] = [
   ["claude-", "anthropic"],
   ["gpt-", "openai"],
@@ -170,6 +197,8 @@ export default function CostClient() {
   const [limitDollars, setLimitDollars] = useState("");
   const [savingLimit, setSavingLimit] = useState(false);
   const [limitMsg, setLimitMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadMsg, setDownloadMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -214,6 +243,46 @@ export default function CostClient() {
       setLimitMsg({ kind: "err", text: err instanceof Error ? err.message : "Could not update the budget." });
     } finally {
       setSavingLimit(false);
+    }
+  }
+
+  function triggerDownload(csv: string, filename: string) {
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function downloadReport(projectId?: string, projectName?: string) {
+    setDownloading(true);
+    setDownloadMsg(null);
+    try {
+      const period = data?.budget?.budget.period;
+      const to = new Date().toISOString().slice(0, 10);
+      const from = period ? `${period}-01` : undefined;
+      const csv = await workspaceService.getCostReportCsv({ from, to, projectId });
+      const periodLabel = period ?? to.slice(0, 7);
+      const filename = projectName
+        ? `layerflow-cost-report-${periodLabel}-${slugify(projectName)}.csv`
+        : `layerflow-cost-report-${periodLabel}.csv`;
+      triggerDownload(csv, filename);
+      setDownloadMsg(
+        projectName
+          ? { kind: "ok", text: `Downloaded ${projectName} report.` }
+          : { kind: "ok", text: "Downloaded cost report." },
+      );
+    } catch (err) {
+      setDownloadMsg({
+        kind: "err",
+        text: err instanceof Error ? err.message : "Could not download the report.",
+      });
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -288,6 +357,30 @@ export default function CostClient() {
       <PageHeader
         title="Cost Analytics"
         description="Every dollar you spend with AI — and every dollar LayerFlow saves you."
+        action={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => downloadReport()}
+              disabled={downloading}
+            >
+              <DownloadIcon className="h-4 w-4" />
+              {downloading ? "Exporting…" : "Download CSV"}
+            </Button>
+            {downloadMsg ? (
+              <span
+                className={
+                  downloadMsg.kind === "ok"
+                    ? "text-[11px] font-medium text-emerald-500"
+                    : "text-[11px] font-medium text-crimson"
+                }
+              >
+                {downloadMsg.text}
+              </span>
+            ) : null}
+          </>
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -339,7 +432,19 @@ export default function CostClient() {
                   >
                     <div className="flex items-center justify-between">
                       <p className="text-[13px] font-semibold text-ink">{p.name}</p>
-                      <p className="text-sm font-bold text-ink">{formatMoney(p.spend)}</p>
+                      <div className="flex items-center gap-2">
+                        {p.projectId ? (
+                          <button
+                            type="button"
+                            onClick={() => downloadReport(p.projectId ?? undefined, p.name)}
+                            disabled={downloading}
+                            className="text-[11px] font-medium text-muted underline-offset-2 transition-colors hover:text-ink hover:underline disabled:opacity-50"
+                          >
+                            Export CSV
+                          </button>
+                        ) : null}
+                        <p className="text-sm font-bold text-ink">{formatMoney(p.spend)}</p>
+                      </div>
                     </div>
                     <div className="mt-2 flex items-center justify-between text-[10px] text-faint">
                       <span>

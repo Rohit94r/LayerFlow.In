@@ -14,7 +14,7 @@ export const emailEvents = pgTable(
     workspaceId: text("workspace_id")
       .notNull()
       .references(() => workspaces.id, { onDelete: "cascade" }),
-    type: text("type").$type<"budget_alert" | "weekly_digest">().notNull(),
+    type: text("type").$type<"budget_alert" | "weekly_digest" | "runaway_alert">().notNull(),
     /** Deterministic key, unique per logical notification. */
     dedupeKey: text("dedupe_key").notNull(),
     recipient: text("recipient").notNull(),

@@ -28,6 +28,29 @@ export function getPlanForWorkspace(workspaceId: string): ReturnType<typeof getC
 }
 
 /**
+ * Cost report export is a Pro feature: free/starter users are denied when
+ * billing is configured. In beta mode (billing not configured) everything is
+ * allowed, matching the rest of the plan-gated features.
+ */
+export async function canExportCostReports(
+  workspaceId: string,
+): Promise<{ allowed: boolean; plan: string; reason?: string }> {
+  if (!isBillingConfigured()) {
+    return { allowed: true, plan: "beta" };
+  }
+  const sub = await getCurrentSubscription(workspaceId);
+  const plan = sub.active ? sub.plan : "free";
+  if (plan === "pro" || plan === "team") {
+    return { allowed: true, plan };
+  }
+  return {
+    allowed: false,
+    plan,
+    reason: "CSV/JSON cost reports are a Pro feature. Upgrade to export your spend.",
+  };
+}
+
+/**
  * Check if a managed-mode call to a provider is allowed by the user's plan.
  * Returns true if:
  * - billing is not configured (beta mode — everything allowed)

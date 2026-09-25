@@ -9,6 +9,7 @@ export * from "./session";
 export * from "./run";
 export * from "./budget";
 export * from "./keys";
+export * from "./report";
 export * from "./gateway";
 export * from "./intelligence";
 export * from "./file";

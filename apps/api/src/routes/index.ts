@@ -5,6 +5,7 @@ import { budgetsRouter } from "./budgets/budgets";
 import { savingsRouter, usageRouter } from "./budgets/usage";
 import { collectionsRouter } from "./community/collections";
 import { promptCloneRouter } from "./community/clone";
+import { reportsRouter } from "./report/report";
 import { followsRouter, profilesRouter } from "./community/profiles";
 import { commentsRouter, likesRouter } from "./community/social";
 import { compareRouter } from "./compare/compare";
@@ -48,6 +49,7 @@ import { autosubmitRouter } from "./autosubmit/autosubmit";
 export function registerRoutes(app: Hono<AppEnv>): void {
   app.route("/api/admin", adminRouter);
   app.route("/api/autosubmit", autosubmitRouter);
+  app.route("/api/report", reportsRouter);
   app.route("/api/workspaces", workspacesRouter);
   app.route("/api/domains", domainsRouter);
   app.route("/api/projects", projectsRouter);

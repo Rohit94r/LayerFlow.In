@@ -16,6 +16,11 @@ import { AppError } from "../middleware/app-error";
 import { rateLimit } from "../middleware/rate-limit";
 import { resolveGatewayProject } from "./projects";
 import {
+  countGatewayCall,
+  isKeyKillSwitched,
+  killSwitchBlockedError,
+} from "./kill-switch";
+import {
   resolveProviderApiKey,
   resolveProviderFromModel,
   resolveAdapter,
@@ -37,6 +42,15 @@ export const gatewayRouter = new Hono<AppEnv>();
 
 gatewayRouter.use(requireApiKey);
 gatewayRouter.use(rateLimit({ requestsPerMinute: 60 }));
+
+// Paused keys are rejected up-front so even cache-hit requests don't slip
+// through while a key is kill-switched.
+gatewayRouter.use("/chat/completions", async (c, next) => {
+  if (await isKeyKillSwitched(c.get("apiKeyId") ?? "")) {
+    throw killSwitchBlockedError();
+  }
+  await next();
+});
 
 /** `x-lf-provider` header → a known provider (used with direct/no-store keys). */
 function providerFromHeader(header: string | undefined): Provider | null {
@@ -271,6 +285,21 @@ gatewayRouter.post("/chat/completions", async (c) => {
   });
   const apiKey = keyInfo.apiKey;
   const estimateMicro = estimateCostMicro(model, messages, maxTokens);
+
+  // Provider-bound (cache-miss) call → count it against the runaway-loop
+  // detector. Fingerprint the RAW client payload (model + messages) — that is
+  // what a buggy loop actually repeats. A burst of identical calls pauses this
+  // key + alerts the owner.
+  const runaway = await countGatewayCall({
+    workspaceId,
+    apiKeyId: apiKeyId ?? "",
+    model: model,
+    messages: body.messages as unknown[],
+  });
+  if (runaway.count >= 2 || runaway.paused) {
+    c.header("x-lf-loop-state", runaway.paused ? "paused" : `count:${runaway.count}`);
+  }
+
   const reservation = await reserveBudget({
     workspaceId,
     projectId,

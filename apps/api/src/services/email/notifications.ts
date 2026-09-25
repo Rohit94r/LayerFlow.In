@@ -7,7 +7,7 @@ import { workspaces } from "../../db/schema/tenancy";
 import { logger } from "../../config/logger";
 import { getLiveMonthlySpent, currentPeriod } from "../budgets/enforce";
 import { sendEmail } from "./resend";
-import { budgetBlockedEmail, budgetWarningEmail, weeklyDigestEmail } from "./templates";
+import { budgetBlockedEmail, budgetWarningEmail, runawayAlertEmail, weeklyDigestEmail } from "./templates";
 
 /**
  * Budget alert + weekly digest evaluation. Idempotency lives in Postgres:
@@ -24,7 +24,7 @@ interface ClaimResult {
 /** Claim a dedupe key. Returns claimed=false when someone already sent it. */
 async function claimEmailEvent(args: {
   workspaceId: string;
-  type: "budget_alert" | "weekly_digest";
+  type: "budget_alert" | "weekly_digest" | "runaway_alert";
   dedupeKey: string;
   recipient: string;
 }): Promise<ClaimResult> {
@@ -176,6 +176,55 @@ export async function evaluateBudgetAlertsForWorkspace(
   outcomes.push({ workspaceId, threshold: kind, sent: result.sent, deduped: false });
 
   return outcomes;
+}
+
+/**
+ * Email the owner when the runaway-loop kill switch auto-pauses an API key.
+ * Deduped per cooldown window so a repeating loop emails at most once per
+ * cooldown — not once per request.
+ */
+export async function sendRunawayAlert(args: {
+  workspaceId: string;
+  apiKeyId: string;
+  keyName: string;
+  model: string;
+  count: number;
+  cooldownSeconds: number;
+}): Promise<{ sent: boolean; deduped: boolean }> {
+  const owner = await ownerEmail(args.workspaceId);
+  if (!owner) return { sent: false, deduped: false };
+
+  const bucket = Math.floor(Date.now() / 1000 / Math.max(60, args.cooldownSeconds));
+  const dedupeKey = `runaway-alert:${args.workspaceId}:${args.apiKeyId}:${bucket}`;
+  const claim = await claimEmailEvent({
+    workspaceId: args.workspaceId,
+    type: "runaway_alert",
+    dedupeKey,
+    recipient: owner.email,
+  });
+  if (!claim.claimed) return { sent: false, deduped: true };
+
+  const message = runawayAlertEmail({
+    workspaceName: owner.name,
+    keyName: args.keyName,
+    model: args.model,
+    count: args.count,
+    cooldownSeconds: args.cooldownSeconds,
+  });
+  const result = await sendEmail({
+    to: owner.email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+    idempotencyKey: dedupeKey,
+  });
+
+  if (!result.sent && !result.skipped) {
+    await releaseEmailEvent(claim.id!);
+  } else {
+    await finishEmailEvent(claim.id!, result);
+  }
+  return { sent: result.sent, deduped: false };
 }
 
 /** Evaluate alerts for every workspace with a budget in the current period. */

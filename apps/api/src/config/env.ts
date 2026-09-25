@@ -132,6 +132,16 @@ export const envSchema = z.object({
   PROVIDER_STREAM_IDLE_TIMEOUT_MS: z.coerce.number().int().min(1_000).optional(),
   /** Total budget for non-streaming provider calls. Default 90000. */
   PROVIDER_TOTAL_TIMEOUT_MS: z.coerce.number().int().min(1_000).optional(),
+  /**
+   * Runaway-loop kill switch: when the gateway sees more than
+   * RUNAWAY_MAX_IDENTICAL identical (model + messages) requests within
+   * RUNAWAY_WINDOW_SECONDS it auto-pauses the API key for a cooldown and
+   * alerts the workspace owner. Set 0 to disable.
+   */
+  RUNAWAY_MAX_IDENTICAL: z.coerce.number().int().min(0).default(5),
+  RUNAWAY_WINDOW_SECONDS: z.coerce.number().int().min(1).default(60),
+  /** How long a paused key stays kill-switched before it resumes. */
+  RUNAWAY_COOLDOWN_SECONDS: z.coerce.number().int().min(0).default(300),
 });
 
 export type Env = z.infer<typeof envSchema>;

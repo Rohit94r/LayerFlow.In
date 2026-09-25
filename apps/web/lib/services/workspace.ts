@@ -27,6 +27,7 @@ import {
 } from "@layerflow/contracts";
 import type { z } from "zod";
 import { apiFetch, getServerCookieHeader } from "@/lib/api/client";
+import { getApiBaseUrl } from "@/lib/api/config";
 import { microToUsd } from "@/lib/api/money";
 import type { Domain } from "@/lib/api/types";
 import type {
@@ -57,6 +58,8 @@ export interface WorkspaceService {
   listUsageAlerts(): Promise<UsageAlert[]>;
   getCurrentBudget(): Promise<CurrentBudgetResponse | null>;
   updateBudget(input: { monthlyLimitMicro: number }): Promise<CurrentBudgetResponse>;
+  /** CSV cost report (Pro). Falls back to the current month when no range given. */
+  getCostReportCsv(params?: { from?: string; to?: string; projectId?: string }): Promise<string>;
 }
 
 /** Fetches with the session cookie forwarded when running in RSC. */
@@ -359,5 +362,24 @@ export const workspaceService: WorkspaceService = {
       },
       updateBudgetResponseSchema,
     );
+  },
+
+  async getCostReportCsv(params) {
+    const url = new URL(`${getApiBaseUrl()}/api/report/costs`);
+    url.searchParams.set("format", "csv");
+    if (params?.from) url.searchParams.set("from", params.from);
+    if (params?.to) url.searchParams.set("to", params.to);
+    if (params?.projectId) url.searchParams.set("projectId", params.projectId);
+
+    const headers = await getServerCookieHeader();
+    const res = await fetch(url.toString(), {
+      ...(headers.Cookie ? { headers } : {}),
+      credentials: "include",
+    });
+    if (!res.ok) {
+      if (res.status === 402) throw new Error("Cost reports are a Pro feature — upgrade to export your spend.");
+      throw new Error(`Download failed (${res.status}). Try again.`);
+    }
+    return res.text();
   },
 };
