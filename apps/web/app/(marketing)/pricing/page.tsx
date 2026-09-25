@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "LayerFlow pricing — Free, Starter $5/mo, Pro $14/mo. Priced on workflow value, never on unlimited AI credits. BYOK-first.",
+    "LayerFlow pricing — Free, Starter $5/mo, Pro $14/mo. Priced on spend-control value, never on resold AI credits. BYOK-first.",
   alternates: { canonical: "/pricing" },
   openGraph: { url: "/pricing" },
 };
@@ -22,12 +22,12 @@ export default function PricingPage() {
             Pricing
           </span>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-            Save the workflow,{" "}
-            <span className="text-brand">not just the tokens</span>
+            Stop the surprise bills,{" "}
+            <span className="text-brand">not your models</span>
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Every plan works with your own API keys. You pay for the system that
-            preserves your AI context — never for resold model credits.
+            Every plan works with your own keys. You pay for spending controls —
+            hard caps, alerts, and usage history — never for resold model credits.
           </p>
         </div>
       </Reveal>
@@ -94,9 +94,9 @@ export default function PricingPage() {
             <div>
               <h3 className="text-base font-semibold text-ink">What never changes</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                No unlimited hosted credits. No selling your chats. No lock-in.
-                LayerFlow is a context system you own — bring your own keys, export
-                anything, leave anytime. Cancel in one click.
+                No resold tokens. No selling your chats. No lock-in.
+                LayerFlow is the spend firewall you own — bring your own keys,
+                export anything, leave anytime. Cancel in one click.
               </p>
             </div>
           </div>

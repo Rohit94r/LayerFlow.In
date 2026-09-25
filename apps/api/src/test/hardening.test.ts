@@ -183,7 +183,7 @@ describe("production hardening", () => {
       return session;
     }
 
-    it("sends the warning once per period, then dedupes", async () => {
+    it("sends the 80% tier alert once per period, then dedupes", async () => {
       const { evaluateBudgetAlertsForWorkspace } = await import(
         "../services/email/notifications"
       );
@@ -191,11 +191,11 @@ describe("production hardening", () => {
       const { emailEvents } = await import("../db/schema/email");
       const { eq } = await import("drizzle-orm");
 
-      const session = await seedBudgetAndSpend(850_000); // 85% of $1
+      const session = await seedBudgetAndSpend(850_000); // 85% of $1 → crosses 80% tier
 
       const first = await evaluateBudgetAlertsForWorkspace(session.workspaceId);
       expect(first).toHaveLength(1);
-      expect(first[0].threshold).toBe("warn");
+      expect(first[0].threshold).toBe("tier80");
       expect(first[0].deduped).toBe(false);
 
       const second = await evaluateBudgetAlertsForWorkspace(session.workspaceId);
@@ -209,6 +209,46 @@ describe("production hardening", () => {
       expect(rows[0].type).toBe("budget_alert");
       // No RESEND_API_KEY in tests → recorded as skipped, still deduped.
       expect(rows[0].status).toBe("skipped");
+    });
+
+    it("emits the 50% tier before the 80% tier as spend climbs", async () => {
+      const { evaluateBudgetAlertsForWorkspace } = await import(
+        "../services/email/notifications"
+      );
+      const { db } = await import("../db/client");
+      const { emailEvents } = await import("../db/schema/email");
+      const { usageLedger } = await import("../db/schema/cost");
+      const { currentPeriod } = await import("../services/budgets/redis-keys");
+      const { eq } = await import("drizzle-orm");
+
+      const session = await seedBudgetAndSpend(550_000); // 55% of $1 → 50% tier only
+
+      const first = await evaluateBudgetAlertsForWorkspace(session.workspaceId);
+      expect(first.map((o) => o.threshold)).toEqual(["tier50"]);
+      expect(first[0].deduped).toBe(false);
+
+      // Climb to 85% total (55% + 30% more) → the 80% tier fires as a
+      // separate dedupe key, without re-sending the 50% alert.
+      await db.insert(usageLedger).values({
+        workspaceId: session.workspaceId,
+        provider: "openai",
+        model: "gpt-4o-mini",
+        source: "playground",
+        inputTokens: 100,
+        outputTokens: 50,
+        costMicro: 300_000,
+      });
+      const escalated = await evaluateBudgetAlertsForWorkspace(session.workspaceId);
+      expect(escalated.map((o) => o.threshold)).toEqual(["tier80"]);
+      expect(escalated[0].deduped).toBe(false);
+
+      const rows = await db.query.emailEvents.findMany({
+        where: eq(emailEvents.workspaceId, session.workspaceId),
+      });
+      expect(rows.map((r) => r.dedupeKey).sort()).toEqual([
+        `budget-alert:${session.workspaceId}:${currentPeriod()}:tier-50`,
+        `budget-alert:${session.workspaceId}:${currentPeriod()}:tier-80`,
+      ]);
     });
 
     it("escalates to a blocked alert at 100% exactly once", async () => {

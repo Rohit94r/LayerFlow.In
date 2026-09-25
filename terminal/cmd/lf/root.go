@@ -16,8 +16,6 @@ import (
 	"github.com/layerflow/terminal/internal/auth"
 	"github.com/layerflow/terminal/internal/cloud"
 	"github.com/layerflow/terminal/internal/config"
-	"github.com/layerflow/terminal/internal/daemon"
-	"github.com/layerflow/terminal/internal/mcp"
 	"github.com/layerflow/terminal/internal/session"
 	"github.com/layerflow/terminal/internal/storage"
 	ui "github.com/layerflow/terminal/internal/ui"
@@ -54,17 +52,13 @@ func Execute() error {
 func init() {
 	rootCmd.AddCommand(
 		newChatCmd(),
-		newRunCmd(),
-		newSessionsCmd(),
+		newConfigCmd(),
 		newLoginCmd(),
 		newLogoutCmd(),
 		newSyncCmd(),
 		newModelsCmd(),
 		newDoctorCmd(),
-		newRescueCmd(),
 		newCostCmd(),
-		newMCPCmd(),
-		newDaemonCmd(),
 		newVersionCmd(),
 		newUpgradeCmd(),
 		newContentCmd(),
@@ -100,55 +94,6 @@ func newChatCmd() *cobra.Command {
 	cmd.Flags().StringP("provider", "p", "", "Provider to use (overrides config)")
 	cmd.Flags().String("id", "", "Session ID to continue")
 	cmd.Flags().BoolP("non-interactive", "n", false, "Non-interactive mode (pipe output)")
-
-	return cmd
-}
-
-// newRunCmd creates the `lf run` command.
-func newRunCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "run <task>",
-		Short: "Run a single task (one-shot agent)",
-		Long: `Run a non-interactive single task. Sends the task to the model via the
-LayerFlow gateway with a focused task prompt and streams the reply. A full
-multi-step agent loop with tool execution and approval gates runs on the
-server (Agents v2 in the dashboard); the terminal run is a single-shot
-wrapper around the gateway chat completion for now.`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			maxSteps, _ := cmd.Flags().GetInt("max-steps")
-			model, _ := cmd.Flags().GetString("model")
-			provider, _ := cmd.Flags().GetString("provider")
-
-			return runTask(args[0], maxSteps, model, provider)
-		},
-	}
-
-	cmd.Flags().Int("max-steps", 20, "Maximum steps for the task")
-	cmd.Flags().StringP("model", "m", "", "Model to use")
-	cmd.Flags().StringP("provider", "p", "", "Provider to use")
-
-	return cmd
-}
-
-// newSessionsCmd creates the `lf sessions` command.
-func newSessionsCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "sessions",
-		Short: "List or delete sessions",
-		Long:  `List local chat sessions from SQLite. Use --id ID --delete to delete one. Interactive --open restore is not wired yet.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			open, _ := cmd.Flags().GetBool("open")
-			id, _ := cmd.Flags().GetString("id")
-			deleteMode, _ := cmd.Flags().GetBool("delete")
-
-			return listSessions(open, id, deleteMode)
-		},
-	}
-
-	cmd.Flags().BoolP("open", "o", false, "Open a session interactively")
-	cmd.Flags().String("id", "", "Session ID")
-	cmd.Flags().BoolP("delete", "d", false, "Delete a session")
 
 	return cmd
 }
@@ -242,18 +187,6 @@ func newDoctorCmd() *cobra.Command {
 	return cmd
 }
 
-// newRescueCmd creates the `lf rescue` command.
-func newRescueCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "rescue",
-		Short: "Rescue/portability flow",
-		Long:  `Generate a report or continue pack for portability.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return runRescue()
-		},
-	}
-}
-
 // newCostCmd creates the `lf cost` command.
 func newCostCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -269,86 +202,6 @@ func newCostCmd() *cobra.Command {
 
 	cmd.Flags().String("session", "", "Session ID (defaults to current)")
 	cmd.Flags().BoolP("project", "p", false, "Show project-level costs")
-
-	return cmd
-}
-
-// newMCPCmd creates the `lf mcp` command group.
-func newMCPCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "mcp",
-		Short: "MCP server management",
-		Long:  `Manage Model Context Protocol servers.`,
-	}
-
-	cmd.AddCommand(
-		&cobra.Command{
-			Use:   "list",
-			Short: "List connected MCP servers",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return listMCPServers()
-			},
-		},
-		&cobra.Command{
-			Use:   "add <name> <type> <ref>",
-			Short: "Add an MCP server",
-			Args:  cobra.ExactArgs(3),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return addMCPServer(args[0], args[1], args[2])
-			},
-		},
-		&cobra.Command{
-			Use:   "remove <name>",
-			Short: "Remove an MCP server",
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return removeMCPServer(args[0])
-			},
-		},
-		&cobra.Command{
-			Use:   "health <name>",
-			Short: "Check MCP server health",
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return checkMCPHealth(args[0])
-			},
-		},
-	)
-
-	return cmd
-}
-
-// newDaemonCmd creates the `lf daemon` command group.
-func newDaemonCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "daemon",
-		Short: "Background daemon lifecycle",
-		Long:  `Manage the background daemon. The daemon runs a long-running process with a file watcher, an IPC socket, and remote control: when logged in, it polls the LayerFlow dashboard for shell commands and runs them on this machine with live output.`,
-	}
-
-	cmd.AddCommand(
-		&cobra.Command{
-			Use:   "start",
-			Short: "Start the daemon",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return startDaemon()
-			},
-		},
-		&cobra.Command{
-			Use:   "stop",
-			Short: "Stop the daemon",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return stopDaemon()
-			},
-		},
-		&cobra.Command{
-			Use:   "status",
-			Short: "Show daemon status",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				return showDaemonStatus()
-			},
-		},
-	)
 
 	return cmd
 }
@@ -392,92 +245,13 @@ func stubNotice(what string) {
 	fmt.Printf("%s is not wired in this build yet.\n", what)
 	fmt.Println("Available command surface:")
 	fmt.Println("  lf login / lf logout              API-key login with the LayerFlow cloud")
-	fmt.Println("  lf chat [query] [-n] [--model X]  streaming chat via the LayerFlow gateway")
-	fmt.Println("  lf run <task>                     single-shot task agent")
+	fmt.Println("  lf chat [query] [-n] [--model X]  streaming chat via LayerFlow (or direct to a provider)")
+	fmt.Println("  lf config                         view / set provider, model, base URL, keys")
 	fmt.Println("  lf sync [--dry-run]               push/pull with the cloud sync API")
-	fmt.Println("  lf sessions [--id ID] [--delete]  list or delete persisted sessions")
 	fmt.Println("  lf doctor [--audit]               config, storage, keychain, audit chain checks")
 	fmt.Println("  lf cost [--session ID]            token and cost usage from the local store")
-	fmt.Println("  lf mcp list                       list MCP servers from config")
-	fmt.Println("  lf daemon start|stop|status       background daemon lifecycle")
 	fmt.Println("  lf version                        show build version")
 	fmt.Println("Full command reference: README.md at the repository root.")
-}
-
-func listSessions(open bool, id string, delete bool) error {
-	db, err := storage.Open(&storage.Options{})
-	if err != nil {
-		return fmt.Errorf("open storage: %w", err)
-	}
-	defer storage.Close()
-
-	store := session.NewSQLStore(db)
-	ctx := context.Background()
-
-	if open {
-		if id == "" {
-			// List sessions and prompt for selection.
-			dir, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-			sessions, err := store.List(ctx, dir, 50)
-			if err != nil {
-				return fmt.Errorf("list sessions: %w", err)
-			}
-			if len(sessions) == 0 {
-				return fmt.Errorf("no sessions found for the current project")
-			}
-			fmt.Println("Sessions (type a number to open):")
-			for i, s := range sessions {
-				title := s.Title
-				if title == "" {
-					title = "(untitled)"
-				}
-				fmt.Printf("  %d) %s  %-32s  %s/%s\n", i+1, s.ID, title, s.Provider, s.Model)
-			}
-			fmt.Print("\n  > ")
-			var choice int
-			if _, err := fmt.Scanln(&choice); err != nil || choice < 1 || choice > len(sessions) {
-				return fmt.Errorf("invalid selection")
-			}
-			id = sessions[choice-1].ID
-		}
-		return runInteractive("", "", "", id)
-	}
-
-	if delete {
-		if id == "" {
-			return fmt.Errorf("delete requires --id <session-id>")
-		}
-		if err := store.Delete(ctx, id); err != nil {
-			return fmt.Errorf("delete session: %w", err)
-		}
-		fmt.Printf("Deleted session %s\n", id)
-		return nil
-	}
-
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	sessions, err := store.List(ctx, dir, 50)
-	if err != nil {
-		return fmt.Errorf("list sessions: %w", err)
-	}
-	if len(sessions) == 0 {
-		fmt.Println("No sessions found for the current project.")
-		return nil
-	}
-	fmt.Println("Sessions:")
-	for _, s := range sessions {
-		title := s.Title
-		if title == "" {
-			title = "(untitled)"
-		}
-		fmt.Printf("  %s  %-32s  %s/%s\n", s.ID, title, s.Provider, s.Model)
-	}
-	return nil
 }
 
 func runDoctor(checkAudit bool) error {
@@ -721,144 +495,4 @@ func formatTokens(n int) string {
 		return fmt.Sprintf("%.1fK", float64(n)/1_000)
 	}
 	return fmt.Sprintf("%d", n)
-}
-
-func listMCPServers() error {
-	cfg, err := config.Load("")
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-
-	if len(cfg.MCPServers) == 0 {
-		fmt.Println("No MCP servers configured.")
-		fmt.Println("  Add them under ~/.config/layerflow/config.yaml or .layerflow/config.yaml:")
-		fmt.Println("  mcp_servers:")
-		fmt.Println("    my-server:")
-		fmt.Println("      command: npx")
-		fmt.Println("      args: [\"-y\", \"@modelcontextprotocol/server-xyz\"]")
-		return nil
-	}
-
-	fmt.Println("Configured MCP servers:")
-	for name, s := range cfg.MCPServers {
-		args := strings.Join(s.Args, " ")
-		if args != "" {
-			args = " " + args
-		}
-		fmt.Printf("  %-24s %s%s\n", name, s.Command, args)
-	}
-	return nil
-}
-
-func addMCPServer(name, serverType, ref string) error {
-	if strings.TrimSpace(name) == "" || strings.TrimSpace(ref) == "" {
-		return errors.New("mcp add requires <name> <type> <ref>")
-	}
-
-	var kind string
-	switch serverType {
-	case "stdio", "http", "sse", "streamable-http":
-		kind = serverType
-	default:
-		return fmt.Errorf("unsupported MCP type %q (use stdio, http, or sse)", serverType)
-	}
-
-	cfg, err := config.Load("")
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-	if cfg.MCPServers == nil {
-		cfg.MCPServers = map[string]config.MCPServerConfig{}
-	}
-	if _, exists := cfg.MCPServers[name]; exists {
-		return fmt.Errorf("MCP server %q already configured", name)
-	}
-
-	// For stdio servers ref is the binary command; for HTTP transports it is
-	// the base URL. Preserve the transport in the command env so health checks
-	// and the runtime know how to connect.
-	cfg.MCPServers[name] = config.MCPServerConfig{
-		Command: ref,
-		Env:     map[string]string{"LF_MCP_TYPE": kind},
-	}
-	if err := cfg.Save(); err != nil {
-		return fmt.Errorf("save config: %w", err)
-	}
-	fmt.Printf("Added MCP server %q (%s)\n", name, kind)
-	return nil
-}
-
-func removeMCPServer(name string) error {
-	if strings.TrimSpace(name) == "" {
-		return errors.New("mcp remove requires <name>")
-	}
-	if err := config.RemoveMCPServer(name); err != nil {
-		return err
-	}
-	fmt.Printf("Removed MCP server %q\n", name)
-	return nil
-}
-
-func checkMCPHealth(name string) error {
-	ctx := context.Background()
-
-	cfg, err := config.Load("")
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-
-	spec, ok := cfg.MCPServers[name]
-	if !ok {
-		return fmt.Errorf("MCP server %q not configured", name)
-	}
-
-	kind := spec.Env["LF_MCP_TYPE"]
-	switch kind {
-	case "stdio":
-	case "http", "sse", "streamable-http":
-		// config stores http/sse servers by URL in the command field.
-	default:
-		return fmt.Errorf("MCP server %q has unknown transport type", name)
-	}
-
-	registry := mcp.NewRegistry()
-	if err := registry.Add(ctx, &mcp.Server{Name: name, Kind: kind, Ref: spec.Command}); err != nil {
-		return fmt.Errorf("register server: %w", err)
-	}
-
-	health, err := registry.Health(ctx, name)
-	if err != nil {
-		return fmt.Errorf("health check: %w", err)
-	}
-	fmt.Printf("%s: status=%s latency=%dms\n", name, health.Status, health.Latency)
-	if health.Status != "ok" {
-		return fmt.Errorf("MCP server %q is unhealthy: %s", name, health.Status)
-	}
-	return nil
-}
-
-func startDaemon() error {
-	cfg, err := config.Load("")
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-	fmt.Println("Starting daemon...")
-	return daemon.Start(cfg)
-}
-
-func stopDaemon() error {
-	return daemon.Stop()
-}
-
-func showDaemonStatus() error {
-	st, err := daemon.StatusQuery()
-	if err != nil {
-		return fmt.Errorf("daemon status: %w", err)
-	}
-	state := "not running"
-	if st.Running {
-		state = "running"
-	}
-	fmt.Printf("Daemon %s (pid %d, socket %s)\n", state, st.PID, st.Socket)
-	return nil
 }

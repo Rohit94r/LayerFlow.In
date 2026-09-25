@@ -2,35 +2,35 @@ export default function FaqSection() {
   const faqs = [
     {
       q: "What is LayerFlow and how is it different from standard AI chat apps?",
-      a: "LayerFlow is an AI workspace and CLI built on shared project memory, prompt optimization, and multi-model routing. Rather than locking you into one vendor, LayerFlow lets you chat across Claude, ChatGPT, Gemini, and DeepSeek, rescue dead conversations with Continue Packs, and run multi-agent workflows with approval gates.",
+      a: "LayerFlow is an AI spend firewall and gateway. One OpenAI-compatible endpoint sits in front of every major model — your keys, hard budget caps, alerts at 50/80/100%, and usage history. Rather than locking you into one vendor, it lets you route calls to Claude, ChatGPT, Gemini, and DeepSeek while keeping every dollar accounted for.",
     },
     {
-      q: "How does Chat Rescue work when I hit an AI rate limit at 11 PM?",
-      a: "When a provider locks you out or a long conversation starts degrading, paste the chat into LayerFlow. Our pipeline extracts architectural decisions, trims redundant tokens, and generates a clean Continue Pack formatted to resume immediately in another AI model without repeating yourself.",
+      q: "How do hard budget caps work?",
+      a: "You set a monthly cap per workspace. Every request counts against it, and at 50%, 80%, and 100% you get an email. At 100%, new requests hard-block — no surprise bills, no exceptions.",
     },
     {
       q: "Can I bring my own API keys (BYOK)?",
-      a: "Yes! You can plug in your own API keys for Anthropic, OpenAI, Google Gemini, DeepSeek, Groq, and OpenRouter. LayerFlow charges 0% token markup—you pay provider wholesale rates directly.",
+      a: "Yes! Plug in your own keys for Anthropic, OpenAI, Google Gemini, DeepSeek, Groq, and more. LayerFlow charges 0% token markup — you pay provider wholesale rates directly, and we add caps, alerts, and usage history on top.",
     },
     {
-      q: "How does the lf CLI sync with the web dashboard?",
-      a: "The lf CLI connects securely to your LayerFlow workspace. Every terminal prompt, context cut, and agent execution is mirrored in your web dashboard, allowing you to review diffs and manage sessions from anywhere.",
+      q: "How does per-project spend attribution work?",
+      a: "Send one header — x-lf-project: client-acme — on any request and the cost lands under that project in your usage history. No spreadsheets, no guesswork.",
     },
     {
-      q: "How does Auto Context Cutting reduce token bills?",
-      a: "Standard chatbots resend the entire conversation history on every turn. LayerFlow extracts only the active dependencies and instructions needed for the current prompt, cutting up to 70% of redundant input tokens.",
+      q: "What exactly is usage history?",
+      a: "Every gateway completion records the model, input/output tokens, project tag, and the exact dollar cost to four decimals. View it in the dashboard, or via `lf cost` in the terminal.",
     },
     {
       q: "What AI models are supported?",
-      a: "All major frontier models: Claude 3.7 Sonnet / Opus, OpenAI GPT-4o / o1 / o3-mini, Google Gemini 2.0 Flash / Pro, DeepSeek R1 / V3, Groq (Llama 3.3 70B), and 200+ models via OpenRouter.",
+      a: "All major frontier models: Claude Sonnet / Opus, OpenAI GPT-4o / o3-mini, Google Gemini Flash / Pro, DeepSeek R1 / V3, Groq (Llama 3.3 70B), and more via a single OpenAI-compatible API.",
     },
     {
-      q: "How do hard budget limits work?",
-      a: "You can define hard dollar caps per agent run, per project, or per day (e.g. $5.00). If an autonomous agent nears your spending threshold, LayerFlow pauses and requires human approval before proceeding.",
+      q: "Can I use the CLI without a LayerFlow account?",
+      a: "Yes. Set a provider key (`lf config key openai sk-...`) or an env var like OPENAI_API_KEY and lf chats directly to that provider at your configured base URL. `lf login` is only needed for gateway budgets.",
     },
     {
       q: "Is my code private and secure?",
-      a: "Yes. When using your own API keys (BYOK), requests go directly to provider endpoints. LayerFlow never trains on your code or prompts, and local files accessed via the CLI remain strictly on your machine.",
+      a: "Yes. With BYOK, requests go straight to provider endpoints through your own key. Direct-mode requests are never stored. LayerFlow never trains on your code or prompts, and provider keys in the vault are encrypted.",
     },
   ];
 

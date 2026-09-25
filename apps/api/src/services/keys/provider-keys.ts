@@ -1,4 +1,5 @@
 import { and, eq, isNull } from "drizzle-orm";
+import { isIP } from "node:net";
 import type { CreateProviderKeyRequest, ProviderKey } from "@layerflow/contracts";
 import { PROVIDERS, type Provider } from "@layerflow/model-registry";
 import { db } from "../../db/client";
@@ -15,6 +16,7 @@ function toProviderKeyDto(row: typeof providerKeys.$inferSelect): ProviderKey {
     provider: row.provider,
     keyHint: row.keyHint,
     label: row.label,
+    baseUrl: row.baseUrl ?? null,
     revokedAt: row.revokedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -26,12 +28,70 @@ function hintFromSecret(secret: string): string {
   return trimmed.slice(-4);
 }
 
+const RESERVED_HOST_SUFFIXES = [
+  "localhost",
+  ".localhost",
+  ".local",
+  ".internal",
+  ".lan",
+  ".home.arpa",
+];
+
+function isPrivateHost(host: string): boolean {
+  const normalized = host.toLowerCase().replace(/\.$/, "");
+  if (normalized === "::1") return true;
+  if (normalized.startsWith("fc") || normalized.startsWith("fd")) return true; // fc00::/7
+  if (normalized.startsWith("fe80")) return true; // fe80::/10 link-local
+  if (isIP(normalized) === 4) {
+    const [a, b] = normalized.split(".").map(Number);
+    return (
+      a === 0 || // 0.0.0.0/8
+      a === 10 || // 10.0.0.0/8
+      a === 127 || // loopback
+      (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10 CGNAT
+      (a === 169 && b === 254) || // 169.254.0.0/16 link-local / cloud metadata
+      (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+      (a === 192 && b === 168) // 192.168.0.0/16
+    );
+  }
+  return RESERVED_HOST_SUFFIXES.some((suffix) => normalized === suffix || normalized.endsWith(suffix));
+}
+
+function assertSafeBaseUrl(raw: string | undefined): string | null {
+  if (!raw) return null;
+  const trimmed = raw.trim();
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    throw new AppError(400, "invalid_base_url", "baseUrl must be a valid http(s) URL");
+  }
+  if (url.username || url.password) {
+    throw new AppError(400, "invalid_base_url", "baseUrl must not contain credentials");
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new AppError(400, "invalid_base_url", "baseUrl must be http(s)");
+  }
+  if (process.env.NODE_ENV === "production" && url.protocol === "http:") {
+    throw new AppError(400, "invalid_base_url", "baseUrl must use https in production");
+  }
+  if (isPrivateHost(url.hostname)) {
+    throw new AppError(
+      400,
+      "base_url_forbidden",
+      "Custom base URLs to private, loopback, or link-local hosts are not allowed",
+    );
+  }
+  return trimmed.replace(/\/+$/, "");
+}
+
 export async function createProviderKey(
   workspaceId: string,
   body: CreateProviderKeyRequest,
 ): Promise<ProviderKey> {
   const provider = body.provider.toLowerCase();
   const ciphertext = encryptSecret(body.secret.trim());
+  const baseUrl = assertSafeBaseUrl(body.baseUrl);
   const [row] = await db
     .insert(providerKeys)
     .values({
@@ -40,6 +100,7 @@ export async function createProviderKey(
       ciphertext,
       keyHint: hintFromSecret(body.secret),
       label: body.label ?? null,
+      baseUrl,
     })
     .returning();
   return toProviderKeyDto(row);

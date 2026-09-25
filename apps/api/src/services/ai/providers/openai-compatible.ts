@@ -20,6 +20,7 @@ export function createOpenAICompatibleAdapter(opts: {
   /** Extra headers (e.g. OpenRouter HTTP-Referer). */
   extraHeaders?: (apiKey: string) => Record<string, string>;
 }): ProviderAdapter {
+  const baseUrlFor = (req: ChatCompletionRequest) => req.baseUrl ?? opts.baseUrl;
   return {
     provider: opts.provider,
     async chatCompletion(req: ChatCompletionRequest): Promise<ChatCompletionResult> {
@@ -32,7 +33,7 @@ export function createOpenAICompatibleAdapter(opts: {
 
       let res: Response;
       try {
-        res = await fetch(`${opts.baseUrl}/chat/completions`, {
+        res = await fetch(`${baseUrlFor(req)}/chat/completions`, {
           method: "POST",
           headers,
           body: JSON.stringify({
@@ -101,7 +102,7 @@ export function createOpenAICompatibleAdapter(opts: {
 
       let res: Response;
       try {
-        res = await fetch(`${opts.baseUrl}/chat/completions`, {
+        res = await fetch(`${baseUrlFor(req)}/chat/completions`, {
           method: "POST",
           headers,
           body: JSON.stringify({

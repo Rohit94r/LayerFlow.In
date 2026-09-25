@@ -102,9 +102,9 @@ export default function Footer() {
             </Link>
             <Link
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"
-              href="/agents"
+              href="/keys"
             >
-              Agent Library
+              API Keys
             </Link>
             <Link
               className="text-[13px] text-white/85 no-underline transition-colors duration-200 hover:text-orange-400 motion-reduce:transition-none"

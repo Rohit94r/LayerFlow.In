@@ -13,10 +13,11 @@ import { BarChart, DonutChart, ChartLegend, Sparkline } from "@/components/ui/ch
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { workspaceService } from "@/lib/services/workspace";
-import { PROVIDER_LABELS, formatMoney, formatTokens } from "@/lib/data/providers";
+import { PROVIDER_LABELS, formatMoney, formatTokens, estimateCost } from "@/lib/data/providers";
+import { getModel } from "@layerflow/model-registry";
 import { microToUsd, usdToMicro } from "@/lib/api/money";
 import type { CurrentBudgetResponse, UsageAlert } from "@layerflow/contracts";
-import type { CostAnalytics, SavingsSummary } from "@/lib/types";
+import type { CostAnalytics, ModelSpend, SavingsSummary } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 function CostStat({
@@ -76,6 +77,56 @@ function providerForModel(model: string | null | undefined): string {
   }
   const bare = m.split(/[/:\s]/)[0];
   return PROVIDER_LABELS[bare] ?? bare.charAt(0).toUpperCase() + bare.slice(1);
+}
+
+/**
+ * Cheaper in-family alternatives used for the savings suggestion. Prices come
+ * from the model registry, so the estimate is real micro-dollar arithmetic on
+ * the exact tokens already billed this period.
+ */
+const CHEAPER_ALT: Record<string, string> = {
+  "gpt-4o": "gpt-4o-mini",
+  "gpt-4.1": "gpt-4.1-mini",
+  "o3-mini": "gpt-4o-mini",
+  "claude-sonnet-4": "claude-3-5-haiku",
+  "claude-opus-4": "claude-sonnet-4",
+  "gemini-3.1-pro-preview": "gemini-flash-latest",
+  "deepseek-reasoner": "deepseek-chat",
+  "grok-3": "grok-3-mini",
+  "kimi-k2-thinking": "kimi-k2",
+};
+
+interface SwitchSuggestion {
+  from: string;
+  to: string;
+  saved: number;
+  pct: number;
+  runs: number;
+  tokens: number;
+}
+
+function findSwitchSuggestion(models: ModelSpend[], totalSpend: number): SwitchSuggestion | null {
+  let best: SwitchSuggestion | null = null;
+  for (const m of models) {
+    const alt = CHEAPER_ALT[m.modelId];
+    if (!alt) continue;
+    const currentCost = estimateCost(m.modelId, m.tokensIn, m.tokensOut);
+    const altCost = estimateCost(alt, m.tokensIn, m.tokensOut);
+    if (currentCost == null || altCost == null || altCost >= currentCost) continue;
+    const saved = currentCost - altCost;
+    if (saved < 1) continue;
+    if (!best || saved > best.saved) {
+      best = {
+        from: m.modelId,
+        to: alt,
+        saved,
+        pct: totalSpend > 0 ? (saved / totalSpend) * 100 : 0,
+        runs: m.runs,
+        tokens: m.tokensIn + m.tokensOut,
+      };
+    }
+  }
+  return best;
 }
 
 function AlertRow({ alert }: { alert: UsageAlert }) {
@@ -211,6 +262,7 @@ export default function CostClient() {
   const budgetPct = budget ? budget.percentUsed : 0;
   const budgetLimit = budget ? microToUsd(budget.budget.monthlyLimitMicro) : 0;
   const spentInBudget = budget ? microToUsd(budget.budget.spentMicro) : 0;
+  const suggestion = findSwitchSuggestion(analytics.spendByModel, totalSpend);
 
   if (totalRuns === 0 && totalSpend === 0) {
     return (
@@ -269,6 +321,62 @@ export default function CostClient() {
           accent="#38bdf8"
         />
       </div>
+
+      <Panel>
+        <PanelHeader
+          title="Spend by project"
+          description="Attributed via the x-lf-project header on every gateway request — no setup"
+        />
+        <PanelBody>
+          {analytics.spendByProject.length ? (
+            <div className="space-y-2.5">
+              {analytics.spendByProject.map((p) => {
+                const pct = totalSpend > 0 ? (p.spend / totalSpend) * 100 : 0;
+                return (
+                  <div
+                    key={p.projectId ?? "ungrouped"}
+                    className="rounded-xl border border-border bg-surface-2/40 p-3.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-[13px] font-semibold text-ink">{p.name}</p>
+                      <p className="text-sm font-bold text-ink">{formatMoney(p.spend)}</p>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[10px] text-faint">
+                      <span>
+                        {p.runs} runs · {formatTokens(p.tokensIn)} in / {formatTokens(p.tokensOut)} out
+                      </span>
+                      <span>{pct.toFixed(0)}% of spend</span>
+                    </div>
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${pct}%`,
+                          background: "linear-gradient(90deg, #38bdf8, #8b7cf8)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="pt-1 text-[11px] leading-relaxed text-faint">
+                Requests that carry an{" "}
+                <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-ink">
+                  x-lf-project: &lt;name&gt;
+                </code>{" "}
+                header are bucketed here automatically — LayerFlow creates the project the first time it sees the
+                header (a &quot;Gateway clients&quot; domain). Requests without it are grouped as &quot;Ungrouped&quot;.
+              </p>
+            </div>
+          ) : (
+            <EmptyState
+              icon={<Wallet className="h-5 w-5" />}
+              title="No per-project spend yet"
+              description="Tag any gateway request with the x-lf-project header and its cost shows up here — LayerFlow attributes it automatically."
+            />
+          )}
+        </PanelBody>
+      </Panel>
 
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel className="lg:col-span-2">
@@ -453,6 +561,21 @@ export default function CostClient() {
           }
         />
         <PanelBody>
+          {suggestion ? (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-brand-2/30 bg-brand-2/5 p-4">
+              <PiggyBank className="h-4 w-4 shrink-0 text-brand-2" />
+              <div className="min-w-0 flex-1 text-[12px] leading-relaxed">
+                <p className="font-semibold text-ink">
+                  Suggestion: route <span className="font-mono">{suggestion.from}</span> to{" "}
+                  <span className="font-mono">{getModel(suggestion.to)?.displayName ?? suggestion.to}</span>
+                </p>
+                <p className="text-faint">
+                  The exact {suggestion.tokens.toLocaleString()} tokens from {suggestion.runs} runs would cost ≈{" "}
+                  {formatMoney(suggestion.saved)} less ({suggestion.pct.toFixed(0)}% of this period) at that rate.
+                </p>
+              </div>
+            </div>
+          ) : null}
           {savings ? (
             <div className="grid gap-3 sm:grid-cols-4">
               <div className="rounded-xl border border-border bg-surface-2/40 p-4 text-center">

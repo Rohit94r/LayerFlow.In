@@ -215,6 +215,15 @@ export interface ModelSpend {
   tokensOut: number;
 }
 
+export interface ProjectSpend {
+  projectId: string | null;
+  name: string;
+  spend: number;
+  runs: number;
+  tokensIn: number;
+  tokensOut: number;
+}
+
 export interface CostAnalytics {
   monthlySpend: number;
   monthlySavings: number;
@@ -223,6 +232,8 @@ export interface CostAnalytics {
   byModel: CostPoint[];
   savingsByMonth: CostPoint[];
   spendByModel: ModelSpend[];
+  /** USD spend per project (x-lf-project attribution), largest first. */
+  spendByProject: ProjectSpend[];
   /** USD spend per day for the last 7 days, oldest first. */
   dailySpend?: number[];
 }

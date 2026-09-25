@@ -264,11 +264,13 @@ export const workspaceService: WorkspaceService = {
   },
 
   async getCostAnalytics() {
-    const [byDay, byModel, savings, budget] = await Promise.all([
+    const [byDay, byModel, byProject, savings, budget, projects] = await Promise.all([
       authedFetch("/api/usage/summary?groupBy=day", usageSummaryResponseSchema),
       authedFetch("/api/usage/summary?groupBy=model", usageSummaryResponseSchema),
+      authedFetch("/api/usage/summary?groupBy=project", usageSummaryResponseSchema),
       authedFetch("/api/savings", savingsResponseSchema),
       authedFetch("/api/budgets/current", currentBudgetResponseSchema).catch(() => null),
+      this.listProjects().catch(() => [] as Project[]),
     ]);
 
     const totalCost = sumCost(byDay.buckets);
@@ -278,6 +280,8 @@ export const workspaceService: WorkspaceService = {
       .sort((a, b) => (a.day ?? "").localeCompare(b.day ?? ""))
       .slice(-7)
       .map((d) => microToUsd(d.costMicro));
+
+    const projectNames = new Map(projects.map((p) => [p.id, p.name]));
 
     return {
       monthlySpend: totalCost,
@@ -300,6 +304,18 @@ export const workspaceService: WorkspaceService = {
           tokensIn: b.inputTokens,
           tokensOut: b.outputTokens,
         })),
+      spendByProject: (byProject.buckets ?? [])
+        .map((b) => ({
+          projectId: b.projectId ?? null,
+          name: b.projectId
+            ? (projectNames.get(b.projectId) ?? `project_${b.projectId.slice(0, 8)}`)
+            : "Ungrouped",
+          spend: microToUsd(b.costMicro),
+          runs: b.requests,
+          tokensIn: b.inputTokens,
+          tokensOut: b.outputTokens,
+        }))
+        .sort((a, b) => b.spend - a.spend),
     };
   },
 

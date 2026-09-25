@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ui/error-state";
 import { modelService } from "@/lib/services/models";
+import { getGatewayBaseUrl } from "@/lib/api/config";
 import { PROVIDER_LABELS, timeAgo } from "@/lib/data/providers";
 import type { PlatformKey, ProviderKey } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -38,6 +39,8 @@ export default function KeysPage() {
         title="API Keys"
         description="Two kinds of keys: platform keys let the CLI talk to LayerFlow's hosted gateway (like opencode), and private own keys bring your own provider accounts."
       />
+
+      <QuickStart gateway={getGatewayBaseUrl()} />
 
       {/* Tab switcher */}
       <div className="flex gap-1.5 rounded-xl border border-border bg-surface-2/40 p-1.5">
@@ -59,6 +62,94 @@ export default function KeysPage() {
 
       {tab === "platform" ? <PlatformKeysPanel /> : <PrivateOwnKeysPanel />}
     </div>
+  );
+}
+
+function CopyCode({ text, label }: { text: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard?.writeText(text).catch(() => undefined);
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1600);
+      }}
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 text-[11px] font-semibold text-muted transition-colors hover:text-ink"
+    >
+      {copied ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copied" : label}
+    </button>
+  );
+}
+
+function QuickStart({ gateway }: { gateway: string }) {
+  const curl = [
+    `curl ${gateway}/chat/completions \\`,
+    `  -H "Authorization: Bearer lf_live_YOUR_KEY" \\`,
+    `  -H "Content-Type: application/json" \\`,
+    `  -H "x-lf-project: my-app" \\`,
+    `  -d '{"model":"gpt-4o-mini","messages":[{"role":"user","content":"Say ready"}],"max_tokens":16}'`,
+  ].join("\n");
+
+  const python = [
+    `from openai import OpenAI`,
+    `client = OpenAI(base_url="${gateway}", api_key="lf_live_YOUR_KEY")`,
+    `reply = client.chat.completions.create(`,
+    `    model="gpt-4o-mini",`,
+    `    messages=[{"role": "user", "content": "Say ready"}],`,
+    `)`,
+    `print(reply.choices[0].message.content)`,
+  ].join("\n");
+
+  const cli = [
+    `export OPENAI_API_KEY="sk-..."    # bring your own, no plan needed`,
+    `# or store it:  lf config key openai sk-...`,
+    `lf chat --provider openai        # direct mode → your provider`,
+  ].join("\n");
+
+  const snippets: { title: string; hint: string; body: string }[] = [
+    {
+      title: "Gateway · curl",
+      hint: "Platform key as Bearer · x-lf-project tags the spend",
+      body: curl,
+    },
+    {
+      title: "Gateway · Python",
+      hint: "OpenAI-compatible base_url — works with any SDK",
+      body: python,
+    },
+    {
+      title: "CLI · direct mode",
+      hint: "BYOK — your own key, nothing metered by LayerFlow",
+      body: cli,
+    },
+  ];
+
+  return (
+    <Panel>
+      <PanelHeader
+        title="Try it in 2 minutes"
+        description="Drop your key in, hit the gateway. Every request is capped by your budget and attributed to a project automatically."
+      />
+      <PanelBody className="grid gap-3 lg:grid-cols-3">
+        {snippets.map((s) => (
+          <div
+            key={s.title}
+            className="flex flex-col gap-2 overflow-hidden rounded-xl border border-border bg-surface/60 p-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] font-semibold text-ink">{s.title}</p>
+              <CopyCode text={s.body} label="Copy" />
+            </div>
+            <p className="text-[10px] text-faint">{s.hint}</p>
+            <pre className="max-h-52 min-h-[7rem] overflow-auto whitespace-pre rounded-lg bg-surface-2 px-3 py-2.5 font-mono text-[10px] leading-relaxed text-ink/90">
+              {s.body}
+            </pre>
+          </div>
+        ))}
+      </PanelBody>
+    </Panel>
   );
 }
 
@@ -103,6 +194,8 @@ function PlatformKeysPanel() {
   const [name, setName] = useState("");
   const [created, setCreated] = useState<{ key: PlatformKey; secret: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -143,6 +236,7 @@ function PlatformKeysPanel() {
       setCreated(res);
       setName("");
       setCopied(false);
+      setTestResult(null);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Could not create the key.");
     } finally {
@@ -169,6 +263,46 @@ function PlatformKeysPanel() {
     navigator.clipboard?.writeText(created.secret).catch(() => undefined);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  async function testKey() {
+    if (!created || testing) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const res = await fetch(`${getGatewayBaseUrl()}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${created.secret}`,
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 16,
+        }),
+      });
+      const keyMode = res.headers.get("x-lf-key-mode") ?? "unknown";
+      let detail = "";
+      try {
+        const body = (await res.json()) as {
+          error?: { message?: string };
+          choices?: Array<{ message?: { content?: string } }>;
+        };
+        detail = body.error?.message ?? body.choices?.[0]?.message?.content ?? "";
+      } catch {
+        // non-JSON response body
+      }
+      if (res.ok) {
+        setTestResult({ ok: true, msg: `${res.status} OK · key-mode: ${keyMode}${detail ? ` · ${detail}` : ""}` });
+      } else {
+        setTestResult({ ok: false, msg: `${res.status} · key-mode: ${keyMode}${detail ? ` · ${detail}` : ""}` });
+      }
+    } catch (err) {
+      setTestResult({ ok: false, msg: err instanceof Error ? err.message : "network error" });
+    } finally {
+      setTesting(false);
+    }
   }
 
   return (
@@ -234,6 +368,27 @@ function PlatformKeysPanel() {
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                 {copied ? "Copied" : "Copy key"}
               </button>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+              <Button size="sm" variant="outline" disabled={testing} onClick={() => void testKey()}>
+                {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                {testing ? "Testing…" : "Test the key"}
+              </Button>
+              {testResult ? (
+                <span
+                  className={cn(
+                    "max-w-md font-mono text-[11px] leading-relaxed",
+                    testResult.ok ? "text-emerald-400" : "text-rose-400",
+                  )}
+                >
+                  {testResult.msg}
+                </span>
+              ) : (
+                <span className="text-[11px] text-faint">
+                  Sends one tiny chat completion through the gateway and reports the <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px]">x-lf-key-mode</code>{" "}
+                  header.
+                </span>
+              )}
             </div>
             <p className="mt-2 text-[11px] text-faint">
               Then authenticate the CLI:{" "}

@@ -1,25 +1,18 @@
 // ─────────────────────────────────────────────────────────────
-// Sidebar navigation — all features, grouped so the flow is
-// obvious: Start → Build → Learn → Manage.
+// Sidebar navigation — the AI spend firewall surface. Every
+// entry here sits on top of the gateway: models, keys, costs,
+// usage history, and billing.
 // ─────────────────────────────────────────────────────────────
 
 import {
   LayoutGrid,
   AiChat,
-  Bot,
   Cpu,
   History,
-  Search,
   BarChart3,
-  FolderKanban,
   KeyRound,
   CreditCard,
   Settings,
-  TerminalSquare,
-  Brain,
-  FileCode2,
-  Users,
-  ClipboardList,
 } from "@/components/ui/icons";
 import type { LucideIcon } from "@/components/ui/icons";
 
@@ -40,34 +33,26 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Start",
     items: [
       { href: "/home", label: "Home", description: "Your work hub", icon: LayoutGrid },
-      { href: "/chat", label: "Chat", description: "One thread, any AI — rescue past chats", icon: AiChat },
+      { href: "/chat", label: "Chat", description: "One thread, any model", icon: AiChat },
     ],
   },
   {
-    label: "Build",
+    label: "Connect",
     items: [
-      { href: "/autosubmit", label: "AutoSubmit", description: "1-Click auto form filler & mailer", icon: ClipboardList },
-      { href: "/agents", label: "Agents", description: "Build and run your own agents", icon: Bot },
-      { href: "/terminal", label: "Terminal", description: "Sessions synced from lf", icon: TerminalSquare },
+      { href: "/models", label: "Models", description: "Gateway models + BYOK", icon: Cpu },
+      { href: "/keys", label: "Keys", description: "Gateway keys + provider keys", icon: KeyRound },
     ],
   },
   {
-    label: "Learn",
+    label: "Spend",
     items: [
-      { href: "/models", label: "Models", description: "Models, routing and BYOK", icon: Cpu },
-      { href: "/history", label: "History", description: "Activity, saved prompts + memory", icon: History },
-      { href: "/memory", label: "Memory", description: "What LayerFlow remembered", icon: Brain },
-      { href: "/files", label: "Files", description: "Uploaded knowledge + RAG", icon: FileCode2 },
-      { href: "/search", label: "Search", description: "Search all your context", icon: Search },
-      { href: "/costs", label: "Costs", description: "Spend, savings and budgets", icon: BarChart3 },
+      { href: "/costs", label: "Costs", description: "Spend, budgets and alerts", icon: BarChart3 },
+      { href: "/history", label: "Usage History", description: "Request and usage history", icon: History },
     ],
   },
   {
     label: "Manage",
     items: [
-      { href: "/workspace", label: "Projects", description: "Projects and AI work ledger", icon: FolderKanban },
-      { href: "/team", label: "Team", description: "Members, roles and invitations", icon: Users },
-      { href: "/keys", label: "Keys", description: "Platform keys + your own BYOK keys", icon: KeyRound },
       { href: "/billing", label: "Billing", description: "Plan and invoices", icon: CreditCard },
       { href: "/settings", label: "Settings", description: "Workspace and profile", icon: Settings },
     ],

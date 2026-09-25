@@ -62,6 +62,14 @@ export const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   /** OpenCode (opencode.ai zen) platform key. */
   OPENCODE_API_KEY: z.string().optional(),
+  /**
+   * Demo mode — the daily cap on free managed (platform-key) usage so the
+   * "free first month" can't be drained. Set 0 to disable.
+   * Per verified account per day. Default 20.
+   */
+  DEMO_DAILY_MSGS_PER_USER: z.coerce.number().int().min(0).default(20),
+  /** Global per-day cap across all demo users (all of LayerFlow). Default 1000. */
+  DEMO_DAILY_MSGS_GLOBAL: z.coerce.number().int().min(0).default(1000),
   /** ElevenLabs — reserved for future audio / sound-effect features. */
   ELEVENLABS_API_KEY: z.string().optional(),
   ELEVENLABS_VOICE_ID: z.string().optional(),

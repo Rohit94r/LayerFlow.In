@@ -53,6 +53,13 @@ export const providerKeys = pgTable(
     /** Last 4 chars of the key, for display only. */
     keyHint: text("key_hint").notNull(),
     label: text("label"),
+    /**
+     * Optional base URL override (OpenAI-compatible providers) so a workspace
+     * can point a known provider at a custom/self-hosted endpoint via the
+     * vault. Server-side only used for the "same protocol" OpenAI-compatible
+     * adapters — never a raw custom URL (SSRF-safe by design).
+     */
+    baseUrl: text("base_url"),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     ...timestamps,
   },

@@ -15,20 +15,19 @@ import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export const metadata: Metadata = {
-  title: "LayerFlow — The AI Workspace That Never Forgets",
+  title: "LayerFlow — Stop Surprise AI Bills. Cap Spend Per Project.",
   description:
-    "Code with AI in your browser or terminal, rescue dead AI chats instead of restarting them, run agents with approvals, and control LLM costs with BYOK keys and hard budget limits.",
+    "The AI spend firewall. One OpenAI-compatible gateway in front of every model — bring your own keys, set hard budget caps, get alerts at 50/80/100%, and trust your usage history.",
   keywords: [
-    "AI workspace",
-    "prompt organization",
-    "LLM cost control",
-    "rescue AI chat",
-    "organize AI prompts",
+    "AI cost control",
+    "LLM budget caps",
+    "AI spend",
     "BYOK",
+    "OpenAI-compatible gateway",
     "model routing",
-    "AI prompt library",
-    "LLM budget limits",
-    "AI coding platform",
+    "AI usage history",
+    "LLM cost monitoring",
+    "AI spend firewall",
     "LayerFlow",
   ],
   authors: [{ name: "Rohit Jadhav", url: "https://layerflow.dev" }],
@@ -39,9 +38,9 @@ export const metadata: Metadata = {
     canonical: "https://layerflow.dev/",
   },
   openGraph: {
-    title: "LayerFlow — The AI Workspace That Never Forgets",
+    title: "LayerFlow — Stop Surprise AI Bills. Cap Spend Per Project.",
     description:
-      "Code with AI across any model, rescue dead conversations instead of restarting them, run agents with approvals, and control LLM costs with BYOK keys.",
+      "The AI spend firewall. Your keys, hard budget caps, alerts at 50/80/100%, and usage history you can trust — one OpenAI-compatible gateway in front of every model.",
     url: "https://layerflow.dev/",
     siteName: "LayerFlow",
     images: [
@@ -56,9 +55,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — Code with AI in your browser or terminal",
+    title: "LayerFlow — Stop surprise AI bills. Cap spend per project in 2 minutes.",
     description:
-      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue.",
+      "The AI spend firewall. One OpenAI-compatible gateway in front of every model — your keys, hard budget caps, alerts at 50/80/100%.",
     images: ["/og.png"],
   },
   icons: {
@@ -75,20 +74,20 @@ const jsonLd = [
     "@id": "https://layerflow.dev/#app",
     name: "LayerFlow",
     applicationCategory: "DeveloperApplication",
-    applicationSubCategory: "AI Workspace & Coding Platform",
+    applicationSubCategory: "AI Spend Firewall & Gateway",
     operatingSystem: "Web, macOS, Linux, Windows",
     description:
-      "Code with AI in your browser or terminal, rescue dead AI chats instead of restarting them, organize prompts, and control LLM costs with BYOK keys.",
+      "Cap AI spend per project in minutes. One OpenAI-compatible gateway, your own keys, hard budget caps, alerts at 50/80/100%, and usage history you can trust.",
     url: "https://layerflow.dev",
     image: "https://layerflow.dev/og.png",
     softwareVersion: "2.0.0",
     featureList: [
-      "Chat across any AI model: ChatGPT, Claude, Gemini, DeepSeek",
-      "Rescue dead conversations with one-click Continue Packs",
-      "Run multi-agent coding workflows with approvals",
-      "Unified session sync between web dashboard and lf CLI",
-      "Hard budget limits and BYOK zero markup",
-      "Auto context cutting to prevent token waste",
+      "Hard monthly budget caps with requests hard-blocked at 100%",
+      "Bring your own keys — OpenAI, Anthropic, DeepSeek, Groq and more",
+      "Email alerts at 50/80/100% of budget",
+      "Per-project spend attribution with a single header",
+      "Full usage history: model, tokens, project, and exact cost",
+      "One OpenAI-compatible API in front of every model",
     ],
     author: { "@id": "https://layerflow.dev/#org" },
     publisher: { "@id": "https://layerflow.dev/#org" },

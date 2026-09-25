@@ -30,6 +30,12 @@ export interface ChatCompletionRequest {
   messages: ChatMessage[];
   /** Decrypted BYOK secret — never logged. */
   apiKey: string;
+  /**
+   * Optional base URL override for OpenAI-compatible providers (BYOK keys
+   * with a custom base URL, e.g. a self-hosted OpenAI-compatible gateway).
+   * Ignored by providers with native APIs (Anthropic, Google).
+   */
+  baseUrl?: string;
   /** Reserved for streaming adapters; non-stream path ignores this. */
   stream?: boolean;
   /** Cap completion length (Prefer-cheap / tokenSaver short answers). */

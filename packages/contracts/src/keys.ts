@@ -54,6 +54,8 @@ export const providerKeySchema = z.object({
   provider: z.string(),
   keyHint: z.string(),
   label: z.string().nullish(),
+  /** Custom OpenAI-compatible base URL override (vault-backed BYOK). */
+  baseUrl: z.string().nullish(),
   revokedAt: timestampSchema.nullish(),
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
@@ -70,6 +72,12 @@ export const createProviderKeyRequestSchema = z.object({
     .regex(/^[a-z][a-z0-9_-]*$/i),
   secret: z.string().min(8).max(512),
   label: z.string().max(120).optional(),
+  /**
+   * Optional base URL override for OpenAI-compatible providers. The server
+   * enforces HTTPS (in production) and rejects private/loopback/link-local
+   * hosts to keep the vault path SSRF-safe.
+   */
+  baseUrl: z.string().url().max(300).optional(),
 });
 
 export type CreateProviderKeyRequest = z.infer<typeof createProviderKeyRequestSchema>;

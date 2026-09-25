@@ -4,7 +4,7 @@ import {
   type ListModelsResponse,
   type RunMessage,
 } from "@layerflow/contracts";
-import { MODELS } from "@layerflow/model-registry";
+import { MODELS, PROVIDERS, type Provider } from "@layerflow/model-registry";
 import { Hono } from "hono";
 import { z } from "zod";
 import { getExactCache, hashExactCacheKey, setExactCache } from "../cache/exact";
@@ -14,9 +14,11 @@ import { gatewayLogs } from "../db/schema/gateway";
 import { requireApiKey } from "../middleware/api-key-auth";
 import { AppError } from "../middleware/app-error";
 import { rateLimit } from "../middleware/rate-limit";
+import { resolveGatewayProject } from "./projects";
 import {
-  loadProviderApiKey,
+  resolveProviderApiKey,
   resolveProviderFromModel,
+  resolveAdapter,
 } from "../services/ai/providers";
 import { listConfiguredProviders } from "../services/keys/provider-keys";
 import { buildRunSavings, prepareRunCall } from "../services/savings/prepare";
@@ -28,12 +30,37 @@ import type {
   ChatTool,
   ChatToolCall,
   ChatMessage,
+  ProviderAdapter,
 } from "../services/ai/providers/types";
 
 export const gatewayRouter = new Hono<AppEnv>();
 
 gatewayRouter.use(requireApiKey);
 gatewayRouter.use(rateLimit({ requestsPerMinute: 60 }));
+
+/** `x-lf-provider` header → a known provider (used with direct/no-store keys). */
+function providerFromHeader(header: string | undefined): Provider | null {
+  if (!header) return null;
+  const value = header.trim().toLowerCase();
+  if ((PROVIDERS as readonly string[]).includes(value)) return value as Provider;
+  throw new AppError(
+    400,
+    "unsupported_provider",
+    `Unknown provider "${header}". Known providers: ${(PROVIDERS as readonly string[]).join(", ")}`,
+  );
+}
+
+function setKeyModeHeaders(
+  c: { header: (k: string, v: string) => void },
+  source: "direct" | "byok" | "platform",
+  demo?: { remainingUser: number; remainingGlobal: number } | null,
+): void {
+  c.header("x-lf-key-mode", source);
+  if (demo) {
+    c.header("x-lf-demo-remaining-user", String(demo.remainingUser));
+    c.header("x-lf-demo-remaining-global", String(demo.remainingGlobal));
+  }
+};
 
 function toChatMessages(
   messages: Array<{ role: string; content?: string | null | unknown; tool_calls?: unknown; tool_call_id?: string }>,
@@ -105,13 +132,20 @@ async function writeGatewayLog(args: {
 gatewayRouter.get("/models", async (c) => {
   const workspaceId = c.get("workspaceId");
   const configured = new Set(await listConfiguredProviders(workspaceId));
+
+  // Direct/no-store mode: a key + `x-lf-provider` on the request marks that
+  // provider's catalog as available without any vault/config setup.
+  const directActive = Boolean(c.req.header("x-lf-provider-key"));
+  const directProvider = providerFromHeader(c.req.header("x-lf-provider"));
+
   const response: ListModelsResponse = {
     object: "list",
     data: MODELS.map((m) => ({
       id: m.id,
       object: "model" as const,
       owned_by: m.provider,
-      available: configured.has(m.provider),
+      available:
+        (directActive && directProvider === m.provider) || configured.has(m.provider),
     })),
   };
   return c.json(response);
@@ -125,7 +159,18 @@ gatewayRouter.post("/chat/completions", async (c) => {
   const requestId = c.get("requestId");
   const body = chatCompletionsRequestSchema.parse(await c.req.json());
 
-  const projectId = body.project_id ?? c.get("apiKeyProjectId") ?? null;
+  // Direct/no-store mode: `x-lf-provider-key` supplies the provider key for
+  // THIS request only. It is never stored, never logged, and (with
+  // `x-lf-provider`) lets a client use a model id that maps to any known
+  // adapter. Budget caps still apply on the cost declared from real usage.
+  const direct = Boolean(c.req.header("x-lf-provider-key"));
+
+  const projectRef = c.req.header("x-lf-project");
+  const projectId =
+    body.project_id ??
+    (projectRef ? await resolveGatewayProject(workspaceId, projectRef) : null) ??
+    c.get("apiKeyProjectId") ??
+    null;
   const rawMessages = toChatMessages(body.messages);
   const hasTools = Array.isArray(body.tools) && body.tools.length > 0;
 
@@ -166,7 +211,18 @@ gatewayRouter.post("/chat/completions", async (c) => {
   const model = prepared.model;
   const messages = hasTools ? rawMessages : toChatMessages(prepared.messages);
   const maxTokens = body.max_tokens ?? body.max_completion_tokens ?? prepared.maxTokens;
-  const { provider, adapter } = resolveProviderFromModel(model);
+
+  // `x-lf-provider` overrides model-based resolution so a direct/no-store key
+  // (or a BYOK vault key) can drive any known adapter without a catalog model.
+  const overrideProvider = providerFromHeader(c.req.header("x-lf-provider"));
+  let provider: Provider;
+  let adapter: ProviderAdapter;
+  if (overrideProvider) {
+    provider = overrideProvider;
+    adapter = resolveAdapter(provider);
+  } else {
+    ({ provider, adapter } = resolveProviderFromModel(model));
+  }
 
   const cacheKey = hashExactCacheKey({
     model,
@@ -179,7 +235,15 @@ gatewayRouter.post("/chat/completions", async (c) => {
     ...(body.tools ? { tools: body.tools } : {}),
   });
 
-  const cached = await getExactCache(workspaceId, cacheKey);
+  // Direct keys are per-request and opaque (no two requests share a vault
+  // key), so the exact-cache can't be trusted across a workspace in that mode.
+  // Platform/BYOK keys are workspace-scoped, so the cache is safe there — and
+  // a cache hit must not burn demo quota, so the platform resolution happens
+  // only AFTER the cache short-circuit below.
+  let cached: string | null = null;
+  if (!direct) {
+    cached = await getExactCache(workspaceId, cacheKey);
+  }
   if (cached && !body.stream) {
     const savings = buildRunSavings({
       prepared,
@@ -202,7 +266,10 @@ gatewayRouter.post("/chat/completions", async (c) => {
     return c.json(JSON.parse(cached));
   }
 
-  const apiKey = await loadProviderApiKey(workspaceId, provider);
+  const keyInfo = await resolveProviderApiKey(workspaceId, provider, {
+    ...(direct ? { requestKey: c.req.header("x-lf-provider-key") } : {}),
+  });
+  const apiKey = keyInfo.apiKey;
   const estimateMicro = estimateCostMicro(model, messages, maxTokens);
   const reservation = await reserveBudget({
     workspaceId,
@@ -215,6 +282,7 @@ gatewayRouter.post("/chat/completions", async (c) => {
     model,
     messages,
     apiKey,
+    ...(keyInfo.baseUrl ? { baseUrl: keyInfo.baseUrl } : {}),
     ...(maxTokens != null ? { maxTokens } : {}),
     ...(Array.isArray(body.tools) && body.tools.length > 0
       ? { tools: body.tools as unknown as ChatTool[] }
@@ -348,6 +416,13 @@ gatewayRouter.post("/chat/completions", async (c) => {
           Connection: "keep-alive",
           "X-Accel-Buffering": "no",
           "x-layerflow-cache": "miss",
+          "x-lf-key-mode": keyInfo.source,
+          ...(keyInfo.demo
+            ? {
+                "x-lf-demo-remaining-user": String(keyInfo.demo.remainingUser),
+                "x-lf-demo-remaining-global": String(keyInfo.demo.remainingGlobal),
+              }
+            : {}),
           "x-layerflow-tokens-saved": String(streamSavings.tokensSaved),
           "x-layerflow-cost-saved-micro": String(streamSavings.costSavedMicro),
           "x-request-id": requestId,
@@ -400,7 +475,9 @@ gatewayRouter.post("/chat/completions", async (c) => {
       layerflow_savings: savings,
     };
 
-    await setExactCache(workspaceId, cacheKey, JSON.stringify(completion));
+    if (!direct) {
+      await setExactCache(workspaceId, cacheKey, JSON.stringify(completion));
+    }
     await writeGatewayLog({
       workspaceId,
       apiKeyId,
@@ -413,6 +490,7 @@ gatewayRouter.post("/chat/completions", async (c) => {
     });
 
     c.header("x-layerflow-cache", "miss");
+    setKeyModeHeaders(c, keyInfo.source, keyInfo.demo ?? null);
     setSavingsHeaders(c, savings);
     return c.json(completion);
   } catch (err) {

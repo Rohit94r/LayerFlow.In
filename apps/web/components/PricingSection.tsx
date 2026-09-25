@@ -16,8 +16,8 @@ export default function PricingSection() {
             </span>
           </h2>
           <p className="lede rv rv-d2">
-            Start free with your own API keys. Upgrade when you need unlimited Chat Rescues,
-            cloud multi-agent execution, and team prompt sharing.
+            Start free with your own API keys. Upgrade when you need unlimited gateway
+            requests, a shared key vault, and team-wide budget control.
           </p>
         </div>
 
@@ -31,10 +31,10 @@ export default function PricingSection() {
               <span className="once">no card needed</span>
             </div>
             <ul>
-              <li>100% BYOK (OpenAI, Claude, DeepSeek)</li>
-              <li>Native lf CLI + web sync</li>
-              <li>Prompt auto-improver (scored 0-100)</li>
-              <li>10 Chat Rescues / month</li>
+              <li>100% BYOK (OpenAI, Claude, DeepSeek, Groq)</li>
+              <li>Gateway capped at 20 messages/day — proof it works</li>
+              <li>Hard budget caps + 50/80/100% alerts</li>
+              <li>Usage history</li>
             </ul>
             <a
               href="/sign-in"
@@ -63,9 +63,9 @@ export default function PricingSection() {
             </div>
             <ul>
               <li>Everything in Developer</li>
-              <li>Unlimited Chat Rescues &amp; Continue Packs</li>
-              <li>Multi-agent parallel execution (review &amp; test)</li>
-              <li>Hard budget limits &amp; killswitches</li>
+              <li>Unlimited gateway requests (no daily cap)</li>
+              <li>BYOK vault — provider keys + custom base URLs</li>
+              <li>Per-project spend + priority support</li>
             </ul>
             <a
               href="/pricing"
@@ -90,8 +90,8 @@ export default function PricingSection() {
             </div>
             <ul>
               <li>Everything in Pro</li>
-              <li>Shared team prompt &amp; agent library</li>
-              <li>Centralized BYOK key vault &amp; audit log</li>
+              <li>Team-wide budget caps &amp; shared key vault</li>
+              <li>Centralized BYOK vault &amp; audit log</li>
               <li>Priority support &amp; private Discord</li>
             </ul>
             <a

@@ -90,14 +90,22 @@ export async function ledgerSpentForPeriod(workspaceId: string, period: string):
 
 export interface BudgetAlertOutcome {
   workspaceId: string;
-  threshold: "warn" | "blocked";
+  threshold: "tier50" | "tier80" | "blocked";
   sent: boolean;
   deduped: boolean;
 }
 
+/** Alert tiers of a monthly budget, as a % of the limit. */
+const BUDGET_ALERT_TIERS = [50, 80, 100] as const;
+
 /**
- * Evaluate one workspace's current-period budget and send at most one
- * warning (>= alertAtPct) and one blocked (>= 100%) email per period.
+ * Evaluate one workspace's current-period budget and send at most one email
+ * per run (the highest crossed tier), each tier once per period:
+ *   50% → warning with projected spend + next-tier heads-up
+ *   80% → warning suggesting BYOK / cheaper models / hard block
+ *   100% → blocked (respecting hardBlock: warn-only when soft)
+ * Deduplicated per (tier, period) so re-runs and multi-worker deployments
+ * never double-send, and the ladder only escalates as spend climbs.
  */
 export async function evaluateBudgetAlertsForWorkspace(
   workspaceId: string,
@@ -117,59 +125,55 @@ export async function evaluateBudgetAlertsForWorkspace(
   const owner = await ownerEmail(workspaceId);
   if (!owner) return [];
 
+  const tier = [...BUDGET_ALERT_TIERS].reverse().find((t) => pct >= t) ?? 0;
+  if (tier === 0) return [];
+
   const outcomes: BudgetAlertOutcome[] = [];
-
-  const thresholds: Array<{ kind: "warn" | "blocked"; hit: boolean }> = [
-    { kind: "warn", hit: pct >= budget.alertAtPct && pct < 100 },
-    { kind: "blocked", hit: pct >= 100 },
-  ];
-
-  for (const { kind, hit } of thresholds) {
-    if (!hit) continue;
-    const dedupeKey = `budget-alert:${workspaceId}:${period}:${kind}`;
-    const claim = await claimEmailEvent({
-      workspaceId,
-      type: "budget_alert",
-      dedupeKey,
-      recipient: owner.email,
-    });
-    if (!claim.claimed) {
-      outcomes.push({ workspaceId, threshold: kind, sent: false, deduped: true });
-      continue;
-    }
-
-    const message =
-      kind === "blocked"
-        ? budgetBlockedEmail({
-            workspaceName: owner.name,
-            spentMicro,
-            limitMicro: budget.monthlyLimitMicro,
-            period,
-          })
-        : budgetWarningEmail({
-            workspaceName: owner.name,
-            percentUsed: pct,
-            spentMicro,
-            limitMicro: budget.monthlyLimitMicro,
-            period,
-          });
-
-    const result = await sendEmail({
-      to: owner.email,
-      subject: message.subject,
-      html: message.html,
-      text: message.text,
-      idempotencyKey: dedupeKey,
-    });
-
-    if (!result.sent && !result.skipped) {
-      // Transient failure — release the claim so the next run retries.
-      await releaseEmailEvent(claim.id!);
-    } else {
-      await finishEmailEvent(claim.id!, result);
-    }
-    outcomes.push({ workspaceId, threshold: kind, sent: result.sent, deduped: false });
+  const kind: BudgetAlertOutcome["threshold"] =
+    tier >= 100 ? "blocked" : tier === 80 ? "tier80" : "tier50";
+  const dedupeKey = `budget-alert:${workspaceId}:${period}:tier-${tier}`;
+  const claim = await claimEmailEvent({
+    workspaceId,
+    type: "budget_alert",
+    dedupeKey,
+    recipient: owner.email,
+  });
+  if (!claim.claimed) {
+    outcomes.push({ workspaceId, threshold: kind, sent: false, deduped: true });
+    return outcomes;
   }
+
+  const message =
+    kind === "blocked"
+      ? budgetBlockedEmail({
+          workspaceName: owner.name,
+          spentMicro,
+          limitMicro: budget.monthlyLimitMicro,
+          period,
+        })
+      : budgetWarningEmail({
+          workspaceName: owner.name,
+          percentUsed: pct,
+          spentMicro,
+          limitMicro: budget.monthlyLimitMicro,
+          period,
+        });
+
+  const result = await sendEmail({
+    to: owner.email,
+    subject: message.subject,
+    html: message.html,
+    text: message.text,
+    idempotencyKey: dedupeKey,
+  });
+
+  if (!result.sent && !result.skipped) {
+    // Transient failure — release the claim so the next run retries.
+    await releaseEmailEvent(claim.id!);
+  } else {
+    await finishEmailEvent(claim.id!, result);
+  }
+  outcomes.push({ workspaceId, threshold: kind, sent: result.sent, deduped: false });
 
   return outcomes;
 }

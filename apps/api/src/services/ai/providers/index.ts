@@ -12,7 +12,14 @@ import { xaiAdapter } from "./xai";
 import type { ProviderAdapter } from "./types";
 
 export type { ChatMessage, ChatCompletionRequest, ChatCompletionResult, ProviderAdapter } from "./types";
-export { hasProviderKey, loadProviderApiKey, platformApiKey, platformDefaultModel } from "./keys";
+export {
+  hasProviderKey,
+  loadProviderApiKey,
+  platformApiKey,
+  platformDefaultModel,
+  type ResolvedProviderKey,
+  resolveProviderApiKey,
+} from "./keys";
 export {
   createProviderWatchdog,
   createNonStreamingWatchdog,

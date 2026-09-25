@@ -18,6 +18,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspace @layerflow/web",
     "test:api": "npm run test --workspace @layerflow/api",
+    "test:registry": "npm run test --workspace @layerflow/model-registry",
     "check:prod": "bash scripts/check-production.sh",
     "preflight:prod": "bash scripts/preflight-prod.sh",
     "deploy:api": "bash scripts/deploy-api-prod.sh"

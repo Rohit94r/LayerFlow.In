@@ -148,6 +148,13 @@
       "when": 1789813318225,
       "tag": "0020_brave_starhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790300000000,
+      "tag": "0021_gateway_direct",
+      "breakpoints": true
     }
   ]
 }

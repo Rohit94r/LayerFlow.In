@@ -2,50 +2,48 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import {
   Sparkles,
-  Bot,
-  Globe,
   KeyRound,
-  FileCode2,
-  CopyCheck,
-  Cpu,
-  Wand2,
+  Globe,
+  ShieldCheck,
+  BarChart3,
+  History,
   ArrowRight,
 } from "@/components/ui/icons";
 import { Reveal } from "@/components/ui/reveal";
 import { CodeBlock } from "@/components/marketing/CodeBlock";
 
 export const metadata: Metadata = {
-  title: "Docs & Guides — AI CLI, Agents & Cost Control",
+  title: "Docs & Guides — Gateway, Keys & Cost Control",
   description:
-    "LayerFlow docs — install the CLI, code from the terminal, run agents in the browser, and keep every bit of AI context.",
+    "LayerFlow docs — get an OpenAI-compatible gateway key, bring your own provider keys, set hard budget caps, and read your usage history.",
   alternates: { canonical: "/docs" },
   openGraph: { url: "/docs" },
 };
 
 const CLI_COMMANDS = [
   {
-    command: `lf`,
-    what: "Launch the full-screen terminal UI — home, streaming chat, sessions, model switcher and command palette.",
-  },
-  {
-    command: `lf run "build a landing page"`,
-    what: "Run a single task with live step streaming and tool approvals — prompt, cost and model handled for you.",
+    command: `lf login`,
+    what: "Paste your LayerFlow API key from the dashboard — the gateway then meters every request, no provider keys needed on your machine.",
   },
   {
     command: `lf chat "explain the auth flow"`,
-    what: "Start a streaming chat session with the LayerFlow gateway. Continue the same session in the web app.",
+    what: "Stream a chat through the gateway. Same OpenAI-compatible call as the API — budgets, usage and alerts all apply.",
   },
   {
-    command: `lf sessions`,
-    what: "List persisted sessions for the current project and reopen any past one with `--id`.",
+    command: `lf config key openai sk-...`,
+    what: "Set a provider key for direct mode — no account needed. lf chats straight to the provider at your configured base URL.",
   },
   {
-    command: `lf sync`,
-    what: "Push/pull your sessions, context and cost ledger between the terminal and the cloud.",
+    command: `lf models`,
+    what: "List the models your workspace can use right now, and which are available.",
   },
   {
     command: `lf cost --project`,
-    what: "Show token and dollar usage from the local store — keep an eye on what each project is spending.",
+    what: "Show token and dollar usage — keep an eye on what each project is spending.",
+  },
+  {
+    command: `lf doctor`,
+    what: "Run local diagnostics: config, storage, keychain and audit checks.",
   },
 ];
 
@@ -75,12 +73,11 @@ export default function DocsPage() {
             Docs
           </span>
           <h1 className="mt-6 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">
-            Install once. <span className="text-brand">Code anywhere.</span>
+            One gateway. <span className="text-brand">Zero surprise bills.</span>
           </h1>
           <p className="mt-4 text-lg text-muted">
-            Use LayerFlow in your browser with zero setup — or install the
-            terminal CLI and code from anywhere. Both share the same sessions,
-            context and cost ledger.
+            Route every model call through LayerFlow — your keys, hard budget
+            caps, alerts at 50/80/100%, and usage history that explains itself.
           </p>
         </div>
       </Reveal>
@@ -93,8 +90,9 @@ export default function DocsPage() {
             Install the terminal CLI
           </h2>
           <p className="mt-3 max-w-2xl text-muted">
-            One command, nothing else. No API keys, no config files, no account
-            needed to try it.
+            One command, nothing else. Point it at the gateway with
+            <span className="font-mono"> lf login</span> — or skip login entirely
+            and chat directly to a provider with your own key.
           </p>
         </Reveal>
         <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -131,17 +129,16 @@ export default function DocsPage() {
         </div>
       </section>
 
-      {/* ── Quick start ── */}
+      {/* ── Gateway quick start ── */}
       <section className="mt-16">
         <Reveal>
           <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
-            <Sparkles className="h-5 w-5 text-brand" />
-            Quick start — terminal
+            <KeyRound className="h-5 w-5 text-brand" />
+            Gateway quick start — 2 minutes
           </h2>
           <p className="mt-3 max-w-2xl text-muted">
-            Write plain English, click Improve in the web app, or just run it —
-            LayerFlow sharpens the prompt, picks a model, checks cost, and runs
-            agents for you.
+            Create an API key, call one OpenAI-compatible endpoint, and your
+            spend is capped and tracked from the first request.
           </p>
         </Reveal>
         <div className="mt-6">
@@ -154,20 +151,20 @@ export default function DocsPage() {
         <Reveal>
           <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
             <Globe className="h-5 w-5 text-brand" />
-            Use it in the browser — zero install
+            Everything in the dashboard
           </h2>
           <p className="mt-3 max-w-2xl text-muted">
-            Everything the CLI does, without installing anything:
+            Keys, models, budgets and history — no install required:
           </p>
         </Reveal>
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {[
-            { icon: FileCode2, title: "Coding Workspace", text: "Plain English in, working code out. Improve, then run with agents." },
-            { icon: Wand2, title: "Improve in Chat", text: "One click in any chat: your rough prompt becomes a sharp, low-token prompt — scored 0–100." },
-            { icon: Bot, title: "Build Agents", text: "Create your own specialist agents with custom prompts and models, then run them from the web." },
-            { icon: CopyCheck, title: "Rescue Chat", text: "Paste a dead AI chat and get a clean prompt, compressed context and Continue Pack." },
-            { icon: KeyRound, title: "BYOK", text: "Bring your own API keys. Pay providers directly — never resold credits." },
-            { icon: Cpu, title: "Cost Check", text: "Dollar estimates before every run, plus the cheapest good-enough model." },
+            { icon: KeyRound, title: "Platform Keys", text: "Create lf_live_… keys for the gateway in seconds. Use them from any OpenAI-compatible client." },
+            { icon: ShieldCheck, title: "BYOK Vault", text: "Bring your own provider keys (OpenAI, Anthropic, DeepSeek, Groq…). Zero markup, zero resale." },
+            { icon: BarChart3, title: "Hard Budget Caps", text: "Set a monthly cap per workspace — requests hard-block at 100%, no exceptions." },
+            { icon: History, title: "Alerts + Usage History", text: "Email alerts at 50/80/100%. Every request shows model, tokens, project and exact cost." },
+            { icon: Sparkles, title: "Direct Mode", text: "Point lf or any client straight at your provider with x-lf-provider — no account needed." },
+            { icon: Globe, title: "Per-Project Spend", text: "Tag any request with x-lf-project: client-acme and see spend attributed instantly." },
           ].map((f, i) => (
             <Reveal key={f.title} delay={i * 0.05}>
               <div className="card card-hover h-full p-5">
@@ -180,32 +177,32 @@ export default function DocsPage() {
         </div>
         <Reveal>
           <Link
-            href="/agents"
+            href="/keys"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-medium text-black transition-transform hover:scale-[1.02]"
           >
-            Open the web workspace <ArrowRight className="h-4 w-4" />
+            Create your first key <ArrowRight className="h-4 w-4" />
           </Link>
         </Reveal>
       </section>
 
-      {/* ── Architecture ── */}
+      {/* ── How it works ── */}
       <section id="architecture" className="mt-16 scroll-mt-28">
         <Reveal>
           <h2 className="flex items-center gap-2.5 text-2xl font-semibold tracking-tight text-ink">
-            <Bot className="h-5 w-5 text-brand" />
+            <ShieldCheck className="h-5 w-5 text-brand" />
             How it works
           </h2>
           <p className="mt-3 max-w-2xl text-muted">
-            One session format everywhere. Web, terminal CLI and agents all
-            write to the same session store, so nothing gets lost when you
-            switch surfaces.
+            Calls enter the gateway, a key mode is resolved (direct, BYOK, or
+            platform), cost is computed from the live model registry, and a
+            budget cap + alert tier runs before the request counts.
           </p>
         </Reveal>
         <div className="mt-6 grid gap-5 md:grid-cols-3">
           {[
-            { step: "1", title: "Prompt Improver", text: "Plain English in. Clarity, context, constraints and output format added — scored 0–100 before it runs." },
-            { step: "2", title: "Agents", text: "Implement, review and test agents run with tool calls: read/edit files, run commands, check diffs." },
-            { step: "3", title: "Context & sessions", text: "Every run saves an AI summary, a prompt and a Continue Pack. Resume from any surface." },
+            { step: "1", title: "Keys & modes", text: "x-lf-provider-key says direct (never stored), x-lf-key provides a BYOK vault key, platform keys are plan-gated and demo-capped." },
+            { step: "2", title: "Budgets & alerts", text: "Every request counts against the workspace limit. At 50/80/100% an email fires; at 100% new calls hard-block." },
+            { step: "3", title: "Usage history", text: "Each completion records model, tokens, project tag and cost to 4 decimals — exportable, always." },
           ].map((s, i) => (
             <Reveal key={s.step} delay={i * 0.06}>
               <div className="relative h-full rounded-2xl border border-border bg-surface-2/40 p-6">

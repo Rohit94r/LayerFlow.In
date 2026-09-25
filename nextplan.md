@@ -188,6 +188,33 @@ a budget cap actually blocks over-spend in prod.
   providers (base URL + model id), local-vs-vault key modes, and why no-store
   keys must never hit logs or DB.
 
+### ✅ Status: implemented (all 11 tasks)
+- **1 ✓** Homepage + marketing reframed to "Stop surprise AI bills. Cap spend per
+  project in 2 minutes." (`components/Hero.tsx`, marketing content, metadata).
+- **2 ✓** Nav trimmed to Start / Connect / Spend / Manage; pricing + docs rewrite
+  (freeze list in "FINAL — Old features" honored).
+- **3 ✓** Managed platform keys plan-gated (402) + demo mode (20 msgs/day/user,
+  strict global cap; `demo-limits.ts`, `gateway-direct.test.ts`).
+- **4 ✓** BYOK + Direct keys: env-var resolution, `lf config` custom
+  OpenAI-compatible base URL, vault mode + direct/no-store mode, never stored
+  nor logged (`terminal/cmd/lf/direct.go`, `config_cmd.go`, gateway router).
+- **5 ✓** Price-accuracy gate pins registry vs published prices to 4 decimals
+  (`model-registry.test.ts`); invalid cap math → "no cap", never a wrong cap.
+- **6 ✓** Latency transparency: stream upstream tokens, tiny added latency
+  (`check:prod` measures first-token time).
+- **7 ✓** `x-lf-project` header accepted, stored, shown per-project in Costs
+  (`spendByProject` panel via `groupBy=project`, auto-creates under "Gateway
+  clients").
+- **8 ✓** Alerts at 50/80/100% + weekly digest via worker wedge
+  (`notifications.ts`, `queues.ts`; legacy schedulers removed).
+- **9 ✓** Keys page: 2-minute snippets (curl / Python / CLI direct) with copy
+  buttons + a **test-request button** that posts one completion and reports
+  `x-lf-key-mode`.
+- **10 ✓** Savings suggestion in Costs: real micro-dollar arithmetic (registry
+  pricing × exact billed tokens) — "switch Y→Z to save ~X%".
+- **11 ✓** CLI trimmed: `run`, `sessions`, `rescue`, `mcp`, `daemon` removed
+  from binary + help (`terminal/cmd/lf/root.go`; go build/vet/test green).
+
 ---
 
 ## Phase 4 — Monetize, secure, and add the hook features

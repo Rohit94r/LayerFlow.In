@@ -135,19 +135,34 @@ func runChat(opts chatOptions) error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	key, err := cloud.ResolveAPIKey(cfg)
-	if err != nil {
-		return err
-	}
+
+	// Prefer the LayerFlow gateway (budgets, usage history, alerts). When no
+	// gateway key is configured, fall back to direct OpenAI-compatible calls to
+	// a provider keyed by env var or `lf config key`.
+	key, keyErr := cloud.ResolveAPIKey(cfg)
 	client := cloud.NewClient(cloud.ResolveBaseURL(cfg), key)
+	direct := false
+	if keyErr != nil {
+		dc, provider, directErr := resolveDirectClient(cfg, opts.provider)
+		if directErr != nil {
+			return fmt.Errorf("no credentials: %w\n\n%s\n\nSet LF_API_KEY or run `lf login` to route through LayerFlow and track AI spend.", keyErr, directErr)
+		}
+		client = dc
+		direct = true
+		fmt.Fprintf(os.Stderr, "  (direct mode → %s — not metered by LayerFlow. Run `lf login` or set LF_API_KEY to track budgets.)\n", provider)
+	}
+
 	model := resolveChatModel(cfg, opts.model)
 
 	// Make sure the configured model is usable on this workspace; otherwise
 	// auto-pick the first available gateway model so chat works out of the box.
+	// Direct mode skips the availability probe (some providers restrict /v1/models).
 	ctx := context.Background()
-	if picked := cloud.PickAvailableModel(ctx, client, model); picked != model {
-		fmt.Fprintf(os.Stderr, "  (model %q unavailable here — using %q)\n", model, picked)
-		model = picked
+	if !direct {
+		if picked := cloud.PickAvailableModel(ctx, client, model); picked != model {
+			fmt.Fprintf(os.Stderr, "  (model %q unavailable here — using %q)\n", model, picked)
+			model = picked
+		}
 	}
 
 	db, err := storage.Open(&storage.Options{})

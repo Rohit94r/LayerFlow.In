@@ -12,26 +12,21 @@ const SITE_URL = "https://layerflow.dev";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "LayerFlow — Code with AI in your browser or terminal",
+    default: "LayerFlow — Stop Surprise AI Bills. Cap Spend Per Project.",
     template: "%s | LayerFlow",
   },
   description:
-    "The AI coding platform. Write plain English, click Improve, and run working prompts — or use the browser terminal with multiple coding agents. Rescue dead AI chats, compress context, and control AI costs.",
+    "The AI spend firewall. One OpenAI-compatible gateway in front of every model — bring your own keys, set hard budget caps, get alerts at 50/80/100%, and trust your usage history.",
   keywords: [
-    "AI coding platform",
-    "browser terminal",
-    "AI coding agent",
-    "multi-agent",
-    "prompt improver",
-    "plain english to code",
-    "AI context",
-    "AI conversation summary",
-    "limit rescue",
-    "chatgpt limit",
-    "claude limit",
-    "AI cost comparison",
-    "best AI model",
-    "AI workspace",
+    "AI spend",
+    "LLM cost control",
+    "AI budget caps",
+    "BYOK",
+    "OpenAI-compatible gateway",
+    "AI usage history",
+    "LLM cost monitoring",
+    "per-project AI spend",
+    "AI spend firewall",
     "LayerFlow",
   ],
   authors: [{ name: "Rohit Jadhav" }],
@@ -42,16 +37,16 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "LayerFlow",
-    title: "LayerFlow — Code with AI in your browser or terminal",
+    title: "LayerFlow — Stop Surprise AI Bills. Cap Spend Per Project.",
     description:
-      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with conversation summaries and cost control.",
+      "The AI spend firewall. Your keys, hard budget caps, alerts at 50/80/100%, and usage history you can trust — one OpenAI-compatible gateway in front of every model.",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "LayerFlow" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LayerFlow — Code with AI in your browser or terminal",
+    title: "LayerFlow — Stop Surprise AI Bills. Cap Spend Per Project.",
     description:
-      "The AI coding platform. Plain English in, improved prompts out. Browser terminal, multi-agent coding, and AI work rescue with conversation summaries and cost control.",
+      "The AI spend firewall. Your keys, hard budget caps, alerts at 50/80/100%, and usage history you can trust.",
     images: ["/og.png"],
   },
   robots: {
@@ -84,7 +79,7 @@ export default function RootLayout({
     applicationCategory: "DeveloperApplication",
     operatingSystem: "Web",
     description:
-      "The AI coding platform — code in your browser or terminal, rescue messy AI chats, and continue in any model with better prompts and lower cost.",
+      "Cap AI spend per project in minutes. One OpenAI-compatible gateway — your own keys, hard budget caps, alerts at 50/80/100%, and usage history you can trust.",
     offers: {
       "@type": "Offer",
       price: "0",

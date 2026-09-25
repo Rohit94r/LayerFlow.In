@@ -51,9 +51,14 @@ export async function enqueue<T extends object>(name: JobName, payload: T): Prom
  * the worker on startup so exactly one schedule exists per job regardless of
  * how many workers run.
  *
+ * The AI-spend-firewall wedge only runs the core spend jobs:
+ *
  *   usage-rollup   hourly at :15  — recompute rollups + reconcile Redis
- *   budget-alerts  every 15 min   — 80% / 100% owner emails (DB-deduped)
+ *   budget-alerts  every 15 min   — 50/80/100% owner emails (DB-deduped)
  *   weekly-digest  Mondays 09:00Z — per-workspace usage summary (DB-deduped)
+ *
+ * Legacy agent/embeddings schedulers are explicitly removed (not just unset)
+ * so leftover repeatables from prior deploys stop firing.
  */
 export async function registerScheduledJobs(): Promise<void> {
   const q = getQueue();
@@ -69,14 +74,9 @@ export async function registerScheduledJobs(): Promise<void> {
     name: "weekly-digest",
     data: {},
   });
-  await q.upsertJobScheduler("agent-maintenance-hourly", { pattern: "25 * * * *" }, {
-    name: "agent-maintenance",
-    data: {},
-  });
-  await q.upsertJobScheduler("embeddings-backfill-daily", { pattern: "0 2 * * *" }, {
-    name: "embeddings-backfill",
-    data: {},
-  });
+  // Wedge: no agent-maintenance / embeddings-backfill schedulers.
+  await q.removeJobScheduler("agent-maintenance-hourly").catch(() => undefined);
+  await q.removeJobScheduler("embeddings-backfill-daily").catch(() => undefined);
 }
 
 /**
