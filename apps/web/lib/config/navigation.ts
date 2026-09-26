@@ -7,6 +7,8 @@
 import {
   LayoutGrid,
   AiChat,
+  Bot,
+  TerminalSquare,
   Cpu,
   History,
   BarChart3,
@@ -43,6 +45,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/models", label: "Models", description: "Gateway models + BYOK", icon: Cpu },
       { href: "/keys", label: "Keys", description: "Gateway keys + provider keys", icon: KeyRound },
       { href: "/integrations/mcp", label: "MCP", description: "Spend tools for agents", icon: Zap },
+    ],
+  },
+  {
+    label: "Build",
+    items: [
+      { href: "/agents", label: "Agents", description: "Hire a digital worker", icon: Bot },
+      { href: "/terminal", label: "Terminal", description: "AI terminal + remote commands", icon: TerminalSquare },
     ],
   },
   {

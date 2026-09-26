@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 
 /**
  * Sidebar navigation list — rendered in the desktop rail (collapsed icon rail
- * below lg) and in the mobile drawer (always expanded). `expanded` controls
- * whether labels are visible; `onNavigate` fires on link activation (used by
- * the mobile drawer to close itself).
+ * when the sidebar is compact) and in the mobile drawer (always expanded).
+ * `expanded` controls whether labels are visible; `onNavigate` fires on link
+ * activation (used by the mobile drawer to close itself).
  */
 export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -18,13 +18,19 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
     href === "/home" ? pathname === "/home" : pathname.startsWith(href);
 
   return (
-    <nav className="flex-1 overflow-y-auto px-2 py-3 lg:px-3" aria-label="Main">
+    <nav
+      className={cn(
+        "flex-1 overflow-y-auto py-3",
+        expanded ? "px-3" : "px-2",
+      )}
+      aria-label="Main"
+    >
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="mb-4 last:mb-0">
           <p
             className={cn(
               "px-2.5 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-faint",
-              expanded ? "block" : "hidden lg:block",
+              expanded ? "block" : "hidden",
             )}
           >
             {group.label}
@@ -45,7 +51,7 @@ export function SidebarNav({ expanded, onNavigate }: { expanded: boolean; onNavi
                   )}
                 >
                   <item.icon className={cn("h-[18px] w-[18px] shrink-0", active ? "text-brand" : "text-muted group-hover:text-ink")} />
-                  <span className={cn("min-w-0 truncate", expanded ? "block" : "hidden lg:block")}>{item.label}</span>
+                  <span className={cn("min-w-0 truncate", expanded ? "block" : "hidden")}>{item.label}</span>
                   {active ? <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand" /> : null}
                 </Link>
               );

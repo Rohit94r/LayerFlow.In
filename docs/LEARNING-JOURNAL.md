@@ -210,7 +210,37 @@ finds:
    script its own throwaway workspace (cascades away after) and dropping the
    diagnostic extra create. Now deterministic every run.
 3. **"All tests pass" and "the app works" are different claims.** The dist build
-   exercised `/health`, smoke, and the full remote-control protocol — the shape
-   CI never ran. Only a negative smoke (no API → skip) existed; the positive
-   path over the real server is the missing link and it's now documented in
-   `docs/PRODUCT-STATUS.md`.
+    exercised `/health`, smoke, and the full remote-control protocol — the shape
+    CI never ran. Only a negative smoke (no API → skip) existed; the positive
+    path over the real server is the missing link and it's now documented in
+    `docs/PRODUCT-STATUS.md`.
+
+## Nav + sidebar restoration (2026-09-26)
+
+Two web changes, both user-driven and both verified in a real browser:
+
+1. **Sidebar labels would "sometimes" vanish.** Root cause: labels used
+   `hidden lg:block`, so any window below the 1024px Tailwind `lg` breakpoint
+   collapsed the 280px lavendar sidebar to a 64px icon rail with *no* labels —
+   "sometimes" just meant "whenever the window is narrow/scaled". Fixed by
+   making the expanded state viewport-driven (`matchMedia("(min-width: 768px)")`
+   via `useSyncExternalStore`, SSR-safe) plus a persisted manual toggle
+   (`localStorage "layerflow.sidebar"`). The two breakpoints were also out of
+   sync with the fixed `w-[280px]` width; width is now state-driven and the
+   `lg:` coupling is gone from labels and nav padding.
+2. **Agents + Terminal unlinked from the nav during the wedge freeze are now
+   first-class again** (explicit user request). Both live in a new "Build"
+   group between Connect and Spend; the ⌘K palette's `terminal` entry had been
+   mislabeled `Chat` and has its own entry now. Full flows re-verified in a
+   browser against the live stack: sign-up → create a Common Assistant with a
+   goal → detail (Live/Start cycle/Pause/Delete) → shows in the workforce list;
+   REPL `/status` .. `/keys` .. `/models` respond, remote control queue/cancel
+   works, and one **real LLM prompt through the web REPL streamed a correct
+   answer** (`PONG-WEB-OK` on gpt-4o-mini) — proving the SSE path end-to-end,
+   not just the mock. Verification battery after the changes: web + API
+   typecheck 0, lint 0 (one `set-state-in-effect` warning created and removed),
+   web build clean, E2E 2 passed + 1 opt-in.
+
+Lesson: a frozen feature can keep *working* while unlinked — and unearthing it
+means re-running the *browser* verification, not just the unit suites, because
+the wedge E2E never touches the agents or terminal pages.
